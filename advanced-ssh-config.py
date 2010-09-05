@@ -107,7 +107,9 @@ class advanced_ssh_config():
             if key not in ['hostname', 'gateways']:
                 config += ["  %s %s" % (key, value)]
 
-        open(os.path.expanduser("~/.ssh/config"), 'w+').write('\n'.join(config))
+        file = open(os.path.expanduser("~/.ssh/config"), 'w+')
+        file.write('\n'.join(config))
+        file.close
         #self.debug('\n'.join(config))
 
 if __name__ == "__main__":
