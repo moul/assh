@@ -1,3 +1,7 @@
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
 ssh_known_hosts() {
   COMPREPLY=($(cat ~/.ssh/config | sed '/^[hH]ost\ [a-zA-Z0-9\._-]*$/!d;s/^.ost\ //g' | grep "^${COMP_WORDS[COMP_CWORD]}" | sort | uniq))
 }
