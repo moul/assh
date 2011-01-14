@@ -1,2 +1,1 @@
-[default]
 ProxyCommand = ~/.ssh/scripts/dynamic_ssh.py --hostname=%h --port=%p -u
