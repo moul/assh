@@ -13,6 +13,15 @@ class advanced_ssh_config():
         if update_sshconfig:
             self._update_sshconfig()
 
+        #self.debug(None, True)
+        #self.debug("pid: %d" % os.getpid(), True)
+        #self.debug("ppid: %d" % os.getppid(), True)
+        #self.debug(None, True)
+        #for env in os.environ:
+        #    self.debug("%s = %s" % (env, os.environ[env]), True)
+        #self.debug(None, True)
+        #sys.exit(0)
+
         self.debug()
         self.debug("================")
 
@@ -64,7 +73,6 @@ class advanced_ssh_config():
         self.debug("port        : %s" % self.port)
 
         self.debug()
-
         gateways = self.conf_get('Gateways', path[-1], 'direct').strip().split(' ')
         for gateway in gateways:
             right_path = path[1:]
