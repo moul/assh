@@ -74,6 +74,7 @@ class advanced_ssh_config():
 
         self.debug()
         gateways = self.conf_get('Gateways', path[-1], 'direct').strip().split(' ')
+        reallocalcommand = self.conf_get('RealLocalCommand', path[-1], '').strip().split(' ')
         for gateway in gateways:
             right_path = path[1:]
             if gateway != 'direct':
@@ -90,9 +91,13 @@ class advanced_ssh_config():
             self.debug("cmd         : %s" % cmd)
             self.debug("================")
             self.debug()
-            process = subprocess.Popen(cmd)
-            if process.wait() != 0:
-                self.debug("There wre some errors")
+            ssh_process = subprocess.Popen(cmd)
+            if len(reallocalcommand[0]):
+                reallocalcommand_process = subprocess.Popen(reallocalcommand)
+            if ssh_process.wait() != 0:
+                self.debug("There were some errors")
+            if len(reallocalcommand[0]):
+                reallocalcommand_process.kill()
 
     def _update_sshconfig(self):
         config = []
@@ -104,7 +109,7 @@ class advanced_ssh_config():
                 host = re.sub('\\\.', '.', host)
                 config += ["Host %s" % host]
                 for key, value in self.parser.items(section):
-                    if key not in ['hostname', 'gateways']:
+                    if key not in ['hostname', 'gateways', 'reallocalcommand']:
                         if key == 'alias':
                             key = 'hostname'
                         config += ["  %s %s" % (key, value)]
