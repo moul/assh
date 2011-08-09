@@ -15,6 +15,7 @@ LocalForward = 1723 localhost:1723
 ForwardX11 = yes
 
 [default]
+Includes = ~/.ssh/config.advanced2 ~/.ssh/config.advanced3
 Port = 22
 User = root
 IdentityFile = ~/.ssh/id_rsa

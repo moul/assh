@@ -9,9 +9,17 @@ class advanced_ssh_config():
         if configfile:
             self.configfiles += configfile
         self.parser = ConfigParser.ConfigParser()
+
         self.parser.read(self.configfiles)
+        includes = self.conf_get('includes', 'default', '').strip()
+        for include in includes.split():
+            include = os.path.expanduser(include)
+            if not include in self.configfiles and os.path.exists(include):
+                self.parser.read(include)
+
         if update_sshconfig:
             self._update_sshconfig()
+        #self._update_sshconfig(False)
 
         #self.debug(None, True)
         #self.debug("pid: %d" % os.getpid(), True)
@@ -99,7 +107,7 @@ class advanced_ssh_config():
             if len(reallocalcommand[0]):
                 reallocalcommand_process.kill()
 
-    def _update_sshconfig(self):
+    def _update_sshconfig(self, write = True):
         config = []
         
         for section in self.parser.sections():
@@ -117,13 +125,16 @@ class advanced_ssh_config():
 
         config += ['Host *']
         for key, value in self.parser.items('default'):
-            if key not in ['hostname', 'gateways']:
+            if key not in ['hostname', 'gateways', 'includes']:
                 config += ["  %s %s" % (key, value)]
 
-        file = open(os.path.expanduser("~/.ssh/config"), 'w+')
-        file.write('\n'.join(config))
-        file.close
-        #self.debug('\n'.join(config))
+        if write:
+            file = open(os.path.expanduser("~/.ssh/config"), 'w+')
+            file.write('\n'.join(config))
+            file.close()
+            #self.debug('\n'.join(config))
+        else:
+            print '\n'.join(config)
 
 if __name__ == "__main__":
     parser = optparse.OptionParser(usage = "%prog [-v] -h hostname -p port", version = "%prog 1.0")
