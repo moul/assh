@@ -99,7 +99,7 @@ class advanced_ssh_config():
 
     def _update_sshconfig(self, write = True):
         config = []
-        
+
         for section in self.parser.sections():
             if section != 'default':
                 host = section
@@ -122,7 +122,6 @@ class advanced_ssh_config():
             file = open(os.path.expanduser("~/.ssh/config"), 'w+')
             file.write('\n'.join(config))
             file.close()
-            #self.debug('\n'.join(config))
         else:
             print '\n'.join(config)
 
