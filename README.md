@@ -14,3 +14,12 @@ Features
 * gateways (chain your ssh connections)
 * includes (include sub files)
 * real local command (execute a command on the local shell)
+
+Installation
+============
+
+Backup your old ~/.ssh/config file
+`cp ~/.ssh/config ~/.ssh/config.backup`
+
+Add this line in your ~/.ssh/config file
+`ProxyCommand = /path/to/advanced-ssh-config.py --hostname=%h --port=%p -u`
