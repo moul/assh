@@ -1,0 +1,10 @@
+[foo.com]
+user = pacman
+port = 2222
+
+[bar]
+hostname = 1.2.3.4
+gateways = foo.com
+
+[default]
+ProxyCommand = /path/to/advanced-ssh-config.py --hostname=%h --port=%p -u
