@@ -19,16 +19,6 @@ class advanced_ssh_config():
 
         if update_sshconfig:
             self._update_sshconfig()
-        #self._update_sshconfig(False)
-
-        #self.debug(None, True)
-        #self.debug("pid: %d" % os.getpid(), True)
-        #self.debug("ppid: %d" % os.getppid(), True)
-        #self.debug(None, True)
-        #for env in os.environ:
-        #    self.debug("%s = %s" % (env, os.environ[env]), True)
-        #self.debug(None, True)
-        #sys.exit(0)
 
         self.debug()
         self.debug("================")
