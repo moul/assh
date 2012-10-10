@@ -107,7 +107,7 @@ class advanced_ssh_config():
                 host = re.sub('\\\.', '.', host)
                 config += ["Host %s" % host]
                 for key, value in self.parser.items(section):
-                    if key not in ['hostname', 'gateways', 'reallocalcommand']:
+                    if key not in ['hostname', 'gateways', 'reallocalcommand', 'remotecommand']:
                         if key == 'alias':
                             key = 'hostname'
                         config += ["  %s %s" % (key, value)]
