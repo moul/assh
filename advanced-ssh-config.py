@@ -9,6 +9,11 @@ class advanced_ssh_config():
         if configfile:
             self.configfiles += configfile
         self.parser = ConfigParser.ConfigParser()
+        self.parser.SECTCRE = re.compile(
+        r'\['                                 # [
+        r'(?P<header>.+)'                  # very permissive!
+        r'\]'                                 # ]
+        )
 
         self.parser.read(self.configfiles)
         includes = self.conf_get('includes', 'default', '').strip()
@@ -73,6 +78,7 @@ class advanced_ssh_config():
         self.debug()
         gateways = self.conf_get('Gateways', path[-1], 'direct').strip().split(' ')
         reallocalcommand = self.conf_get('RealLocalCommand', path[-1], '').strip().split(' ')
+        self.debug("reallocalcommand: %s" % reallocalcommand)
         for gateway in gateways:
             right_path = path[1:]
             if gateway != 'direct':
@@ -90,11 +96,12 @@ class advanced_ssh_config():
             self.debug("================")
             self.debug()
             ssh_process = subprocess.Popen(cmd)
+            reallocalcommand_process = None
             if len(reallocalcommand[0]):
                 reallocalcommand_process = subprocess.Popen(reallocalcommand)
             if ssh_process.wait() != 0:
                 self.debug("There were some errors")
-            if len(reallocalcommand[0]):
+            if reallocalcommand_process != None:
                 reallocalcommand_process.kill()
 
     def _update_sshconfig(self, write = True):
@@ -133,5 +140,8 @@ if __name__ == "__main__":
     parser.add_option("-u", "--update-sshconfig", dest = "update_sshconfig", action="store_true")
     (options, args) = parser.parse_args()
     ssh = advanced_ssh_config(hostname = options.hostname, port = options.port, verbose = options.verbose, update_sshconfig = options.update_sshconfig)
-    ssh.connect()
+    if ssh.hostname == None:
+        print "Must specify a host!\n"
+    else:
+        ssh.connect()
     #sys.stderr.write("\n")
