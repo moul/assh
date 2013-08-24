@@ -39,7 +39,7 @@ class advanced_ssh_config():
         for section in self.parser.sections():
             if re.match(section, host):
                 if self.parser.has_option(section, key):
-                    return self.parser.get(section, key)
+                    return self.parser.get(section, key, False, { 'Hostname': host})
         if self.parser.has_option('default', key):
             return self.parser.get('default', key)
         return default
@@ -113,7 +113,7 @@ class advanced_ssh_config():
                 host = re.sub('\.\*', '*', host)
                 host = re.sub('\\\.', '.', host)
                 config += ["Host %s" % host]
-                for key, value in self.parser.items(section):
+                for key, value in self.parser.items(section, False, { 'Hostname': host }):
                     if key not in ['hostname', 'gateways', 'reallocalcommand', 'remotecommand']:
                         if key == 'alias':
                             key = 'hostname'
