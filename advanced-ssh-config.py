@@ -45,13 +45,16 @@ class advanced_ssh_config( ):
                 errors += 1
 
         if 0 == errors:
-            if update_sshconfig:
-                self._update_sshconfig( )
-
             self.debug( )
+            self.debug( "configfiles : %s" % self.configfiles )
             self.debug( "================" )
         else:
             raise ConfigError('Errors found in config')
+
+        if update_sshconfig:
+            self._update_sshconfig( )
+
+
 
     def debug( self, str = None, force = False ):
         # if self.verbose or force:
@@ -61,16 +64,17 @@ class advanced_ssh_config( ):
         #         sys.stderr.write( "\n" )
         self.log.debug(str and str or '')
 
-    def conf_get( self, key, host, default = None ):
+    def conf_get( self, key, host, default = None, vardct = None ):
         for section in self.parser.sections( ):
             if re.match( section, host ):
                 if self.parser.has_option( section, key ):
-                    return self.parser.get( section, key, False, { 'hostname': self.hostname, 'port': self.port } )
+                    return self.parser.get( section, key, False, vardct )
         if self.parser.has_option( 'default', key ):
             return self.parser.get( 'default', key )
         return default
 
     def connect( self ):
+        # Handle special settings
         mkdir_path = os.path.dirname(
             os.path.join( os.path.dirname( os.path.expanduser( self.conf_get( 'controlpath', 'default', '/tmp' ) ) ),
                           self.hostname ) )
@@ -78,11 +82,13 @@ class advanced_ssh_config( ):
             os.makedirs( mkdir_path )
         except:
             pass
+
+        # Parse special routing
         path = self.hostname.split( '/' )
 
         args = { }
         options = { 'p': 'Port',
-                    'u': 'User',
+                    'l': 'User',
                     'h': 'Hostname',
                     'i': 'IdentifyFile' }
         for key in options:
@@ -96,12 +102,11 @@ class advanced_ssh_config( ):
         self.debug( )
 
         self.debug( "hostname    : %s" % self.hostname )
+        self.debug( "port        : %s" % self.port )
         self.debug( "path        : %s" % path )
         self.debug( "path[0]     : %s" % path[ 0 ] )
         self.debug( "path[1:]    : %s" % path[ 1: ] )
         self.debug( "args        : %s" % args )
-        self.debug( "configfiles : %s" % self.configfiles )
-        self.debug( "port        : %s" % self.port )
 
         self.debug( )
         gateways = self.conf_get( 'Gateways', path[ -1 ], 'direct' ).strip( ).split( ' ' )
@@ -115,10 +120,10 @@ class advanced_ssh_config( ):
             if len( right_path ):
                 cmd += [ 'ssh', '/'.join( right_path ) ]
 
-            if len( cmd ):
-                cmd += [ 'nc', args[ 'h' ], args[ 'p' ] ]
-            else:
-                cmd += [ 'nc', args[ 'h' ], args[ 'p' ] ]
+            # if len( cmd ):
+            #     cmd += [ 'nc', args[ 'h' ], args[ 'p' ] ]
+            # else:
+            cmd += [ 'nc', args[ 'h' ], args[ 'p' ] ]
 
             self.debug( "cmd         : %s" % cmd )
             self.debug( "================" )
@@ -128,7 +133,7 @@ class advanced_ssh_config( ):
             if len( reallocalcommand[ 0 ] ):
                 reallocalcommand_process = subprocess.Popen( reallocalcommand )
             if ssh_process.wait( ) != 0:
-                self.debug( "There were some errors" )
+                self.log.critical( "There were some errors" )
             if reallocalcommand_process != None:
                 reallocalcommand_process.kill( )
 
