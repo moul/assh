@@ -88,10 +88,10 @@ class advanced_ssh_config( ):
         for sect in self.parser.sections( ):
             if re.match( sect, self.hostname ):
                 section = sect
-                sectdct = self.parser.items(sect)
+                sectdct = self.parser.items(sect,True)
 
-        if not (section and sectdct):
-            raise ConfigError("'%s' section not found!" % self.hostname )
+        #if not (section and sectdct):
+        #    raise ConfigError("'%s' section not found!" % self.hostname )
         self.log.debug( "section '%s' " % section )
 
         # Parse special routing
@@ -105,11 +105,12 @@ class advanced_ssh_config( ):
         matches = None
         updated = False
         for key in options:
-            cfval = self.conf_get( options[ key ], path[ 0 ] )
+            cfval = self.conf_get( options[ key ], path[ 0 ],False, { 'hostname': self.hostname, 'port': self.port } )
             value = self._interpolate(cfval)
             if cfval != value:
                 updated = True
                 self.parser.set(section,options[key],value)
+                args[ key ] = value
 
             self.debug( "get (-%-1s) %-12s : %s" % (key, options[ key ], value) )
             if value:
