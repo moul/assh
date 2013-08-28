@@ -1,147 +1,198 @@
 #!/usr/bin/env python
 
-import sys, os, ConfigParser, re, socket, subprocess, optparse
+import sys, os, ConfigParser, re, socket, subprocess, optparse, logging
 
-class advanced_ssh_config():
-    def __init__(self, hostname = None, port = 22, configfile = None, verbose = False, update_sshconfig = False):
+LOGGING_LEVELS = {
+    'crit': logging.CRITICAL,
+    'critical': logging.CRITICAL,
+    'err': logging.ERROR,
+    'error': logging.ERROR,
+    'warn': logging.WARNING,
+    'warning': logging.WARNING,
+    'info': logging.INFO,
+    'debug': logging.DEBUG }
+
+# exception classes
+class ConfigError(Exception):
+    """Config exceptions."""
+
+
+class advanced_ssh_config( ):
+    def __init__( self, hostname = None, port = 22, configfile = None, verbose = False, update_sshconfig = False):
         self.verbose, self.hostname, self.port = verbose, hostname, port
-        self.configfiles = [ '/etc/ssh/config.advanced', os.path.expanduser("~/.ssh/config.advanced") ]
+
+        self.log = logging.getLogger( '' )
+
+        self.configfiles = [ '/etc/ssh/config.advanced', os.path.expanduser( "~/.ssh/config.advanced" ) ]
         if configfile:
             self.configfiles += configfile
-        self.parser = ConfigParser.ConfigParser()
+        self.parser = ConfigParser.ConfigParser( )
         self.parser.SECTCRE = re.compile(
-        r'\['                                 # [
-        r'(?P<header>.+)'                  # very permissive!
-        r'\]'                                 # ]
+            r'\['                                 # [
+            r'(?P<header>.+)'                  # very permissive!
+            r'\]'                                 # ]
         )
 
-        self.parser.read(self.configfiles)
-        includes = self.conf_get('includes', 'default', '').strip()
-        for include in includes.split():
-            include = os.path.expanduser(include)
-            if not include in self.configfiles and os.path.exists(include):
-                self.parser.read(include)
-
-        if update_sshconfig:
-            self._update_sshconfig()
-
-        self.debug()
-        self.debug("================")
-
-    def debug(self, str = None, force = False):
-        if self.verbose or force:
-            if str:
-                sys.stderr.write("Debug: %s\n" % str)
+        errors = 0
+        self.parser.read( self.configfiles )
+        includes = self.conf_get( 'includes', 'default', '' ).strip( )
+        for include in includes.split( ):
+            incpath = os.path.expanduser( include )
+            if not incpath in self.configfiles and os.path.exists( incpath ):
+                self.parser.read( incpath )
             else:
-                sys.stderr.write("\n")
+                self.log.error("'%s' include not found" % incpath )
+                errors += 1
 
-    def conf_get(self, key, host, default = None):
-        for section in self.parser.sections():
-            if re.match(section, host):
-                if self.parser.has_option(section, key):
-                    return self.parser.get(section, key, False, { 'Hostname': host})
-        if self.parser.has_option('default', key):
-            return self.parser.get('default', key)
+        if 0 == errors:
+            if update_sshconfig:
+                self._update_sshconfig( )
+
+            self.debug( )
+            self.debug( "================" )
+        else:
+            raise ConfigError('Errors found in config')
+
+    def debug( self, str = None, force = False ):
+        # if self.verbose or force:
+        #     if str:
+        #         sys.stderr.write( "Debug: %s\n" % str )
+        #     else:
+        #         sys.stderr.write( "\n" )
+        self.log.debug(str)
+
+    def conf_get( self, key, host, default = None ):
+        for section in self.parser.sections( ):
+            if re.match( section, host ):
+                if self.parser.has_option( section, key ):
+                    return self.parser.get( section, key, False, { 'hostname': self.hostname, 'port': self.port } )
+        if self.parser.has_option( 'default', key ):
+            return self.parser.get( 'default', key )
         return default
 
-    def connect(self):
-        mkdir_path = os.path.dirname(os.path.join(os.path.dirname(os.path.expanduser(self.conf_get('controlpath', 'default', '/tmp'))), self.hostname))
+    def connect( self ):
+        mkdir_path = os.path.dirname(
+            os.path.join( os.path.dirname( os.path.expanduser( self.conf_get( 'controlpath', 'default', '/tmp' ) ) ),
+                          self.hostname ) )
         try:
-            os.makedirs(mkdir_path)
+            os.makedirs( mkdir_path )
         except:
             pass
-        path = self.hostname.split('/')
+        path = self.hostname.split( '/' )
 
-        args = {}
-        options = {'p': 'Port',
-                   'u': 'User',
-                   'h': 'Hostname',
-                   'i': 'IdentifyFile'}
+        args = { }
+        options = { 'p': 'Port',
+                    'u': 'User',
+                    'h': 'Hostname',
+                    'i': 'IdentifyFile' }
         for key in options:
-            value = self.conf_get(options[key], path[0])
-            self.debug("get (-%-1s) %-12s : %s" % (key, options[key], value))
+            value = self.conf_get( options[ key ], path[ 0 ] )
+            self.debug( "get (-%-1s) %-12s : %s" % (key, options[ key ], value) )
             if value:
-                args[key] = value
+                args[ key ] = value
         if not 'h' in args:
-            args['h'] = path[0]
-        self.debug('args: %s' % args)
-        self.debug()
+            args[ 'h' ] = path[ 0 ]
+        self.debug( 'args: %s' % args )
+        self.debug( )
 
-        self.debug("hostname    : %s" % self.hostname)
-        self.debug("path        : %s" % path)
-        self.debug("path[0]     : %s" % path[0])
-        self.debug("path[1:]    : %s" % path[1:])
-        self.debug("args        : %s" % args)
-        self.debug("configfiles : %s" % self.configfiles)
-        self.debug("port        : %s" % self.port)
+        self.debug( "hostname    : %s" % self.hostname )
+        self.debug( "path        : %s" % path )
+        self.debug( "path[0]     : %s" % path[ 0 ] )
+        self.debug( "path[1:]    : %s" % path[ 1: ] )
+        self.debug( "args        : %s" % args )
+        self.debug( "configfiles : %s" % self.configfiles )
+        self.debug( "port        : %s" % self.port )
 
-        self.debug()
-        gateways = self.conf_get('Gateways', path[-1], 'direct').strip().split(' ')
-        reallocalcommand = self.conf_get('RealLocalCommand', path[-1], '').strip().split(' ')
-        self.debug("reallocalcommand: %s" % reallocalcommand)
+        self.debug( )
+        gateways = self.conf_get( 'Gateways', path[ -1 ], 'direct' ).strip( ).split( ' ' )
+        reallocalcommand = self.conf_get( 'RealLocalCommand', path[ -1 ], '' ).strip( ).split( ' ' )
+        self.debug( "reallocalcommand: %s" % reallocalcommand )
         for gateway in gateways:
-            right_path = path[1:]
+            right_path = path[ 1: ]
             if gateway != 'direct':
-                right_path += [gateway]
-            cmd = []
-            if len(right_path):
-                cmd += ['ssh', '/'.join(right_path)]
+                right_path += [ gateway ]
+            cmd = [ ]
+            if len( right_path ):
+                cmd += [ 'ssh', '/'.join( right_path ) ]
 
-            if len(cmd):
-                cmd += ['nc', args['h'], args['p']]
+            if len( cmd ):
+                cmd += [ 'nc', args[ 'h' ], args[ 'p' ] ]
             else:
-                cmd += ['nc', args['h'], args['p']]
+                cmd += [ 'nc', args[ 'h' ], args[ 'p' ] ]
 
-            self.debug("cmd         : %s" % cmd)
-            self.debug("================")
-            self.debug()
-            ssh_process = subprocess.Popen(cmd)
+            self.debug( "cmd         : %s" % cmd )
+            self.debug( "================" )
+            self.debug( )
+            ssh_process = subprocess.Popen( cmd )
             reallocalcommand_process = None
-            if len(reallocalcommand[0]):
-                reallocalcommand_process = subprocess.Popen(reallocalcommand)
-            if ssh_process.wait() != 0:
-                self.debug("There were some errors")
+            if len( reallocalcommand[ 0 ] ):
+                reallocalcommand_process = subprocess.Popen( reallocalcommand )
+            if ssh_process.wait( ) != 0:
+                self.debug( "There were some errors" )
             if reallocalcommand_process != None:
-                reallocalcommand_process.kill()
+                reallocalcommand_process.kill( )
 
-    def _update_sshconfig(self, write = True):
-        config = []
+    def _update_sshconfig( self, write = True ):
+        config = [ ]
 
-        for section in self.parser.sections():
+        for section in self.parser.sections( ):
             if section != 'default':
                 host = section
-                host = re.sub('\.\*', '*', host)
-                host = re.sub('\\\.', '.', host)
-                config += ["Host %s" % host]
-                for key, value in self.parser.items(section, False, { 'Hostname': host }):
-                    if key not in ['hostname', 'gateways', 'reallocalcommand', 'remotecommand']:
+                host = re.sub( '\.\*', '*', host )
+                host = re.sub( '\\\.', '.', host )
+                config += [ "Host %s" % host ]
+                for key, value in self.parser.items( section, False, { 'Hostname': host } ):
+                    if key not in [ 'hostname', 'gateways', 'reallocalcommand', 'remotecommand' ]:
                         if key == 'alias':
                             key = 'hostname'
-                        config += ["  %s %s" % (key, value)]
-                config += ['']
+                        config += [ "  %s %s" % (key, value) ]
+                config += [ '' ]
 
-        config += ['Host *']
-        for key, value in self.parser.items('default'):
-            if key not in ['hostname', 'gateways', 'includes']:
-                config += ["  %s %s" % (key, value)]
+        config += [ 'Host *' ]
+        for key, value in self.parser.items( 'default' ):
+            if key not in [ 'hostname', 'gateways', 'includes' ]:
+                config += [ "  %s %s" % (key, value) ]
 
         if write:
-            file = open(os.path.expanduser("~/.ssh/config"), 'w+')
-            file.write('\n'.join(config))
-            file.close()
+            file = open( os.path.expanduser( "~/.ssh/config" ), 'w+' )
+            file.write( '\n'.join( config ) )
+            file.close( )
         else:
-            print '\n'.join(config)
+            print '\n'.join( config )
+
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser(usage = "%prog [-v] -h hostname -p port", version = "%prog 1.0")
-    parser.add_option("-H", "--hostname", dest = "hostname", help = "Host")
-    parser.add_option("-p", "--port", dest = "port")
-    parser.add_option("-v", "--verbose", dest = "verbose", action="store_true")
-    parser.add_option("-u", "--update-sshconfig", dest = "update_sshconfig", action="store_true")
-    (options, args) = parser.parse_args()
-    ssh = advanced_ssh_config(hostname = options.hostname, port = options.port, verbose = options.verbose, update_sshconfig = options.update_sshconfig)
-    if ssh.hostname == None:
-        print "Must specify a host!\n"
-    else:
-        ssh.connect()
-    #sys.stderr.write("\n")
+    parser = optparse.OptionParser( usage = "%prog [-v] -h hostname -p port", version = "%prog 1.0" )
+    parser.add_option( "-H", "--hostname", dest = "hostname", help = "Host" )
+    parser.add_option( "-p", "--port", dest = "port" )
+    parser.add_option( "-v", "--verbose", dest = "verbose", action = "store_true" )
+    parser.add_option( "-l", "--log_level", dest = "log_level" )
+    parser.add_option( "-u", "--update-sshconfig", dest = "update_sshconfig", action = "store_true" )
+    (options, args) = parser.parse_args( )
+    # You can access command-line arguments using the args variable.
+
+    logging_level = LOGGING_LEVELS.get( options.log_level, logging.ERROR )
+    if options.verbose and logging_level == logging.ERROR:
+        logging_level = logging.DEBUG
+    logging.basicConfig( level      = logging_level,
+                         filename   = None,
+                         format     = '%(asctime)s %(levelname)s: %(message)s',
+                         datefmt    = '%Y-%m-%d %H:%M:%S' )
+
+    try:
+        #debug = 0 if (None == options.debug) else int( options.debug )
+        ssh = advanced_ssh_config( hostname         = options.hostname,
+                                   port             = options.port,
+                                   verbose          = options.verbose,
+                                   update_sshconfig = options.update_sshconfig
+                                 )
+        if ssh.hostname == None:
+            print "Must specify a host!\n"
+        else:
+            ssh.connect( )
+            #sys.stderr.write("\n")
+    except ConfigError as e:
+        # noop
+        sys.stderr.write(e.message)
+    except Exception:
+        print "ERROR: 'debug' value must be an integer from 0 to 9."
