@@ -83,6 +83,17 @@ class advanced_ssh_config( ):
         except:
             pass
 
+        section = None
+        sectdct = None
+        for sect in self.parser.sections( ):
+            if re.match( sect, self.hostname ):
+                section = sect
+                sectdct = self.parser.items(sect)
+
+        if not (section and sectdct):
+            raise ConfigError("'%s' section not found!" % self.hostname )
+        self.log.debug( "section '%s' " % section )
+
         # Parse special routing
         path = self.hostname.split( '/' )
 
@@ -92,12 +103,23 @@ class advanced_ssh_config( ):
                     'h': 'Hostname',
                     'i': 'IdentityFile' }
         matches = None
+        updated = False
         for key in options:
-            value = self._interpolate(self.conf_get( options[ key ], path[ 0 ] ))
+            cfval = self.conf_get( options[ key ], path[ 0 ] )
+            value = self._interpolate(cfval)
+            if cfval != value:
+                updated = True
+                self.parser.set(section,options[key],value)
 
             self.debug( "get (-%-1s) %-12s : %s" % (key, options[ key ], value) )
             if value:
                 args[ key ] = value
+
+        # If we interpolated any keys
+        if updated:
+            self._update_sshconfig( )
+            self.log.debug("Config updated. Need to restart SSH!?")
+
         if not 'h' in args:
             args[ 'h' ] = path[ 0 ]
         self.debug( 'args: %s' % args )
