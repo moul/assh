@@ -90,9 +90,11 @@ class advanced_ssh_config( ):
         options = { 'p': 'Port',
                     'l': 'User',
                     'h': 'Hostname',
-                    'i': 'IdentifyFile' }
+                    'i': 'IdentityFile' }
+        matches = None
         for key in options:
-            value = self.conf_get( options[ key ], path[ 0 ] )
+            value = self._interpolate(self.conf_get( options[ key ], path[ 0 ] ))
+
             self.debug( "get (-%-1s) %-12s : %s" % (key, options[ key ], value) )
             if value:
                 args[ key ] = value
@@ -165,6 +167,17 @@ class advanced_ssh_config( ):
         else:
             print '\n'.join( config )
 
+    def _interpolate( self, value ):
+
+        matches = value and re.match( '\$(\w+)', value ) or None
+        if matches:
+            var = matches.group(1)
+            val = os.environ.get(var)
+            if val:
+                self.log.debug("'%s' => '%s'" % (value, val))
+                return self._interpolate(re.sub('\$%s' % var,val,value))
+
+        return value
 
 if __name__ == "__main__":
     parser = optparse.OptionParser( usage = "%prog [-v] -h hostname -p port", version = "%prog 1.0" )
@@ -183,6 +196,7 @@ if __name__ == "__main__":
                          filename   = None,
                          format     = '%(asctime)s %(levelname)s: %(message)s',
                          datefmt    = '%Y-%m-%d %H:%M:%S' )
+    log = logging.getLogger( '' )
 
     try:
         #debug = 0 if (None == options.debug) else int( options.debug )
@@ -199,5 +213,6 @@ if __name__ == "__main__":
     except ConfigError as e:
         # noop
         sys.stderr.write(e.message)
-    except Exception:
+    except Exception as e:
+        log.debug(e.__str__())
         print "ERROR: 'debug' value must be an integer from 0 to 9."
