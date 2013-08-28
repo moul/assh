@@ -59,7 +59,7 @@ class advanced_ssh_config( ):
         #         sys.stderr.write( "Debug: %s\n" % str )
         #     else:
         #         sys.stderr.write( "\n" )
-        self.log.debug(str)
+        self.log.debug(str and str or '')
 
     def conf_get( self, key, host, default = None ):
         for section in self.parser.sections( ):
