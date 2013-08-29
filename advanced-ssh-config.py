@@ -196,7 +196,7 @@ class AdvancedSshConfig():
         return value
 
 
-if __name__ == '__main__':
+def main():
     parser = optparse.OptionParser(usage='%prog [-v] -h hostname -p port', version='%prog 1.0')
     parser.add_option('-H', '--hostname', dest='hostname', help='Host')
     parser.add_option('-p', '--port', dest='port')
@@ -227,3 +227,6 @@ if __name__ == '__main__':
         sys.stderr.write(e.message)
     except Exception as e:
         log.debug(e.__str__())
+
+if __name__ == '__main__':
+    main()
