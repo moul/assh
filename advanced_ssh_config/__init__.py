@@ -139,6 +139,8 @@ class AdvancedSshConfig(object):
         gateways = self.conf_get('Gateways', path[-1], 'direct').strip().split(' ')
         reallocalcommand = self.conf_get('RealLocalCommand', path[-1], '').strip().split(' ')
         self.debug('reallocalcommand: %s' % reallocalcommand)
+        self.debug('gateways    : %s' % ', '.join(gateways))
+
         for gateway in gateways:
             right_path = path[1:]
             if gateway != 'direct':
