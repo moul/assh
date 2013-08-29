@@ -226,10 +226,10 @@ def main():
                                 verbose=options.verbose,
                                 update_sshconfig=options.update_sshconfig,
                                 dry_run=options.dry_run)
-        if ssh.hostname is None:
-            print 'Must specify a host!\n'
-        else:
+        if ssh.hostname:
             ssh.connect()
+        elif not options.update_sshconfig:
+            print 'Must specify a host!\n'
     except ConfigError as err:
         sys.stderr.write(err.message)
     except Exception as err:
