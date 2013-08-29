@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os, ConfigParser, re, socket, subprocess, optparse, logging
+import sys
+import os
+import ConfigParser
+import re
+import subprocess
+import optparse
+import logging
+import errno
 
 
 LOGGING_LEVELS = {
@@ -20,7 +27,7 @@ class ConfigError(Exception):
     '''Config exceptions.'''
 
 
-class AdvancedSshConfig():
+class AdvancedSshConfig(object):
     def __init__(self, hostname=None, port=22, configfile=None, verbose=False, update_sshconfig=False):
         self.verbose, self.hostname, self.port = verbose, hostname, port
 
@@ -57,8 +64,8 @@ class AdvancedSshConfig():
         if update_sshconfig:
             self._update_sshconfig()
 
-    def debug(self, str=None, force=False):
-        self.log.debug(str and str or '')
+    def debug(self, string=None):
+        self.log.debug(string and string or '')
 
     def conf_get(self, key, host, default=None, vardct=None):
         for section in self.parser.sections():
@@ -75,18 +82,15 @@ class AdvancedSshConfig():
         mkdir_path = os.path.dirname(os.path.join(os.path.dirname(os.path.expanduser(controlpath)), self.hostname))
         try:
             os.makedirs(mkdir_path)
-        except:
-            pass
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
 
         section = None
-        sectdct = None
         for sect in self.parser.sections():
             if re.match(sect, self.hostname):
                 section = sect
-                sectdct = self.parser.items(sect, True)
 
-        #if not (section and sectdct):
-        #    raise ConfigError(''%s' section not found!' % self.hostname)
         self.log.debug('section \'%s\' ' % section)
 
         # Parse special routing
@@ -99,7 +103,6 @@ class AdvancedSshConfig():
             'h': 'Hostname',
             'i': 'IdentityFile'
             }
-        matches = None
         updated = False
         for key in options:
             cfval = self.conf_get(options[key], path[0], False, {'hostname': self.hostname, 'port': self.port})
@@ -162,8 +165,8 @@ class AdvancedSshConfig():
         for section in self.parser.sections():
             if section != 'default':
                 host = section
-                host = re.sub('\.\*', '*', host)
-                host = re.sub('\\\.', '.', host)
+                host = re.sub(r'\.\*', '*', host)
+                host = re.sub(r'\\\.', '.', host)
                 config += ['Host %s' % host]
                 for key, value in self.parser.items(section, False, {'Hostname': host}):
                     if key not in ('hostname', 'gateways', 'reallocalcommand', 'remotecommand'):
@@ -178,20 +181,20 @@ class AdvancedSshConfig():
                 config += ['  %s %s' % (key, value)]
 
         if write:
-            file = open(os.path.expanduser('~/.ssh/config'), 'w+')
-            file.write('\n'.join(config))
-            file.close()
+            fhandle = open(os.path.expanduser('~/.ssh/config'), 'w+')
+            fhandle.write('\n'.join(config))
+            fhandle.close()
         else:
             print '\n'.join(config)
 
     def _interpolate(self, value):
-        matches = value and re.match('\$(\w+)', value) or None
+        matches = value and re.match(r'\$(\w+)', value) or None
         if matches:
             var = matches.group(1)
             val = os.environ.get(var)
             if val:
                 self.log.debug('\'%s\' => \'%s\'' % (value, val))
-                return self._interpolate(re.sub('\$%s' % var, val, value))
+                return self._interpolate(re.sub(r'\$%s' % var, val, value))
 
         return value
 
@@ -223,10 +226,10 @@ def main():
             print 'Must specify a host!\n'
         else:
             ssh.connect()
-    except ConfigError as e:
-        sys.stderr.write(e.message)
-    except Exception as e:
-        log.debug(e.__str__())
+    except ConfigError as err:
+        sys.stderr.write(err.message)
+    except Exception as err:
+        log.debug(err.__str__())
 
 if __name__ == '__main__':
     main()
