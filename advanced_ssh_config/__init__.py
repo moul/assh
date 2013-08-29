@@ -107,7 +107,7 @@ class AdvancedSshConfig(object):
             }
         updated = False
         for key in options:
-            cfval = self.conf_get(options[key], path[0], False, {'hostname': self.hostname, 'port': self.port})
+            cfval = self.conf_get(options[key], path[0], False, {'hostname': self.hostname, 'port': str(self.port)})
             value = self._interpolate(cfval)
             if cfval != value:
                 updated = True
@@ -208,7 +208,7 @@ class AdvancedSshConfig(object):
 def main():
     parser = optparse.OptionParser(usage='%prog [-v] -h hostname -p port', version='%prog 1.0')
     parser.add_option('-H', '--hostname', dest='hostname', help='Host')
-    parser.add_option('-p', '--port', dest='port')
+    parser.add_option('-p', '--port', dest='port', default=22)
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true')
     parser.add_option('-l', '--log_level', dest='log_level')
     parser.add_option('-u', '--update-sshconfig', dest='update_sshconfig', action='store_true')
