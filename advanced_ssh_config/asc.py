@@ -28,8 +28,8 @@ class ConfigError(Exception):
 
 
 class AdvancedSshConfig(object):
-    def __init__(self, hostname=None, port=22, configfile=None, verbose=False, update_sshconfig=False):
-        self.verbose, self.hostname, self.port = verbose, hostname, port
+    def __init__(self, hostname=None, port=22, configfile=None, verbose=False, update_sshconfig=False, dry_run=False):
+        self.verbose, self.hostname, self.port, self.dry_run = verbose, hostname, port, dry_run
 
         self.log = logging.getLogger('')
 
@@ -150,14 +150,16 @@ class AdvancedSshConfig(object):
             self.debug('cmd         : %s' % cmd)
             self.debug('================')
             self.debug()
-            ssh_process = subprocess.Popen(cmd)
-            reallocalcommand_process = None
-            if len(reallocalcommand[0]):
-                reallocalcommand_process = subprocess.Popen(reallocalcommand)
-            if ssh_process.wait() != 0:
-                self.log.critical('There were some errors')
-            if reallocalcommand_process is not None:
-                reallocalcommand_process.kill()
+
+            if not self.dry_run:
+                ssh_process = subprocess.Popen(cmd)
+                reallocalcommand_process = None
+                if len(reallocalcommand[0]):
+                    reallocalcommand_process = subprocess.Popen(reallocalcommand)
+                if ssh_process.wait() != 0:
+                    self.log.critical('There were some errors')
+                if reallocalcommand_process is not None:
+                    reallocalcommand_process.kill()
 
     def _update_sshconfig(self, write=True):
         config = []
@@ -177,7 +179,7 @@ class AdvancedSshConfig(object):
 
         config += ['Host *']
         for key, value in self.parser.items('default'):
-            if key not in ['hostname', 'gateways', 'includes']:
+            if key not in ('hostname', 'gateways', 'includes'):
                 config += ['  %s %s' % (key, value)]
 
         if write:
@@ -206,6 +208,7 @@ def main():
     parser.add_option('-v', '--verbose', dest='verbose', action='store_true')
     parser.add_option('-l', '--log_level', dest='log_level')
     parser.add_option('-u', '--update-sshconfig', dest='update_sshconfig', action='store_true')
+    parser.add_option('--dry-run', action='store_true', dest='dry_run')
     (options, args) = parser.parse_args()
 
     logging_level = LOGGING_LEVELS.get(options.log_level, logging.ERROR)
@@ -221,7 +224,8 @@ def main():
         ssh = AdvancedSshConfig(hostname=options.hostname,
                                 port=options.port,
                                 verbose=options.verbose,
-                                update_sshconfig=options.update_sshconfig)
+                                update_sshconfig=options.update_sshconfig,
+                                dry_run=options.dry_run)
         if ssh.hostname is None:
             print 'Must specify a host!\n'
         else:
