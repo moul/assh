@@ -16,11 +16,14 @@ MODULE = imp.load_module(MODULE_NAME, *imp.find_module(MODULE_NAME))
 
 setup(
     name=MODULE_NAME.replace('_', '-'),
+    description='An alternative ssh configuration file with extended options and features',
     version=MODULE.__version__,
     author='Manfred Touron',
     author_email='m@42.am',
     url='https://github.com/moul/advanced-ssh-config',
+    download_url='https://github.com/moul/advanced-ssh-config/archive/master.zip',
     packages=find_packages(),
+    package_dir={'advanced_ssh_config': 'advanced_ssh_config'},
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 3 - Alpha',
