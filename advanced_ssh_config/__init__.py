@@ -22,7 +22,7 @@ LOGGING_LEVELS = {
     'debug': logging.DEBUG
     }
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 
 class ConfigError(Exception):
