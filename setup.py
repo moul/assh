@@ -41,7 +41,7 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'advanced-ssh-config = advanced_ssh_config.asc:main',
+            'advanced-ssh-config = advanced_ssh_config:main',
             ],
     },
 )
