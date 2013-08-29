@@ -40,8 +40,14 @@ Backup your old ~/.ssh/config file
 
     cp ~/.ssh/config ~/.ssh/config.backup
 
-Add this line in your ~/.ssh/config file
+Generate the new config file
+
+    advanced-ssh-config -u
+
+Or add this line manually in your ~/.ssh/config file
 
     ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
+
+--
 
 © 2009-2013 Manfred Touron - [MIT License](https://github.com/moul/advanced-ssh-config/blob/master/License.txt).
