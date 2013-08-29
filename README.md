@@ -1,7 +1,7 @@
 Advanced SSH config
 ===================
 
-Enhance `ssh_config` file capabilities
+Enhances `ssh_config` file capabilities
 
 This program is called by `ProxyCommand` from `lib-ssh`
 It works with `ssh`, `scp`, `rsync`, `git`, etc
