@@ -105,9 +105,13 @@ class AdvancedSshConfig(object):
             'h': 'Hostname',
             'i': 'IdentityFile'
             }
+        default_options = {
+            'p': str(self.port),
+            'h': path[0]
+            }
         updated = False
         for key in options:
-            cfval = self.conf_get(options[key], path[0], False, {'hostname': self.hostname, 'port': str(self.port)})
+            cfval = self.conf_get(options[key], path[0], default_options.get(key))
             value = self._interpolate(cfval)
             if cfval != value:
                 updated = True
@@ -123,8 +127,6 @@ class AdvancedSshConfig(object):
             self._update_sshconfig()
             self.log.debug('Config updated. Need to restart SSH!?')
 
-        if not 'h' in args:
-            args['h'] = path[0]
         self.debug('args: %s' % args)
         self.debug()
 
