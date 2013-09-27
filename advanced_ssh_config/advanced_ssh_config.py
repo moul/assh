@@ -9,12 +9,19 @@ import errno
 
 
 class AdvancedSshConfig(object):
-    def __init__(self, hostname=None, port=22, configfile=None, verbose=False, update_sshconfig=False, dry_run=False):
-        self.verbose, self.hostname, self.port, self.dry_run = verbose, hostname, port, dry_run
+
+    def __init__(self, hostname=None, port=22, configfile=None, verbose=False,
+                 update_sshconfig=False, dry_run=False):
+
+        self.verbose, self.dry_run = verbose, dry_run
+        self.hostname, self.port = hostname, port
 
         self.log = logging.getLogger('')
 
-        self.configfiles = ['/etc/ssh/config.advanced', os.path.expanduser('~/.ssh/config.advanced')]
+        self.configfiles = [
+            '/etc/ssh/config.advanced',
+            os.path.expanduser('~/.ssh/config.advanced')
+            ]
         if configfile:
             self.configfiles += configfile
         self.parser = ConfigParser.ConfigParser()
@@ -57,15 +64,25 @@ class AdvancedSshConfig(object):
             return self.parser.get('default', key)
         return default
 
-    def connect(self):
-        # Handle special settings
+    def _get_controlpath_dir(self, hostname):
         controlpath = self.conf_get('controlpath', 'default', '/tmp')
-        mkdir_path = os.path.dirname(os.path.join(os.path.dirname(os.path.expanduser(controlpath)), self.hostname))
+        dir = os.path.dirname(os.path.expanduser(controlpath))
+        dir = os.path.join(dir, self.hostname)
+        dir = os.path.dirname(dir)
+        return dir
+
+    def _prepare_controlpath(self):
+        controlpath_dir = self._get_controlpath_dir(self.hostname)
         try:
-            os.makedirs(mkdir_path)
+            os.makedirs(controlpath_dir)
         except OSError as exception:
             if exception.errno != errno.EEXIST:
-                raise
+                raise exception
+
+    def connect(self):
+        # Handle special settings
+
+        self._prepare_controlpath()
 
         section = None
         for sect in self.parser.sections():
@@ -155,8 +172,15 @@ class AdvancedSshConfig(object):
                 host = re.sub(r'\.\*', '*', host)
                 host = re.sub(r'\\\.', '.', host)
                 config += ['Host %s' % host]
-                for key, value in self.parser.items(section, False, {'Hostname': host}):
-                    if key not in ('hostname', 'gateways', 'reallocalcommand', 'remotecommand'):
+                special_keys = (
+                    'hostname',
+                    'gateways',
+                    'reallocalcommand',
+                    'remotecommand'
+                    )
+                items = self.parser.items(section, False, {'Hostname': host})
+                for key, value in items:
+                    if key not in special_keys:
                         if key == 'alias':
                             key = 'hostname'
                         config += ['  %s %s' % (key, value)]
