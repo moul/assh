@@ -2,8 +2,31 @@
 
 import unittest
 import sys
+import os
 
 from advanced_ssh_config.bin import parse_options
+
+
+class RedirectStdStreams(object):
+    def __init__(self, stdout=None, stderr=None):
+        devnull = open(os.devnull, 'w')
+        if stdout == 'devnull':
+            stdout = devnull
+        if stderr == 'devnull':
+            stderr = devnull
+
+        self._stdout = stdout or sys.stdout
+        self._stderr = stderr or sys.stderr
+
+    def __enter__(self):
+        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
+        self.old_stdout.flush(); self.old_stderr.flush()
+        sys.stdout, sys.stderr = self._stdout, self._stderr
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stdout.flush(); self._stderr.flush()
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
 
 
 def _parse_options(*args):
@@ -21,7 +44,8 @@ class TestParseOptions(unittest.TestCase):
         self.assertRaises(ValueError, _parse_options, 'localhost', '--port=22')
 
     def test_unkown_options(self):
-        self.assertRaises(SystemExit, _parse_options, '--toto=titi')
+        with RedirectStdStreams(stdout='devnull', stderr='devnull'):
+            self.assertRaises(SystemExit, _parse_options, '--toto=titi')
 
     def test_default(self):
         options = _parse_options('--host=1.2.3.4')
@@ -50,8 +74,9 @@ class TestParseOptions(unittest.TestCase):
             self.assertEqual(options.hostname, host)
 
     def test_option_invalid_host(self):
-        self.assertRaises(SystemExit, _parse_options, '-H')
-        self.assertRaises(SystemExit, _parse_options, '--host')
+        with RedirectStdStreams(stdout='devnull', stderr='devnull'):
+            self.assertRaises(SystemExit, _parse_options, '-H')
+            self.assertRaises(SystemExit, _parse_options, '--host')
 
         for host in ('',):
             self.assertRaises(ValueError, _parse_options, '--host={}'.format(host))
@@ -66,12 +91,13 @@ class TestParseOptions(unittest.TestCase):
             self.assertEqual(options.port, port)
 
     def test_option_invalid_port(self):
-        self.assertRaises(SystemExit, _parse_options, '--host=localhost', '--port')
-        self.assertRaises(SystemExit, _parse_options, '--host=localhost', '-p')
+        with RedirectStdStreams(stdout='devnull', stderr='devnull'):
+            self.assertRaises(SystemExit, _parse_options, '--host=localhost', '--port')
+            self.assertRaises(SystemExit, _parse_options, '--host=localhost', '-p')
 
-        for port in ('test', '', '1.0'):
-            self.assertRaises(SystemExit, _parse_options, '--host=localhost', '--port={}'.format(port))
-            self.assertRaises(SystemExit, _parse_options, '--host=localhost', '-p', port)
+            for port in ('test', '', '1.0'):
+                self.assertRaises(SystemExit, _parse_options, '--host=localhost', '--port={}'.format(port))
+                self.assertRaises(SystemExit, _parse_options, '--host=localhost', '-p', port)
 
         for port in (-1, 65536):
             self.assertRaises(ValueError, _parse_options, '--host=localhost', '--port={}'.format(port))
