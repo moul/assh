@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import os
-import ConfigParser
-import re
 import subprocess
+import os
+import re
 import logging
 import errno
+
+from .config import Config
 
 
 class AdvancedSshConfig(object):
@@ -18,36 +19,14 @@ class AdvancedSshConfig(object):
 
         self.log = logging.getLogger('')
 
-        self.configfiles = [
+        configfiles = [
             '/etc/ssh/config.advanced',
-            os.path.expanduser('~/.ssh/config.advanced')
+            '~/.ssh/config.advanced'
             ]
         if configfile:
-            self.configfiles += configfile
-        self.parser = ConfigParser.ConfigParser()
-        self.parser.SECTCRE = re.compile(
-            r'\['
-            r'(?P<header>.+)'
-            r'\]'
-            )
-
-        errors = 0
-        self.parser.read(self.configfiles)
-        includes = self.conf_get('includes', 'default', '').strip()
-        for include in includes.split():
-            incpath = os.path.expanduser(include)
-            if not incpath in self.configfiles and os.path.exists(incpath):
-                self.parser.read(incpath)
-            else:
-                self.log.error('\'%s\' include not found' % incpath)
-                errors += 1
-
-        if 0 == errors:
-            self.debug()
-            self.debug('configfiles : %s' % self.configfiles)
-            self.debug('================')
-        else:
-            raise ConfigError('Errors found in config')
+            configfiles += configfile
+        self.config = Config(configfiles=configfiles)
+        self.config.read()
 
         if update_sshconfig:
             self._update_sshconfig()
@@ -55,17 +34,8 @@ class AdvancedSshConfig(object):
     def debug(self, string=None):
         self.log.debug(string and string or '')
 
-    def conf_get(self, key, host, default=None, vardct=None):
-        for section in self.parser.sections():
-            if re.match(section, host):
-                if self.parser.has_option(section, key):
-                    return self.parser.get(section, key, False, vardct)
-        if self.parser.has_option('default', key):
-            return self.parser.get('default', key)
-        return default
-
     def _get_controlpath_dir(self, hostname):
-        controlpath = self.conf_get('controlpath', 'default', '/tmp')
+        controlpath = self.config.get('controlpath', 'default', '/tmp')
         dir = os.path.dirname(os.path.expanduser(controlpath))
         dir = os.path.join(dir, self.hostname)
         dir = os.path.dirname(dir)
@@ -85,11 +55,11 @@ class AdvancedSshConfig(object):
         self._prepare_controlpath()
 
         section = None
-        for sect in self.parser.sections():
+        for sect in self.config.parser.sections():
             if re.match(sect, self.hostname):
                 section = sect
 
-        self.log.debug('section \'%s\' ' % section)
+        self.debug('section \'%s\' ' % section)
 
         # Parse special routing
         path = self.hostname.split('/')
@@ -107,11 +77,11 @@ class AdvancedSshConfig(object):
             }
         updated = False
         for key in options:
-            cfval = self.conf_get(options[key], path[0], default_options.get(key))
+            cfval = self.config.get(options[key], path[0], default_options.get(key))
             value = self._interpolate(cfval)
             if cfval != value:
                 updated = True
-                self.parser.set(section, options[key], value)
+                self.config.parser.set(section, options[key], value)
                 args[key] = value
 
             self.debug('get (-%-1s) %-12s : %s' % (key, options[key], value))
@@ -134,8 +104,8 @@ class AdvancedSshConfig(object):
         self.debug('args        : %s' % args)
 
         self.debug()
-        gateways = self.conf_get('Gateways', path[-1], 'direct').strip().split(' ')
-        reallocalcommand = self.conf_get('RealLocalCommand', path[-1], '').strip().split(' ')
+        gateways = self.config.get('Gateways', path[-1], 'direct').strip().split(' ')
+        reallocalcommand = self.config.get('RealLocalCommand', path[-1], '').strip().split(' ')
         self.debug('reallocalcommand: %s' % reallocalcommand)
         self.debug('gateways    : %s' % ', '.join(gateways))
 
@@ -166,7 +136,7 @@ class AdvancedSshConfig(object):
     def _update_sshconfig(self, write=True):
         config = []
 
-        for section in self.parser.sections():
+        for section in self.config.parser.sections():
             if section != 'default':
                 host = section
                 host = re.sub(r'\.\*', '*', host)
@@ -178,7 +148,7 @@ class AdvancedSshConfig(object):
                     'reallocalcommand',
                     'remotecommand'
                     )
-                items = self.parser.items(section, False, {'Hostname': host})
+                items = self.config.parser.items(section, False, {'Hostname': host})
                 for key, value in items:
                     if key not in special_keys:
                         if key == 'alias':
@@ -187,7 +157,7 @@ class AdvancedSshConfig(object):
                 config += ['']
 
         config += ['Host *']
-        for key, value in self.parser.items('default'):
+        for key, value in self.config.parser.items('default'):
             if key not in ('hostname', 'gateways', 'includes'):
                 config += ['  %s %s' % (key, value)]
 
@@ -204,7 +174,7 @@ class AdvancedSshConfig(object):
             var = matches.group(1)
             val = os.environ.get(var)
             if val:
-                self.log.debug('\'%s\' => \'%s\'' % (value, val))
+                self.debug('\'%s\' => \'%s\'' % (value, val))
                 return self._interpolate(re.sub(r'\$%s' % var, val, value))
 
         return value
