@@ -24,6 +24,8 @@ setup(
     download_url='https://github.com/moul/advanced-ssh-config/archive/master.zip',
     packages=find_packages(),
     package_dir={'advanced_ssh_config': 'advanced_ssh_config'},
+    tests_require=['mock', 'nose', 'coverage'],
+    test_suite=MODULE_NAME + '.tests',
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 3 - Alpha',
