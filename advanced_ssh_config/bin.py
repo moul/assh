@@ -4,7 +4,7 @@ import sys
 import optparse
 import logging
 
-from .utils import LOGGING_LEVELS
+from .utils import LOGGING_LEVELS, validate_host, validate_port
 from .exceptions import ConfigError
 from .advanced_ssh_config import AdvancedSshConfig
 
@@ -18,6 +18,7 @@ def parse_options():
                       help='Host')
 
     parser.add_option('-p', '--port',
+                      type='int',
                       dest='port',
                       default=22)
 
@@ -40,6 +41,9 @@ def parse_options():
 
     if len(args):
         raise ValueError('This program only takes options, not args')
+
+    validate_host(options.hostname)
+    validate_port(options.port)
 
     return options
 
