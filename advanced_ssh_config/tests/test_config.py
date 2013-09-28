@@ -115,5 +115,5 @@ port = 22
         config = Config([DEFAULT_CONFIG])
         print()
         print('-' * 80)
-        print(config.get('hosta', 'hostname', 'hosta'))
+        print(config.get('hostname', 'hosta', 'def'))
         print('-' * 80)
