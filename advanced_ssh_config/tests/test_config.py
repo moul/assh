@@ -4,17 +4,61 @@ import unittest
 import os
 
 from advanced_ssh_config.config import Config
+from advanced_ssh_config.exceptions import ConfigError
+
+
+PREFIX = '/tmp/test-asc-config'
+DEFAULT_CONFIG = os.path.join(PREFIX, 'config.advanced')
+
+
+def write_config(contents, name='config.advanced'):
+    with open(os.path.join(PREFIX, name), 'w') as f:
+        f.write(contents)
 
 
 class TestConfig(unittest.TestCase):
 
     def setUp(self):
-        self.prefix = '/tmp/test-asc-config'
-        os.system('rm -rf {}'.format(self.prefix))
-        os.makedirs(self.prefix)
-        with open('{}/config.advanced'.format(self.prefix), 'w') as f:
-            f.write('')
+        os.system('rm -rf {}'.format(PREFIX))
+        os.makedirs(PREFIX)
+        write_config('')
 
     def test_initialize_config(self):
-        config = Config(['{}/config.advanced'.format(self.prefix)])
+        config = Config([DEFAULT_CONFIG])
         self.assertIsInstance(config, Config)
+
+    def test_include_existing_files(self):
+        write_config('', name='include-1')
+        write_config('', name='include-2')
+        contents = """
+[default]
+Includes = {0}/include-1 {0}/include-2
+""".format(PREFIX)
+        write_config(contents)
+        config = Config([DEFAULT_CONFIG])
+        self.assertEquals(config.loaded_files, [
+                DEFAULT_CONFIG,
+                '{}/include-1'.format(PREFIX),
+                '{}/include-2'.format(PREFIX),
+                ])
+
+    def test_include_not_exists(self):
+        contents = """
+[default]
+Includes = {0}/include-1 {0}/include-2
+""".format(PREFIX)
+        write_config(contents)
+        self.assertRaises(ConfigError, Config, [DEFAULT_CONFIG])
+
+    def test_include_same_file(self):
+        write_config('', name='include-1')
+        contents = """
+[default]
+Includes = {0}/include-1 {0}/include-1
+""".format(PREFIX)
+        write_config(contents)
+        config = Config([DEFAULT_CONFIG])
+        self.assertEquals(config.loaded_files, [
+                DEFAULT_CONFIG,
+                '{}/include-1'.format(PREFIX),
+                ])

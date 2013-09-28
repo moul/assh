@@ -5,11 +5,14 @@ import logging
 import ConfigParser
 import re
 
+from .exceptions import ConfigError
+
 
 class Config(object):
     def __init__(self, configfiles):
 
         self.configfiles = map(os.path.expanduser, configfiles)
+        self.loaded_files = []
 
         self.log = logging.getLogger('')
 
@@ -19,25 +22,33 @@ class Config(object):
             r'(?P<header>.+)'
             r'\]'
             )
+        self._read()
 
     def debug(self, string=None):
         self.log.debug(string and string or '')
 
-    def read(self):
+    def _load_file(self, filename):
+        if filename in self.loaded_files:
+            return
+        self.parser.read(filename)
+        self.loaded_files.append(filename)
+
+    def _read(self):
         errors = 0
-        self.parser.read(self.configfiles)
+        for configfile in self.configfiles:
+            self._load_file(configfile)
         includes = self.get('includes', 'default', '').strip()
         for include in includes.split():
             incpath = os.path.expanduser(include)
             if not incpath in self.configfiles and os.path.exists(incpath):
-                self.parser.read(incpath)
+                self._load_file(incpath)
             else:
-                self.log.error('\'%s\' include not found' % incpath)
+                self.log.error('\'{}\' include not found'.format(incpath))
                 errors += 1
 
         if 0 == errors:
             self.debug()
-            self.debug('configfiles : %s' % self.configfiles)
+            self.debug('configfiles : {}'.format(self.configfiles))
             self.debug('================')
         else:
             raise ConfigError('Errors found in config')

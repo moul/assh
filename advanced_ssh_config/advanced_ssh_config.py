@@ -27,7 +27,6 @@ class AdvancedSshConfig(object):
         if configfile:
             configfiles += configfile
         self.config = Config(configfiles=configfiles)
-        self.config.read()
 
     def debug(self, string=None):
         self.log.debug(string and string or '')
