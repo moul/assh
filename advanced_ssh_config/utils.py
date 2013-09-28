@@ -5,6 +5,8 @@ import re
 import os
 import errno
 
+from .exceptions import ConfigError
+
 
 def validate_host(host):
     if not type(host).__name__ in ('str', 'unicode'):
@@ -28,14 +30,16 @@ def safe_makedirs(dir):
             raise exception
 
 
-def value_interpolate(value):
+def value_interpolate(value, already_interpolated=[]):
     matches = value and re.match(r'\$(\w+)', value) or None
     if matches:
         var = matches.group(1)
+        if var in already_interpolated:
+            raise ConfigError('Interpolation loop')
         val = os.environ.get(var)
         if val:
             logging.getLogger('').debug('\'{}\' => \'{}\''.format(value, val))
-            return value_interpolate(re.sub(r'\${}'.format(var), val, value))
+            return value_interpolate(re.sub(r'\${}'.format(var), val, value), already_interpolated + [var])
 
     return value
 

@@ -4,6 +4,7 @@ import unittest
 import os
 
 from advanced_ssh_config.utils import safe_makedirs, value_interpolate
+from advanced_ssh_config.exceptions import ConfigError
 
 
 PREFIX = '/tmp/test-safe-makedirs'
@@ -45,3 +46,14 @@ class TestValueInterpolate(unittest.TestCase):
     def test_interpolate_not_interpolable(self):
         os.environ['TEST_INTERPOLATE'] = 'titi'
         self.assertEquals(value_interpolate('TEST_INTERPOLATE'), 'TEST_INTERPOLATE')
+
+    def test_interpolate_interpolate_recursive(self):
+        os.environ['TEST_INTERPOLATE'] = '$TEST_INTERPOLATE_2'
+        os.environ['TEST_INTERPOLATE_2'] = '$TEST_INTERPOLATE_3'
+        os.environ['TEST_INTERPOLATE_3'] = '$TEST_INTERPOLATE_4'
+        os.environ['TEST_INTERPOLATE_4'] = 'tutu'
+        self.assertEquals(value_interpolate('$TEST_INTERPOLATE'), 'tutu')
+
+    def test_interpolate_interpolate_loop(self):
+        os.environ['TEST_INTERPOLATE'] = '$TEST_INTERPOLATE'
+        self.assertRaises(ConfigError, value_interpolate, '$TEST_INTERPOLATE')
