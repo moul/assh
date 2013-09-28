@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import re
 import os
 import errno
 
@@ -25,6 +26,18 @@ def safe_makedirs(dir):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise exception
+
+
+def value_interpolate(value):
+    matches = value and re.match(r'\$(\w+)', value) or None
+    if matches:
+        var = matches.group(1)
+        val = os.environ.get(var)
+        if val:
+            logging.getLogger('').debug('\'{}\' => \'{}\''.format(value, val))
+            return value_interpolate(re.sub(r'\${}'.format(var), val, value))
+
+    return value
 
 
 LOGGING_LEVELS = {

@@ -48,7 +48,7 @@ class AdvancedSshConfig(object):
             if re.match(sect, self.hostname):
                 section = sect
 
-        self.debug('section \'%s\' ' % section)
+        self.debug('section \'{}\' '.format(section))
 
         # Parse special routing
         path = self.hostname.split('/')
@@ -67,7 +67,7 @@ class AdvancedSshConfig(object):
         updated = False
         for key in options:
             cfval = self.config.get(options[key], path[0], default_options.get(key))
-            value = self._interpolate(cfval)
+            value = value_interpolate(cfval)
             if cfval != value:
                 updated = True
                 self.config.parser.set(section, options[key], value)
@@ -82,21 +82,21 @@ class AdvancedSshConfig(object):
             self._update_sshconfig()
             self.log.debug('Config updated. Need to restart SSH!?')
 
-        self.debug('args: %s' % args)
+        self.debug('args: {}'.format(args))
         self.debug()
 
-        self.debug('hostname    : %s' % self.hostname)
-        self.debug('port        : %s' % self.port)
-        self.debug('path        : %s' % path)
-        self.debug('path[0]     : %s' % path[0])
-        self.debug('path[1:]    : %s' % path[1:])
-        self.debug('args        : %s' % args)
+        self.debug('hostname    : {}'.format(self.hostname))
+        self.debug('port        : {}'.format(self.port))
+        self.debug('path        : {}'.format(path))
+        self.debug('path[0]     : {}'.format(path[0]))
+        self.debug('path[1:]    : {}'.format(path[1:]))
+        self.debug('args        : {}'.format(args))
 
         self.debug()
         gateways = self.config.get('Gateways', path[-1], 'direct').strip().split(' ')
         reallocalcommand = self.config.get('RealLocalCommand', path[-1], '').strip().split(' ')
-        self.debug('reallocalcommand: %s' % reallocalcommand)
-        self.debug('gateways    : %s' % ', '.join(gateways))
+        self.debug('reallocalcommand : {}'.format(reallocalcommand))
+        self.debug('gateways         : {}'.format(', '.join(gateways)))
 
         for gateway in gateways:
             right_path = path[1:]
@@ -108,7 +108,7 @@ class AdvancedSshConfig(object):
 
             cmd += ['nc', args['h'], args['p']]
 
-            self.debug('cmd         : %s' % cmd)
+            self.debug('cmd         : {}'.format(cmd))
             self.debug('================')
             self.debug()
 
@@ -130,7 +130,7 @@ class AdvancedSshConfig(object):
                 host = section
                 host = re.sub(r'\.\*', '*', host)
                 host = re.sub(r'\\\.', '.', host)
-                config += ['Host %s' % host]
+                config += ['Host {}'.format(host)]
                 special_keys = (
                     'hostname',
                     'gateways',
@@ -142,13 +142,13 @@ class AdvancedSshConfig(object):
                     if key not in special_keys:
                         if key == 'alias':
                             key = 'hostname'
-                        config += ['  %s %s' % (key, value)]
+                        config += ['  {} {}'.format(key, value)]
                 config += ['']
 
         config += ['Host *']
         for key, value in self.config.parser.items('default'):
             if key not in ('hostname', 'gateways', 'includes'):
-                config += ['  %s %s' % (key, value)]
+                config += ['  {} {}'.format(key, value)]
 
         if write:
             fhandle = open(os.path.expanduser('~/.ssh/config'), 'w+')
@@ -156,14 +156,3 @@ class AdvancedSshConfig(object):
             fhandle.close()
         else:
             print '\n'.join(config)
-
-    def _interpolate(self, value):
-        matches = value and re.match(r'\$(\w+)', value) or None
-        if matches:
-            var = matches.group(1)
-            val = os.environ.get(var)
-            if val:
-                self.debug('\'%s\' => \'%s\'' % (value, val))
-                return self._interpolate(re.sub(r'\$%s' % var, val, value))
-
-        return value
