@@ -62,3 +62,58 @@ Includes = {0}/include-1 {0}/include-1
                 DEFAULT_CONFIG,
                 '{}/include-1'.format(PREFIX),
                 ])
+
+    def test_sections_simple(self):
+        contents = """
+[hosta]
+[default]
+""".format(PREFIX)
+        write_config(contents)
+        config = Config([DEFAULT_CONFIG])
+        self.assertEquals(config.sections, ['hosta', 'default'])
+
+    def test_sections_with_double(self):
+        contents = """
+[hosta]
+[hosta]
+[default]
+""".format(PREFIX)
+        write_config(contents)
+        config = Config([DEFAULT_CONFIG])
+        self.assertEquals(config.sections, ['hosta', 'default'])
+
+    def test_sections_with_case(self):
+        contents = """
+[hosta]
+[hostA]
+[default]
+""".format(PREFIX)
+        write_config(contents)
+        config = Config([DEFAULT_CONFIG])
+        self.assertEquals(config.sections, ['hosta', 'hostA', 'default'])
+
+    def test_sections_with_regex(self):
+        contents = """
+[hosta]
+[host.*]
+[default]
+""".format(PREFIX)
+        write_config(contents)
+        config = Config([DEFAULT_CONFIG])
+        self.assertEquals(config.sections, ['hosta', 'host.*', 'default'])
+
+    def test_get_simple(self):
+        contents = """
+[hosta]
+hostmame = 1.2.3.4
+port = 23
+
+[default]
+port = 22
+""".format(PREFIX)
+        write_config(contents)
+        config = Config([DEFAULT_CONFIG])
+        print()
+        print('-' * 80)
+        print(config.get('hosta', 'hostname', 'hosta'))
+        print('-' * 80)

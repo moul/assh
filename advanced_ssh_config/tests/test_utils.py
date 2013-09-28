@@ -57,3 +57,9 @@ class TestValueInterpolate(unittest.TestCase):
     def test_interpolate_interpolate_loop(self):
         os.environ['TEST_INTERPOLATE'] = '$TEST_INTERPOLATE'
         self.assertRaises(ConfigError, value_interpolate, '$TEST_INTERPOLATE')
+
+    def test_interpolate_interpolate_loop_complex(self):
+        os.environ['TEST_INTERPOLATE'] = '$TEST_INTERPOLATE_2'
+        os.environ['TEST_INTERPOLATE_2'] = '$TEST_INTERPOLATE_3'
+        os.environ['TEST_INTERPOLATE_3'] = '$TEST_INTERPOLATE'
+        self.assertRaises(ConfigError, value_interpolate, '$TEST_INTERPOLATE')

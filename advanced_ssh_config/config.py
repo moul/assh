@@ -34,27 +34,24 @@ class Config(object):
         self.loaded_files.append(filename)
 
     def _read(self):
-        errors = 0
         for configfile in self.configfiles:
             self._load_file(configfile)
+
+        # Load sub files
         includes = self.get('includes', 'default', '').strip()
         for include in includes.split():
             incpath = os.path.expanduser(include)
-            if not incpath in self.configfiles and os.path.exists(incpath):
+            if os.path.exists(incpath):
                 self._load_file(incpath)
             else:
-                self.log.error('\'{}\' include not found'.format(incpath))
-                errors += 1
+                raise ConfigError('\'{}\' include not found'.format(incpath))
 
-        if 0 == errors:
-            self.debug()
-            self.debug('configfiles : {}'.format(self.configfiles))
-            self.debug('================')
-        else:
-            raise ConfigError('Errors found in config')
+    @property
+    def sections(self):
+        return self.parser.sections()
 
     def get(self, key, host, default=None, vardct=None):
-        for section in self.parser.sections():
+        for section in self.sections:
             if re.match(section, host):
                 if self.parser.has_option(section, key):
                     return self.parser.get(section, key, False, vardct)
