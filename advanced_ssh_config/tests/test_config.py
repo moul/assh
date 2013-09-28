@@ -146,14 +146,17 @@ port = 24
 [ccc.*ddd]
 port = 23
 
-[default]
+[.*eee.*]
 port = 22
+
+[default]
+port = 21
 """.format(PREFIX)
         write_config(contents)
         config = Config([DEFAULT_CONFIG])
         self.assertEquals(config.get('Port', 'aaa'), '25')
         self.assertEquals(config.get('Port', 'aaa42'), '25')
-        self.assertEquals(config.get('Port', '42aaa'), '22')
+        self.assertEquals(config.get('Port', '42aaa'), '21')
 
         self.assertEquals(config.get('Port', 'bbb'), '24')
         self.assertEquals(config.get('Port', 'bbb42'), '24')  # strange
@@ -162,3 +165,15 @@ port = 22
         self.assertEquals(config.get('Port', 'cccddd'), '23')
         self.assertEquals(config.get('Port', 'ccc42ddd'), '23')
 
+        self.assertEquals(config.get('Port', 'eee'), '22')
+        self.assertEquals(config.get('Port', '42eee'), '22')
+        self.assertEquals(config.get('Port', 'eee42'), '22')
+        self.assertEquals(config.get('Port', '42eee42'), '22')
+
+    def test_host_invalid_wildcard(self):
+        contents = """
+[aaa.+]
+port = 25
+""".format(PREFIX)
+        write_config(contents)
+        self.assertRaises(ConfigError, Config, [DEFAULT_CONFIG])
