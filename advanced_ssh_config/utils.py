@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
+import errno
 
 
 def validate_host(host):
@@ -15,6 +17,14 @@ def validate_port(port):
         raise ValueError('port must be an integer')
     if port < 1 or port > 65535:
         raise ValueError('port must be between 1-65535')
+
+
+def safe_makedirs(dir):
+    try:
+        os.makedirs(dir)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise exception
 
 
 LOGGING_LEVELS = {

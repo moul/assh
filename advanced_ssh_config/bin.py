@@ -64,13 +64,17 @@ def main():
         ssh = AdvancedSshConfig(hostname=options.hostname,
                                 port=options.port,
                                 verbose=options.verbose,
-                                update_sshconfig=options.update_sshconfig,
                                 dry_run=options.dry_run)
+        if options.update_sshconfig:
+            ssh.update_sshconfig()
+
         if ssh.hostname:
             ssh.connect()
         elif not options.update_sshconfig:
             print 'Must specify a host!\n'
+
     except ConfigError as err:
         sys.stderr.write(err.message)
+
     except Exception as err:
         sys.stderr.write(err.__str__())
