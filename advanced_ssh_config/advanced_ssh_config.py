@@ -11,7 +11,7 @@ from .utils import safe_makedirs, value_interpolate
 
 class AdvancedSshConfig(object):
 
-    def __init__(self, hostname=None, port=22, configfile=None, verbose=False,
+    def __init__(self, hostname=None, port=None, configfile=None, verbose=False,
                  dry_run=False):
 
         self.verbose, self.dry_run = verbose, dry_run
@@ -98,7 +98,9 @@ class AdvancedSshConfig(object):
         self.debug('reallocalcommand : {}'.format(routing['reallocalcommand']))
         self.debug('gateways         : {}'.format(', '.join(['gateways'])))
         routing['right_path'] = path[1:]
+        routing['hostname'] = self.hostname
         routing['args'] = args
+        routing['port'] = self.port or args['p'] or 22
         return routing
 
     def connect(self, routing):
@@ -109,7 +111,7 @@ class AdvancedSshConfig(object):
             if len(routing['right_path']):
                 cmd += ['ssh', '/'.join(routing['right_path'])]
 
-            cmd += ['nc', routing['args']['h'], routing['args']['p']]
+            cmd += ['nc', routing['hostname'], routing['port']]
 
             self.debug('cmd         : {}'.format(cmd))
             self.debug('================')

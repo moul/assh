@@ -18,9 +18,8 @@ def parse_options():
                       help='Host')
 
     parser.add_option('-p', '--port',
-                      type='int',
                       dest='port',
-                      default=22)
+                      default=None)
 
     parser.add_option('-v', '--verbose',
                       dest='verbose',
@@ -43,7 +42,9 @@ def parse_options():
         raise ValueError('This program only takes options, not args')
 
     validate_host(options.hostname)
-    validate_port(options.port)
+    if not options.port is None:
+        validate_port(options.port)
+        options.port = int(options.port)
 
     return options
 

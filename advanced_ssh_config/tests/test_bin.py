@@ -55,7 +55,7 @@ class TestParseOptions(unittest.TestCase):
             'dry_run': None,
             'hostname': '1.2.3.4',
             'update_sshconfig': None,
-            'port': 22
+            'port': None
             }
         self.assertEqual(options, should_be)
 
@@ -90,15 +90,15 @@ class TestParseOptions(unittest.TestCase):
             options = _parse_options('--host=localhost', '-p', port)
             self.assertEqual(options.port, port)
 
+    def test_option_no_port(self):
+        options = _parse_options('--host=localhost')
+        self.assertEqual(options.port, None)
+
     def test_option_invalid_port(self):
         with RedirectStdStreams(stdout='devnull', stderr='devnull'):
             self.assertRaises(SystemExit, _parse_options, '--host=localhost', '--port')
             self.assertRaises(SystemExit, _parse_options, '--host=localhost', '-p')
 
-            for port in ('test', '', '1.0'):
-                self.assertRaises(SystemExit, _parse_options, '--host=localhost', '--port={}'.format(port))
-                self.assertRaises(SystemExit, _parse_options, '--host=localhost', '-p', port)
-
-        for port in (-1, 65536):
+        for port in (-1, 65536, 'test', '', '1.0'):
             self.assertRaises(ValueError, _parse_options, '--host=localhost', '--port={}'.format(port))
             self.assertRaises(ValueError, _parse_options, '--host=localhost', '-p', port)

@@ -16,6 +16,11 @@ def validate_host(host):
 
 
 def validate_port(port):
+    if type(port).__name__ == 'str':
+        try:
+            port = int(port)
+        except ValueError:
+            raise ValueError('port must be a number')
     if type(port).__name__ != 'int':
         raise ValueError('port must be an integer')
     if port < 1 or port > 65535:
