@@ -7,7 +7,7 @@ import logging
 import errno
 
 from .config import Config
-from .utils import safe_makedirs
+from .utils import safe_makedirs, value_interpolate
 
 class AdvancedSshConfig(object):
 
@@ -39,8 +39,9 @@ class AdvancedSshConfig(object):
         dir = os.path.dirname(dir)
         return dir
 
-    def connect(self):
-        safe_makedirs(selfcontrolpath_dir)
+    def get_routing(self):
+        routing = {}
+        safe_makedirs(self.controlpath_dir)
 
         section = None
         for sect in self.config.parser.sections():
@@ -92,20 +93,23 @@ class AdvancedSshConfig(object):
         self.debug('args        : {}'.format(args))
 
         self.debug()
-        gateways = self.config.get('Gateways', path[-1], 'direct').strip().split(' ')
-        reallocalcommand = self.config.get('RealLocalCommand', path[-1], '').strip().split(' ')
-        self.debug('reallocalcommand : {}'.format(reallocalcommand))
-        self.debug('gateways         : {}'.format(', '.join(gateways)))
+        routing['gateways'] = self.config.get('Gateways', path[-1], 'direct').strip().split(' ')
+        routing['reallocalcommand'] = self.config.get('RealLocalCommand', path[-1], '').strip().split(' ')
+        self.debug('reallocalcommand : {}'.format(routing['reallocalcommand']))
+        self.debug('gateways         : {}'.format(', '.join(['gateways'])))
+        routing['right_path'] = path[1:]
+        routing['args'] = args
+        return routing
 
-        for gateway in gateways:
-            right_path = path[1:]
+    def connect(self, routing):
+        for gateway in routing['gateways']:
             if gateway != 'direct':
-                right_path += [gateway]
+                routing['right_path'] += [gateway]
             cmd = []
-            if len(right_path):
-                cmd += ['ssh', '/'.join(right_path)]
+            if len(routing['right_path']):
+                cmd += ['ssh', '/'.join(routing['right_path'])]
 
-            cmd += ['nc', args['h'], args['p']]
+            cmd += ['nc', routing['args']['h'], routing['args']['p']]
 
             self.debug('cmd         : {}'.format(cmd))
             self.debug('================')
@@ -114,8 +118,8 @@ class AdvancedSshConfig(object):
             if not self.dry_run:
                 ssh_process = subprocess.Popen(cmd)
                 reallocalcommand_process = None
-                if len(reallocalcommand[0]):
-                    reallocalcommand_process = subprocess.Popen(reallocalcommand)
+                if len(routing['reallocalcommand'][0]):
+                    reallocalcommand_process = subprocess.Popen(routing['reallocalcommand'])
                 if ssh_process.wait() != 0:
                     self.log.critical('There were some errors')
                 if reallocalcommand_process is not None:

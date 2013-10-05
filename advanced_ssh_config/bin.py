@@ -69,7 +69,8 @@ def main():
             ssh.update_sshconfig()
 
         if ssh.hostname:
-            ssh.connect()
+            routing = ssh.get_routing()
+            ssh.connect(routing)
         elif not options.update_sshconfig:
             print 'Must specify a host!\n'
 
