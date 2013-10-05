@@ -118,7 +118,7 @@ class AdvancedSshConfig(object):
             self.debug()
 
             if not self.dry_run:
-                ssh_process = subprocess.Popen(cmd)
+                ssh_process = subprocess.Popen(map(str, cmd))
                 reallocalcommand_process = None
                 if len(routing['reallocalcommand'][0]):
                     reallocalcommand_process = subprocess.Popen(routing['reallocalcommand'])

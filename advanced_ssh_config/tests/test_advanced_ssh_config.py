@@ -23,5 +23,8 @@ class TestAdvancedSshConfig(unittest.TestCase):
         self.assertEqual(routing['right_path'], [])
         self.assertEqual(routing['gateways'], ['direct'])
 
+    # FIXME: test_routing_with_config
+    # FIXME: test_routing_override_config
+    # FIXME: test_connect
     # FIXME: test_dryrun
     # FIXME: test_verbose
