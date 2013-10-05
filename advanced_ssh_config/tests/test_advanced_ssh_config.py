@@ -11,17 +11,17 @@ class TestAdvancedSshConfig(unittest.TestCase):
         advssh = AdvancedSshConfig()
         self.assertIsInstance(advssh, AdvancedSshConfig)
 
-    def test_routing(self):
+    def test_routing_simple(self):
         advssh = AdvancedSshConfig(hostname='test',
                                    port=23,
                                    verbose=True,
                                    dry_run=True)
         routing = advssh.get_routing()
-        from pprint import pprint
-        print()
-        print('-' * 80)
-        pprint(routing)
-        print('-' * 80)
+        self.assertEqual(routing['port'], 23)
+        self.assertEqual(routing['hostname'], 'test')
+        self.assertEqual(routing['reallocalcommand'], [''])
+        self.assertEqual(routing['right_path'], [])
+        self.assertEqual(routing['gateways'], ['direct'])
 
     # FIXME: test_dryrun
     # FIXME: test_verbose
