@@ -32,13 +32,17 @@ def construct_proxy_command(config):
     elif proxy_type == 'socat_http_proxy':
         cmd.append('socat')
         cmd.append('STDIN')
-        args = (
+        args = [
             config.get('http_proxy_host', '127.0.0.1'),
             hostname,
             port,
             config.get('http_proxy_port', 3128),
-            )
-        cmd.append('PROXY:{}:{}:{},proxyport={}'.format(*args))
+            ]
+        if config.get('http_proxy_auth', None):
+            args.append(config.get('http_proxy_auth'))
+            cmd.append('PROXY:{}:{}:{},proxyport={},proxyauth={}'.format(*args))
+        else:
+            cmd.append('PROXY:{}:{}:{},proxyport={}'.format(*args))
     else:
         raise ValueError('proxy_type `{}` is not handled'.format(proxy_type))
     return cmd
