@@ -52,6 +52,25 @@ class TestContructProxyCommand(unittest.TestCase):
             }
         self.assertRaises(ValueError, construct_proxy_command, args)
 
+    def test_minimal_socat(self):
+        command = construct_proxy_command({
+                'hostname': 'aaa',
+                'proxy_type': 'socat',
+                'port': 42,
+                })
+        self.assertEqual(command, ['socat', 'STDIN', 'TCP:aaa:42'])
+
+    def test_minimal_socat_http_proxy(self):
+        command = construct_proxy_command({
+                'hostname': 'aaa',
+                'proxy_type': 'socat_http_proxy',
+                'http_proxy_host': 'bbb',
+                'http_proxy_port': 43,
+                'port': 42,
+                })
+        self.assertEqual(command, ['socat', 'STDIN', 'PROXY:bbb:aaa:42,proxyport=43'])
+
+
 
 class TestSafeMakedirs(unittest.TestCase):
 

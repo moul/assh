@@ -15,6 +15,7 @@ def construct_proxy_command(config):
     timeout = config.get('timeout', 180)
     if not 'hostname' in config or not 'port' in config:
         raise ValueError('hostname and port must be configured')
+    hostname, port = config['hostname'], config['port']
     if proxy_type == 'nc':
         cmd.append('nc')
         if verbose:
@@ -22,8 +23,22 @@ def construct_proxy_command(config):
         if timeout:
             cmd.append('-w')
             cmd.append(timeout)
-        cmd.append(config['hostname'])
-        cmd.append(config['port'])
+        cmd.append(hostname)
+        cmd.append(port)
+    elif proxy_type == 'socat':
+        cmd.append('socat')
+        cmd.append('STDIN')
+        cmd.append('TCP:{}:{}'.format(hostname, port))
+    elif proxy_type == 'socat_http_proxy':
+        cmd.append('socat')
+        cmd.append('STDIN')
+        args = (
+            config.get('http_proxy_host', '127.0.0.1'),
+            hostname,
+            port,
+            config.get('http_proxy_port', 3128),
+            )
+        cmd.append('PROXY:{}:{}:{},proxyport={}'.format(*args))
     else:
         raise ValueError('proxy_type `{}` is not handled'.format(proxy_type))
     return cmd
