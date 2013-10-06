@@ -70,6 +70,17 @@ class TestContructProxyCommand(unittest.TestCase):
                 })
         self.assertEqual(command, ['socat', 'STDIN', 'PROXY:bbb:aaa:42,proxyport=43'])
 
+    def test_minimal_socat_socks(self):
+        command = construct_proxy_command({
+                'hostname': 'aaa',
+                'proxy_type': 'socat_socks',
+                'socks_host': 'bbb',
+                'socks_port': 43,
+                'port': 42,
+                })
+        self.assertEqual(command, ['socat', 'STDIN', 'SOCKS:bbb:aaa:42,socksport=43'])
+
+    # FIXME: test_custom_handler
 
 
 class TestSafeMakedirs(unittest.TestCase):
