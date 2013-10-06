@@ -8,6 +8,21 @@ import errno
 from .exceptions import ConfigError
 
 
+def construct_proxy_command(config):
+    cmd = []
+    if config['proxy_type'] == 'nc':
+        cmd.append('nc')
+        if config['verbose']:
+            cmd.append('-v')
+        timeout = config.get('timeout', 180)
+        if timeout:
+            cmd.append('-w')
+            cmd.append(timeout)
+        cmd.append(config['hostname'])
+        cmd.append(config['port'])
+    return cmd
+
+
 def validate_host(host):
     if not type(host).__name__ in ('str', 'unicode'):
         raise ValueError('host must be a string')

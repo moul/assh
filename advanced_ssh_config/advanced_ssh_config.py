@@ -7,15 +7,17 @@ import logging
 import errno
 
 from .config import Config
-from .utils import safe_makedirs, value_interpolate
+from .utils import safe_makedirs, value_interpolate, construct_proxy_command
 
 class AdvancedSshConfig(object):
 
-    def __init__(self, hostname=None, port=None, configfile=None, verbose=False,
-                 dry_run=False):
+    def __init__(self, hostname=None, port=None, configfile=None,
+                 verbose=False, dry_run=False, proxy_type='nc',
+                 timeout=180):
 
         self.verbose, self.dry_run = verbose, dry_run
         self.hostname, self.port = hostname, port
+        self.proxy_type, self.timeout = proxy_type, timeout
 
         self.log = logging.getLogger('')
 
@@ -93,25 +95,35 @@ class AdvancedSshConfig(object):
         self.debug('args        : {}'.format(args))
 
         self.debug()
+        routing['verbose'] = self.verbose
+        routing['proxy_type'] = self.proxy_type
         routing['gateways'] = self.config.get('Gateways', path[-1], 'direct').strip().split(' ')
         routing['reallocalcommand'] = self.config.get('RealLocalCommand', path[-1], '').strip().split(' ')
         self.debug('reallocalcommand : {}'.format(routing['reallocalcommand']))
         self.debug('gateways         : {}'.format(', '.join(['gateways'])))
-        routing['right_path'] = path[1:]
-        routing['hostname'] = self.hostname
-        routing['args'] = args
+        routing['gateway_route'] = path[1:]
+        routing['hostname'] = path[0]
+        #routing['args'] = args
         routing['port'] = self.port or args['p'] or 22
+        routing['proxy_command'] = construct_proxy_command(routing)
+
+        self.debug()
+        self.debug('Routing:')
+        for k, v in routing.iteritems():
+            self.debug('  {0}: {1}'.format(k, v))
+        self.debug()
+
         return routing
 
     def connect(self, routing):
         for gateway in routing['gateways']:
             if gateway != 'direct':
-                routing['right_path'] += [gateway]
+                routing['gateway_route'] += [gateway]
             cmd = []
-            if len(routing['right_path']):
-                cmd += ['ssh', '/'.join(routing['right_path'])]
+            if len(routing['gateway_route']):
+                cmd += ['ssh', '/'.join(routing['gateway_route'])]
 
-            cmd += ['nc', routing['hostname'], routing['port']]
+            cmd += routing['proxy_command']
 
             self.debug('cmd         : {}'.format(cmd))
             self.debug('================')

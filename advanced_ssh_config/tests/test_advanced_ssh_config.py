@@ -20,8 +20,10 @@ class TestAdvancedSshConfig(unittest.TestCase):
         self.assertEqual(routing['port'], 23)
         self.assertEqual(routing['hostname'], 'test')
         self.assertEqual(routing['reallocalcommand'], [''])
-        self.assertEqual(routing['right_path'], [])
         self.assertEqual(routing['gateways'], ['direct'])
+        self.assertEqual(routing['verbose'], True)
+        self.assertEqual(routing['proxy_type'], 'nc')
+        self.assertEqual(routing['proxy_command'], ['nc', '-v', '-w', 180, 'test', 23])
 
     # FIXME: test_routing_with_config
     # FIXME: test_routing_override_config
