@@ -10,16 +10,22 @@ from .exceptions import ConfigError
 
 def construct_proxy_command(config):
     cmd = []
-    if config['proxy_type'] == 'nc':
+    proxy_type = config.get('proxy_type', 'nc')
+    verbose = config.get('verbose', False)
+    timeout = config.get('timeout', 180)
+    if not 'hostname' in config or not 'port' in config:
+        raise ValueError('hostname and port must be configured')
+    if proxy_type == 'nc':
         cmd.append('nc')
-        if config['verbose']:
+        if verbose:
             cmd.append('-v')
-        timeout = config.get('timeout', 180)
         if timeout:
             cmd.append('-w')
             cmd.append(timeout)
         cmd.append(config['hostname'])
         cmd.append(config['port'])
+    else:
+        raise ValueError('proxy_type `{}` is not handled'.format(proxy_type))
     return cmd
 
 

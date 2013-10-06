@@ -3,11 +3,54 @@
 import unittest
 import os
 
-from advanced_ssh_config.utils import safe_makedirs, value_interpolate
+from advanced_ssh_config.utils import (safe_makedirs, value_interpolate,
+                                       construct_proxy_command)
 from advanced_ssh_config.exceptions import ConfigError
 
 
 PREFIX = '/tmp/test-safe-makedirs'
+
+
+class TestContructProxyCommand(unittest.TestCase):
+
+    def test_no_arg(self):
+        self.assertRaises(TypeError, construct_proxy_command)
+
+    def test_empty_arg(self):
+        self.assertRaises(ValueError, construct_proxy_command, {})
+
+    def test_minimal_valid(self):
+        command = construct_proxy_command({
+                'hostname': 'aaa',
+                'port': 42,
+                })
+        self.assertEqual(command, ['nc', '-w', 180, 'aaa', 42])
+
+    def test_minimal_nc(self):
+        command = construct_proxy_command({
+                'hostname': 'aaa',
+                'proxy_type': 'nc',
+                'port': 42,
+                })
+        self.assertEqual(command, ['nc', '-w', 180, 'aaa', 42])
+
+    def test_full_nc(self):
+        command = construct_proxy_command({
+                'hostname': 'aaa',
+                'port': 42,
+                'verbose': True,
+                'proxy_type': 'nc',
+                'timeout': 45,
+                })
+        self.assertEqual(command, ['nc', '-v', '-w', 45, 'aaa', 42])
+
+    def test_invalid_proxy_type(self):
+        args = {
+            'hostname': 'aaa',
+            'port': 42,
+            'proxy_type': 'fake',
+            }
+        self.assertRaises(ValueError, construct_proxy_command, args)
 
 
 class TestSafeMakedirs(unittest.TestCase):
