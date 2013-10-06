@@ -75,6 +75,10 @@ def main():
         elif not options.update_sshconfig:
             print 'Must specify a host!\n'
 
+    except KeyboardInterrupt:
+        logging.error('Advanced SSH Interrupted, bye.')
+        sys.exit(1)
+
     except ConfigError as err:
         sys.stderr.write(err.message)
 
