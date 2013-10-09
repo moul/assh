@@ -34,7 +34,7 @@ class AdvancedSshConfig(object):
 
     @property
     def controlpath_dir(self):
-        controlpath = self.config.get('controlpath', 'default', '/tmp')
+        controlpath = self.config.get('controlpath', 'default', '/tmp/advssh_cm/')
         dir = os.path.dirname(os.path.expanduser(controlpath))
         dir = os.path.join(dir, self.hostname)
         dir = os.path.dirname(dir)
