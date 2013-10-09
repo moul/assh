@@ -11,7 +11,7 @@ from .utils import safe_makedirs, value_interpolate, construct_proxy_command
 
 class AdvancedSshConfig(object):
 
-    def __init__(self, hostname=None, port=None, configfile=None,
+    def __init__(self, hostname=None, port=None, configfiles=None,
                  verbose=False, dry_run=False, proxy_type='nc',
                  timeout=180):
 
@@ -22,12 +22,11 @@ class AdvancedSshConfig(object):
         self.log = logging.getLogger('')
 
         # Initializes the Config object
-        configfiles = [
-            '/etc/ssh/config.advanced',
-            '~/.ssh/config.advanced',
-            ]
-        if configfile:
-            configfiles += configfile
+        if not configfiles:
+            configfiles = [
+                '/etc/ssh/config.advanced',
+                '~/.ssh/config.advanced',
+                ]
         self.config = Config(configfiles=configfiles)
 
     def debug(self, string=None):
