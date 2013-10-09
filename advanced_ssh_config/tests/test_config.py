@@ -5,15 +5,7 @@ import os
 
 from advanced_ssh_config.config import Config
 from advanced_ssh_config.exceptions import ConfigError
-
-
-PREFIX = '/tmp/test-asc-config'
-DEFAULT_CONFIG = os.path.join(PREFIX, 'config.advanced')
-
-
-def write_config(contents, name='config.advanced'):
-    with open(os.path.join(PREFIX, name), 'w') as f:
-        f.write(contents)
+from . import write_config, PREFIX, DEFAULT_CONFIG
 
 
 class TestConfig(unittest.TestCase):

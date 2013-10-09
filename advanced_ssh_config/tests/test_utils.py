@@ -7,8 +7,7 @@ from advanced_ssh_config.utils import (safe_makedirs, value_interpolate,
                                        construct_proxy_command)
 from advanced_ssh_config.exceptions import ConfigError
 
-
-PREFIX = '/tmp/test-safe-makedirs'
+from . import PREFIX
 
 
 class TestContructProxyCommand(unittest.TestCase):

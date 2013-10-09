@@ -101,7 +101,7 @@ class AdvancedSshConfig(object):
         self.debug('reallocalcommand : {}'.format(routing['reallocalcommand']))
         self.debug('gateways         : {}'.format(', '.join(['gateways'])))
         routing['gateway_route'] = path[1:]
-        routing['hostname'] = path[0]
+        routing['hostname'] = args['h']
         #routing['args'] = args
         routing['port'] = self.port or args['p'] or 22
         routing['proxy_command'] = construct_proxy_command(routing)
