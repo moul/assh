@@ -45,6 +45,32 @@ port = 25
         self.assertEqual(routing['proxy_type'], 'nc')
         self.assertEqual(routing['proxy_command'], ['nc', '-w', 180, '1.2.3.4', 25])
 
+    def test_routing_via_two_other_hosts(self):
+        advssh = AdvancedSshConfig(hostname='aaa.com/bbb.com/ccc.com')
+        routing = advssh.get_routing()
+        self.assertEqual(routing['hostname'], 'aaa.com')
+        self.assertEqual(routing['proxy_type'], 'nc')
+        self.assertEqual(routing['gateways'], ['direct'])
+        self.assertEqual(routing['proxy_command'], ['nc', '-w', 180, 'aaa.com', 22])
+        self.assertEqual(routing['gateway_route'], ['bbb.com', 'ccc.com'])
+
+    def test_routing_via_two_other_hosts_with_config_one(self):
+        contents = """
+[ddd.com]
+hostname = 1.2.3.4
+port = 25
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='ddd.com/eee.com', configfile=[DEFAULT_CONFIG])
+        routing = advssh.get_routing()
+        print(routing)
+        self.assertEqual(routing['hostname'], '1.2.3.4')
+        self.assertEqual(routing['proxy_type'], 'nc')
+        self.assertEqual(routing['gateways'], ['direct'])
+        self.assertEqual(routing['proxy_command'], ['nc', '-w', 180, '1.2.3.4', 25])
+        self.assertEqual(routing['gateway_route'], ['eee.com'])
+
+
     # FIXME: test_routing_override_config
     # FIXME: test_connect
     # FIXME: test_dryrun
