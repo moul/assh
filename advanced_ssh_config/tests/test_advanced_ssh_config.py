@@ -34,8 +34,8 @@ hostname = 1.2.3.4
 port = 25
 """
         set_config(contents)
-        advssh = AdvancedSshConfig(hostname='test.com', configfile=[DEFAULT_CONFIG])
-                                   port=23,
+        advssh = AdvancedSshConfig(hostname='test.com',
+                                   port=25,
                                    verbose=True,
                                    dry_run=True,
                                    configfiles=[DEFAULT_CONFIG])
@@ -43,7 +43,24 @@ port = 25
         self.assertEqual(routing['port'], 25)
         self.assertEqual(routing['hostname'], '1.2.3.4')
         self.assertEqual(routing['proxy_type'], 'nc')
-        self.assertEqual(routing['proxy_command'], ['nc', '-w', 180, '1.2.3.4', 25])
+        self.assertEqual(routing['proxy_command'], ['nc', '-v', '-w', 180, '1.2.3.4', 25])
+
+    def test_routing_config_override(self):
+        contents = """
+[test.com]
+port = 25
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test.com',
+                                   port=23,
+                                   verbose=True,
+                                   dry_run=True,
+                                   configfiles=[DEFAULT_CONFIG])
+        routing = advssh.get_routing()
+        self.assertEqual(routing['port'], 23)
+        self.assertEqual(routing['hostname'], 'test.com')
+        self.assertEqual(routing['proxy_type'], 'nc')
+        self.assertEqual(routing['proxy_command'], ['nc', '-v', '-w', 180, 'test.com', 23])
 
     def test_routing_via_two_other_hosts(self):
         advssh = AdvancedSshConfig(hostname='aaa.com/bbb.com/ccc.com')
@@ -61,9 +78,8 @@ hostname = 1.2.3.4
 port = 25
 """
         set_config(contents)
-        advssh = AdvancedSshConfig(hostname='ddd.com/eee.com', configfile=[DEFAULT_CONFIG])
+        advssh = AdvancedSshConfig(hostname='ddd.com/eee.com', configfiles=[DEFAULT_CONFIG])
         routing = advssh.get_routing()
-        print(routing)
         self.assertEqual(routing['hostname'], '1.2.3.4')
         self.assertEqual(routing['proxy_type'], 'nc')
         self.assertEqual(routing['gateways'], ['direct'])
