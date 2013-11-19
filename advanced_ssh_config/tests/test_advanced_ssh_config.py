@@ -4,7 +4,7 @@ import unittest
 
 from advanced_ssh_config.advanced_ssh_config import AdvancedSshConfig
 
-from . import write_config, PREFIX, DEFAULT_CONFIG
+from .test_config import set_config, DEFAULT_CONFIG
 
 
 class TestAdvancedSshConfig(unittest.TestCase):
@@ -29,21 +29,22 @@ class TestAdvancedSshConfig(unittest.TestCase):
 
     def test_routing_hostname_in_config(self):
         contents = """
-[test]
-hostname=1.2.3.4
-[default]
-""".format(PREFIX)
-        write_config(contents)
-        advssh = AdvancedSshConfig(hostname='test',
+[test.com]
+hostname = 1.2.3.4
+port = 25
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test.com', configfile=[DEFAULT_CONFIG])
                                    port=23,
                                    verbose=True,
                                    dry_run=True,
                                    configfiles=[DEFAULT_CONFIG])
         routing = advssh.get_routing()
+        self.assertEqual(routing['port'], 25)
         self.assertEqual(routing['hostname'], '1.2.3.4')
+        self.assertEqual(routing['proxy_type'], 'nc')
+        self.assertEqual(routing['proxy_command'], ['nc', '-w', 180, '1.2.3.4', 25])
 
-
-    # FIXME: test_routing_with_config
     # FIXME: test_routing_override_config
     # FIXME: test_connect
     # FIXME: test_dryrun

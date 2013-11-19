@@ -8,6 +8,12 @@ from advanced_ssh_config.exceptions import ConfigError
 from . import write_config, PREFIX, DEFAULT_CONFIG
 
 
+def set_config(contents):
+    contents = contents.format(PREFIX)
+    write_config(contents)
+    config = Config([DEFAULT_CONFIG])
+
+
 class TestConfig(unittest.TestCase):
 
     def setUp(self):
