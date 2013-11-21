@@ -23,7 +23,7 @@ class TestContructProxyCommand(unittest.TestCase):
                 'hostname': 'aaa',
                 'port': 42,
                 })
-        self.assertEqual(command, ['nc', '-w', 180, 'aaa', 42])
+        self.assertEqual(command, ['nc', '-w', 180, '-G', 5, 'aaa', 42])
 
     def test_minimal_nc(self):
         command = construct_proxy_command({
@@ -31,7 +31,7 @@ class TestContructProxyCommand(unittest.TestCase):
                 'proxy_type': 'nc',
                 'port': 42,
                 })
-        self.assertEqual(command, ['nc', '-w', 180, 'aaa', 42])
+        self.assertEqual(command, ['nc', '-w', 180, '-G', 5, 'aaa', 42])
 
     def test_full_nc(self):
         command = construct_proxy_command({
@@ -41,7 +41,7 @@ class TestContructProxyCommand(unittest.TestCase):
                 'proxy_type': 'nc',
                 'timeout': 45,
                 })
-        self.assertEqual(command, ['nc', '-v', '-w', 45, 'aaa', 42])
+        self.assertEqual(command, ['nc', '-v', '-w', 45, '-G', 5, 'aaa', 42])
 
     def test_invalid_proxy_type(self):
         args = {
