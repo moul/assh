@@ -102,6 +102,10 @@ def ssh_config_to_advanced_ssh_config_parse_options():
                       default='~/.ssh/config',
                       help='ssh_config file to parse')
 
+    parser.add_option('-a', '--all',
+                      action='store_true',
+                      help='include hosts without configuration')
+
     (options, args) = parser.parse_args()
 
     options.file = os.path.expanduser(options.file)
@@ -120,6 +124,8 @@ def ssh_config_to_advanced_ssh_config():
     with open(options.file, 'r') as file:
         config = parse_ssh_config(file)
         for host, config in config.iteritems():
+            if not config and not options.all:
+                continue
             print('[{0}]'.format(host))
             for k, v in config.iteritems():
                 print('  {0} = {1}'.format(k, v))
