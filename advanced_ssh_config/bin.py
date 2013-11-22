@@ -106,6 +106,12 @@ def ssh_config_to_advanced_ssh_config_parse_options():
                       action='store_true',
                       help='include hosts without configuration')
 
+    parser.add_option('--no-escape',
+                      action='store_false',
+                      default=True,
+                      dest='escape',
+                      help='escape host for regexp')
+
     (options, args) = parser.parse_args()
 
     options.file = os.path.expanduser(options.file)
@@ -123,9 +129,14 @@ def ssh_config_to_advanced_ssh_config():
 
     with open(options.file, 'r') as file:
         config = parse_ssh_config(file)
+        print(options.escape)
         for host, config in config.iteritems():
             if not config and not options.all:
                 continue
+            if options.escape:
+                host = host.replace('.', '\.')
+                host = host.replace('*', '.*')
+                host = '^{0}$'.format(host)
             print('[{0}]'.format(host))
             for k, v in config.iteritems():
                 print('  {0} = {1}'.format(k, v))
