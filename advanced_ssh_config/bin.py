@@ -4,14 +4,15 @@ import sys
 import optparse
 import logging
 
+from . import __version__
 from .utils import LOGGING_LEVELS, validate_host, validate_port
 from .exceptions import ConfigError
 from .advanced_ssh_config import AdvancedSshConfig
 
 
 def parse_options():
-    parser = optparse.OptionParser(usage='%prog [-v] -h hostname -p port',
-                                   version='%prog 1.0')
+    parser = optparse.OptionParser(usage='%prog [-v] [-l 9] -H host [-p 22]',
+                                   version='%prog {0}'.format(__version__))
 
     parser.add_option('-H', '--hostname',
                       dest='hostname',
@@ -49,8 +50,12 @@ def parse_options():
     return options
 
 
-def main():
-    options = parse_options()
+def advanced_ssh_config():
+    try:
+        options = parse_options()
+    except ValueError as err:
+        logging.error(err.message)
+        sys.exit(1)
 
     # Setup logging
     logging_level = LOGGING_LEVELS.get(options.log_level, logging.ERROR)
