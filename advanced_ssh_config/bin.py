@@ -3,14 +3,16 @@
 import sys
 import optparse
 import logging
+import os
 
 from . import __version__
 from .utils import LOGGING_LEVELS, validate_host, validate_port
 from .exceptions import ConfigError
 from .advanced_ssh_config import AdvancedSshConfig
+from .ssh_config import parse_ssh_config
 
 
-def parse_options():
+def advanced_ssh_config_parse_options():
     parser = optparse.OptionParser(usage='%prog [-v] [-l 9] -H host [-p 22]',
                                    version='%prog {0}'.format(__version__))
 
@@ -52,7 +54,7 @@ def parse_options():
 
 def advanced_ssh_config():
     try:
-        options = parse_options()
+        options = advanced_ssh_config_parse_options()
     except ValueError as err:
         logging.error(err.message)
         sys.exit(1)
@@ -89,3 +91,36 @@ def advanced_ssh_config():
 
     except Exception as err:
         sys.stderr.write(err.__str__())
+
+
+def ssh_config_to_advanced_ssh_config_parse_options():
+    parser = optparse.OptionParser(usage='%prog',
+                                   version='%prog {0}'.format(__version__))
+
+    parser.add_option('-f', '--file',
+                      dest='file',
+                      default='~/.ssh/config',
+                      help='ssh_config file to parse')
+
+    (options, args) = parser.parse_args()
+
+    options.file = os.path.expanduser(options.file)
+    if not os.path.exists(options.file):
+        raise ValueError('File not found: {0}'.format(options.file))
+    return options
+
+
+def ssh_config_to_advanced_ssh_config():
+    try:
+        options = ssh_config_to_advanced_ssh_config_parse_options()
+    except ValueError as err:
+        logging.error(err.message)
+        sys.exit(1)
+
+    with open(options.file, 'r') as file:
+        config = parse_ssh_config(file)
+        for host, config in config.iteritems():
+            print('[{0}]'.format(host))
+            for k, v in config.iteritems():
+                print('  {0} = {1}'.format(k, v))
+            print('')
