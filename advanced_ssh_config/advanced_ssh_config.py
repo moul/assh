@@ -192,9 +192,12 @@ class AdvancedSshConfig(object):
             for key, value in items:
                 if key in key_translation:
                     key = key_translation.get(key)
-                if not isinstance(value, list):
-                    value = [value]
-                for line in value:
+                if key in ('identityfile', 'localforward', 'remoteforward'):
+                    values = value.split('\n')
+                    values = map(str.strip, values)
+                else:
+                    values = [value]
+                for line in values:
                     if key in special_keys:
                         extra_config.append((key, line))
                     else:

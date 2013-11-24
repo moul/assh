@@ -107,8 +107,18 @@ port = 24
         self.assertEqual(len(config.keys()), 2)
         self.assertEqual(config['test']['host'], 'test')
         self.assertEqual(config['test']['config'], [('port', '25')])
-        #self.assertEqual(config['test']['extra_config'], [('hostname', 'test')])
         self.assertEqual(config['*']['host'], '*')
         self.assertEqual(config['*']['config'], [('port', '24')])
+
+    def test_prepare_sshconfig_multiline(self):
+        contents = """
+[test]
+localforward = 1 2.3.4.5 6 \n 7 8.9.10.11 12
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.prepare_sshconfig()
+        self.assertEqual(config['test']['host'], 'test')
+        self.assertEqual(config['test']['config'], [('localforward', '1 2.3.4.5 6'), ('localforward', '7 8.9.10.11 12')])
 
     # FIXME: test_prepare_sshconfig_with_hostname
