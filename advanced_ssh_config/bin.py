@@ -127,17 +127,17 @@ def ssh_config_to_advanced_ssh_config():
         logging.error(err.message)
         sys.exit(1)
 
-    with open(options.file, 'r') as file:
-        config = parse_ssh_config(file)
+    with open(options.file, 'r') as file_descriptor:
+        config = parse_ssh_config(file_descriptor)
         print(options.escape)
         for host, config in config.iteritems():
             if not config and not options.all:
                 continue
             if options.escape:
-                host = host.replace('.', '\.')
+                host = host.replace('.', '\\.')
                 host = host.replace('*', '.*')
                 host = '^{0}$'.format(host)
             print('[{0}]'.format(host))
-            for k, v in config.iteritems():
-                print('  {0} = {1}'.format(k, v))
+            for key, value in config.iteritems():
+                print('  {0} = {1}'.format(key, value))
             print('')

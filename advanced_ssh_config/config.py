@@ -43,7 +43,7 @@ class Config(object):
             self._load_file(configfile)
 
         # Load sub files
-        includes = self.get('includes', 'default', '').strip()
+        includes = str(self.get('includes', 'default', '')).strip()
         for include in includes.split():
             incpath = os.path.expanduser(include)
             if os.path.exists(incpath):
@@ -55,10 +55,10 @@ class Config(object):
     def sections(self):
         return self.parser.sections()
 
-    def get_in_section(self, section, key, raw=False, vars=None):
+    def get_in_section(self, section, key, raw=False, vardct=None):
         if not self.parser.has_option(section, key):
             return False
-        var = self.parser.get(section, key, raw, vars)
+        var = self.parser.get(section, key, raw, vardct)
         if key in ('identityfile', 'localforward', 'remoteforward'):
             var = var.split('\n')
             var = map(str.strip, var)
@@ -67,7 +67,7 @@ class Config(object):
     def get(self, key, host, default=None, vardct=None):
         for section in self.sections:
             if re.match(section, host):
-                val = self.get_in_section(section, key, vars=vardct)
+                val = self.get_in_section(section, key, vardct=vardct)
                 if val:
                     return val
         val = self.get_in_section('default', key)

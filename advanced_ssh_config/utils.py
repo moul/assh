@@ -83,15 +83,17 @@ def validate_port(port):
         raise ValueError('port must be between 1-65535')
 
 
-def safe_makedirs(dir):
+def safe_makedirs(directory):
     try:
-        os.makedirs(dir)
+        os.makedirs(directory)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise exception
 
 
-def value_interpolate(value, already_interpolated=[]):
+def value_interpolate(value, already_interpolated=None):
+    if not already_interpolated:
+        already_interpolated = []
     matches = value and re.match(r'\$(\w+)', value) or None
     if matches:
         var = matches.group(1)

@@ -4,7 +4,6 @@ import subprocess
 import os
 import re
 import logging
-import errno
 
 from .config import Config
 from .utils import safe_makedirs, value_interpolate, construct_proxy_command
@@ -38,10 +37,10 @@ class AdvancedSshConfig(object):
         controlpath = self.config.get('controlpath',
                                       'default',
                                       '/tmp/advssh_cm/')
-        dir = os.path.dirname(os.path.expanduser(controlpath))
-        dir = os.path.join(dir, self.hostname)
-        dir = os.path.dirname(dir)
-        return dir
+        directory = os.path.dirname(os.path.expanduser(controlpath))
+        directory = os.path.join(directory, self.hostname)
+        directory = os.path.dirname(directory)
+        return directory
 
     def get_routing(self):
         routing = {}
@@ -116,8 +115,8 @@ class AdvancedSshConfig(object):
 
         self.debug()
         self.debug('Routing:')
-        for k, v in routing.iteritems():
-            self.debug('  {0}: {1}'.format(k, v))
+        for key, value in routing.iteritems():
+            self.debug('  {0}: {1}'.format(key, value))
         self.debug()
 
         return routing
@@ -138,7 +137,7 @@ class AdvancedSshConfig(object):
 
             if not self.dry_run:
                 ssh_process = subprocess.Popen(map(str, cmd))
-                reallocalcommand_process = None
+                rlc_process = None
                 if len(routing['reallocalcommand'][0]):
                     rlc_process = subprocess.Popen(routing['reallocalcommand'])
                 if ssh_process.wait() != 0:

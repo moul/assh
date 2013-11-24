@@ -2,7 +2,7 @@
 
 import re
 
-proxy_re = re.compile(r"^(proxycommand)\s*=*\s*(.*)", re.I)
+PROXY_REGEX = re.compile(r"^(proxycommand)\s*=*\s*(.*)", re.I)
 
 
 def parse_ssh_config(file_obj):
@@ -24,7 +24,7 @@ def parse_ssh_config(file_obj):
         if '=' in line:
             # Ensure ProxyCommand gets properly split
             if line.lower().strip().startswith('proxycommand'):
-                match = proxy_re.match(line)
+                match = PROXY_REGEX.match(line)
                 key, value = match.group(1).lower(), match.group(2)
             else:
                 key, value = line.split('=', 1)
