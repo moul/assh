@@ -43,10 +43,10 @@ def parse_ssh_config(file_obj):
             hosts[host['host'][0]] = host['config']
             value = value.split()
             host = {key: value, 'config': {}}
-        #identityfile, localforward, remoteforward keys are special cases, since they are allowed to be
-        # specified multiple times and they should be tried in order
-        # of specification.
 
+        # identityfile, localforward, remoteforward keys are special cases,
+        # since they are allowed to be specified multiple times and they
+        # should be tried in order of specification.
         elif key in ['identityfile', 'localforward', 'remoteforward']:
             if key in host['config']:
                 host['config'][key].append(value)

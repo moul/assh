@@ -26,7 +26,8 @@ class Config(object):
 
         for section in self.sections:
             if re.sub(r'[^a-zA-Z0-9\\\.\*_-]', '', section) != section:
-                raise ConfigError('Invalid characters used in section {}'.format(section))
+                raise ConfigError('Invalid characters used in '
+                                  'section {}'.format(section))
 
     def debug(self, string=None):
         self.log.debug(string and string or '')

@@ -44,7 +44,9 @@ def construct_proxy_command(config):
             ]
         if config.get('http_proxy_auth', None):
             args.append(config.get('http_proxy_auth'))
-            cmd.append('PROXY:{}:{}:{},proxyport={},proxyauth={}'.format(*args))
+            cmd.append('PROXY:{}:{}:{},'
+                       'proxyport={},'
+                       'proxyauth={}'.format(*args))
         else:
             cmd.append('PROXY:{}:{}:{},proxyport={}'.format(*args))
     elif proxy_type == 'socat_socks':
@@ -98,7 +100,8 @@ def value_interpolate(value, already_interpolated=[]):
         val = os.environ.get(var)
         if val:
             logging.getLogger('').debug('\'{}\' => \'{}\''.format(value, val))
-            return value_interpolate(re.sub(r'\${}'.format(var), val, value), already_interpolated + [var])
+            new_value = re.sub(r'\${}'.format(var), val, value)
+            return value_interpolate(new_value, already_interpolated + [var])
 
     return value
 

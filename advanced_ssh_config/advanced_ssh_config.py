@@ -9,6 +9,7 @@ import errno
 from .config import Config
 from .utils import safe_makedirs, value_interpolate, construct_proxy_command
 
+
 class AdvancedSshConfig(object):
 
     def __init__(self, hostname=None, port=None, configfiles=None,
@@ -34,7 +35,9 @@ class AdvancedSshConfig(object):
 
     @property
     def controlpath_dir(self):
-        controlpath = self.config.get('controlpath', 'default', '/tmp/advssh_cm/')
+        controlpath = self.config.get('controlpath',
+                                      'default',
+                                      '/tmp/advssh_cm/')
         dir = os.path.dirname(os.path.expanduser(controlpath))
         dir = os.path.join(dir, self.hostname)
         dir = os.path.dirname(dir)
@@ -67,7 +70,9 @@ class AdvancedSshConfig(object):
             }
         updated = False
         for key in options:
-            cfval = self.config.get(options[key], path[0], default_options.get(key))
+            cfval = self.config.get(options[key],
+                                    path[0],
+                                    default_options.get(key))
             value = value_interpolate(cfval)
             if cfval != value:
                 updated = True
@@ -96,8 +101,11 @@ class AdvancedSshConfig(object):
         self.debug()
         routing['verbose'] = self.verbose
         routing['proxy_type'] = self.proxy_type
-        routing['gateways'] = self.config.get('Gateways', path[-1], 'direct').strip().split(' ')
-        routing['reallocalcommand'] = self.config.get('RealLocalCommand', path[-1], '').strip().split(' ')
+        routing['gateways'] = self.config.get('Gateways', path[-1], 'direct')
+        routing['reallocalcommand'] = self.config.get('RealLocalCommand',
+                                                      path[-1], '')
+        for key in ('gateways', 'reallocalcommand'):
+            routing[key] = routing[key].strip().split(' ')
         self.debug('reallocalcommand : {}'.format(routing['reallocalcommand']))
         self.debug('gateways         : {}'.format(', '.join(['gateways'])))
         routing['gateway_route'] = path[1:]
@@ -132,11 +140,11 @@ class AdvancedSshConfig(object):
                 ssh_process = subprocess.Popen(map(str, cmd))
                 reallocalcommand_process = None
                 if len(routing['reallocalcommand'][0]):
-                    reallocalcommand_process = subprocess.Popen(routing['reallocalcommand'])
+                    rlc_process = subprocess.Popen(routing['reallocalcommand'])
                 if ssh_process.wait() != 0:
                     self.log.critical('There were some errors')
-                if reallocalcommand_process is not None:
-                    reallocalcommand_process.kill()
+                if rlc_process is not None:
+                    rlc_process.kill()
 
     def write_sshconfig(self, filename='~/.ssh/config'):
         config = self.build_sshconfig()
@@ -188,7 +196,9 @@ class AdvancedSshConfig(object):
             key_translation = {
                 'alias': 'hostname',
                 }
-            items = self.config.parser.items(section, False, {'Hostname': host})
+            items = self.config.parser.items(section,
+                                             False,
+                                             {'Hostname': host})
             for key, value in items:
                 if key in key_translation:
                     key = key_translation.get(key)
