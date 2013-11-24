@@ -74,7 +74,7 @@ def advanced_ssh_config():
                                 verbose=options.verbose,
                                 dry_run=options.dry_run)
         if options.update_sshconfig:
-            ssh.update_sshconfig()
+            ssh.write_sshconfig()
 
         if ssh.hostname:
             routing = ssh.get_routing()

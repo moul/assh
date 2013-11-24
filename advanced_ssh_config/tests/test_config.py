@@ -12,6 +12,7 @@ def set_config(contents):
     contents = contents.format(PREFIX)
     write_config(contents)
     config = Config([DEFAULT_CONFIG])
+    return config
 
 
 class TestConfig(unittest.TestCase):
@@ -175,3 +176,19 @@ port = 25
 """.format(PREFIX)
         write_config(contents)
         self.assertRaises(ConfigError, Config, [DEFAULT_CONFIG])
+
+    def test_multiple_line(self):
+        contents = """
+[test]
+localforward = 1 test 2 \n 2 test 3
+"""
+        config = set_config(contents)
+        self.assertEquals(config.get('localforward', 'test'), ['1 test 2', '2 test 3'])
+
+    def test_one_line_list(self):
+        contents = """
+[test]
+localforward = 1 test 2
+"""
+        config = set_config(contents)
+        self.assertEquals(config.get('localforward', 'test'), ['1 test 2'])

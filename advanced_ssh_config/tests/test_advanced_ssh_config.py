@@ -92,3 +92,23 @@ port = 25
     # FIXME: test_dryrun
     # FIXME: test_verbose
     # FIXME: test_alias
+
+    def test_prepare_sshconfig_simple(self):
+        contents = """
+[test]
+port = 25
+
+[default]
+port = 24
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.prepare_sshconfig()
+        self.assertEqual(len(config.keys()), 2)
+        self.assertEqual(config['test']['host'], 'test')
+        self.assertEqual(config['test']['config'], [('port', '25')])
+        #self.assertEqual(config['test']['extra_config'], [('hostname', 'test')])
+        self.assertEqual(config['*']['host'], '*')
+        self.assertEqual(config['*']['config'], [('port', '24')])
+
+    # FIXME: test_prepare_sshconfig_with_hostname

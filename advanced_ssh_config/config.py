@@ -54,11 +54,20 @@ class Config(object):
     def sections(self):
         return self.parser.sections()
 
+    def get_in_section(self, section, key, raw=False, vars=None):
+        if not self.parser.has_option(section, key):
+            return False
+        var = self.parser.get(section, key, raw, vars)
+        if key in ('identityfile', 'localforward', 'remoteforward'):
+            var = var.split('\n')
+            var = map(str.strip, var)
+        return var
+
     def get(self, key, host, default=None, vardct=None):
         for section in self.sections:
             if re.match(section, host):
-                if self.parser.has_option(section, key):
-                    return self.parser.get(section, key, False, vardct)
-        if self.parser.has_option('default', key):
-            return self.parser.get('default', key)
-        return default
+                val = self.get_in_section(section, key, vars=vardct)
+                if val:
+                    return val
+        val = self.get_in_section('default', key)
+        return val or default

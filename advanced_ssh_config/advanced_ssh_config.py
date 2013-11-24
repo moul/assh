@@ -80,7 +80,7 @@ class AdvancedSshConfig(object):
 
         # If we interpolated any keys
         if updated:
-            self._update_sshconfig()
+            self.write_sshconfig()
             self.log.debug('Config updated. Need to restart SSH!?')
 
         self.debug('args: {}'.format(args))
@@ -138,37 +138,73 @@ class AdvancedSshConfig(object):
                 if reallocalcommand_process is not None:
                     reallocalcommand_process.kill()
 
-    def update_sshconfig(self, write=True):
+    def write_sshconfig(self, filename='~/.ssh/config'):
+        config = self.build_sshconfig()
+        fhandle = open(os.path.expanduser(filename), 'w+')
+        fhandle.write('\n'.join(config))
+        fhandle.close()
+
+    def build_sshconfig(self):
+        def build_entry(entry):
+            sub_config = []
+            sub_config.append('Host {}'.format(entry['host']))
+            for items in entry['config']:
+                sub_config.append('  {} {}'.format(items[0], items[1]))
+            for items in entry['extra_config']:
+                sub_config.append('  # {} {}'.format(items[0], items[1]))
+            sub_config.append('')
+            return sub_config
+
         config = []
 
+        hosts = self.prepare_sshconfig()
+        for entry in hosts.values():
+            if entry['host'] == '*':
+                continue
+            else:
+                config += build_entry(entry)
+
+        if '*' in hosts:
+            config += build_entry(hosts['*'])
+
+        return config
+
+    def prepare_sshconfig(self):
+        hosts = {}
+
         for section in self.config.parser.sections():
-            if section != 'default':
-                host = section
-                host = re.sub(r'\.\*', '*', host)
-                host = re.sub(r'\\\.', '.', host)
-                config += ['Host {}'.format(host)]
-                special_keys = (
-                    'hostname',
-                    'gateways',
-                    'reallocalcommand',
-                    'remotecommand'
-                    )
-                items = self.config.parser.items(section, False, {'Hostname': host})
-                for key, value in items:
-                    if key not in special_keys:
-                        if key == 'alias':
-                            key = 'hostname'
-                        config += ['  {} {}'.format(key, value)]
-                config += ['']
+            config = []
+            extra_config = []
+            host = section
+            host = re.sub(r'\.\*', '*', host)
+            host = re.sub(r'\\\.', '.', host)
+            special_keys = (
+                'hostname',
+                'gateways',
+                'reallocalcommand',
+                'remotecommand',
+                'includes',
+                )
+            key_translation = {
+                'alias': 'hostname',
+                }
+            items = self.config.parser.items(section, False, {'Hostname': host})
+            for key, value in items:
+                if key in key_translation:
+                    key = key_translation.get(key)
+                if not isinstance(value, list):
+                    value = [value]
+                for line in value:
+                    if key in special_keys:
+                        extra_config.append((key, line))
+                    else:
+                        config.append((key, line))
+            if section == 'default':
+                host = '*'
+            hosts[host] = {
+                'config': config,
+                'extra_config': extra_config,
+                'host': host,
+                }
 
-        config += ['Host *']
-        for key, value in self.config.parser.items('default'):
-            if key not in ('hostname', 'gateways', 'includes'):
-                config += ['  {} {}'.format(key, value)]
-
-        if write:
-            fhandle = open(os.path.expanduser('~/.ssh/config'), 'w+')
-            fhandle.write('\n'.join(config))
-            fhandle.close()
-        else:
-            print '\n'.join(config)
+        return hosts
