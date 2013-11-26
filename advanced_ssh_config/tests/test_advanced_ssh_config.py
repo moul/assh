@@ -3,11 +3,13 @@
 import unittest
 
 from advanced_ssh_config.advanced_ssh_config import AdvancedSshConfig
-
-from .test_config import set_config, DEFAULT_CONFIG
+from . import set_config, prepare_config, DEFAULT_CONFIG
 
 
 class TestAdvancedSshConfig(unittest.TestCase):
+
+    def setUp(self):
+        prepare_config()
 
     def test_load_advanced_ssh_config(self):
         advssh = AdvancedSshConfig()

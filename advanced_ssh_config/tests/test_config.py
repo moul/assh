@@ -5,22 +5,13 @@ import os
 
 from advanced_ssh_config.config import Config
 from advanced_ssh_config.exceptions import ConfigError
-from . import write_config, PREFIX, DEFAULT_CONFIG
-
-
-def set_config(contents):
-    contents = contents.format(PREFIX)
-    write_config(contents)
-    config = Config([DEFAULT_CONFIG])
-    return config
+from . import set_config, prepare_config, write_config, PREFIX, DEFAULT_CONFIG
 
 
 class TestConfig(unittest.TestCase):
 
     def setUp(self):
-        os.system('rm -rf {}'.format(PREFIX))
-        os.makedirs(PREFIX)
-        write_config('')
+        prepare_config()
 
     def test_initialize_config(self):
         config = Config([DEFAULT_CONFIG])
@@ -32,9 +23,8 @@ class TestConfig(unittest.TestCase):
         contents = """
 [default]
 Includes = {0}/include-1 {0}/include-2
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.loaded_files, [
                 DEFAULT_CONFIG,
                 '{}/include-1'.format(PREFIX),
@@ -45,8 +35,8 @@ Includes = {0}/include-1 {0}/include-2
         contents = """
 [default]
 Includes = {0}/include-1 {0}/include-2
-""".format(PREFIX)
-        write_config(contents)
+"""
+        set_config(contents, load=False)
         self.assertRaises(ConfigError, Config, [DEFAULT_CONFIG])
 
     def test_include_same_file(self):
@@ -54,9 +44,8 @@ Includes = {0}/include-1 {0}/include-2
         contents = """
 [default]
 Includes = {0}/include-1 {0}/include-1
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.loaded_files, [
                 DEFAULT_CONFIG,
                 '{}/include-1'.format(PREFIX),
@@ -66,9 +55,8 @@ Includes = {0}/include-1 {0}/include-1
         contents = """
 [hosta]
 [default]
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.sections, ['hosta', 'default'])
 
     def test_sections_with_double(self):
@@ -76,9 +64,8 @@ Includes = {0}/include-1 {0}/include-1
 [hosta]
 [hosta]
 [default]
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.sections, ['hosta', 'default'])
 
     def test_sections_with_case(self):
@@ -86,9 +73,8 @@ Includes = {0}/include-1 {0}/include-1
 [hosta]
 [hostA]
 [default]
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.sections, ['hosta', 'hostA', 'default'])
 
     def test_sections_with_regex(self):
@@ -96,27 +82,24 @@ Includes = {0}/include-1 {0}/include-1
 [hosta]
 [host.*]
 [default]
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.sections, ['hosta', 'host.*', 'default'])
 
     def test_get_simple(self):
         contents = """
 [hosta]
 hostname = 1.2.3.4
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.get('Hostname', 'hosta'), '1.2.3.4')
         self.assertEquals(config.get('hostname', 'hosta'), '1.2.3.4')
 
     def test_get_key_not_found(self):
         contents = """
 [hosta]
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.get('Hostname', 'hosta'), None)
         self.assertEquals(config.get('Hostname', 'hosta', 'localhost'), 'localhost')
 
@@ -124,14 +107,12 @@ hostname = 1.2.3.4
         contents = """
 [default]
 port = 22
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.get('Port', 'hosta'), '22')
 
     def test_get_host_and_key_not_found(self):
-        write_config('')
-        config = Config([DEFAULT_CONFIG])
+        config = set_config('')
         self.assertEquals(config.get('Port', 'hosta'), None)
 
     def test_host_wildcard(self):
@@ -150,9 +131,8 @@ port = 22
 
 [default]
 port = 21
-""".format(PREFIX)
-        write_config(contents)
-        config = Config([DEFAULT_CONFIG])
+"""
+        config = set_config(contents)
         self.assertEquals(config.get('Port', 'aaa'), '25')
         self.assertEquals(config.get('Port', 'aaa42'), '25')
         self.assertEquals(config.get('Port', '42aaa'), '21')
@@ -173,8 +153,8 @@ port = 21
         contents = """
 [aaa.+]
 port = 25
-""".format(PREFIX)
-        write_config(contents)
+"""
+        set_config(contents, load=False)
         self.assertRaises(ConfigError, Config, [DEFAULT_CONFIG])
 
     def test_multiple_line(self):
