@@ -51,3 +51,7 @@ Or add this line manually in your ~/.ssh/config file
 --
 
 © 2009-2013 Manfred Touron - [MIT License](https://github.com/moul/advanced-ssh-config/blob/master/License.txt).
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moul/advanced-ssh-config/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
