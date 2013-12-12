@@ -89,12 +89,6 @@ port = 25
         self.assertEqual(routing['gateway_route'], ['eee.com'])
 
 
-    # FIXME: test_routing_override_config
-    # FIXME: test_connect
-    # FIXME: test_dryrun
-    # FIXME: test_verbose
-    # FIXME: test_alias
-
     def test_prepare_sshconfig_simple(self):
         contents = """
 [test]
@@ -124,3 +118,8 @@ localforward = 1 2.3.4.5 6 \n 7 8.9.10.11 12
         self.assertEqual(config['test']['config'], [('localforward', '1 2.3.4.5 6'), ('localforward', '7 8.9.10.11 12')])
 
     # FIXME: test_prepare_sshconfig_with_hostname
+    # FIXME: test_routing_override_config
+    # FIXME: test_connect
+    # FIXME: test_dryrun
+    # FIXME: test_verbose
+    # FIXME: test_alias
