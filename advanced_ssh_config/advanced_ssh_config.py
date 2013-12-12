@@ -152,24 +152,14 @@ class AdvancedSshConfig(object):
         fhandle.close()
 
     def build_sshconfig(self):
-        def build_entry(entry):
-            sub_config = []
-            sub_config.append('Host {}'.format(entry['host']))
-            for items in entry['config']:
-                sub_config.append('  {} {}'.format(items[0], items[1]))
-            for items in entry['extra_config']:
-                sub_config.append('  # {} {}'.format(items[0], items[1]))
-            sub_config.append('')
-            return sub_config
-
         config = []
 
         hosts = self.prepare_sshconfig()
         for entry in hosts.values():
-            if entry['host'] == '*':
+            if entry.host == '*':
                 continue
             else:
-                config += build_entry(entry)
+                config += entry.build_sshconfig()
 
         if '*' in hosts:
             config += build_entry(hosts['*'])
@@ -178,45 +168,7 @@ class AdvancedSshConfig(object):
 
     def prepare_sshconfig(self):
         hosts = {}
-
-        for section in self.config.parser.sections():
-            config = []
-            extra_config = []
-            host = section
-            host = re.sub(r'\.\*', '*', host)
-            host = re.sub(r'\\\.', '.', host)
-            special_keys = (
-                'hostname',
-                'gateways',
-                'reallocalcommand',
-                'remotecommand',
-                'includes',
-                )
-            key_translation = {
-                'alias': 'hostname',
-                }
-            items = self.config.parser.items(section,
-                                             False,
-                                             {'Hostname': host})
-            for key, value in items:
-                if key in key_translation:
-                    key = key_translation.get(key)
-                if key in ('identityfile', 'localforward', 'remoteforward'):
-                    values = value.split('\n')
-                    values = map(str.strip, values)
-                else:
-                    values = [value]
-                for line in values:
-                    if key in special_keys:
-                        extra_config.append((key, line))
-                    else:
-                        config.append((key, line))
-            if section == 'default':
-                host = '*'
-            hosts[host] = {
-                'config': config,
-                'extra_config': extra_config,
-                'host': host,
-                }
-
+        for host in self.config.full.values():
+            host.resolve()
+            hosts[host.host] = host
         return hosts

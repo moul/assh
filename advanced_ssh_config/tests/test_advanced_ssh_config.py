@@ -101,10 +101,10 @@ port = 24
         advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
         config = advssh.prepare_sshconfig()
         self.assertEqual(len(config.keys()), 2)
-        self.assertEqual(config['test']['host'], 'test')
-        self.assertEqual(config['test']['config'], [('port', '25')])
-        self.assertEqual(config['*']['host'], '*')
-        self.assertEqual(config['*']['config'], [('port', '24')])
+        self.assertEqual(config['test'].host, 'test')
+        self.assertEqual(config['test'].config, [('port', '25')])
+        self.assertEqual(config['default'].host, 'default')
+        self.assertEqual(config['default'].config, [('port', '24')])
 
     def test_prepare_sshconfig_multiline(self):
         contents = """
@@ -114,9 +114,62 @@ localforward = 1 2.3.4.5 6 \n 7 8.9.10.11 12
         set_config(contents)
         advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
         config = advssh.prepare_sshconfig()
-        self.assertEqual(config['test']['host'], 'test')
-        self.assertEqual(config['test']['config'], [('localforward', '1 2.3.4.5 6'), ('localforward', '7 8.9.10.11 12')])
+        self.assertEqual(config['test'].host, 'test')
+        self.assertEqual(config['test'].config, [('localforward', '1 2.3.4.5 6'), ('localforward', '7 8.9.10.11 12')])
 
+    def test_inherits(self):
+        contents = """
+[aaa]
+hostname = 1.2.3.4
+user = toto
+
+[bbb]
+inherits = aaa
+port = 23
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.config.full
+        self.assertEqual(config['aaa'].clean_config['user'], 'toto')
+        self.assertEqual('port' in config['aaa'].clean_config, False)
+        self.assertEqual(config['bbb'].clean_config['user'], 'toto')
+        self.assertEqual(config['bbb'].clean_config['port'], '23')
+
+    def test_build_ssh_config(self):
+        contents = """
+[aaa]
+hostname = 1.2.3.4
+user = toto
+
+[bbb]
+inherits = aaa
+port = 23
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.prepare_sshconfig()
+        arr = advssh.build_sshconfig()
+        string = '\n'.join(arr)
+        self.assertEquals(len(arr), 10)
+        dest = """
+Host aaa
+  user toto
+  # hostname aaa
+
+Host bbb
+  port 23
+  user toto
+  # inherits aaa
+  # hostname bbb
+
+"""
+        self.assertEquals(string.strip(), dest.strip())
+
+
+
+    # FIXME: test_inherits_noexists
+    # FIXME: test_inherits_loop
+    # FIXME: test_inherits_override
     # FIXME: test_prepare_sshconfig_with_hostname
     # FIXME: test_routing_override_config
     # FIXME: test_connect
