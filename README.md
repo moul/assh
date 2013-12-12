@@ -17,6 +17,12 @@ Features
 - gateways (chains your ssh connections)
 - includes (includes sub files)
 - real local command (executes a command on the local shell)
+- inherits
+
+Todo
+====
+
+- print config tree
 
 Contributors
 ============
