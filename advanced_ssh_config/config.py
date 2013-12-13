@@ -72,7 +72,7 @@ class ConfigHost(object):
     def clean_config(self):
         config = self.config_dict
         if self.inherited:
-            config.update(self.inherited)
+            config = dict(self.inherited.items() + config.items())
         return config
 
     def resolve(self):
@@ -83,6 +83,9 @@ class ConfigHost(object):
                 if value in self.c.full:
                     parent = self.c.full[value]
                     self.inherited = parent.clean_config
+                else:
+                    raise ConfigError('Inheriting an unkonwn '
+                                      'host: `{}`'.format(value))
         self.resolved = True
 
     def get_prep_value(self):

@@ -3,6 +3,7 @@
 import unittest
 
 from advanced_ssh_config.advanced_ssh_config import AdvancedSshConfig
+from advanced_ssh_config.exceptions import ConfigError
 from . import set_config, prepare_config, DEFAULT_CONFIG
 
 
@@ -157,19 +158,66 @@ Host aaa
   # hostname aaa
 
 Host bbb
-  port 23
   user toto
+  port 23
   # inherits aaa
   # hostname bbb
-
 """
         self.assertEquals(string.strip(), dest.strip())
 
+    def test_inherits_noexists(self):
+        contents = """
+[aaa]
+hostname = 1.2.3.4
+user = toto
+
+[bbb]
+inherits = ccc
+port = 23
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.config.full
+        def call():
+            host = config['bbb'].clean_config
+        self.assertRaises(ConfigError, call)
+
+    def test_inherits_deep(self):
+        contents = """
+[aaa]
+hostname = 1.2.3.4
+user = toto
+
+[bbb]
+inherits = aaa
+tcpkeepalive = 42
+
+[ccc]
+inherits = bbb
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.config.full
+        self.assertEqual(config['ccc'].clean_config['user'], 'toto')
+        self.assertEqual(config['ccc'].clean_config['tcpkeepalive'], '42')
+
+    def test_inherits_override(self):
+        contents = """
+[aaa]
+user = toto
+
+[bbb]
+inherits = aaa
+user = titi
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.config.full
+        self.assertEqual(config['aaa'].clean_config['user'], 'toto')
+        self.assertEqual(config['bbb'].clean_config['user'], 'titi')
 
 
-    # FIXME: test_inherits_noexists
     # FIXME: test_inherits_loop
-    # FIXME: test_inherits_override
     # FIXME: test_prepare_sshconfig_with_hostname
     # FIXME: test_routing_override_config
     # FIXME: test_connect
