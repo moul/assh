@@ -75,13 +75,16 @@ class ConfigHost(object):
             config = dict(self.inherited.items() + config.items())
         return config
 
-    def resolve(self):
+    def resolve(self, rec=10):
+        if not rec:
+            raise ConfigError('Maximum recursion deptch exceeded')
         if self.resolved:
             return
         for key, value in self.extra:
             if key == 'inherits':
                 if value in self.c.full:
                     parent = self.c.full[value]
+                    parent.resolve(rec - 1)
                     self.inherited = parent.clean_config
                 else:
                     raise ConfigError('Inheriting an unkonwn '

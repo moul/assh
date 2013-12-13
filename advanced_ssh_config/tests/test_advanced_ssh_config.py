@@ -179,7 +179,7 @@ port = 23
         advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
         config = advssh.config.full
         def call():
-            host = config['bbb'].clean_config
+            return config['bbb'].clean_config
         self.assertRaises(ConfigError, call)
 
     def test_inherits_deep(self):
@@ -216,8 +216,27 @@ user = titi
         self.assertEqual(config['aaa'].clean_config['user'], 'toto')
         self.assertEqual(config['bbb'].clean_config['user'], 'titi')
 
+    def test_inherits_loop(self):
+        contents = """
+[aaa]
+inherits = ccc
 
-    # FIXME: test_inherits_loop
+[bbb]
+inherits = aaa
+
+[ccc]
+inherits = bbb
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.config.full
+        def call(key):
+            return config[key].clean_config
+        self.assertRaises(ConfigError, call, 'aaa')
+        self.assertRaises(ConfigError, call, 'bbb')
+        self.assertRaises(ConfigError, call, 'ccc')
+
+
     # FIXME: test_prepare_sshconfig_with_hostname
     # FIXME: test_routing_override_config
     # FIXME: test_connect
