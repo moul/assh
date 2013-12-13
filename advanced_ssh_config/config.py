@@ -16,6 +16,7 @@ class ConfigHost(object):
         'remotecommand',
         'includes',
         'inherits',
+        'proxycommand',
         )
 
     key_translation = {

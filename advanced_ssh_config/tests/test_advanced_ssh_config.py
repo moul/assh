@@ -236,7 +236,39 @@ inherits = bbb
         self.assertRaises(ConfigError, call, 'bbb')
         self.assertRaises(ConfigError, call, 'ccc')
 
+    def test_inherits_loop_self(self):
+        contents = """
+[aaa]
+inherits = aaa
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.config.full
+        def call(key):
+            return config[key].clean_config
+        self.assertRaises(ConfigError, call, 'aaa')
 
+    def test_reserved_key(self):
+        contents = """
+[aaa]
+user = toto
+proxycommand = nc
+hostname = titi
+alias = tutu
+gateways = toutou
+reallocalcommand = tonton
+remotecommand = tantan
+includes = tuotuo
+inherits = bbb
+[bbb]
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.config.full
+        self.assertEquals(config['aaa'].clean_config, {'user': 'toto'})
+
+
+    # FIXME: test_handle_custom_proxycommand
     # FIXME: test_prepare_sshconfig_with_hostname
     # FIXME: test_routing_override_config
     # FIXME: test_connect
