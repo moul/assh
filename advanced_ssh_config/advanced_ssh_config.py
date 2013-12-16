@@ -4,6 +4,7 @@ import subprocess
 import os
 import re
 import logging
+from collections import OrderedDict
 
 from .config import Config
 from .utils import safe_makedirs, value_interpolate, construct_proxy_command
@@ -155,7 +156,8 @@ class AdvancedSshConfig(object):
         config = []
 
         hosts = self.prepare_sshconfig()
-        for entry in hosts.values():
+        od = OrderedDict(sorted(hosts.items()))
+        for entry in od.values():
             if entry.host == '*':
                 continue
             else:

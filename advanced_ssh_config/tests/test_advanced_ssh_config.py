@@ -158,10 +158,62 @@ Host aaa
   # hostname aaa
 
 Host bbb
-  user toto
   port 23
-  # inherits aaa
+  user toto
   # hostname bbb
+  # inherits aaa
+"""
+        self.assertEquals(string.strip(), dest.strip())
+
+    def test_build_ssh_config_sorted(self):
+        contents = """
+[ddd]
+inherits = aaa
+port = 23
+user = titi
+
+[bbb]
+user = titi
+inherits = aaa
+port = 23
+hostname = 1.1.1.1
+
+[ccc]
+hostname = 5.4.3.2
+inherits = aaa
+port = 23
+
+[aaa]
+hostname = 1.2.3.4
+user = toto
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        config = advssh.prepare_sshconfig()
+        arr = advssh.build_sshconfig()
+        string = '\n'.join(arr)
+        dest = """
+Host aaa
+  user toto
+  # hostname aaa
+
+Host bbb
+  port 23
+  user titi
+  # hostname bbb
+  # inherits aaa
+
+Host ccc
+  port 23
+  user toto
+  # hostname ccc
+  # inherits aaa
+
+Host ddd
+  port 23
+  user titi
+  # hostname ddd
+  # inherits aaa
 """
         self.assertEquals(string.strip(), dest.strip())
 

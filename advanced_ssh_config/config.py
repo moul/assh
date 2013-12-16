@@ -4,6 +4,7 @@ import os
 import logging
 import ConfigParser
 import re
+from collections import OrderedDict
 
 from .exceptions import ConfigError
 
@@ -70,10 +71,21 @@ class ConfigHost(object):
         return config
 
     @property
-    def clean_config(self):
+    def extra_dict(self, sort=True):
+        extra = {}
+        for entry in self.extra:
+            extra[entry[0]] = entry[1]
+        if sort:
+            return OrderedDict(sorted(extra.items()))
+        return extra
+
+    @property
+    def clean_config(self, sort=True):
         config = self.config_dict
         if self.inherited:
             config = dict(self.inherited.items() + config.items())
+        if sort:
+            return OrderedDict(sorted(config.items()))
         return config
 
     def resolve(self, rec=10):
@@ -118,11 +130,16 @@ class ConfigHost(object):
             host = '*'
         else:
             host = self.host
+
         sub_config.append('Host {}'.format(host))
-        for key, value in self.clean_config.items():
+
+        attrs = OrderedDict(sorted(self.clean_config.items()))
+        for key, value in attrs.iteritems():
             sub_config.append('  {} {}'.format(key, value))
-        for items in self.extra:
-            sub_config.append('  # {} {}'.format(items[0], items[1]))
+
+        for key, value in self.extra_dict.iteritems():
+            sub_config.append('  # {} {}'.format(key, value))
+
         sub_config.append('')
         return sub_config
 
