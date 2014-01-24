@@ -7,7 +7,7 @@ import logging
 from collections import OrderedDict
 
 from .config import Config
-from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands, \
+from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands,
                     shellquotemultiple)
 
 

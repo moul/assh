@@ -29,7 +29,7 @@ def construct_proxy_commands(config):
         raise ValueError('hostname and port must be configured')
     hostname, port = config['hostname'], config['port']
     if proxy_type in ('nc', 'ncat', 'netcat'):
-        cmd = [] # cmd with options
+        cmd = []  # cmd with options
         cmd.append(proxy_type)
         if verbose:
             cmd.append('-v')
@@ -42,7 +42,7 @@ def construct_proxy_commands(config):
         cmd.append(hostname)
         cmd.append(port)
         cmds.append(cmd)
-        cmd = [] # cmd without options
+        cmd = []  # cmd without options
         cmd.append(proxy_type)
         cmd.append(hostname)
         cmd.append(port)

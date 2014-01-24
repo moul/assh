@@ -317,7 +317,7 @@ inherits = bbb
         set_config(contents)
         advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
         config = advssh.config.full
-        self.assertEquals(config['aaa'].clean_config, {'user': 'toto'})
+        self.assertEquals(config['aaa'].clean_config, {'user': 'toto', 'proxycommand': 'nc'})
 
 
     # FIXME: test_handle_custom_proxycommand
