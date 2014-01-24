@@ -7,7 +7,8 @@ import logging
 from collections import OrderedDict
 
 from .config import Config
-from .utils import safe_makedirs, value_interpolate, construct_proxy_command
+from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands, \
+                    shellquotemultiple)
 
 
 class AdvancedSshConfig(object):
@@ -112,7 +113,7 @@ class AdvancedSshConfig(object):
         routing['hostname'] = args['h']
         #routing['args'] = args
         routing['port'] = self.port or int(args['p']) or 22
-        routing['proxy_command'] = construct_proxy_command(routing)
+        routing['proxy_commands'] = construct_proxy_commands(routing)
 
         self.debug()
         self.debug('Routing:')
@@ -129,8 +130,10 @@ class AdvancedSshConfig(object):
             cmd = []
             if len(routing['gateway_route']):
                 cmd += ['ssh', '/'.join(routing['gateway_route'])]
+                cmd.append(shellquotemultiple(routing['proxy_commands']))
 
-            cmd += routing['proxy_command']
+            else:
+                cmd += routing['proxy_commands'][0]
 
             self.debug('cmd         : {}'.format(cmd))
             self.debug('================')

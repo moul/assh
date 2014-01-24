@@ -8,8 +8,19 @@ import errno
 from .exceptions import ConfigError
 
 
-def construct_proxy_command(config):
-    cmd = []
+def shellquote(cmd):
+    return ' '.join(map(str, cmd))
+
+
+def shellquotemultiple(cmds):
+    if len(cmds) > 1:
+        return '({})'.format(' 2>/dev/null || '.join(map(shellquote, cmds)))
+    else:
+        return cmds[0]
+
+
+def construct_proxy_commands(config):
+    cmds = []
     proxy_type = config.get('proxy_type', 'nc')
     verbose = config.get('verbose', False)
     timeout = config.get('timeout', 180)
@@ -18,6 +29,7 @@ def construct_proxy_command(config):
         raise ValueError('hostname and port must be configured')
     hostname, port = config['hostname'], config['port']
     if proxy_type in ('nc', 'ncat', 'netcat'):
+        cmd = [] # cmd with options
         cmd.append(proxy_type)
         if verbose:
             cmd.append('-v')
@@ -29,11 +41,20 @@ def construct_proxy_command(config):
             cmd.append(connection_timeout)
         cmd.append(hostname)
         cmd.append(port)
+        cmds.append(cmd)
+        cmd = [] # cmd without options
+        cmd.append(proxy_type)
+        cmd.append(hostname)
+        cmd.append(port)
+        cmds.append(cmd)
     elif proxy_type == 'socat':
+        cmd = []
         cmd.append('socat')
         cmd.append('STDIN')
         cmd.append('TCP:{}:{}'.format(hostname, port))
+        cmds.append(cmd)
     elif proxy_type == 'socat_http_proxy':
+        cmd = []
         cmd.append('socat')
         cmd.append('STDIN')
         args = [
@@ -49,7 +70,9 @@ def construct_proxy_command(config):
                        'proxyauth={}'.format(*args))
         else:
             cmd.append('PROXY:{}:{}:{},proxyport={}'.format(*args))
+        cmds.append(cmd)
     elif proxy_type == 'socat_socks':
+        cmd = []
         cmd.append('socat')
         cmd.append('STDIN')
         args = [
@@ -59,9 +82,10 @@ def construct_proxy_command(config):
             config.get('socks_port', 1080),
             ]
         cmd.append('SOCKS:{}:{}:{},socksport={}'.format(*args))
+        cmds.append(cmd)
     else:
         raise ValueError('proxy_type `{}` is not handled'.format(proxy_type))
-    return cmd
+    return cmds
 
 
 def validate_host(host):

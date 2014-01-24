@@ -4,7 +4,8 @@ import unittest
 import os
 
 from advanced_ssh_config.utils import (safe_makedirs, value_interpolate,
-                                       construct_proxy_command)
+                                       construct_proxy_commands, shellquote,
+                                       shellquotemultiple)
 from advanced_ssh_config.exceptions import ConfigError
 
 from . import PREFIX
@@ -13,35 +14,35 @@ from . import PREFIX
 class TestContructProxyCommand(unittest.TestCase):
 
     def test_no_arg(self):
-        self.assertRaises(TypeError, construct_proxy_command)
+        self.assertRaises(TypeError, construct_proxy_commands)
 
     def test_empty_arg(self):
-        self.assertRaises(ValueError, construct_proxy_command, {})
+        self.assertRaises(ValueError, construct_proxy_commands, {})
 
     def test_minimal_valid(self):
-        command = construct_proxy_command({
+        command = construct_proxy_commands({
                 'hostname': 'aaa',
                 'port': 42,
                 })
-        self.assertEqual(command, ['nc', '-w', 180, '-G', 5, 'aaa', 42])
+        self.assertEqual(command, [['nc', '-w', 180, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]])
 
     def test_minimal_nc(self):
-        command = construct_proxy_command({
+        command = construct_proxy_commands({
                 'hostname': 'aaa',
                 'proxy_type': 'nc',
                 'port': 42,
                 })
-        self.assertEqual(command, ['nc', '-w', 180, '-G', 5, 'aaa', 42])
+        self.assertEqual(command, [['nc', '-w', 180, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]])
 
     def test_full_nc(self):
-        command = construct_proxy_command({
+        command = construct_proxy_commands({
                 'hostname': 'aaa',
                 'port': 42,
                 'verbose': True,
                 'proxy_type': 'nc',
                 'timeout': 45,
                 })
-        self.assertEqual(command, ['nc', '-v', '-w', 45, '-G', 5, 'aaa', 42])
+        self.assertEqual(command, [['nc', '-v', '-w', 45, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]])
 
     def test_invalid_proxy_type(self):
         args = {
@@ -49,35 +50,35 @@ class TestContructProxyCommand(unittest.TestCase):
             'port': 42,
             'proxy_type': 'fake',
             }
-        self.assertRaises(ValueError, construct_proxy_command, args)
+        self.assertRaises(ValueError, construct_proxy_commands, args)
 
     def test_minimal_socat(self):
-        command = construct_proxy_command({
+        command = construct_proxy_commands({
                 'hostname': 'aaa',
                 'proxy_type': 'socat',
                 'port': 42,
                 })
-        self.assertEqual(command, ['socat', 'STDIN', 'TCP:aaa:42'])
+        self.assertEqual(command, [['socat', 'STDIN', 'TCP:aaa:42']])
 
     def test_minimal_socat_http_proxy(self):
-        command = construct_proxy_command({
+        command = construct_proxy_commands({
                 'hostname': 'aaa',
                 'proxy_type': 'socat_http_proxy',
                 'http_proxy_host': 'bbb',
                 'http_proxy_port': 43,
                 'port': 42,
                 })
-        self.assertEqual(command, ['socat', 'STDIN', 'PROXY:bbb:aaa:42,proxyport=43'])
+        self.assertEqual(command, [['socat', 'STDIN', 'PROXY:bbb:aaa:42,proxyport=43']])
 
     def test_minimal_socat_socks(self):
-        command = construct_proxy_command({
+        command = construct_proxy_commands({
                 'hostname': 'aaa',
                 'proxy_type': 'socat_socks',
                 'socks_host': 'bbb',
                 'socks_port': 43,
                 'port': 42,
                 })
-        self.assertEqual(command, ['socat', 'STDIN', 'SOCKS:bbb:aaa:42,socksport=43'])
+        self.assertEqual(command, [['socat', 'STDIN', 'SOCKS:bbb:aaa:42,socksport=43']])
 
     # FIXME: test_custom_handler
 
@@ -135,3 +136,6 @@ class TestValueInterpolate(unittest.TestCase):
         os.environ['TEST_INTERPOLATE_2'] = '$TEST_INTERPOLATE_3'
         os.environ['TEST_INTERPOLATE_3'] = '$TEST_INTERPOLATE'
         self.assertRaises(ConfigError, value_interpolate, '$TEST_INTERPOLATE')
+
+    # FIXME: shellquote
+    # FIXME: shellquotemultiple
