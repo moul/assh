@@ -160,4 +160,12 @@ class TestShellQuote(unittest.TestCase):
         self.assertRaises(ValueError, shellquote, 'aaa')
 
 
-    # FIXME: shellquotemultiple
+class TestShellQuoteMultiple(unittest.TestCase):
+
+    def test_shellquote_multiple_simple(self):
+        self.assertEquals(shellquotemultiple([['aaa', 'bbb', 42], ['ccc', 'ddd', 43]]), '(aaa bbb 42 2>/dev/null || ccc ddd 43)')
+
+    def test_shellquote_not_list_of_list(self):
+        self.assertRaises(ValueError, shellquotemultiple, [42, 42])
+        self.assertRaises(ValueError, shellquotemultiple, 42)
+        self.assertRaises(ValueError, shellquotemultiple, "42")

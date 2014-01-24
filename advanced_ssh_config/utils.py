@@ -26,6 +26,11 @@ def shellquote(cmd):
 
 
 def shellquotemultiple(cmds):
+    if type(cmds) != list:
+        raise ValueError('`cmds` must be a list of list')
+    for cmd in cmds:
+        if type(cmd) != list:
+            raise ValueError('`cmd` in `cmds` must be lists')
     if len(cmds) > 1:
         return '({})'.format(' 2>/dev/null || '.join(map(shellquote, cmds)))
     else:
