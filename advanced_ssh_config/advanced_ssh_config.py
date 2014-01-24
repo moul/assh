@@ -131,7 +131,6 @@ class AdvancedSshConfig(object):
             if len(routing['gateway_route']):
                 cmd += ['ssh', '/'.join(routing['gateway_route'])]
                 cmd.append(shellquotemultiple(routing['proxy_commands']))
-
             else:
                 cmd += routing['proxy_commands'][0]
 
