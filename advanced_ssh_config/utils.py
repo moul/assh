@@ -8,8 +8,21 @@ import errno
 from .exceptions import ConfigError
 
 
+def shellquote_arg(before):
+    before = str(before)
+    after = before
+    after = after.replace('\\', '\\\\')
+    after = after.replace('\'', '\\\'')
+    if after != before:
+        return "'{}'".format(after)
+    else:
+        return before
+
+
 def shellquote(cmd):
-    return ' '.join(map(str, cmd))
+    if type(cmd) != list:
+        raise ValueError('`cmd` must be a list')
+    return ' '.join(map(shellquote_arg, cmd))
 
 
 def shellquotemultiple(cmds):

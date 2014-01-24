@@ -137,5 +137,27 @@ class TestValueInterpolate(unittest.TestCase):
         os.environ['TEST_INTERPOLATE_3'] = '$TEST_INTERPOLATE'
         self.assertRaises(ConfigError, value_interpolate, '$TEST_INTERPOLATE')
 
-    # FIXME: shellquote
+
+class TestShellQuote(unittest.TestCase):
+
+    def test_shellquote_simple(self):
+        self.assertEquals(shellquote(["aaa"]), 'aaa')
+        self.assertEquals(shellquote(["aaa", "bbb"]), 'aaa bbb')
+        self.assertEquals(shellquote(["aaa", "bbb", 42]), 'aaa bbb 42')
+
+    def test_shellquote_empty(self):
+        self.assertEquals(shellquote([]), '')
+
+    def test_shellquote_escape(self):
+        self.assertEquals(shellquote(["test'test"]), "'test\\'test'")
+        self.assertEquals(shellquote(["test\\test"]), "'test\\\\test'")
+        self.assertEquals(shellquote(["test\"test"]), "test\"test")
+
+    def test_shellquote_complex(self):
+        self.assertEquals(shellquote(["ssh", "manfred's imac", '-p', 4242]), "ssh 'manfred\\'s imac' -p 4242")
+
+    def test_shellquote_not_list(self):
+        self.assertRaises(ValueError, shellquote, 'aaa')
+
+
     # FIXME: shellquotemultiple
