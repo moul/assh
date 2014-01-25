@@ -11,6 +11,9 @@ RUN mkdir /advanced_ssh_config
 WORKDIR /advanced_ssh_config
 VOLUME /advanced_ssh_config
 
+RUN echo '#!/bin/bash \n pep8 advanced_ssh_config | grep -v tests \n python setup.py test' > /test.sh && \
+    chmod +x /test.sh
+#CMD /test.sh
 CMD /bin/bash --rcfile /venv/bin/activate
 
 ENV VIRTUAL_ENV /venv
