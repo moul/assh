@@ -136,6 +136,8 @@ def safe_makedirs(directory):
 def value_interpolate(value, already_interpolated=None):
     if not already_interpolated:
         already_interpolated = []
+    if type(value) == int:
+        return value
     matches = value and re.match(r'\$(\w+)', value) or None
     if matches:
         var = matches.group(1)
