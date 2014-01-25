@@ -10,27 +10,19 @@ The new `.ssh/config` file become `.ssh/config.advanced` with new features and a
 Each time the script is called, it recreate a whole new `.ssh/config`, so be careful, backup your old .ssh/config file !
 
 Features
-========
+--------
 
-- regex for hostnames (gw.school-*.*.domain.net)
+- regex for hostnames - gw.school-*.*.domain.net
 - aliases
-- gateways (chains your ssh connections)
-- includes (includes sub files)
-- real local command (executes a command on the local shell)
-- inherits
-
-Todo
-====
-
-- print config tree
-
-Contributors
-============
-
-- [Christo DeLange](https://github.com/dldinternet)
+- gateways - transparent ssh connections chaining
+- includes files
+- real local command - executes a command on the local shell when connecting
+- intelligent proxycommand with fallbacks
+- inherits configuration
+- variable expansion
 
 Installation
-============
+------------
 
 From Pypi
 
@@ -54,9 +46,32 @@ Or add this line manually in your ~/.ssh/config file
 
     ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
 
+Tests
+-----
+
+- install test dependencies and run tests
+
+    python setup.py test
+
+Docker
+------
+
+- build
+
+    docker build -t moul/advanced-ssh-config .
+
+- run
+
+    docker run -rm -i -t -v $(pwd)/:/advanced_ssh_config moul/advanced-ssh-config
+
+Contributors
+------------
+
+- [Christo DeLange](https://github.com/dldinternet)
+
 --
 
-© 2009-2013 Manfred Touron - [MIT License](https://github.com/moul/advanced-ssh-config/blob/master/License.txt).
+© 2009-2014 Manfred Touron - [MIT License](https://github.com/moul/advanced-ssh-config/blob/master/License.txt).
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moul/advanced-ssh-config/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
