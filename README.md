@@ -51,26 +51,27 @@ Or add this line manually in your ~/.ssh/config file
 Tests
 -----
 
-- install test dependencies and run tests
+Install test dependencies and run tests
 
     # python setup.py test
+    
+Pep8
+
+    # pep8 advanced_ssh_config | grep -v /tests/
 
 Docker
 ------
 
-- build
+Build
 
     # docker build -t moul/advanced-ssh-config .
 
-- run
+Run
 
     # docker run -rm -i -t moul/advanced-ssh-config
-
-or
+    or
     # docker run -rm -i -t -v $(pwd)/:/advanced_ssh_config moul/advanced-ssh-config
-
-or
-
+    or
     # docker run -rm -i -t -v moul/advanced-ssh-config python setup.py test
 
 Contributors
