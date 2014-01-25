@@ -66,9 +66,11 @@ class AdvancedSshConfig(object):
             'i': 'IdentityFile'
             }
         default_options = {
-            'p': str(self.port),
+            'p': None,
             'h': path[0]
             }
+        if self.port:
+            default_options['p'] = self.port
         updated = False
         for key in options:
             cfval = self.config.get(options[key],
@@ -114,7 +116,6 @@ class AdvancedSshConfig(object):
         #routing['args'] = args
         routing['port'] = self.port
         if not routing['port'] and args['p']:
-            print(args['p'])
             routing['port'] = int(args['p'])
         if not routing['port']:
             routing['port'] = 22
