@@ -112,7 +112,11 @@ class AdvancedSshConfig(object):
         routing['gateway_route'] = path[1:]
         routing['hostname'] = args['h']
         #routing['args'] = args
-        routing['port'] = self.port or int(args['p']) or 22
+        routing['port'] = self.port
+        if not routing['port'] and args['p']:
+            routing['port'] = int(args['p'])
+        if not routing['port']:
+            routing['port'] = 22
         routing['proxy_commands'] = construct_proxy_commands(routing)
 
         self.debug()
