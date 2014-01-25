@@ -26,43 +26,52 @@ Installation
 
 From Pypi
 
-    pip install advanced-ssh-config
+    # pip install advanced-ssh-config
 
 Or by cloning
 
-    git clone https://github.com/moul/advanced-ssh-config
-    cd advanced-ssh-config
-    python setup.py install
+    # git clone https://github.com/moul/advanced-ssh-config
+    # cd advanced-ssh-config
+    # python setup.py install
 
 Backup your old ~/.ssh/config file
 
-    cp ~/.ssh/config ~/.ssh/config.backup
+    # cp ~/.ssh/config ~/.ssh/config.backup
 
 Generate the new config file
 
-    advanced-ssh-config -u
+    # advanced-ssh-config -u
 
 Or add this line manually in your ~/.ssh/config file
 
+    ...
     ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
+    ...
 
 Tests
 -----
 
 - install test dependencies and run tests
 
-    python setup.py test
+    # python setup.py test
 
 Docker
 ------
 
 - build
 
-    docker build -t moul/advanced-ssh-config .
+    # docker build -t moul/advanced-ssh-config .
 
 - run
 
-    docker run -rm -i -t -v $(pwd)/:/advanced_ssh_config moul/advanced-ssh-config
+    # docker run -rm -i -t moul/advanced-ssh-config
+
+or
+    # docker run -rm -i -t -v $(pwd)/:/advanced_ssh_config moul/advanced-ssh-config
+
+or
+
+    # docker run -rm -i -t -v moul/advanced-ssh-config python setup.py test
 
 Contributors
 ------------
