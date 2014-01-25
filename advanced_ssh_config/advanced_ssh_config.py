@@ -114,6 +114,7 @@ class AdvancedSshConfig(object):
         #routing['args'] = args
         routing['port'] = self.port
         if not routing['port'] and args['p']:
+            print(args['p'])
             routing['port'] = int(args['p'])
         if not routing['port']:
             routing['port'] = 22
