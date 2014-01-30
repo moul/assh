@@ -44,6 +44,9 @@ def advanced_ssh_config_parse_options():
     if len(args):
         raise ValueError('This program only takes options, not args')
 
+    if options.update_sshconfig and not options.hostname:
+        return options
+
     validate_host(options.hostname)
     if not options.port is None:
         validate_port(options.port)
