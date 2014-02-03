@@ -2,6 +2,7 @@
 
 import subprocess
 import os
+import sys
 import re
 import logging
 from collections import OrderedDict
@@ -105,6 +106,7 @@ class AdvancedSshConfig(object):
         routing['verbose'] = self.verbose
         routing['proxy_type'] = self.proxy_type
         routing['gateways'] = self.config.get('Gateways', path[-1], 'direct')
+        routing['comment'] = self.config.get('comment', path[-1], None)
         routing['reallocalcommand'] = self.config.get('RealLocalCommand',
                                                       path[-1], '')
         for key in ('gateways', 'reallocalcommand'):
@@ -145,6 +147,9 @@ class AdvancedSshConfig(object):
             self.debug()
 
             if not self.dry_run:
+                comment = routing.get('comment', None)
+                if comment:
+                    sys.stderr.write('{}\n'.format(comment))
                 ssh_process = subprocess.Popen(map(str, cmd))
                 rlc_process = None
                 if len(routing['reallocalcommand'][0]):

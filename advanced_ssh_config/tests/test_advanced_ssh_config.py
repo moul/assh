@@ -319,6 +319,29 @@ inherits = bbb
         config = advssh.config.full
         self.assertEquals(config['aaa'].clean_config, {'user': 'toto', 'proxycommand': 'nc'})
 
+    def test_comment_simple(self):
+        contents = """
+[test]
+comment = Hello
+"""
+        config = set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        routing = advssh.get_routing()
+        self.assertEquals(routing['comment'], 'Hello')
+
+    def test_comment_multiline(self):
+        contents = """
+[test]
+comment = Hello
+          World
+                         !
+
+port = 22
+"""
+        config = set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test', configfiles=[DEFAULT_CONFIG])
+        routing = advssh.get_routing()
+        self.assertEquals(routing['comment'], 'Hello\nWorld\n!')
 
     # FIXME: test_handle_custom_proxycommand
     # FIXME: test_prepare_sshconfig_with_hostname

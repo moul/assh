@@ -17,6 +17,7 @@ class ConfigHost(object):
         'remotecommand',
         'includes',
         'inherits',
+        'comment',
         #'proxycommand',
         )
 
