@@ -149,7 +149,7 @@ class AdvancedSshConfig(object):
             if not self.dry_run:
                 comment = routing.get('comment', None)
                 if comment:
-                    sys.stderr.write('{}\n'.format(comment))
+                    sys.stderr.write('{}\n'.format('\n'.join(comment)))
                 ssh_process = subprocess.Popen(map(str, cmd))
                 rlc_process = None
                 if len(routing['reallocalcommand'][0]):
