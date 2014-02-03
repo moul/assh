@@ -47,7 +47,8 @@ class ConfigHost(object):
         for key, value in entry:
             if key in ConfigHost.key_translation:
                 key = ConfigHost.key_translation.get(key)
-            if key in ('identityfile', 'localforward', 'remoteforward'):
+            if key in ('identityfile', 'localforward', 'remoteforward',
+                       'comment'):
                 values = value.split('\n')
                 values = map(str.strip, values)
             else:
@@ -68,14 +69,20 @@ class ConfigHost(object):
             self.resolve()
         config = {}
         for entry in self.config:
-            config[entry[0]] = entry[1]
+            if entry[0] in config:
+                config[entry[0]].append(entry[1])
+            else:
+                config[entry[0]] = [entry[1]]
         return config
 
     @property
     def extra_dict(self, sort=True):
         extra = {}
         for entry in self.extra:
-            extra[entry[0]] = entry[1]
+            if entry[0] in extra:
+                extra[entry[0]].append(entry[1])
+            else:
+                extra[entry[0]] = [entry[1]]
         if sort:
             return OrderedDict(sorted(extra.items()))
         return extra
@@ -135,11 +142,13 @@ class ConfigHost(object):
         sub_config.append('Host {}'.format(host))
 
         attrs = OrderedDict(sorted(self.clean_config.items()))
-        for key, value in attrs.iteritems():
-            sub_config.append('  {} {}'.format(key, value))
+        for key, values in attrs.iteritems():
+            for value in values:
+                sub_config.append('  {} {}'.format(key, value))
 
-        for key, value in self.extra_dict.iteritems():
-            sub_config.append('  # {} {}'.format(key, value))
+        for key, values in self.extra_dict.iteritems():
+            for value in values:
+                sub_config.append('  # {} {}'.format(key, value))
 
         sub_config.append('')
         return sub_config
@@ -197,7 +206,7 @@ class Config(object):
         if not self.parser.has_option(section, key):
             return False
         var = self.parser.get(section, key, raw, vardct)
-        if key in ('identityfile', 'localforward', 'remoteforward'):
+        if key in ('identityfile', 'localforward', 'remoteforward', 'comment'):
             var = var.split('\n')
             var = map(str.strip, var)
         return var
