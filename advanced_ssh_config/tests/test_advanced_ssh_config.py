@@ -163,16 +163,15 @@ port = 23
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 10)
+        self.assertEquals(len(arr), 9)
         dest = """
 Host aaa
   user toto
-  # hostname aaa
+  # hostname 1.2.3.4
 
 Host bbb
   port 23
   user toto
-  # hostname bbb
   # inherits aaa
 """
         self.assertEquals(string.strip(), dest.strip())
@@ -208,24 +207,23 @@ user = toto
         dest = """
 Host aaa
   user toto
-  # hostname aaa
+  # hostname 1.2.3.4
 
 Host bbb
   port 23
   user titi
-  # hostname bbb
+  # hostname 1.1.1.1
   # inherits aaa
 
 Host ccc
   port 23
   user toto
-  # hostname ccc
+  # hostname 5.4.3.2
   # inherits aaa
 
 Host ddd
   port 23
   user titi
-  # hostname ddd
   # inherits aaa
 """
         self.assertEquals(string.strip(), dest.strip())
@@ -377,14 +375,13 @@ port = 22
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 7)
+        self.assertEquals(len(arr), 6)
         dest = """
 Host localhost
   localforward 1 2.3.4.5 6
   localforward 7 8.9.10.11 12
   port 22
   user toto
-  # hostname localhost
 
 """
         self.assertEquals(string.strip(), dest.strip())
@@ -404,14 +401,13 @@ port = 22
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 7)
+        self.assertEquals(len(arr), 6)
         dest = """
 Host localhost
   localforward 1 2.3.4.5 6
   localforward 7 8.9.10.11 12
   port 22
   user toto
-  # hostname localhost
 
 """
         self.assertEquals(string.strip(), dest.strip())
@@ -450,7 +446,6 @@ Host localhost
   # comment .    | o | | o |
   # comment .    |___|_|___|
   # comment .
-  # hostname localhost
 
 """
         self.assertEquals(string.strip(), dest.strip())

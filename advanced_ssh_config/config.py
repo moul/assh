@@ -228,7 +228,7 @@ class Config(object):
                 host = ConfigHost.prepare_hostname(section)
                 config_file_entry = self.parser.items(section,
                                                       False,
-                                                      {'Hostname': host})
+                                                      {})
                 conf = ConfigHost.from_config_file(self, host,
                                                    config_file_entry)
                 self.full_cache[host] = conf

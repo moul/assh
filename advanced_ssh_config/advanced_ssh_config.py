@@ -135,6 +135,10 @@ class AdvancedSshConfig(object):
         for gateway in routing['gateways']:
             if gateway != 'direct':
                 routing['gateway_route'] += [gateway]
+                logging.info('Using gateway: '
+                             '{}'.format(routing['gateway_route']))
+            else:
+                logging.info('Direct connection')
             cmd = []
             if len(routing['gateway_route']):
                 cmd += ['ssh', '/'.join(routing['gateway_route'])]
@@ -145,6 +149,8 @@ class AdvancedSshConfig(object):
             self.debug('cmd         : {}'.format(cmd))
             self.debug('================')
             self.debug()
+
+            logging.info('Connection command {}'.format(cmd))
 
             if not self.dry_run:
                 comment = routing.get('comment', None)
