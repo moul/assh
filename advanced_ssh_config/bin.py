@@ -6,7 +6,9 @@ import logging
 import os
 
 from . import __version__
-from .utils import LOGGING_LEVELS, validate_host, validate_port
+from .utils import (
+    validate_host, validate_port, parent_ssh_process_info, setup_logging
+    )
 from .exceptions import ConfigError
 from .advanced_ssh_config import AdvancedSshConfig
 from .ssh_config import parse_ssh_config
@@ -62,17 +64,8 @@ def advanced_ssh_config():
         logging.error(err.message)
         sys.exit(1)
 
-    # Setup logging
-    logging_level = LOGGING_LEVELS.get(options.log_level, logging.ERROR)
-    if options.verbose and logging_level == logging.ERROR:
-        logging_level = logging.DEBUG
-    environ_log_level = os.environ.get('ASSH_LOG_LEVEL', None)
-    if environ_log_level:
-        logging_level = LOGGING_LEVELS.get(environ_log_level, logging.ERROR)
-    logging.basicConfig(level=logging_level,
-                        filename=None,
-                        format='%(asctime)s %(levelname)s: %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    parent = parent_ssh_process_info()
+    setup_logging(options, parent)
 
     try:
         ssh = AdvancedSshConfig(hostname=options.hostname,

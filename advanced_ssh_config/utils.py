@@ -152,13 +152,58 @@ def value_interpolate(value, already_interpolated=None):
     return value
 
 
+def parent_ssh_process_info():
+    try:
+        import psutil
+        return psutil.Process(os.getppid())
+    except:
+        return None
+
+
+def setup_logging(options, parent=None):
+
+    def get_logging_level():
+        if options.verbose:
+            return logging.DEBUG
+
+        if parent:
+            parent_level = 0
+            for arg in parent.cmdline:
+                if arg == '-v':
+                    parent_level += 1
+                elif arg == '-vv':
+                    parent_level += 2
+                elif arg == '-vvv':
+                    parent_level += 3
+            if parent_level:
+                parent_level = min(parent_level + 2, 4)
+                return LOGGING_LEVELS.get(parent_level, logging.INFO)
+
+        environ_log_level = os.environ.get('ASSH_LOG_LEVEL', None)
+        if environ_log_level:
+            return LOGGING_LEVELS.get(environ_log_level, logging.ERROR)
+
+        return LOGGING_LEVELS.get(options.log_level, logging.ERROR)
+
+    logging_level = get_logging_level()
+    logging.basicConfig(level=logging_level,
+                        filename=None,
+                        format='%(asctime)s %(levelname)s: %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
+
 LOGGING_LEVELS = {
     'crit':     logging.CRITICAL,
     'critical': logging.CRITICAL,
+    0:          logging.CRITICAL,
     'err':      logging.ERROR,
     'error':    logging.ERROR,
+    1:          logging.ERROR,
     'warn':     logging.WARNING,
     'warning':  logging.WARNING,
+    2:          logging.WARNING,
     'info':     logging.INFO,
-    'debug':    logging.DEBUG
+    3:          logging.INFO,
+    'debug':    logging.DEBUG,
+    4:          logging.DEBUG,
     }
