@@ -66,6 +66,9 @@ def advanced_ssh_config():
     logging_level = LOGGING_LEVELS.get(options.log_level, logging.ERROR)
     if options.verbose and logging_level == logging.ERROR:
         logging_level = logging.DEBUG
+    environ_log_level = os.environ.get('ASSH_LOG_LEVEL', None)
+    if environ_log_level:
+        logging_level = LOGGING_LEVELS.get(environ_log_level, logging.ERROR)
     logging.basicConfig(level=logging_level,
                         filename=None,
                         format='%(asctime)s %(levelname)s: %(message)s',
