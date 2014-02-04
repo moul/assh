@@ -25,6 +25,9 @@ setup(
     packages=find_packages(),
     package_dir={'advanced_ssh_config': 'advanced_ssh_config'},
     tests_require=['mock', 'nose', 'coverage', 'pep8'],
+    extras_require={
+        'process_inspection': ['psutil']
+        },
     test_suite=MODULE_NAME + '.tests',
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
