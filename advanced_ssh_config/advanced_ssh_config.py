@@ -8,6 +8,7 @@ import logging
 from collections import OrderedDict
 
 from .config import Config
+from .network import Socket
 from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands,
                     shellquotemultiple)
 
@@ -163,7 +164,9 @@ class AdvancedSshConfig(object):
                     if proxy_process.wait() != 0:
                         self.log.critical('There were some errors')
                 else:
-                    create_socket(routing['hostname'], routing['port'])
+                    socket = Socket(routing['hostname'], routing['port'])
+                    logging.info('Socket created')
+                    socket.run()
 
                 if rlc_process is not None:
                     rlc_process.kill()
