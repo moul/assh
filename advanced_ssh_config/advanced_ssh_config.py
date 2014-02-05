@@ -143,12 +143,9 @@ class AdvancedSshConfig(object):
             if len(routing['gateway_route']):
                 cmd += ['ssh', '/'.join(routing['gateway_route'])]
                 cmd.append(shellquotemultiple(routing['proxy_commands']))
-            else:
-                cmd += routing['proxy_commands'][0]
-
-            self.debug('cmd         : {}'.format(cmd))
-            self.debug('================')
-            self.debug()
+                self.debug('cmd         : {}'.format(cmd))
+                self.debug('================')
+                self.debug()
 
             logging.info('Connection command {}'.format(cmd))
 
@@ -156,12 +153,18 @@ class AdvancedSshConfig(object):
                 comment = routing.get('comment', None)
                 if comment:
                     sys.stderr.write('{}\n'.format('\n'.join(comment)))
-                ssh_process = subprocess.Popen(map(str, cmd))
+
                 rlc_process = None
                 if len(routing['reallocalcommand'][0]):
                     rlc_process = subprocess.Popen(routing['reallocalcommand'])
-                if ssh_process.wait() != 0:
-                    self.log.critical('There were some errors')
+
+                if len(routing['gateway_route']):
+                    proxy_process = subprocess.Popen(map(str, cmd))
+                    if proxy_process.wait() != 0:
+                        self.log.critical('There were some errors')
+                else:
+                    create_socket(routing['hostname'], routing['port'])
+
                 if rlc_process is not None:
                     rlc_process.kill()
 
