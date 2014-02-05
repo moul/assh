@@ -8,7 +8,6 @@ import logging
 from collections import OrderedDict
 
 from .config import Config
-from .network import Socket
 from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands,
                     shellquotemultiple)
 
@@ -17,11 +16,12 @@ class AdvancedSshConfig(object):
 
     def __init__(self, hostname=None, port=None, configfiles=None,
                  verbose=False, dry_run=False, proxy_type='nc',
-                 timeout=180):
+                 timeout=180, use_python_socket=True):
 
         self.verbose, self.dry_run = verbose, dry_run
         self.hostname, self.port = hostname, port
         self.proxy_type, self.timeout = proxy_type, timeout
+        self.user_python_socket = use_python_socket
 
         self.log = logging.getLogger('')
 
@@ -32,9 +32,6 @@ class AdvancedSshConfig(object):
                 '~/.ssh/config.advanced',
                 ]
         self.config = Config(configfiles=configfiles)
-
-    def debug(self, string=None):
-        self.log.debug(string and string or '')
 
     @property
     def controlpath_dir(self):
@@ -55,7 +52,7 @@ class AdvancedSshConfig(object):
             if re.match(sect, self.hostname):
                 section = sect
 
-        self.debug('section \'{}\' '.format(section))
+        logging.debug('section "{}" '.format(section))
 
         # Parse special routing
         path = self.hostname.split('/')
@@ -84,7 +81,9 @@ class AdvancedSshConfig(object):
                 self.config.parser.set(section, options[key], value)
                 args[key] = value
 
-            self.debug('get (-%-1s) %-12s : %s' % (key, options[key], value))
+            logging.debug('get (-%-1s) %-12s : %s' % (key,
+                                                      options[key],
+                                                      value))
             if value:
                 args[key] = value
 
@@ -93,17 +92,15 @@ class AdvancedSshConfig(object):
             self.write_sshconfig()
             self.log.debug('Config updated. Need to restart SSH!?')
 
-        self.debug('args: {}'.format(args))
-        self.debug()
+        logging.debug('args: {}'.format(args))
 
-        self.debug('hostname    : {}'.format(self.hostname))
-        self.debug('port        : {}'.format(self.port))
-        self.debug('path        : {}'.format(path))
-        self.debug('path[0]     : {}'.format(path[0]))
-        self.debug('path[1:]    : {}'.format(path[1:]))
-        self.debug('args        : {}'.format(args))
+        logging.debug('hostname    : {}'.format(self.hostname))
+        logging.debug('port        : {}'.format(self.port))
+        logging.debug('path        : {}'.format(path))
+        logging.debug('path[0]     : {}'.format(path[0]))
+        logging.debug('path[1:]    : {}'.format(path[1:]))
+        logging.debug('args        : {}'.format(args))
 
-        self.debug()
         routing['verbose'] = self.verbose
         routing['proxy_type'] = self.proxy_type
         routing['gateways'] = self.config.get('Gateways', path[-1], 'direct')
@@ -112,8 +109,9 @@ class AdvancedSshConfig(object):
                                                       path[-1], '')
         for key in ('gateways', 'reallocalcommand'):
             routing[key] = routing[key].strip().split(' ')
-        self.debug('reallocalcommand : {}'.format(routing['reallocalcommand']))
-        self.debug('gateways         : {}'.format(', '.join(['gateways'])))
+        logging.debug('reallocalcommand '
+                      ': {}'.format(routing['reallocalcommand']))
+        logging.debug('gateways         : {}'.format(', '.join(['gateways'])))
         routing['gateway_route'] = path[1:]
         routing['hostname'] = args['h']
         #routing['args'] = args
@@ -124,11 +122,9 @@ class AdvancedSshConfig(object):
             routing['port'] = 22
         routing['proxy_commands'] = construct_proxy_commands(routing)
 
-        self.debug()
-        self.debug('Routing:')
+        logging.debug('Routing:')
         for key, value in routing.iteritems():
-            self.debug('  {0}: {1}'.format(key, value))
-        self.debug()
+            logging.debug('  {0}: {1}'.format(key, value))
 
         return routing
 
@@ -144,11 +140,11 @@ class AdvancedSshConfig(object):
             if len(routing['gateway_route']):
                 cmd += ['ssh', '/'.join(routing['gateway_route'])]
                 cmd.append(shellquotemultiple(routing['proxy_commands']))
-                self.debug('cmd         : {}'.format(cmd))
-                self.debug('================')
-                self.debug()
+                logging.info('cmd: {}'.format(cmd))
+            else:
+                cmd = routing['proxy_commands'][0]
 
-            logging.info('Connection command {}'.format(cmd))
+            logging.info('Connection command {}'.format(map(str, cmd)))
 
             if not self.dry_run:
                 comment = routing.get('comment', None)
@@ -159,14 +155,17 @@ class AdvancedSshConfig(object):
                 if len(routing['reallocalcommand'][0]):
                     rlc_process = subprocess.Popen(routing['reallocalcommand'])
 
-                if len(routing['gateway_route']):
+                if self.user_python_socket \
+                        and not len(routing['gateway_route']):
+                    logging.info('Using Python socket')
+                    from .network import Socket
+                    socket = Socket(routing['hostname'], routing['port'])
+                    socket.run()
+                else:
+                    logging.info('Using ProxyCommand')
                     proxy_process = subprocess.Popen(map(str, cmd))
                     if proxy_process.wait() != 0:
                         self.log.critical('There were some errors')
-                else:
-                    socket = Socket(routing['hostname'], routing['port'])
-                    logging.info('Socket created')
-                    socket.run()
 
                 if rlc_process is not None:
                     rlc_process.kill()

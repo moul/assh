@@ -7,7 +7,7 @@ import logging
 
 
 class Socket(object):
-    def __init__(self, hostname, port, bufsize=1024, stdin=None, stdout=None):
+    def __init__(self, hostname, port, bufsize=4096, stdin=None, stdout=None):
         self.hostname = hostname
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,7 +52,7 @@ class Socket(object):
                             self.stdout.flush()
                             buffer = self.socket.recv(self.bufsize)
                         if buffer == '':
+                            logging.warn('Server disconnected')
                             return
                     except socket.error:
-                        logging.warn('socket.error')
                         pass
