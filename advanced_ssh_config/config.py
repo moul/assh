@@ -47,12 +47,8 @@ class ConfigHost(object):
         for key, value in entry:
             if key in ConfigHost.key_translation:
                 key = ConfigHost.key_translation.get(key)
-            if key in ('identityfile', 'localforward', 'remoteforward',
-                       'comment'):
-                values = value.split('\n')
-                values = map(str.strip, values)
-            else:
-                values = [value]
+            values = value.split('\n')
+            values = map(str.strip, values)
             for line in values:
                 if key in ConfigHost.special_keys:
                     extra_config.append((key, line))
