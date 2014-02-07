@@ -18,6 +18,7 @@ class ConfigHost(object):
         'includes',
         'inherits',
         'comment',
+        'password',
         #'proxycommand',
         )
 

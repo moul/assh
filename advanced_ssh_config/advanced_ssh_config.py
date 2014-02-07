@@ -94,24 +94,16 @@ class AdvancedSshConfig(object):
 
         logging.debug('args: {}'.format(args))
 
-        logging.debug('hostname    : {}'.format(self.hostname))
-        logging.debug('port        : {}'.format(self.port))
-        logging.debug('path        : {}'.format(path))
-        logging.debug('path[0]     : {}'.format(path[0]))
-        logging.debug('path[1:]    : {}'.format(path[1:]))
-        logging.debug('args        : {}'.format(args))
-
         routing['verbose'] = self.verbose
         routing['proxy_type'] = self.proxy_type
-        routing['gateways'] = self.config.get('Gateways', path[-1], 'direct')
-        routing['comment'] = self.config.get('comment', path[-1], None)
-        routing['reallocalcommand'] = self.config.get('RealLocalCommand',
-                                                      path[-1], '')
-        for key in ('gateways', 'reallocalcommand'):
-            routing[key] = routing[key].strip().split(' ')
-        logging.debug('reallocalcommand '
-                      ': {}'.format(routing['reallocalcommand']))
-        logging.debug('gateways         : {}'.format(', '.join(['gateways'])))
+        for special_key in ('comment', 'password', 'gateways',
+                            'reallocalcommand'):
+            routing[special_key] = self.config.get(special_key, path[-1], None)
+        if not routing['gateways']:
+            routing['gateways'] = ['direct']
+        else:
+            routing['gateways'] = routing['gateways'].split(' ')
+
         routing['gateway_route'] = path[1:]
         routing['hostname'] = args['h']
         #routing['args'] = args
@@ -147,28 +139,41 @@ class AdvancedSshConfig(object):
             logging.info('Connection command {}'.format(map(str, cmd)))
 
             if not self.dry_run:
-                comment = routing.get('comment', None)
-                if comment:
-                    sys.stderr.write('{}\n'.format('\n'.join(comment)))
+                self.connect_once(routing, cmd)
 
-                rlc_process = None
-                if len(routing['reallocalcommand'][0]):
-                    rlc_process = subprocess.Popen(routing['reallocalcommand'])
+    def connect_once(self, routing, cmd):
+        comment = routing.get('comment', None)
+        if comment:
+            sys.stderr.write('{}\n'.format('\n'.join(comment)))
 
-                if self.user_python_socket \
-                        and not len(routing['gateway_route']):
-                    logging.info('Using Python socket')
-                    from .network import Socket
-                    socket = Socket(routing['hostname'], routing['port'])
-                    socket.run()
-                else:
-                    logging.info('Using ProxyCommand')
-                    proxy_process = subprocess.Popen(map(str, cmd))
-                    if proxy_process.wait() != 0:
-                        self.log.critical('There were some errors')
+        password = routing.get('password', None)
+        if password:
+            sys.stderr.write('password: {}\n'.format(password))
 
-                if rlc_process is not None:
-                    rlc_process.kill()
+        rlc_process = None
+        if routing['reallocalcommand']:
+            logging.info('Executing localcommand: '
+                         '{}'.format(routing['reallocalcommand']))
+            rlc_cmd = ['/bin/sh', '-c', routing['reallocalcommand']]
+            rlc_process = subprocess.Popen(rlc_cmd,
+                                           stdout=sys.stderr,
+                                           stderr=sys.stderr)
+
+        if self.user_python_socket \
+                and not len(routing['gateway_route']):
+            logging.info('Using Python socket')
+            from .network import Socket
+            socket = Socket(routing['hostname'], routing['port'])
+            socket.run()
+        else:
+            logging.info('Using ProxyCommand')
+            proxy_process = subprocess.Popen(map(str, cmd))
+            if proxy_process.wait() != 0:
+                self.log.critical('There were some errors')
+
+        if rlc_process is not None:
+            print(rlc_process)
+            rlc_process.kill()
 
     def write_sshconfig(self, filename='~/.ssh/config'):
         config = self.build_sshconfig()

@@ -24,7 +24,7 @@ class TestAdvancedSshConfig(unittest.TestCase):
         routing = advssh.get_routing()
         self.assertEqual(routing['port'], 23)
         self.assertEqual(routing['hostname'], 'test')
-        self.assertEqual(routing['reallocalcommand'], [''])
+        self.assertEqual(routing['reallocalcommand'], None)
         self.assertEqual(routing['gateways'], ['direct'])
         self.assertEqual(routing['verbose'], True)
         self.assertEqual(routing['proxy_type'], 'nc')
@@ -328,6 +328,8 @@ reallocalcommand = tonton
 remotecommand = tantan
 includes = tuotuo
 inherits = bbb
+password = 4242
+comment = 4343
 [bbb]
 """
         set_config(contents)
