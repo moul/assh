@@ -6,6 +6,7 @@ import sys
 import re
 import logging
 from collections import OrderedDict
+from time import sleep
 
 from .config import Config
 from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands,
@@ -16,7 +17,7 @@ class AdvancedSshConfig(object):
 
     def __init__(self, hostname=None, port=None, configfiles=None,
                  verbose=False, dry_run=False, proxy_type='nc',
-                 timeout=180, use_python_socket=True):
+                 timeout=180, use_python_socket=False):
 
         self.verbose, self.dry_run = verbose, dry_run
         self.hostname, self.port = hostname, port
@@ -158,6 +159,7 @@ class AdvancedSshConfig(object):
             rlc_process = subprocess.Popen(rlc_cmd,
                                            stdout=sys.stderr,
                                            stderr=sys.stderr)
+            sleep(.1)
 
         if self.user_python_socket \
                 and not len(routing['gateway_route']):

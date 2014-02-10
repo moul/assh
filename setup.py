@@ -26,7 +26,8 @@ setup(
     package_dir={'advanced_ssh_config': 'advanced_ssh_config'},
     tests_require=['mock', 'nose', 'coverage', 'pep8'],
     extras_require={
-        'process_inspection': ['psutil']
+        'process_inspection': ['psutil'],
+        'password': ['pexpect']
         },
     test_suite=MODULE_NAME + '.tests',
     classifiers=[
