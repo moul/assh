@@ -18,7 +18,8 @@ class AdvancedSshConfig(object):
 
     def __init__(self, hostname=None, port=None, configfiles=None,
                  verbose=False, dry_run=False, proxy_type='nc',
-                 timeout=180, use_python_socket=False):
+                 timeout=180, use_python_socket=False,
+                 ssh_config_file='~/.ssh/config'):
 
         self.verbose, self.dry_run = verbose, dry_run
         self.hostname, self.port = hostname, port
@@ -178,7 +179,9 @@ class AdvancedSshConfig(object):
             print(rlc_process)
             rlc_process.kill()
 
-    def write_sshconfig(self, filename='~/.ssh/config'):
+    def write_sshconfig(self, filename=None):
+        if not filename:
+            filename = self.ssh_config_file
         config = self.build_sshconfig()
         fhandle = open(os.path.expanduser(filename), 'w+')
         fhandle.write('\n'.join(config))
