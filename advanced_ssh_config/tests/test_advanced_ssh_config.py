@@ -8,6 +8,10 @@ from . import set_config, prepare_config, DEFAULT_CONFIG
 from .. import __version__
 
 
+class TestRoot(unittest.TestCase):
+    def test_version(self):
+        self.assertIsInstance(__version__, str)
+
 class TestAdvancedSshConfig(unittest.TestCase):
 
     def setUp(self):
