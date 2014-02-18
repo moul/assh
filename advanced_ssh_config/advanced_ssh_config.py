@@ -19,7 +19,7 @@ class AdvancedSshConfig(object):
     def __init__(self, hostname=None, port=None, configfiles=None,
                  verbose=False, dry_run=False, proxy_type='nc',
                  timeout=180, use_python_socket=False,
-                 ssh_config_file='~/.ssh/config'):
+                 ssh_config_file='~/.ssh/config', force=False):
 
         self.verbose, self.dry_run = verbose, dry_run
         self.hostname, self.port = hostname, port
@@ -35,6 +35,14 @@ class AdvancedSshConfig(object):
                 '~/.ssh/config.advanced',
                 ]
         self.config = Config(configfiles=configfiles)
+        self.ssh_config_file = ssh_config_file
+        ssh_config_file_version = self.ssh_config_file_version()
+        if ssh_config_file_version != __version__:
+            logging.error('ssh_config file is at version {}, '
+                          'but Advanced SSH config is at '
+                          'version {}'.format(ssh_config_file_version,
+                                              __version__))
+        self.force = force
 
     @property
     def controlpath_dir(self):
@@ -45,6 +53,16 @@ class AdvancedSshConfig(object):
         directory = os.path.join(directory, self.hostname)
         directory = os.path.dirname(directory)
         return directory
+
+    def ssh_config_file_version(self, filename=None):
+        if not filename:
+            filename = self.ssh_config_file
+        with open(os.path.expanduser(filename)) as f:
+            first_line = f.readline()
+            if first_line.startswith('# assh version: '):
+                return first_line.split(' ')[-1].strip()
+            return None
+        return None
 
     def get_routing(self):
         routing = {}
@@ -180,6 +198,10 @@ class AdvancedSshConfig(object):
             rlc_process.kill()
 
     def write_sshconfig(self, filename=None):
+        if not self.force and self.ssh_config_file_version() != __version__:
+            logging.error('Cannot save ssh_config_file, versions differ, '
+                          'use -f to force')
+            return False
         if not filename:
             filename = self.ssh_config_file
         config = self.build_sshconfig()

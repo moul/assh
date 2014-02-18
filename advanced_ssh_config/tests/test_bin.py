@@ -56,7 +56,8 @@ class TestParseOptions(unittest.TestCase):
             'hostname': '1.2.3.4',
             'update_sshconfig': None,
             'port': None,
-            'file': '~/.ssh/config'
+            'file': '~/.ssh/config',
+            'force': False
             }
         self.assertEqual(options, should_be)
 

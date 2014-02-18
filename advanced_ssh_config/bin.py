@@ -26,10 +26,16 @@ def advanced_ssh_config_parse_options():
                       dest='port',
                       default=None)
 
-    parser.add_option('-f', '--file',
+    parser.add_option('--file',
                       dest='file',
                       default='~/.ssh/config',
                       help='ssh_config file')
+
+    parser.add_option('-f', '--force',
+                      dest='force',
+                      default=False,
+                      action='store_true',
+                      help='force update if versions differ')
 
     parser.add_option('-v', '--verbose',
                       dest='verbose',
@@ -77,7 +83,8 @@ def advanced_ssh_config():
                                 port=options.port,
                                 verbose=options.verbose,
                                 dry_run=options.dry_run,
-                                ssh_config_file=options.file)
+                                ssh_config_file=options.file,
+                                force=options.force)
         if options.update_sshconfig:
             ssh.write_sshconfig()
 
