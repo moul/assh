@@ -5,6 +5,7 @@ import unittest
 from advanced_ssh_config.advanced_ssh_config import AdvancedSshConfig
 from advanced_ssh_config.exceptions import ConfigError
 from . import set_config, prepare_config, DEFAULT_CONFIG
+from .. import __version__
 
 
 class TestAdvancedSshConfig(unittest.TestCase):
@@ -163,8 +164,10 @@ port = 23
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 9)
+        self.assertEquals(len(arr), 11)
         dest = """
+# assh version: {}
+
 Host aaa
   user toto
   # hostname 1.2.3.4
@@ -173,7 +176,7 @@ Host bbb
   port 23
   user toto
   # inherits aaa
-"""
+""".format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
     def test_build_ssh_config_sorted(self):
@@ -205,6 +208,8 @@ user = toto
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
         dest = """
+# assh version: {}
+
 Host aaa
   user toto
   # hostname 1.2.3.4
@@ -225,7 +230,7 @@ Host ddd
   port 23
   user titi
   # inherits aaa
-"""
+""".format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
     def test_inherits_noexists(self):
@@ -377,15 +382,17 @@ port = 22
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 6)
+        self.assertEquals(len(arr), 8)
         dest = """
+# assh version: {}
+
 Host localhost
   localforward 1 2.3.4.5 6
   localforward 7 8.9.10.11 12
   port 22
   user toto
 
-"""
+""".format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
 
@@ -403,15 +410,17 @@ port = 22
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 6)
+        self.assertEquals(len(arr), 8)
         dest = """
+# assh version: {}
+
 Host localhost
   localforward 1 2.3.4.5 6
   localforward 7 8.9.10.11 12
   port 22
   user toto
 
-"""
+""".format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
     def test_build_ssh_config_with_multiline_comment(self):
@@ -436,6 +445,8 @@ user = toto
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
         dest = """
+# assh version: {}
+
 Host localhost
   port 22
   user toto
@@ -449,7 +460,7 @@ Host localhost
   # comment .    |___|_|___|
   # comment .
 
-"""
+""".format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
 

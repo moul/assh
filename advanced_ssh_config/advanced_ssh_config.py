@@ -11,6 +11,7 @@ from time import sleep
 from .config import Config
 from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands,
                     shellquotemultiple)
+from . import __version__
 
 
 class AdvancedSshConfig(object):
@@ -185,6 +186,9 @@ class AdvancedSshConfig(object):
 
     def build_sshconfig(self):
         config = []
+
+        config.append('# assh version: {}'.format(__version__))
+        config.append('')
 
         hosts = self.prepare_sshconfig()
         od = OrderedDict(sorted(hosts.items()))
