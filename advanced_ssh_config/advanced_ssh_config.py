@@ -57,10 +57,14 @@ class AdvancedSshConfig(object):
     def ssh_config_file_version(self, filename=None):
         if not filename:
             filename = self.ssh_config_file
-        with open(os.path.expanduser(filename)) as f:
+        try:
+            filepath = os.path.expanduser(filename)
+            f = open(filepath, 'r')
             first_line = f.readline()
             if first_line.startswith('# assh version: '):
                 return first_line.split(' ')[-1].strip()
+            return None
+        except IOError:
             return None
         return None
 
