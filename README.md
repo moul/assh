@@ -19,6 +19,8 @@ It works with `ssh`, `scp`, `rsync`, `git`, etc
 The new `.ssh/config` file become `.ssh/config.advanced` with new features and a better regex engine for the hostnames.
 Each time the script is called, it recreate a whole new `.ssh/config`, so be careful, backup your old .ssh/config file !
 
+[![Gitter chat](https://badges.gitter.im/moul/advanced-ssh-config.png)](https://gitter.im/moul/advanced-ssh-config)
+
 Features
 --------
 
