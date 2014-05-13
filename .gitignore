@@ -1,3 +1,4 @@
+nosetests.xml
 *.egg
 *.pyc
 *~
