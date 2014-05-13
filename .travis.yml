@@ -1,1 +1,10 @@
-shippable.yml
+language: python
+python:
+  - "2.7"
+  - "3.2"
+  - "3.3"
+install:
+  - python setup.py install
+  - python setup.py develop
+script:
+  - python setup.py test
