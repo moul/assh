@@ -1,0 +1,14 @@
+language: python
+python:
+  - "2.7"
+install:
+  - python setup.py install
+  - python setup.py develop
+before_script:
+  - mkdir -p shippable/testresults
+  - mkdir -p shippable/codecoverage
+script:
+  - python setup.py test
+  - nosetests advanced_ssh_config --with-xunit --xunit-file=shippable/testresults/nosetests.xml
+  - coverage run --branch advanced_ssh_config/*.py
+  - coverage xml -o shippable/codecoverage/coverage.xml advanced_ssh_config/*.py
