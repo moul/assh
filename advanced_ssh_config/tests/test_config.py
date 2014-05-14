@@ -3,8 +3,8 @@
 import unittest
 import os
 
-from advanced_ssh_config.config import Config
-from advanced_ssh_config.exceptions import ConfigError
+from ..config import Config
+from ..exceptions import ConfigError
 from . import set_config, prepare_config, write_config, PREFIX, DEFAULT_CONFIG
 
 

@@ -43,7 +43,7 @@ def construct_proxy_commands(config):
     verbose = config.get('verbose', False)
     timeout = config.get('timeout', 180)
     connection_timeout = config.get('connection_timeout', 5)
-    if not 'hostname' in config or not 'port' in config:
+    if 'hostname' not in config or 'port' not in config:
         raise ValueError('hostname and port must be configured')
     hostname, port = config['hostname'], config['port']
     if proxy_type in ('nc', 'ncat', 'netcat'):

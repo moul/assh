@@ -4,7 +4,7 @@ import unittest
 import sys
 import os
 
-from advanced_ssh_config.bin import advanced_ssh_config_parse_options
+from ..bin import advanced_ssh_config_parse_options
 
 
 class RedirectStdStreams(object):

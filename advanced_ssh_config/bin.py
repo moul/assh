@@ -61,7 +61,7 @@ def advanced_ssh_config_parse_options():
         return options
 
     validate_host(options.hostname)
-    if not options.port is None:
+    if options.port is not None:
         validate_port(options.port)
         options.port = int(options.port)
 
@@ -92,7 +92,7 @@ def advanced_ssh_config():
             routing = ssh.get_routing()
             ssh.connect(routing)
         elif not options.update_sshconfig:
-            print 'Must specify a host!\n'
+            print('Must specify a host!\n')
 
     except KeyboardInterrupt:
         logging.error('Advanced SSH Interrupted, bye.')

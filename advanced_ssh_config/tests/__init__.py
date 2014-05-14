@@ -2,7 +2,7 @@
 
 import os
 
-from advanced_ssh_config.config import Config
+from ..config import Config
 
 
 PREFIX = '/tmp/test-asc'

@@ -2,8 +2,8 @@
 
 import unittest
 
-from advanced_ssh_config.advanced_ssh_config import AdvancedSshConfig
-from advanced_ssh_config.exceptions import ConfigError
+from ..advanced_ssh_config import AdvancedSshConfig
+from ..exceptions import ConfigError
 from . import set_config, prepare_config, DEFAULT_CONFIG
 from .. import __version__
 

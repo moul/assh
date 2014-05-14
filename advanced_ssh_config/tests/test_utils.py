@@ -3,10 +3,10 @@
 import unittest
 import os
 
-from advanced_ssh_config.utils import (safe_makedirs, value_interpolate,
+from ..utils import (safe_makedirs, value_interpolate,
                                        construct_proxy_commands, shellquote,
                                        shellquotemultiple)
-from advanced_ssh_config.exceptions import ConfigError
+from ..exceptions import ConfigError
 
 from . import PREFIX
 

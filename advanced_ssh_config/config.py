@@ -2,7 +2,12 @@
 
 import os
 import logging
-import ConfigParser
+try:
+    import configparser as ConfigParser
+    # Python 3
+except ImportError:
+    # Python 2
+    import ConfigParser
 import re
 from collections import OrderedDict
 
@@ -19,7 +24,7 @@ class ConfigHost(object):
         'inherits',
         'comment',
         'password',
-        #'proxycommand',
+        # 'proxycommand',
         )
 
     key_translation = {
