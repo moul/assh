@@ -22,12 +22,12 @@ if __name__ == "__main__" and __package__ is None:
     import advanced_ssh_config
     __package__ = str("advanced_ssh_config")
 
-from .config import Config
-from .utils import (
+from advanced_ssh_config.config import Config
+from advanced_ssh_config.utils import (
     safe_makedirs, value_interpolate, construct_proxy_commands,
     shellquotemultiple
 )
-from . import __version__
+from advanced_ssh_config import __version__
 
 
 class AdvancedSshConfig(object):
