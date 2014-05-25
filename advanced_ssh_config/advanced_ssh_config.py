@@ -11,10 +11,12 @@ import logging
 from collections import OrderedDict
 from time import sleep
 
-from .config import Config
-from .utils import (safe_makedirs, value_interpolate, construct_proxy_commands,
-                    shellquotemultiple)
-from . import __version__
+from advanced_ssh_config.config import Config
+from advanced_ssh_config.utils import (
+    safe_makedirs, value_interpolate, construct_proxy_commands,
+    shellquotemultiple
+)
+from advanced_ssh_config import __version__
 
 
 class AdvancedSshConfig(object):
