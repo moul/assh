@@ -10,5 +10,3 @@ before_script:
 script:
   - python setup.py test
   - nosetests advanced_ssh_config --with-xunit --xunit-file=shippable/testresults/nosetests.xml
-  - coverage run --branch advanced_ssh_config/*.py
-  - coverage xml -o shippable/codecoverage/coverage.xml advanced_ssh_config/*.py
