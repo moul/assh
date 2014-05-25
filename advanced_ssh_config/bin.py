@@ -61,7 +61,7 @@ def advanced_ssh_config_parse_options():
         return options
 
     validate_host(options.hostname)
-    if not options.port is None:
+    if options.port is not None:
         validate_port(options.port)
         options.port = int(options.port)
 

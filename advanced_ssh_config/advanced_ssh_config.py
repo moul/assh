@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import subprocess
 import os
 import sys
@@ -106,9 +109,10 @@ class AdvancedSshConfig(object):
                 self.config.parser.set(section, options[key], value)
                 args[key] = value
 
-            logging.debug('get (-%-1s) %-12s : %s' % (key,
-                                                      options[key],
-                                                      value))
+            logging.debug('get (-%-1s) %-12s : %s',
+                          key,
+                          options[key],
+                          value)
             if value:
                 args[key] = value
 
@@ -131,7 +135,6 @@ class AdvancedSshConfig(object):
 
         routing['gateway_route'] = path[1:]
         routing['hostname'] = args['h']
-        #routing['args'] = args
         routing['port'] = self.port
         if not routing['port'] and 'p' in args:
             routing['port'] = int(args['p'])
@@ -228,7 +231,7 @@ class AdvancedSshConfig(object):
                 config += entry.build_sshconfig()
 
         if '*' in hosts:
-            config += build_entry(hosts['*'])
+            config += hosts['*'].build_sshconfig()
 
         return config
 

@@ -19,7 +19,7 @@ class ConfigHost(object):
         'inherits',
         'comment',
         'password',
-        #'proxycommand',
+        # 'proxycommand',
         )
 
     key_translation = {
