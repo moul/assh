@@ -12,7 +12,15 @@ from collections import OrderedDict
 from time import sleep
 
 if __name__ == "__main__" and __package__ is None:
-    __package__ = "advanced_ssh_config"
+    # The following assumes the script is in the top level of the package
+    # directory.  We use dirname() to help get the parent directory to add to
+    # sys.path, so that we can import the current package.  This is necessary
+    # since when invoked directly, the 'current' package is not automatically
+    # imported.
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(1, parent_dir)
+    import advanced_ssh_config
+    __package__ = str("advanced_ssh_config")
 
 from .config import Config
 from .utils import (
