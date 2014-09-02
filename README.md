@@ -1,6 +1,7 @@
 Advanced SSH config
 ===================
 
+[![PyPI version](https://badge.fury.io/py/advanced-ssh-config.png)](http://badge.fury.io/py/advanced-ssh-config)
 [![Build Status](https://travis-ci.org/moul/advanced-ssh-config.png?branch=develop)](https://travis-ci.org/moul/advanced-ssh-config)
 [![authors](https://sourcegraph.com/api/repos/github.com/moul/advanced-ssh-config/badges/authors.png)](https://sourcegraph.com/github.com/moul/advanced-ssh-config)
 [![library users](https://sourcegraph.com/api/repos/github.com/moul/advanced-ssh-config/badges/library-users.png)](https://sourcegraph.com/github.com/moul/advanced-ssh-config)
