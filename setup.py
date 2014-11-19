@@ -16,7 +16,9 @@ MODULE = imp.load_module(MODULE_NAME, *imp.find_module(MODULE_NAME))
 
 setup(
     name=MODULE_NAME.replace('_', '-'),
-    description='An alternative ssh configuration file with extended options and features',
+    description="""
+    An alternative ssh configuration file with extended options and features
+    """,
     version=MODULE.__version__,
     author='Manfred Touron',
     author_email='m@42.am',
@@ -28,7 +30,7 @@ setup(
     extras_require={
         'process_inspection': ['psutil'],
         'password': ['pexpect']
-        },
+    },
     test_suite=MODULE_NAME + '.tests',
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
