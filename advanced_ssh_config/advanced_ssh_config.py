@@ -215,9 +215,14 @@ class AdvancedSshConfig(object):
         if not filename:
             filename = self.ssh_config_file
         config = self.build_sshconfig()
-        fhandle = open(os.path.expanduser(filename), 'w+')
-        fhandle.write('\n'.join(config))
-        fhandle.close()
+        if self.dry_run:
+            self.logger.error('Without dry-run, the file {} should be replaced '
+                              'by the following content'.format(filename))
+            self.logger.error('\n'.join(config))
+        else:
+            fhandle = open(os.path.expanduser(filename), 'w+')
+            fhandle.write('\n'.join(config))
+            fhandle.close()
 
     def build_sshconfig(self):
         config = []
