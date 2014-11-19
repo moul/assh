@@ -69,15 +69,15 @@ def advanced_ssh_config_parse_options():
 
 
 def advanced_ssh_config():
-    logger = logging.getLogger('assh.advanced_ssh_config')
     try:
         options = advanced_ssh_config_parse_options()
     except ValueError as err:
-        logger.fatal(err.message)
+        logging.fatal(err.message)
         sys.exit(1)
 
     parent = parent_ssh_process_info()
     setup_logging(options, parent)
+    logger = logging.getLogger('assh.advanced_ssh_config')
 
     try:
         ssh = AdvancedSshConfig(hostname=options.hostname,
