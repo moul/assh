@@ -145,7 +145,8 @@ def value_interpolate(value, already_interpolated=None):
             raise ConfigError('Interpolation loop')
         val = os.environ.get(var)
         if val:
-            logging.getLogger('').debug('\'{}\' => \'{}\''.format(value, val))
+            logger = logging.getLogger('assh.value_interpolate')
+            logger.debug('\'{}\' => \'{}\''.format(value, val))
             new_value = re.sub(r'\${}'.format(var), val, value)
             return value_interpolate(new_value, already_interpolated + [var])
 
@@ -185,11 +186,15 @@ def setup_logging(options, parent=None):
 
         return LOGGING_LEVELS.get(options.log_level, logging.ERROR)
 
-    logging_level = get_logging_level()
-    logging.basicConfig(level=logging_level,
-                        filename=None,
-                        format='%(asctime)s %(levelname)s: %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    logger = logging.getLogger('assh')
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    logger.setLevel(get_logging_level())
+    return logger
 
 
 LOGGING_LEVELS = {

@@ -29,7 +29,7 @@ class AdvancedSshConfig(object):
         self.proxy_type, self.timeout = proxy_type, timeout
         self.user_python_socket = use_python_socket
 
-        self.log = logging.getLogger('')
+        self.logger = logging.getLogger('assh.AdvancedSshConfig')
 
         # Initializes the Config object
         if not configfiles:
@@ -41,10 +41,10 @@ class AdvancedSshConfig(object):
         self.ssh_config_file = ssh_config_file
         ssh_config_file_version = self.ssh_config_file_version()
         if ssh_config_file_version != __version__:
-            logging.error('ssh_config file is at version {}, '
-                          'but Advanced SSH config is at '
-                          'version {}'.format(ssh_config_file_version,
-                                              __version__))
+            self.logger.error(
+                'ssh_config file is at version {}, but Advanced SSH config is '
+                'at version {}'.format(ssh_config_file_version, __version__)
+            )
         self.force = force
 
     @property
@@ -80,7 +80,7 @@ class AdvancedSshConfig(object):
             if re.match(sect, self.hostname):
                 section = sect
 
-        logging.debug('section "{}" '.format(section))
+        self.logger.debug('section "{}" '.format(section))
 
         # Parse special routing
         path = self.hostname.split('/')
@@ -109,19 +109,19 @@ class AdvancedSshConfig(object):
                 self.config.parser.set(section, options[key], value)
                 args[key] = value
 
-            logging.debug('get (-%-1s) %-12s : %s',
-                          key,
-                          options[key],
-                          value)
+            self.logger.debug(
+                'get (-%-1s) %-12s : %s',
+                key, options[key], value
+            )
             if value:
                 args[key] = value
 
         # If we interpolated any keys
         if updated:
             self.write_sshconfig()
-            self.log.debug('Config updated. Need to restart SSH!?')
+            self.logger.debug('Config updated. Need to restart SSH!?')
 
-        logging.debug('args: {}'.format(args))
+        self.logger.debug('args: {}'.format(args))
 
         routing['verbose'] = self.verbose
         routing['proxy_type'] = self.proxy_type
@@ -142,9 +142,9 @@ class AdvancedSshConfig(object):
             routing['port'] = 22
         routing['proxy_commands'] = construct_proxy_commands(routing)
 
-        logging.debug('Routing:')
+        self.logger.debug('Routing:')
         for key, value in routing.iteritems():
-            logging.debug('  {0}: {1}'.format(key, value))
+            self.logger.debug('  {0}: {1}'.format(key, value))
 
         return routing
 
@@ -152,19 +152,19 @@ class AdvancedSshConfig(object):
         for gateway in routing['gateways']:
             if gateway != 'direct':
                 routing['gateway_route'] += [gateway]
-                logging.info('Using gateway: '
-                             '{}'.format(routing['gateway_route']))
+                self.logger.info('Using gateway: '
+                                 '{}'.format(routing['gateway_route']))
             else:
-                logging.info('Direct connection')
+                self.logger.info('Direct connection')
             cmd = []
             if len(routing['gateway_route']):
                 cmd += ['ssh', '/'.join(routing['gateway_route'])]
                 cmd.append(shellquotemultiple(routing['proxy_commands']))
-                logging.info('cmd: {}'.format(cmd))
+                self.logger.info('cmd: {}'.format(cmd))
             else:
                 cmd = routing['proxy_commands'][0]
 
-            logging.info('Connection command {}'.format(map(str, cmd)))
+            self.logger.info('Connection command {}'.format(map(str, cmd)))
 
             if not self.dry_run:
                 self.connect_once(routing, cmd)
@@ -180,8 +180,11 @@ class AdvancedSshConfig(object):
 
         rlc_process = None
         if routing['reallocalcommand']:
-            logging.info('Executing localcommand: '
-                         '{}'.format(routing['reallocalcommand']))
+            self.logger.info(
+                'Executing localcommand: {}'.format(
+                    routing['reallocalcommand']
+                )
+            )
             rlc_cmd = ['/bin/sh', '-c', routing['reallocalcommand']]
             rlc_process = subprocess.Popen(rlc_cmd,
                                            stdout=sys.stderr,
@@ -190,15 +193,15 @@ class AdvancedSshConfig(object):
 
         if self.user_python_socket \
                 and not len(routing['gateway_route']):
-            logging.info('Using Python socket')
+            self.logger.info('Using Python socket')
             from .network import Socket
             socket = Socket(routing['hostname'], routing['port'])
             socket.run()
         else:
-            logging.info('Using ProxyCommand')
+            self.logger.info('Using ProxyCommand')
             proxy_process = subprocess.Popen(map(str, cmd))
             if proxy_process.wait() != 0:
-                self.log.critical('There were some errors')
+                self.logger.critical('There were some errors')
 
         if rlc_process is not None:
             print(rlc_process)
@@ -206,8 +209,8 @@ class AdvancedSshConfig(object):
 
     def write_sshconfig(self, filename=None):
         if not self.force and self.ssh_config_file_version() != __version__:
-            logging.error('Cannot save ssh_config_file, versions differ, '
-                          'use -f to force')
+            self.logger.error('Cannot save ssh_config_file, versions differ. '
+                              'Use -f to force')
             return False
         if not filename:
             filename = self.ssh_config_file

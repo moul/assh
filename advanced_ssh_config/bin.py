@@ -69,10 +69,11 @@ def advanced_ssh_config_parse_options():
 
 
 def advanced_ssh_config():
+    logger = logging.getLogger('assh.advanced_ssh_config')
     try:
         options = advanced_ssh_config_parse_options()
     except ValueError as err:
-        logging.error(err.message)
+        logger.fatal(err.message)
         sys.exit(1)
 
     parent = parent_ssh_process_info()
@@ -95,7 +96,7 @@ def advanced_ssh_config():
             print 'Must specify a host!\n'
 
     except KeyboardInterrupt:
-        logging.error('Advanced SSH Interrupted, bye.')
+        logger.fatal('Advanced SSH Interrupted, bye.')
         sys.exit(1)
 
     except ConfigError as err:
@@ -136,7 +137,8 @@ def ssh_config_to_advanced_ssh_config():
     try:
         options = ssh_config_to_advanced_ssh_config_parse_options()
     except ValueError as err:
-        logging.error(err.message)
+        logger = logging.getLogger('assh')
+        logger.fatal(err.message)
         sys.exit(1)
 
     with open(options.file, 'r') as file_descriptor:

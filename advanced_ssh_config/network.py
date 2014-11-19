@@ -13,6 +13,8 @@ class Socket(object):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.bufsize = bufsize
 
+        self.logger = logging.getLogger('assh.Socket')
+
         if not stdin:
             stdin = sys.stdin
         if not stdout:
@@ -52,7 +54,7 @@ class Socket(object):
                             self.stdout.flush()
                             buffer = self.socket.recv(self.bufsize)
                         if buffer == '':
-                            logging.warn('Server disconnected')
+                            self.logger.warn('Server disconnected')
                             return
                     except socket.error:
                         pass

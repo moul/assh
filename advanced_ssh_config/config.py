@@ -158,7 +158,7 @@ class Config(object):
         self.configfiles = map(os.path.expanduser, configfiles)
         self.loaded_files = []
 
-        self.log = logging.getLogger('')
+        self.logger = logging.getLogger('assh.Config')
 
         self.parser = ConfigParser.ConfigParser()
         self.parser.SECTCRE = re.compile(
@@ -174,7 +174,7 @@ class Config(object):
                                   'section {}'.format(section))
 
     def debug(self, string=None):
-        self.log.debug(string and string or '')
+        self.logger.debug(string and string or '')
 
     def _load_file(self, filename):
         if filename in self.loaded_files:
