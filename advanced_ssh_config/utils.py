@@ -4,6 +4,7 @@ import logging
 import re
 import os
 import errno
+import subprocess
 
 from .exceptions import ConfigError
 
@@ -138,6 +139,8 @@ def value_interpolate(value, already_interpolated=None):
         already_interpolated = []
     if type(value) == int:
         return value
+
+    # Variable
     matches = value and re.match(r'\$(\w+)', value) or None
     if matches:
         var = matches.group(1)
@@ -149,6 +152,15 @@ def value_interpolate(value, already_interpolated=None):
             logger.debug('\'{}\' => \'{}\''.format(value, val))
             new_value = re.sub(r'\${}'.format(var), val, value)
             return value_interpolate(new_value, already_interpolated + [var])
+
+    # Bash command
+    if type(value) == str and value.lstrip()[:2] == '$(' and value.rstrip()[-1] == ')':
+        logger = logging.getLogger('assh.value_interpolate')
+        command = value.strip()[2:-1]
+        logger.info('Executing "{}"'.format(command))
+        ret = subprocess.check_output(['/bin/sh', '-c', command]).strip()
+        logger.info('Result: {}'.format(ret))
+        return ret
 
     return value
 

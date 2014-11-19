@@ -51,10 +51,14 @@ class ConfigHost(object):
             values = value.split('\n')
             values = map(str.strip, values)
             for line in values:
-                if key in ConfigHost.special_keys:
+                # if line matches $(...), we need to put the line in extras
+                if line.lstrip().find('$(') == 0 and line.rstrip()[-1] == ')':
                     extra_config.append((key, line))
                 else:
-                    config.append((key, line))
+                    if key in ConfigHost.special_keys:
+                        extra_config.append((key, line))
+                    else:
+                        config.append((key, line))
         return cls(c, host, config=config, extra=extra_config)
 
     def config_keys(self):
