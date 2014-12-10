@@ -9,3 +9,4 @@ nosetests.xml
 *.egg-info/
 .idea
 .coverage
+advanced-ssh-config.spec
