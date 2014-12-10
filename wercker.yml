@@ -1,20 +1,20 @@
 box: wercker-labs/docker
 build:
   steps:
-    - virtualenv:
-      name: setup virtual environment
-      install_wheel: true
-    - script:
-      name: echo python information
-      code: |
-        echo "python version $(python --version) running"
-        echo "pip version $(pip --version) running"
-    - script:
-      name: run make deveop
-      code: make develop
-    - script:
-      name: run make test
-      code: make develop
-    - script:
-      name: run make release_binary
-      code: make release_binary
+  - virtualenv:
+    name: setup virtual environment
+    install_wheel: true
+  - script:
+    name: echo python information
+    code: |
+      echo "python version $(python --version) running"
+      echo "pip version $(pip --version) running"
+  - script:
+    name: run make deveop
+    code: make develop
+  - script:
+    name: run make test
+    code: make develop
+  - script:
+    name: run make release_binary
+    code: make release_binary
