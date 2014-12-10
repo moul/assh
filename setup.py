@@ -29,7 +29,8 @@ setup(
     tests_require=['mock', 'nose', 'coverage', 'pep8'],
     extras_require={
         'process_inspection': ['psutil'],
-        'password': ['pexpect']
+        'password': ['pexpect'],
+        'release': ['PyInstaller'],
     },
     test_suite=MODULE_NAME + '.tests',
     classifiers=[

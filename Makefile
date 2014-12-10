@@ -4,7 +4,7 @@ all:	develop
 
 
 develop:
-	pip install -e .
+	pip install -e .[release]
 
 
 test:
