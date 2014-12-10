@@ -1,7 +1,8 @@
-FROM moul/python-dev
+FROM python:2.7
 MAINTAINER Manfred Touron "m@42.am"
 
-RUN apt-get -qq install openssh-client netcat-openbsd && \
+RUN apt-get update && \
+    apt-get -qq install openssh-client netcat-openbsd && \
     apt-get clean
 
 RUN mkdir /advanced_ssh_config
