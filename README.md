@@ -60,6 +60,42 @@ Or add this line manually in your ~/.ssh/config file
     ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
     ...
 
+Config example
+--------------
+
+`~/.ssh/config.advanced`
+
+    [foo]
+    user = pacman
+    port = 2222
+    hostname = foo.com
+    
+    [bar]
+    hostname = 1.2.3.4
+    gateways = foo
+    # By running `ssh bar`, you will ssh to `bar` through a `ssh foo`
+    
+    [vm-.*\.joe\.com]
+    IdentityFile = ~/.ssh/root-joe
+    gateways = direct joe.com joe.com/bar
+    DynamicForward = 43217
+    LocalForward = 1723 localhost:1723
+    ForwardX11 = yes
+
+    [default]
+    Includes = ~/.ssh/config.advanced2 ~/.ssh/config.advanced3
+    Port = 22
+    User = root
+    IdentityFile = ~/.ssh/id_rsa
+    ProxyCommand = ~/.ssh/scripts/dynamic_ssh.py --hostname=%h --port=%p -u
+    Gateways = direct
+    PubkeyAuthentication = yes
+    VisualHostKey = yes
+    ControlMaster = auto
+    ControlPath = ~/.ssh/controlmaster/%h-%p-%r.sock
+    EscapeChar = ~
+
+
 Tests
 -----
 
