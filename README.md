@@ -48,7 +48,7 @@ Config example
     gateways = foo.com
     
     [default]
-    ProxyCommand = /path/to/advanced-ssh-config.py --hostname=%h --port=%p -u
+    ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
 
 ---
 
@@ -66,6 +66,7 @@ Config example
     [vm-.*\.joe\.com]
     IdentityFile = ~/.ssh/root-joe
     gateways = direct joe.com joe.com/bar
+    # Will try to ssh without proxy, then fallback to joe.com proxy, then fallback to joe.com through bar
     DynamicForward = 43217
     LocalForward = 1723 localhost:1723
     ForwardX11 = yes
@@ -75,7 +76,7 @@ Config example
     Port = 22
     User = root
     IdentityFile = ~/.ssh/id_rsa
-    ProxyCommand = ~/.ssh/scripts/dynamic_ssh.py --hostname=%h --port=%p -u
+    ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
     Gateways = direct
     PubkeyAuthentication = yes
     VisualHostKey = yes
