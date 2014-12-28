@@ -33,38 +33,26 @@ Features
 - inherits configuration
 - variable expansion
 
-Installation
-------------
-
-From Pypi
-
-    # pip install advanced-ssh-config
-
-Or by cloning
-
-    # git clone https://github.com/moul/advanced-ssh-config
-    # cd advanced-ssh-config
-    # python setup.py install
-
-Backup your old ~/.ssh/config file
-
-    # cp ~/.ssh/config ~/.ssh/config.backup
-
-Generate the new config file
-
-    # advanced-ssh-config -u
-
-Or add this line manually in your ~/.ssh/config file
-
-    ...
-    ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
-    ...
-
 Config example
 --------------
 
 `~/.ssh/config.advanced`
 
+    # Simple example
+    [foo.com]
+    user = pacman
+    port = 2222
+    
+    [bar]
+    hostname = 1.2.3.4
+    gateways = foo.com
+    
+    [default]
+    ProxyCommand = /path/to/advanced-ssh-config.py --hostname=%h --port=%p -u
+
+---
+
+    # Complete example
     [foo]
     user = pacman
     port = 2222
@@ -95,6 +83,33 @@ Config example
     ControlPath = ~/.ssh/controlmaster/%h-%p-%r.sock
     EscapeChar = ~
 
+
+Installation
+------------
+
+From Pypi
+
+    # pip install advanced-ssh-config
+
+Or by cloning
+
+    # git clone https://github.com/moul/advanced-ssh-config
+    # cd advanced-ssh-config
+    # python setup.py install
+
+Backup your old ~/.ssh/config file
+
+    # cp ~/.ssh/config ~/.ssh/config.backup
+
+Generate the new config file
+
+    # advanced-ssh-config -u
+
+Or add this line manually in your ~/.ssh/config file
+
+    ...
+    ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
+    ...
 
 Tests
 -----
