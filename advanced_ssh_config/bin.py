@@ -3,12 +3,14 @@
 import sys
 import optparse
 import logging
+import re
 import os
 
 from . import __version__
 from .utils import (
     validate_host, validate_port, parent_ssh_process_info, setup_logging
     )
+from .config import Config
 from .exceptions import ConfigError
 from .advanced_ssh_config import AdvancedSshConfig
 from .ssh_config import parse_ssh_config
@@ -155,3 +157,30 @@ def ssh_config_to_advanced_ssh_config():
             for key, value in config.iteritems():
                 print('  {0} = {1}'.format(key, value))
             print('')
+
+
+def assh_to_etchosts():
+    print('')
+    print('## Automatically generated with assh-to-etchosts')
+    configfiles = [
+        '/etc/ssh/config.advanced',
+        '~/.ssh/config.advanced',
+    ]
+    config = Config(configfiles=configfiles)
+    hosts = {}
+    for sect in config.parser.sections():
+        ip = config.get('hostname', sect)
+        if ip:
+            if '$' in ip:
+                continue  # command
+            # FIXME: handle IPV6
+            if not re.match(r'[0-9\.]+', ip):
+                # FIXME: try to resolve non-ip hostnames
+                continue
+            if ip not in hosts:
+                hosts[ip] = []
+            if sect not in hosts[ip]:
+                hosts[ip].append(sect)
+    for ip in sorted(hosts.keys()):
+        hostnames = hosts[ip]
+        print("{:40} {}".format(ip, ' '.join(hostnames)))
