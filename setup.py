@@ -52,6 +52,7 @@ setup(
         'console_scripts': [
             'advanced-ssh-config = advanced_ssh_config.bin:advanced_ssh_config',
             'ssh-config-to-advanced-ssh-config = advanced_ssh_config.bin:ssh_config_to_advanced_ssh_config',
+            'assh = advanced_ssh_config.bin:advanced_ssh_config',
             ],
     },
 )
