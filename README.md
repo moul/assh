@@ -13,16 +13,36 @@ Advanced SSH config
 
 Enhances `ssh_config` file capabilities
 
-This program is called by `ProxyCommand` from `lib-ssh`
-It works with `ssh`, `scp`, `rsync`, `git`, etc
+**NOTE**: This program is called by `ProxyCommand` from `lib-ssh`.
+
+It is known to work with:
+
+- ssh
+- scp
+- rsync
+- git
+- and even desktop applications depending on `lib-ssh` (for instance Tower)
 
 The new `.ssh/config` file become `.ssh/config.advanced` with new features and a better regex engine for the hostnames.
 Each time the script is called, it recreate a whole new `.ssh/config`, so be careful, backup your old .ssh/config file !
 
 [![Gitter chat](https://badges.gitter.im/moul/advanced-ssh-config.png)](https://gitter.im/moul/advanced-ssh-config)
 
-Features
---------
+Commmand line features
+----------------------
+
+**Gateway chaining**
+
+    ssh foo.com/bar.com
+    
+Connect to `bar.com` using ssh and create a proxy on `bar.com` to `foo.com`. Then connect to `foo.com` using the created proxy on `bar.com`.
+
+    ssh foo.com/bar.com/baz.com
+    
+Connect to `foo.com` using `bar.com/baz.com` which itself uses `baz.com`.
+
+Configuration features
+----------------------
 
 - regex for hostnames - gw.school-*.*.domain.net
 - aliases
