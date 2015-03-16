@@ -70,7 +70,19 @@ def advanced_ssh_config_parse_options():
     return options
 
 
+def keyboard_interrupt(fn):
+    """ KeyboardInterrupt interceptor decorator. """
+    logger = logging.getLogger('assh.advanced_ssh_config')
+    try:
+        fn()
+    except KeyboardInterrupt:
+        logging.fatal('Advanced SSH interrupted, bye.')
+        sys.exit(1)
+
+
+@keyboard_interrupt
 def advanced_ssh_config():
+    """ advanced-ssh-config entry-point. """
     try:
         options = advanced_ssh_config_parse_options()
     except ValueError as err:
@@ -96,10 +108,6 @@ def advanced_ssh_config():
             ssh.connect(routing)
         elif not options.update_sshconfig:
             print 'Must specify a host!\n'
-
-    except KeyboardInterrupt:
-        logger.fatal('Advanced SSH Interrupted, bye.')
-        sys.exit(1)
 
     except ConfigError as err:
         sys.stderr.write(err.message)
@@ -135,7 +143,9 @@ def ssh_config_to_advanced_ssh_config_parse_options():
     return options
 
 
+@keyboard_interrupt
 def ssh_config_to_advanced_ssh_config():
+    """ ssh-config-to-advanced-ssh-config entry-point. """
     try:
         options = ssh_config_to_advanced_ssh_config_parse_options()
     except ValueError as err:
@@ -159,7 +169,9 @@ def ssh_config_to_advanced_ssh_config():
             print('')
 
 
+@keyboard_interrupt
 def assh_to_etchosts():
+    """ assh-to-etchosts entry-point. """
     print('')
     print('## Automatically generated with assh-to-etchosts')
     configfiles = [
