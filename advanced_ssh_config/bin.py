@@ -72,12 +72,14 @@ def advanced_ssh_config_parse_options():
 
 def keyboard_interrupt(fn):
     """ KeyboardInterrupt interceptor decorator. """
-    logger = logging.getLogger('assh.advanced_ssh_config')
-    try:
-        fn()
-    except KeyboardInterrupt:
-        logging.fatal('Advanced SSH interrupted, bye.')
-        sys.exit(1)
+    def wrapper():
+        logger = logging.getLogger('assh.advanced_ssh_config')
+        try:
+            fn()
+        except KeyboardInterrupt:
+            logging.fatal('Advanced SSH interrupted, bye.')
+            sys.exit(1)
+    return wrapper
 
 
 @keyboard_interrupt
