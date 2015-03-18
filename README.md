@@ -170,4 +170,4 @@ Contributors
 
 --
 
-© 2009-2014 Manfred Touron - [MIT License](https://github.com/moul/advanced-ssh-config/blob/master/License.txt).
+© 2009-2015 Manfred Touron - [MIT License](https://github.com/moul/advanced-ssh-config/blob/master/License.txt).

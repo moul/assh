@@ -10,6 +10,7 @@ from setuptools import setup, find_packages
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
+
 MODULE_NAME = 'advanced_ssh_config'
 MODULE = imp.load_module(MODULE_NAME, *imp.find_module(MODULE_NAME))
 
@@ -17,6 +18,9 @@ MODULE = imp.load_module(MODULE_NAME, *imp.find_module(MODULE_NAME))
 setup(
     name=MODULE_NAME.replace('_', '-'),
     description="""
+    Extended ssh configuration (.ssh/config) with regex, aliases, gateways,
+    includes, command execution, variable expansion...
+
     An alternative ssh configuration file with extended options and features
     """,
     version=MODULE.__version__,
