@@ -28,7 +28,7 @@ It works *transparently* with :
 
 ---
 
-The `.ssh/config` file is automatically generated, you need to update `.ssh/config.advanced` file instead; 
+The `.ssh/config` file is automatically generated, you need to update `.ssh/config.advanced` file instead;
 With new features and a better regex engine for the hostnames.
 
 *Note: Each time the script is called, it recreate a fresh new `.ssh/config`, so be careful, backup your old .ssh/config file !*
@@ -39,11 +39,11 @@ Commmand line features
 **Gateway chaining**
 
     ssh foo.com/bar.com
-    
+
 Connect to `bar.com` using ssh and create a proxy on `bar.com` to `foo.com`. Then connect to `foo.com` using the created proxy on `bar.com`.
 
     ssh foo.com/bar.com/baz.com
-    
+
 Connect to `foo.com` using `bar.com/baz.com` which itself uses `baz.com`.
 
 Configuration features
@@ -67,11 +67,11 @@ Config example
     [foo.com]
     user = pacman
     port = 2222
-    
+
     [bar]
     hostname = 1.2.3.4
-    gateways = foo.com
-    
+    gateways = foo.com   # `ssh bar` will use `foo.com` as gateway
+
     [default]
     ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
 
@@ -82,12 +82,12 @@ Config example
     user = pacman
     port = 2222
     hostname = foo.com
-    
+
     [bar]
     hostname = 1.2.3.4
     gateways = foo
     # By running `ssh bar`, you will ssh to `bar` through a `ssh foo`
-    
+
     [vm-.*\.joe\.com]
     IdentityFile = ~/.ssh/root-joe
     gateways = direct joe.com joe.com/bar
@@ -143,7 +143,7 @@ Tests
 Install test dependencies and run tests
 
     # python setup.py test
-    
+
 Pep8
 
     # pep8 advanced_ssh_config | grep -v /tests/

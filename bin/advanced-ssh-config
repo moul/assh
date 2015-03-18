@@ -1,3 +1,0 @@
-#!/usr/bin/env python
-from advanced_ssh_config.bin import advanced_ssh_config
-advanced_ssh_config()
