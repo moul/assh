@@ -9,24 +9,29 @@ Advanced SSH config
 [![Views in the last 24 hours](https://sourcegraph.com/api/repos/github.com/moul/advanced-ssh-config/counters/views-24h.png)](https://sourcegraph.com/github.com/moul/advanced-ssh-config)
 [![PyPi downloads](https://pypip.in/d/advanced-ssh-config/badge.png)](https://crate.io/packages/advanced-ssh-config/)
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moul/advanced-ssh-config/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+[![Gitter chat](https://badges.gitter.im/moul/advanced-ssh-config.png)](https://gitter.im/moul/advanced-ssh-config)
 
 
 Enhances `ssh_config` file capabilities
 
-**NOTE**: This program is called by `ProxyCommand` from `lib-ssh`.
+**NOTE**: This program is called by [ProxyCommand](http://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) from [lib-ssh](https://www.libssh.org).
 
-It is known to work with:
+---
+
+It works *transparently* with :
 
 - ssh
 - scp
 - rsync
 - git
-- and even desktop applications depending on `lib-ssh` (for instance Tower)
+- and even desktop applications depending on `lib-ssh` (for instance [Tower](http://www.git-tower.com), [Atom.io](https://atom.io), [SSH Tunnel Manager](http://projects.tynsoe.org/fr/stm/))
 
-The new `.ssh/config` file become `.ssh/config.advanced` with new features and a better regex engine for the hostnames.
-Each time the script is called, it recreate a whole new `.ssh/config`, so be careful, backup your old .ssh/config file !
+---
 
-[![Gitter chat](https://badges.gitter.im/moul/advanced-ssh-config.png)](https://gitter.im/moul/advanced-ssh-config)
+The `.ssh/config` file is automatically generated, you need to update `.ssh/config.advanced` file instead; 
+With new features and a better regex engine for the hostnames.
+
+*Note: Each time the script is called, it recreate a fresh new `.ssh/config`, so be careful, backup your old .ssh/config file !*
 
 Commmand line features
 ----------------------
