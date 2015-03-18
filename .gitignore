@@ -10,3 +10,5 @@ nosetests.xml
 .idea
 .coverage
 advanced-ssh-config.spec
+README.txt
+README.rst

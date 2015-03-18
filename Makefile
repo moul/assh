@@ -12,7 +12,11 @@ test:
 	# FIXME: handle python 2.6 and 3.4
 
 
-release: test release_binary release_pypi
+release: test release_binary release_pypi README.rst README.md
+
+
+README.txt README.rst:	README.md
+	-pandoc -o $@ $<
 
 
 release_pypi:

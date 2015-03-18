@@ -15,14 +15,21 @@ MODULE_NAME = 'advanced_ssh_config'
 MODULE = imp.load_module(MODULE_NAME, *imp.find_module(MODULE_NAME))
 
 
-setup(
-    name=MODULE_NAME.replace('_', '-'),
-    description="""
+description = """
     Extended ssh configuration (.ssh/config) with regex, aliases, gateways,
     includes, command execution, variable expansion...
 
     An alternative ssh configuration file with extended options and features
-    """,
+"""
+long_description = description
+if os.path.exists('README.rst'):
+    long_description = open('README.rst').read()
+
+
+setup(
+    name=MODULE_NAME.replace('_', '-'),
+    description=description,
+    long_description=long_description,
     version=MODULE.__version__,
     author='Manfred Touron',
     author_email='m@42.am',
