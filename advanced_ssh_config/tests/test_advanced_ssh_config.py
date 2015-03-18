@@ -12,6 +12,7 @@ class TestRoot(unittest.TestCase):
     def test_version(self):
         self.assertIsInstance(__version__, str)
 
+
 class TestAdvancedSshConfig(unittest.TestCase):
 
     def setUp(self):
@@ -99,7 +100,6 @@ port = 25
         self.assertEqual(routing['proxy_commands'][0],
                          ['nc', '-w', 180, '-G', 5, '1.2.3.4', 25])
         self.assertEqual(routing['gateway_route'], ['eee.com'])
-
 
     def test_prepare_sshconfig_simple(self):
         contents = """
@@ -251,8 +251,10 @@ port = 23
         advssh = AdvancedSshConfig(hostname='test',
                                    configfiles=[DEFAULT_CONFIG])
         config = advssh.config.full
+
         def call():
             return config['bbb'].clean_config
+
         self.assertRaises(ConfigError, call)
 
     def test_inherits_deep(self):
@@ -306,8 +308,10 @@ inherits = bbb
         advssh = AdvancedSshConfig(hostname='test',
                                    configfiles=[DEFAULT_CONFIG])
         config = advssh.config.full
+
         def call(key):
             return config[key].clean_config
+
         self.assertRaises(ConfigError, call, 'aaa')
         self.assertRaises(ConfigError, call, 'bbb')
         self.assertRaises(ConfigError, call, 'ccc')
@@ -321,8 +325,10 @@ inherits = aaa
         advssh = AdvancedSshConfig(hostname='test',
                                    configfiles=[DEFAULT_CONFIG])
         config = advssh.config.full
+
         def call(key):
             return config[key].clean_config
+
         self.assertRaises(ConfigError, call, 'aaa')
 
     def test_reserved_key(self):
@@ -345,7 +351,10 @@ comment = 4343
         advssh = AdvancedSshConfig(hostname='test',
                                    configfiles=[DEFAULT_CONFIG])
         config = advssh.config.full
-        self.assertEquals(config['aaa'].clean_config, {'user': ['toto'], 'proxycommand': ['nc']})
+        self.assertEquals(
+            config['aaa'].clean_config,
+            {'user': ['toto'], 'proxycommand': ['nc']}
+        )
 
     def test_comment_simple(self):
         contents = """
@@ -398,7 +407,6 @@ Host localhost
 
 """.format(__version__)
         self.assertEquals(string.strip(), dest.strip())
-
 
     def test_build_ssh_config_with_multiline_localforward(self):
         contents = """
@@ -466,7 +474,6 @@ Host localhost
 
 """.format(__version__)
         self.assertEquals(string.strip(), dest.strip())
-
 
     # FIXME: test_handle_custom_proxycommand
     # FIXME: test_prepare_sshconfig_with_hostname

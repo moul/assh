@@ -21,28 +21,37 @@ class TestContructProxyCommand(unittest.TestCase):
 
     def test_minimal_valid(self):
         command = construct_proxy_commands({
-                'hostname': 'aaa',
-                'port': 42,
-                })
-        self.assertEqual(command, [['nc', '-w', 180, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]])
+            'hostname': 'aaa',
+            'port': 42,
+        })
+        self.assertEqual(
+            command, [['nc', '-w', 180, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]]
+        )
 
     def test_minimal_nc(self):
         command = construct_proxy_commands({
-                'hostname': 'aaa',
-                'proxy_type': 'nc',
-                'port': 42,
-                })
-        self.assertEqual(command, [['nc', '-w', 180, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]])
+            'hostname': 'aaa',
+            'proxy_type': 'nc',
+            'port': 42,
+        })
+        self.assertEqual(
+            command, [['nc', '-w', 180, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]]
+        )
 
     def test_full_nc(self):
         command = construct_proxy_commands({
-                'hostname': 'aaa',
-                'port': 42,
-                'verbose': True,
-                'proxy_type': 'nc',
-                'timeout': 45,
-                })
-        self.assertEqual(command, [['nc', '-v', '-w', 45, '-G', 5, 'aaa', 42], ['nc', 'aaa', 42]])
+            'hostname': 'aaa',
+            'port': 42,
+            'verbose': True,
+            'proxy_type': 'nc',
+            'timeout': 45,
+        })
+        self.assertEqual(
+            command, [
+                ['nc', '-v', '-w', 45, '-G', 5, 'aaa', 42],
+                ['nc', 'aaa', 42]
+            ]
+        )
 
     def test_invalid_proxy_type(self):
         args = {
@@ -54,31 +63,35 @@ class TestContructProxyCommand(unittest.TestCase):
 
     def test_minimal_socat(self):
         command = construct_proxy_commands({
-                'hostname': 'aaa',
-                'proxy_type': 'socat',
-                'port': 42,
-                })
+            'hostname': 'aaa',
+            'proxy_type': 'socat',
+            'port': 42,
+        })
         self.assertEqual(command, [['socat', 'STDIN', 'TCP:aaa:42']])
 
     def test_minimal_socat_http_proxy(self):
         command = construct_proxy_commands({
-                'hostname': 'aaa',
-                'proxy_type': 'socat_http_proxy',
-                'http_proxy_host': 'bbb',
-                'http_proxy_port': 43,
-                'port': 42,
-                })
-        self.assertEqual(command, [['socat', 'STDIN', 'PROXY:bbb:aaa:42,proxyport=43']])
+            'hostname': 'aaa',
+            'proxy_type': 'socat_http_proxy',
+            'http_proxy_host': 'bbb',
+            'http_proxy_port': 43,
+            'port': 42,
+        })
+        self.assertEqual(
+            command, [['socat', 'STDIN', 'PROXY:bbb:aaa:42,proxyport=43']]
+        )
 
     def test_minimal_socat_socks(self):
         command = construct_proxy_commands({
-                'hostname': 'aaa',
-                'proxy_type': 'socat_socks',
-                'socks_host': 'bbb',
-                'socks_port': 43,
-                'port': 42,
-                })
-        self.assertEqual(command, [['socat', 'STDIN', 'SOCKS:bbb:aaa:42,socksport=43']])
+            'hostname': 'aaa',
+            'proxy_type': 'socat_socks',
+            'socks_host': 'bbb',
+            'socks_port': 43,
+            'port': 42,
+        })
+        self.assertEqual(
+            command, [['socat', 'STDIN', 'SOCKS:bbb:aaa:42,socksport=43']]
+        )
 
     # FIXME: test_custom_handler
 
@@ -114,11 +127,15 @@ class TestValueInterpolate(unittest.TestCase):
         self.assertEquals(value_interpolate('$TEST_INTERPOLATE'), 'titi')
 
     def test_interpolate_no_match(self):
-        self.assertEquals(value_interpolate('$TEST_INTERPOLATE'), '$TEST_INTERPOLATE')
+        self.assertEquals(
+            value_interpolate('$TEST_INTERPOLATE'), '$TEST_INTERPOLATE'
+        )
 
     def test_interpolate_not_interpolable(self):
         os.environ['TEST_INTERPOLATE'] = 'titi'
-        self.assertEquals(value_interpolate('TEST_INTERPOLATE'), 'TEST_INTERPOLATE')
+        self.assertEquals(
+            value_interpolate('TEST_INTERPOLATE'), 'TEST_INTERPOLATE'
+        )
 
     def test_interpolate_interpolate_recursive(self):
         os.environ['TEST_INTERPOLATE'] = '$TEST_INTERPOLATE_2'
@@ -154,7 +171,10 @@ class TestShellQuote(unittest.TestCase):
         self.assertEquals(shellquote(["test\"test"]), "test\"test")
 
     def test_shellquote_complex(self):
-        self.assertEquals(shellquote(["ssh", "manfred's imac", '-p', 4242]), "ssh 'manfred\\'s imac' -p 4242")
+        self.assertEquals(
+            shellquote(["ssh", "manfred's imac", '-p', 4242]),
+            "ssh 'manfred\\'s imac' -p 4242"
+        )
 
     def test_shellquote_not_list(self):
         self.assertRaises(ValueError, shellquote, 'aaa')
@@ -163,7 +183,10 @@ class TestShellQuote(unittest.TestCase):
 class TestShellQuoteMultiple(unittest.TestCase):
 
     def test_shellquote_multiple_simple(self):
-        self.assertEquals(shellquotemultiple([['aaa', 'bbb', 42], ['ccc', 'ddd', 43]]), '(aaa bbb 42 2>/dev/null || ccc ddd 43)')
+        self.assertEquals(
+            shellquotemultiple([['aaa', 'bbb', 42], ['ccc', 'ddd', 43]]),
+            '(aaa bbb 42 2>/dev/null || ccc ddd 43)'
+        )
 
     def test_shellquote_not_list_of_list(self):
         self.assertRaises(ValueError, shellquotemultiple, [42, 42])

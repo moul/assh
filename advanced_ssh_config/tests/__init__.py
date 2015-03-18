@@ -17,7 +17,6 @@ def write_config(contents, name='config.advanced'):
 def prepare_config():
     os.system('rm -rf {}'.format(PREFIX))
     os.makedirs(PREFIX)
-    #write_config('')
 
 
 def set_config(contents, load=True):

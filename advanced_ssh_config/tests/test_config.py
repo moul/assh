@@ -26,10 +26,10 @@ Includes = {0}/include-1 {0}/include-2
 """
         config = set_config(contents)
         self.assertEquals(config.loaded_files, [
-                DEFAULT_CONFIG,
-                '{}/include-1'.format(PREFIX),
-                '{}/include-2'.format(PREFIX),
-                ])
+            DEFAULT_CONFIG,
+            '{}/include-1'.format(PREFIX),
+            '{}/include-2'.format(PREFIX),
+        ])
 
     def test_include_not_exists(self):
         contents = """
@@ -47,9 +47,9 @@ Includes = {0}/include-1 {0}/include-1
 """
         config = set_config(contents)
         self.assertEquals(config.loaded_files, [
-                DEFAULT_CONFIG,
-                '{}/include-1'.format(PREFIX),
-                ])
+            DEFAULT_CONFIG,
+            '{}/include-1'.format(PREFIX),
+        ])
 
     def test_sections_simple(self):
         contents = """
@@ -101,7 +101,9 @@ hostname = 1.2.3.4
 """
         config = set_config(contents)
         self.assertEquals(config.get('Hostname', 'hosta'), None)
-        self.assertEquals(config.get('Hostname', 'hosta', 'localhost'), 'localhost')
+        self.assertEquals(
+            config.get('Hostname', 'hosta', 'localhost'), 'localhost'
+        )
 
     def test_get_host_not_found(self):
         contents = """
@@ -163,7 +165,9 @@ port = 25
 localforward = 1 test 2 \n 2 test 3
 """
         config = set_config(contents)
-        self.assertEquals(config.get('localforward', 'test'), ['1 test 2', '2 test 3'])
+        self.assertEquals(
+            config.get('localforward', 'test'), ['1 test 2', '2 test 3']
+        )
 
     def test_one_line_list(self):
         contents = """
