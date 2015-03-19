@@ -29,10 +29,10 @@ release_pypi:
 	# FIXME: handle python 3.4
 
 
-release_binary: dist/advanced-ssh-config-$(shell uname -m)
+release_binary: dist/advanced-ssh-config-$(shell uname -s)-$(shell uname -m)
 
 
-dist/advanced-ssh-config-$(shell uname -m): dist/advanced-ssh-config
+dist/advanced-ssh-config-$(shell uname -s)-$(shell uname -m): dist/advanced-ssh-config
 	cp $< $@
 
 dist/advanced-ssh-config: bin/advanced-ssh-config
