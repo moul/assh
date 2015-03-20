@@ -28,10 +28,9 @@ It works *transparently* with :
 
 ---
 
-The `.ssh/config` file is automatically generated, you need to update `.ssh/config.advanced` file instead;
+The `.ssh/config` file is automatically generated, you need to update
+`.ssh/config.advanced` file instead;
 With new features and a better regex engine for the hostnames.
-
-*Note: Each time the script is called, it recreate a fresh new `.ssh/config`, so be careful, backup your old .ssh/config file !*
 
 Commmand line features
 ----------------------
@@ -49,14 +48,14 @@ Connect to `foo.com` using `bar.com/baz.com` which itself uses `baz.com`.
 Configuration features
 ----------------------
 
-- regex for hostnames - gw.school-*.*.domain.net
-- aliases
-- gateways - transparent ssh connections chaining
-- includes files
-- real local command - executes a command on the local shell when connecting
-- intelligent proxycommand with fallbacks
-- inherits configuration
-- variable expansion
+- **regex for hostnames**: `gw.school-.*.domain.net`
+- **aliases**: `gate` -> `gate.domain.tld`
+- **gateways**: transparent ssh connections chaining
+- **includes**: split configuration into multiple files
+- **local command execution**: finally a way to execute a command locally on connection
+- **inheritance**: `inherits = gate.domain.tld`
+- **variable expansion**: `User = $USER` (take $USER from environment)
+- **smart proxycommand**: connect using `netcat`, `socat` or custom handler
 
 Config example
 --------------
@@ -72,8 +71,12 @@ Config example
     hostname = 1.2.3.4
     gateways = foo.com   # `ssh bar` will use `foo.com` as gateway
 
+    [^vm-[0-9]*\.joe\.com$]
+    gateways = bar       # `ssh vm-42.joe.com will use `bar` as gateway which
+                         # itself will use `foo.com` as gateway
+
     [default]
-    ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
+    ProxyCommand = assh --port=%p connect %h
 
 ---
 
@@ -88,10 +91,11 @@ Config example
     gateways = foo
     # By running `ssh bar`, you will ssh to `bar` through a `ssh foo`
 
-    [vm-.*\.joe\.com]
+    [^vm-[0-9]*\.joe\.com$]
     IdentityFile = ~/.ssh/root-joe
     gateways = direct joe.com joe.com/bar
-    # Will try to ssh without proxy, then fallback to joe.com proxy, then fallback to joe.com through bar
+    # Will try to ssh without proxy, then fallback to joe.com proxy, then
+    # fallback to joe.com through bar
     DynamicForward = 43217
     LocalForward = 1723 localhost:1723
     ForwardX11 = yes
@@ -101,14 +105,13 @@ Config example
     Port = 22
     User = root
     IdentityFile = ~/.ssh/id_rsa
-    ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
+    ProxyCommand = assh connect %h --port=%p
     Gateways = direct
     PubkeyAuthentication = yes
     VisualHostKey = yes
     ControlMaster = auto
     ControlPath = ~/.ssh/controlmaster/%h-%p-%r.sock
     EscapeChar = ~
-
 
 Installation
 ------------
@@ -126,25 +129,20 @@ Or by cloning
 
     # git clone https://github.com/moul/advanced-ssh-config
     # cd advanced-ssh-config
-    # python setup.py install
+    # make install
 
----
+First run
+---------
 
-Generate the new config file
+Automatically generate a new `.ssh/config.advanced` based on your
+current `.ssh/config` file:
 
-    # cp ~/.ssh/config ~/.ssh/config.backup
-    # advanced-ssh-config -uf
+    # advanced-ssh-config init
 
 Tests
 -----
 
-Install test dependencies and run tests
-
-    # python setup.py test
-
-Pep8
-
-    # pep8 advanced_ssh_config | grep -v /tests/
+    # make test
 
 Docker
 ------
