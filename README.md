@@ -117,25 +117,23 @@ From Pypi
 
     # pip install advanced-ssh-config
 
+Download the latest build
+
+    # wget https://github.com/moul/advanced-ssh-config/releases/download/v0.16.0/advanced-ssh-config-Darwin-x86_64 -O /usr/local/bin/advanced-ssh-config && chmod +x /usr/local/bin/advanced-ssh-config
+    # wget https://github.com/moul/advanced-ssh-config/releases/download/v0.16.0/advanced-ssh-config-$(uname -s)-$(uname -p) -O /usr/local/bin/advanced-ssh-config && chmod +x /usr/local/bin/advanced-ssh-config
+
 Or by cloning
 
     # git clone https://github.com/moul/advanced-ssh-config
     # cd advanced-ssh-config
     # python setup.py install
 
-Backup your old ~/.ssh/config file
-
-    # cp ~/.ssh/config ~/.ssh/config.backup
+---
 
 Generate the new config file
 
-    # advanced-ssh-config -u
-
-Or add this line manually in your ~/.ssh/config file
-
-    ...
-    ProxyCommand = advanced-ssh-config --hostname=%h --port=%p -u
-    ...
+    # cp ~/.ssh/config ~/.ssh/config.backup
+    # advanced-ssh-config -uf
 
 Tests
 -----
