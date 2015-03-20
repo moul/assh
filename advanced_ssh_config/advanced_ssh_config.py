@@ -116,10 +116,9 @@ class AdvancedSshConfig(object):
             if value:
                 args[key] = value
 
-        # If we interpolated any keys
-        if updated:
-            self.write_sshconfig()
-            self.logger.debug('Config updated. Need to restart SSH!?')
+        # FIXME: determine if we need to rebuild .ssh/config
+        self.write_sshconfig()
+        self.logger.debug('Config updated. Need to restart SSH!?')
 
         self.logger.debug('args: {}'.format(args))
 

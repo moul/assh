@@ -16,28 +16,43 @@ from .advanced_ssh_config import AdvancedSshConfig
 from .ssh_config import parse_ssh_config
 
 
+AVAILABLE_COMMANDS = (
+    'build',
+    'connect',
+    'generate-etc-hosts',
+    'info',
+    'init',
+    'stats',
+)
+
+
 def advanced_ssh_config_parse_options():
-    parser = optparse.OptionParser(usage='%prog [-v] [-l 9] -H host [-p 22]',
-                                   version='%prog {0}'.format(__version__))
+    parser = optparse.OptionParser(
+        usage="""%prog [OPTIONS] COMMAND [arg...]
 
-    parser.add_option('-H', '--hostname',
-                      dest='hostname',
-                      help='Host')
-
+Commands:
+  build                 Build .ssh/config based on .ssh/config.advanced
+  connect <host>        Open a connection to <host>
+  info <host>           Print connection informations
+  init                  Build a .ssh/config.advanced file based on .ssh/config
+  generate-etc-hosts    Print a /etc/hosts file of .ssh/config.advanced
+  stats                 Print statistics""",
+        version='%prog {0}'.format(__version__)
+    )
     parser.add_option('-p', '--port',
                       dest='port',
-                      default=None)
+                      default=None,
+                      help='SSH port')
 
-    parser.add_option('--file',
-                      dest='file',
+    parser.add_option('-c', '--config',
+                      dest='config_file',
                       default='~/.ssh/config',
                       help='ssh_config file')
 
     parser.add_option('-f', '--force',
                       dest='force',
                       default=False,
-                      action='store_true',
-                      help='force update if versions differ')
+                      action='store_true')
 
     parser.add_option('-v', '--verbose',
                       dest='verbose',
@@ -46,26 +61,34 @@ def advanced_ssh_config_parse_options():
     parser.add_option('-l', '--log_level',
                       dest='log_level')
 
-    parser.add_option('-u', '--update-sshconfig',
-                      dest='update_sshconfig',
-                      action='store_true')
-
     parser.add_option('--dry-run',
                       action='store_true',
                       dest='dry_run')
 
     (options, args) = parser.parse_args()
 
-    if len(args):
-        raise ValueError('This program only takes options, not args')
+    # Must specify a COMMAND
+    if not len(args):
+        parser.print_help()
+        exit(-1)
 
-    if options.update_sshconfig and not options.hostname:
-        return options
+    options.command = args[0]
 
-    validate_host(options.hostname)
-    if options.port is not None:
-        validate_port(options.port)
-        options.port = int(options.port)
+    # COMMAND must exists
+    if options.command not in AVAILABLE_COMMANDS:
+        raise ValueError("'{}' is not a valid command.".format(options.command))
+
+    options.hostname = None
+    # some COMMANDS needs a HOST as argument
+    if options.command in ('connect', 'info'):
+        if len(args) < 2:
+            parser.print_help()
+            exit(-1)
+        options.hostname = args[1]
+        validate_host(options.hostname)
+        if options.port is not None:
+            validate_port(options.port)
+            options.port = int(options.port)
 
     return options
 
@@ -96,31 +119,42 @@ def advanced_ssh_config():
     logger = logging.getLogger('assh.advanced_ssh_config')
 
     try:
-        ssh = AdvancedSshConfig(hostname=options.hostname,
-                                port=options.port,
-                                verbose=options.verbose,
-                                dry_run=options.dry_run,
-                                ssh_config_file=options.file,
-                                force=options.force)
-        if options.update_sshconfig:
-            ssh.write_sshconfig()
+        ssh = AdvancedSshConfig(
+            hostname=options.hostname,
+            port=options.port,
+            verbose=options.verbose,
+            dry_run=options.dry_run,
+            ssh_config_file=options.config_file,
+            force=options.force
+        )
 
-        if ssh.hostname:
+        if options.command == 'build':
+            ssh.write_sshconfig()
+            print("The file '{}' has been rebuilt".format(options.config_file))
+            # FIXME: print some stats
+            # FIXME: print diff
+
+        elif options.command == 'connect':
             routing = ssh.get_routing()
             ssh.connect(routing)
-        elif not options.update_sshconfig:
-            print 'Must specify a host!\n'
+
+        else:
+            raise NotImplementedError(
+                "Command '{}' not yet implemented".format(options.command)
+            )
 
     except ConfigError as err:
         sys.stderr.write(err.message)
 
     except Exception as err:
-        sys.stderr.write(err.__str__())
+        sys.stderr.write(err.__str__().strip() + '\n')
 
 
 def ssh_config_to_advanced_ssh_config_parse_options():
-    parser = optparse.OptionParser(usage='%prog',
-                                   version='%prog {0}'.format(__version__))
+    parser = optparse.OptionParser(
+        usage='%prog',
+        version='%prog {0}'.format(__version__)
+    )
 
     parser.add_option('-f', '--file',
                       dest='file',

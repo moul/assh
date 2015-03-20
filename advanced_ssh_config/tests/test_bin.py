@@ -60,15 +60,15 @@ class TestParseOptions(unittest.TestCase):
             )
 
     def test_default(self):
-        options = _advanced_ssh_config_parse_options('--host=1.2.3.4')
+        options = _advanced_ssh_config_parse_options('connect', '1.2.3.4')
         should_be = {
             'log_level': None,
             'verbose': None,
             'dry_run': None,
+            'command': 'connect',
             'hostname': '1.2.3.4',
-            'update_sshconfig': None,
             'port': None,
-            'file': '~/.ssh/config',
+            'config_file': '~/.ssh/config',
             'force': False
             }
         self.assertEqual(options, should_be)
@@ -81,65 +81,51 @@ class TestParseOptions(unittest.TestCase):
                      '1.2.3.4.5',
                      '::1',
                      'fe80::1%lo0'):
-            options = _advanced_ssh_config_parse_options(
-                '--host={}'.format(host)
-            )
-            self.assertEqual(options.hostname, host)
-
-            options = _advanced_ssh_config_parse_options('-H', host)
+            options = _advanced_ssh_config_parse_options('connect', host)
             self.assertEqual(options.hostname, host)
 
     def test_option_invalid_host(self):
         with RedirectStdStreams(stdout='devnull', stderr='devnull'):
             self.assertRaises(
-                SystemExit, _advanced_ssh_config_parse_options, '-H'
+                SystemExit, _advanced_ssh_config_parse_options, 'connect'
             )
             self.assertRaises(
-                SystemExit, _advanced_ssh_config_parse_options, '--host'
-            )
-
-        for host in ('',):
-            self.assertRaises(
-                ValueError, _advanced_ssh_config_parse_options,
-                '--host={}'.format(host)
-            )
-            self.assertRaises(
-                ValueError, _advanced_ssh_config_parse_options, '-H', host
+                SystemExit, _advanced_ssh_config_parse_options, 'info'
             )
 
     def test_option_valid_port(self):
         for port in (22, 1, 65535):
             options = _advanced_ssh_config_parse_options(
-                '--host=localhost', '--port={}'.format(port)
+                'connect', 'localhost', '--port={}'.format(port)
             )
             self.assertEqual(options.port, port)
 
             options = _advanced_ssh_config_parse_options(
-                '--host=localhost', '-p', port
+                'connect', 'localhost', '-p', port
             )
             self.assertEqual(options.port, port)
 
     def test_option_no_port(self):
-        options = _advanced_ssh_config_parse_options('--host=localhost')
+        options = _advanced_ssh_config_parse_options('connect', 'localhost')
         self.assertEqual(options.port, None)
 
     def test_option_invalid_port(self):
         with RedirectStdStreams(stdout='devnull', stderr='devnull'):
             self.assertRaises(
                 SystemExit, _advanced_ssh_config_parse_options,
-                '--host=localhost', '--port'
+                'connect', 'localhost', '--port'
             )
             self.assertRaises(
                 SystemExit, _advanced_ssh_config_parse_options,
-                '--host=localhost', '-p'
+                'connect', 'localhost', '-p'
             )
 
         for port in (-1, 65536, 'test', '', '1.0'):
             self.assertRaises(
                 ValueError, _advanced_ssh_config_parse_options,
-                '--host=localhost', '--port={}'.format(port)
+                'connect', 'localhost', '--port={}'.format(port)
             )
             self.assertRaises(
                 ValueError, _advanced_ssh_config_parse_options,
-                '--host=localhost', '-p', port
+                'connect', 'localhost', '-p', port
             )
