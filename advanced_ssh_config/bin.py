@@ -144,6 +144,18 @@ def advanced_ssh_config():
             routing = ssh.get_routing()
             ssh.connect(routing)
 
+        elif options.command == 'info':
+            routing = ssh.get_routing()
+            for key, value in routing.items():
+                if value is None:
+                    continue
+                if isinstance(value, list):
+                    if len(value):
+                        print('{}:'.format(key))
+                        print('\n'.join(['- {}'.format(line) for line in value]))
+                else:
+                    print('{}: {}'.format(key, value))
+
         elif options.command == 'generate-etc-hosts':
             assh_to_etchosts()
 
