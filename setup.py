@@ -64,7 +64,6 @@ setup(
             'advanced-ssh-config = advanced_ssh_config.bin:advanced_ssh_config',
             'assh = advanced_ssh_config.bin:advanced_ssh_config',
             'ssh-to-assh = advanced_ssh_config.bin:ssh_config_to_advanced_ssh_config',
-            'assh-to-etchosts = advanced_ssh_config.bin:assh_to_etchosts',
             ],
     },
 )

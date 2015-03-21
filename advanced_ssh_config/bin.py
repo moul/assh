@@ -144,6 +144,9 @@ def advanced_ssh_config():
             routing = ssh.get_routing()
             ssh.connect(routing)
 
+        elif options.command == 'generate-etc-hosts':
+            assh_to_etchosts()
+
         else:
             raise NotImplementedError(
                 "Command '{}' not yet implemented".format(options.command)
@@ -211,11 +214,10 @@ def ssh_config_to_advanced_ssh_config():
             print('')
 
 
-@keyboard_interrupt
 def assh_to_etchosts():
     """ assh-to-etchosts entry-point. """
-    print('')
     print('## Automatically generated with assh-to-etchosts')
+    print('')
     configfiles = [
         '/etc/ssh/config.advanced',
         '~/.ssh/config.advanced',
