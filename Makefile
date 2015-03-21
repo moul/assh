@@ -9,7 +9,7 @@ develop:
 
 test:
 	python2.7 setup.py test
-	# FIXME: handle python 2.6 and 3.4
+	# FIXME: handle python 3
 
 
 release: test release_binary release_pypi README.rst README.md
@@ -26,7 +26,7 @@ release_pypi:
 	python2.7 setup.py bdist_egg upload
 	python2.6 setup.py bdist_wheel --python-tag=py26 upload
 	python2.7 setup.py bdist_wheel --python-tag=py27 upload
-	# FIXME: handle python 3.4
+	# FIXME: handle python 3
 
 
 release_binary: dist/advanced-ssh-config-$(shell uname -s)-$(shell uname -m)
@@ -41,3 +41,7 @@ dist/advanced-ssh-config: bin/advanced-ssh-config
 
 fclean:
 	-rm -rf ./dist/
+
+
+install:
+	pip install -e .
