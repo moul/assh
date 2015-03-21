@@ -20,6 +20,7 @@ AVAILABLE_COMMANDS = (
     'build',
     'connect',
     'generate-etc-hosts',
+    'help',
     'info',
     'init',
     'stats',
@@ -76,7 +77,12 @@ Commands:
 
     # COMMAND must exists
     if options.command not in AVAILABLE_COMMANDS:
-        raise ValueError("'{}' is not a valid command.".format(options.command))
+        raise ValueError("'{}' is not a valid command."
+                         .format(options.command))
+
+    if options.command == 'help':
+        parser.print_help()
+        exit(-1)
 
     options.hostname = None
     # some COMMANDS needs a HOST as argument
