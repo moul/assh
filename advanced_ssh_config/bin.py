@@ -159,6 +159,10 @@ def advanced_ssh_config():
         elif options.command == 'generate-etc-hosts':
             assh_to_etchosts()
 
+        elif options.command == 'stats':
+            hosts = ssh.prepare_sshconfig()
+            print('{} hosts'.format(len(hosts.keys())))
+
         else:
             raise NotImplementedError(
                 "Command '{}' not yet implemented".format(options.command)
