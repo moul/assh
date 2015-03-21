@@ -215,8 +215,9 @@ class AdvancedSshConfig(object):
             filename = self.ssh_config_file
         config = self.build_sshconfig()
         if self.dry_run:
-            self.logger.error('Without dry-run, the file {} should be replaced '
-                              'by the following content'.format(filename))
+            self.logger.error(
+                'Without dry-run, the file {} should be replaced by the '
+                'following content'.format(filename))
             self.logger.error('\n'.join(config))
         else:
             fhandle = open(os.path.expanduser(filename), 'w+')
@@ -232,13 +233,15 @@ class AdvancedSshConfig(object):
         hosts = self.prepare_sshconfig()
         od = OrderedDict(sorted(hosts.items()))
         for entry in od.values():
-            if entry.host == '*':
+            # '*' host must be at the end of the file
+            if entry.host in ('*', 'default'):
                 continue
             else:
                 config += entry.build_sshconfig()
 
-        if '*' in hosts:
-            config += hosts['*'].build_sshconfig()
+        # '*' host
+        if 'default' in hosts:
+            config += hosts['default'].build_sshconfig()
 
         return config
 

@@ -57,7 +57,7 @@ Includes = {0}/include-1 {0}/include-1
 [default]
 """
         config = set_config(contents)
-        self.assertEquals(config.sections, ['hosta', 'default'])
+        self.assertEquals(config.sections, ['default', 'hosta'])
 
     def test_sections_with_double(self):
         contents = """
@@ -66,7 +66,7 @@ Includes = {0}/include-1 {0}/include-1
 [default]
 """
         config = set_config(contents)
-        self.assertEquals(config.sections, ['hosta', 'default'])
+        self.assertEquals(config.sections, ['default', 'hosta'])
 
     def test_sections_with_case(self):
         contents = """
@@ -75,7 +75,7 @@ Includes = {0}/include-1 {0}/include-1
 [default]
 """
         config = set_config(contents)
-        self.assertEquals(config.sections, ['hosta', 'hostA', 'default'])
+        self.assertEquals(config.sections, ['default', 'hostA', 'hosta'])
 
     def test_sections_with_regex(self):
         contents = """
@@ -84,7 +84,7 @@ Includes = {0}/include-1 {0}/include-1
 [default]
 """
         config = set_config(contents)
-        self.assertEquals(config.sections, ['hosta', 'host.*', 'default'])
+        self.assertEquals(config.sections, ['default', 'host.*', 'hosta'])
 
     def test_get_simple(self):
         contents = """

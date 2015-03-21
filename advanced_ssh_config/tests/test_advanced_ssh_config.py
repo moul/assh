@@ -168,7 +168,7 @@ port = 23
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 11)
+        self.assertEquals(len(arr), 14)
         dest = """
 # assh version: {}
 
@@ -180,6 +180,48 @@ Host bbb
   port 23
   user toto
   # inherits aaa
+
+Host *
+  proxycommand assh connect %h --port=%p
+""".format(__version__)
+        self.assertEquals(string.strip(), dest.strip())
+
+    def test_build_ssh_config_with_proxycommand(self):
+        contents = """
+[aaa]
+hostname = 1.2.3.4
+user = toto
+
+[bbb]
+inherits = aaa
+port = 23
+
+[default]
+ProxyCommand = assh connect %h --port=%p
+User = titi
+"""
+        set_config(contents)
+        advssh = AdvancedSshConfig(hostname='test',
+                                   configfiles=[DEFAULT_CONFIG])
+        config = advssh.prepare_sshconfig()
+        arr = advssh.build_sshconfig()
+        string = '\n'.join(arr)
+        #self.assertEquals(len(arr), 17)
+        dest = """
+# assh version: {}
+
+Host aaa
+  user toto
+  # hostname 1.2.3.4
+
+Host bbb
+  port 23
+  user toto
+  # inherits aaa
+
+Host *
+  proxycommand assh connect %h --port=%p
+  user titi
 """.format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
@@ -234,6 +276,9 @@ Host ddd
   port 23
   user titi
   # inherits aaa
+
+Host *
+  proxycommand assh connect %h --port=%p
 """.format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
@@ -395,7 +440,7 @@ port = 22
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 8)
+        self.assertEquals(len(arr), 11)
         dest = """
 # assh version: {}
 
@@ -405,6 +450,8 @@ Host localhost
   port 22
   user toto
 
+Host *
+  proxycommand assh connect %h --port=%p
 """.format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
@@ -422,7 +469,7 @@ port = 22
         config = advssh.prepare_sshconfig()
         arr = advssh.build_sshconfig()
         string = '\n'.join(arr)
-        self.assertEquals(len(arr), 8)
+        self.assertEquals(len(arr), 11)
         dest = """
 # assh version: {}
 
@@ -432,6 +479,8 @@ Host localhost
   port 22
   user toto
 
+Host *
+  proxycommand assh connect %h --port=%p
 """.format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 
@@ -472,6 +521,8 @@ Host localhost
   # comment .    |___|_|___|
   # comment .
 
+Host *
+  proxycommand assh connect %h --port=%p
 """.format(__version__)
         self.assertEquals(string.strip(), dest.strip())
 

@@ -93,6 +93,11 @@ class ConfigHost(object):
         config = self.config_dict
         if self.inherited:
             config = dict(self.inherited.items() + config.items())
+
+        # Ensure 'default' Host has a proxycommand
+        if self.host == 'default' and not 'proxycommand' in config:
+            config['proxycommand'] = ['assh connect %h --port=%p']
+
         if sort:
             return OrderedDict(sorted(config.items()))
         return config
@@ -201,7 +206,7 @@ class Config(object):
 
     @property
     def sections(self):
-        return self.parser.sections()
+        return sorted(list(set(self.parser.sections() + ['default'])))
 
     def get_in_section(self, section, key, raw=False, vardct=None):
         if not self.parser.has_option(section, key):
@@ -233,4 +238,8 @@ class Config(object):
                 conf = ConfigHost.from_config_file(self, host,
                                                    config_file_entry)
                 self.full_cache[host] = conf
+
+            if not 'default' in self.full_cache:
+                self.full_cache['default'] = ConfigHost(self, 'default')
+
         return self.full_cache
