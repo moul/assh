@@ -3,8 +3,6 @@ Advanced SSH config
 
 [![PyPI version](https://badge.fury.io/py/advanced-ssh-config.svg)](http://badge.fury.io/py/advanced-ssh-config)
 [![Build Status](https://travis-ci.org/moul/advanced-ssh-config.svg?branch=develop)](https://travis-ci.org/moul/advanced-ssh-config)
-[![authors](https://sourcegraph.com/api/repos/github.com/moul/advanced-ssh-config/badges/authors.png)](https://sourcegraph.com/github.com/moul/advanced-ssh-config)
-[![library users](https://sourcegraph.com/api/repos/github.com/moul/advanced-ssh-config/badges/library-users.png)](https://sourcegraph.com/github.com/moul/advanced-ssh-config)
 [![Total views](https://sourcegraph.com/api/repos/github.com/moul/advanced-ssh-config/counters/views.png)](https://sourcegraph.com/github.com/moul/advanced-ssh-config)
 [![Views in the last 24 hours](https://sourcegraph.com/api/repos/github.com/moul/advanced-ssh-config/counters/views-24h.png)](https://sourcegraph.com/github.com/moul/advanced-ssh-config)
 [![PyPi downloads](https://pypip.in/d/advanced-ssh-config/badge.svg)](https://crate.io/packages/advanced-ssh-config/)
