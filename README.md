@@ -32,6 +32,31 @@ The `.ssh/config` file is automatically generated, you need to update
 `.ssh/config.advanced` file instead;
 With new features and a better regex engine for the hostnames.
 
+Usage
+-----
+
+    ➜  ~  assh
+    Usage: assh [OPTIONS] COMMAND [arg...]
+    
+    Commands:
+      build                 Build .ssh/config based on .ssh/config.advanced
+      connect <host>        Open a connection to <host>
+      info <host>           Print connection informations
+      init                  Build a .ssh/config.advanced file based on .ssh/config
+      generate-etc-hosts    Print a /etc/hosts file of .ssh/config.advanced
+      stats                 Print statistics
+    
+    Options:
+      --version             show program's version number and exit
+      -h, --help            show this help message and exit
+      -p PORT, --port=PORT  SSH port
+      -c CONFIG_FILE, --config=CONFIG_FILE
+                            ssh_config file
+      -f, --force
+      -v, --verbose
+      -l LOG_LEVEL, --log_level=LOG_LEVEL
+      --dry-run
+
 Commmand line features
 ----------------------
 
