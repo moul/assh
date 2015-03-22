@@ -111,6 +111,17 @@ def keyboard_interrupt(fn):
     return wrapper
 
 
+def assh_from_options(options):
+    return AdvancedSshConfig(
+        hostname=options.hostname,
+        port=options.port,
+        verbose=options.verbose,
+        dry_run=options.dry_run,
+        ssh_config_file=options.config_file,
+        force=options.force
+    )
+
+
 @keyboard_interrupt
 def advanced_ssh_config():
     """ advanced-ssh-config entry-point. """
@@ -125,26 +136,20 @@ def advanced_ssh_config():
     logger = logging.getLogger('assh.advanced_ssh_config')
 
     try:
-        ssh = AdvancedSshConfig(
-            hostname=options.hostname,
-            port=options.port,
-            verbose=options.verbose,
-            dry_run=options.dry_run,
-            ssh_config_file=options.config_file,
-            force=options.force
-        )
-
         if options.command == 'build':
+            ssh = assh_from_options(options)
             ssh.write_sshconfig()
             print("The file '{}' has been rebuilt".format(options.config_file))
             # FIXME: print some stats
             # FIXME: print diff
 
         elif options.command == 'connect':
+            ssh = assh_from_options(options)
             routing = ssh.get_routing()
             ssh.connect(routing)
 
         elif options.command == 'info':
+            ssh = assh_from_options(options)
             routing = ssh.get_routing()
             for key, value in routing.items():
                 if value is None:
@@ -160,8 +165,36 @@ def advanced_ssh_config():
             assh_to_etchosts()
 
         elif options.command == 'stats':
+            ssh = assh_from_options(options)
             hosts = ssh.prepare_sshconfig()
             print('{} hosts'.format(len(hosts.keys())))
+
+
+        elif options.command == 'init':
+            ssh_config_file = os.path.expanduser('~/.ssh/config')
+            with open(ssh_config_file, 'r') as file_descriptor:
+                config = parse_ssh_config(file_descriptor)
+                for host, config in config.iteritems():
+
+                    # Escape regex
+                    if host == '*':
+                        escaped_host = 'default'
+                    else:
+                        escaped_host = host.replace('.', '\\.')
+                        escaped_host = escaped_host.replace('*', '.*')
+                        # escaped_host = '^{0}$'.format(escaped_host)
+
+                    print('[{0}]'.format(escaped_host))
+                    print('# non-escaped host: {}'.format(host))
+                    for key, value in config.iteritems():
+                        if isinstance(value, list):
+                            for entry in value:
+                                print('{0} = {1}'.format(key, entry))
+                            pass
+                        else:
+                            print('{0} = {1}'.format(key, value))
+                    print('')
+
 
         else:
             raise NotImplementedError(
@@ -173,61 +206,6 @@ def advanced_ssh_config():
 
     except Exception as err:
         sys.stderr.write(err.__str__().strip() + '\n')
-
-
-def ssh_config_to_advanced_ssh_config_parse_options():
-    parser = optparse.OptionParser(
-        usage='%prog',
-        version='%prog {0}'.format(__version__)
-    )
-
-    parser.add_option('-f', '--file',
-                      dest='file',
-                      default='~/.ssh/config',
-                      help='ssh_config file to parse')
-
-    parser.add_option('-a', '--all',
-                      action='store_true',
-                      help='include hosts without configuration')
-
-    parser.add_option('--no-escape',
-                      action='store_false',
-                      default=True,
-                      dest='escape',
-                      help='escape host for regexp')
-
-    (options, args) = parser.parse_args()
-
-    options.file = os.path.expanduser(options.file)
-    if not os.path.exists(options.file):
-        raise ValueError('File not found: {0}'.format(options.file))
-    return options
-
-
-@keyboard_interrupt
-def ssh_config_to_advanced_ssh_config():
-    """ ssh-config-to-advanced-ssh-config entry-point. """
-    try:
-        options = ssh_config_to_advanced_ssh_config_parse_options()
-    except ValueError as err:
-        logger = logging.getLogger('assh')
-        logger.fatal(err.message)
-        sys.exit(1)
-
-    with open(options.file, 'r') as file_descriptor:
-        config = parse_ssh_config(file_descriptor)
-        print(options.escape)
-        for host, config in config.iteritems():
-            if not config and not options.all:
-                continue
-            if options.escape:
-                host = host.replace('.', '\\.')
-                host = host.replace('*', '.*')
-                host = '^{0}$'.format(host)
-            print('[{0}]'.format(host))
-            for key, value in config.iteritems():
-                print('  {0} = {1}'.format(key, value))
-            print('')
 
 
 def assh_to_etchosts():
