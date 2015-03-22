@@ -10,6 +10,8 @@ Advanced SSH config
 [![Gitter chat](https://badges.gitter.im/moul/advanced-ssh-config.svg)](https://gitter.im/moul/advanced-ssh-config)
 
 
+<img src="https://raw.githubusercontent.com/moul/advanced-ssh-config/develop/assets/assh.jpg" width="400" />
+
 Enhances `ssh_config` file capabilities
 
 **NOTE**: This program is called by [ProxyCommand](http://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) from [lib-ssh](https://www.libssh.org).
@@ -135,7 +137,7 @@ First run
 Automatically generate a new `.ssh/config.advanced` based on your
 current `.ssh/config` file:
 
-    # advanced-ssh-config init
+    # assh init > ~/.ssh/config.advanced
 
 Tests
 -----
