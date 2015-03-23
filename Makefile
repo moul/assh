@@ -55,7 +55,6 @@ dist/assh-Darwin-x86_64:	bin/assh setup.py advanced_ssh_config/__init__.py
 	rm -rf venv dist/assh
 	virtualenv venv
 	venv/bin/pip install .
-	venv/bin/pip install -e '.[process_inspection]'
 	venv/bin/pip install -e '.[release]'
 	venv/bin/pyinstaller -F bin/assh
 	./dist/assh --version

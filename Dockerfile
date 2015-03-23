@@ -11,7 +11,6 @@ WORKDIR /code/
 ADD setup.py /code/
 ADD advanced_ssh_config/__init__.py /code/advanced_ssh_config/
 RUN pip install .
-RUN pip install -e '.[process_inspection]'
 RUN pip install -e '.[release]'
 # RUN pip install -e '.[tests]'
 ADD . /code/

@@ -17,6 +17,7 @@ MODULE_NAME = 'advanced_ssh_config'
 MODULE = imp.load_module(MODULE_NAME, *imp.find_module(MODULE_NAME))
 
 DEPENDENCIES = [
+    'psutil >=2.2'
 ]
 
 TEST_DEPENDENCIES = [
@@ -46,7 +47,6 @@ setup(
     install_requires=DEPENDENCIES,
     tests_require=TEST_DEPENDENCIES,
     extras_require={
-        'process_inspection': ['psutil'],
         'password': ['pexpect'],
         'release': ['PyInstaller', 'wheel'],
     },

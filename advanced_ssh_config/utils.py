@@ -6,6 +6,8 @@ import os
 import errno
 import subprocess
 
+import psutil
+
 from .exceptions import ConfigError
 
 
@@ -166,11 +168,7 @@ def value_interpolate(value, already_interpolated=None):
 
 
 def parent_ssh_process_info():
-    try:
-        import psutil
-        return psutil.Process(os.getppid())
-    except:
-        return None
+    return psutil.Process(os.getppid())
 
 
 def setup_logging(options, parent=None):
@@ -181,7 +179,7 @@ def setup_logging(options, parent=None):
 
         if parent:
             parent_level = 0
-            for arg in parent.cmdline:
+            for arg in parent.cmdline():
                 if arg == '-v':
                     parent_level += 1
                 elif arg == '-vv':
