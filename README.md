@@ -37,7 +37,7 @@ Usage
 
     ➜  ~  assh
     Usage: assh [OPTIONS] COMMAND [arg...]
-    
+
     Commands:
       build                 Build .ssh/config based on .ssh/config.advanced
       connect <host>        Open a connection to <host>
@@ -45,7 +45,7 @@ Usage
       init                  Build a .ssh/config.advanced file based on .ssh/config
       generate-etc-hosts    Print a /etc/hosts file of .ssh/config.advanced
       stats                 Print statistics
-    
+
     Options:
       --version             show program's version number and exit
       -h, --help            show this help message and exit
@@ -141,14 +141,14 @@ Config example
 Installation
 ------------
 
-From Pypi
-
-    # pip install advanced-ssh-config
-
 Download the latest build
 
-    # wget https://github.com/moul/advanced-ssh-config/releases/download/v0.16.0/advanced-ssh-config-Darwin-x86_64 -O /usr/local/bin/advanced-ssh-config && chmod +x /usr/local/bin/advanced-ssh-config
-    # wget https://github.com/moul/advanced-ssh-config/releases/download/v0.16.0/advanced-ssh-config-$(uname -s)-$(uname -p) -O /usr/local/bin/advanced-ssh-config && chmod +x /usr/local/bin/advanced-ssh-config
+    # curl -L https://github.com/moul/advanced-ssh-config/releases/download/v0.17.0/assh-`uname -s`-`uname -m` > /usr/local/bin/assh
+    # chmod +x /usr/local/bin/assh
+
+Using Pypi
+
+    # pip install advanced-ssh-config
 
 Or by cloning
 
