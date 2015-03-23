@@ -48,9 +48,9 @@ setup(
     extras_require={
         'process_inspection': ['psutil'],
         'password': ['pexpect'],
-        'release': ['PyInstaller'],
+        'release': ['PyInstaller', 'wheel'],
     },
-    test_suite='{}.tests'.format(MODULE_NAME),
+    test_suite=MODULE_NAME + '.tests',
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 3 - Alpha',

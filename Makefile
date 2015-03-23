@@ -1,5 +1,9 @@
+PYTHON_VERSION ?=	2.7
+PYTHON_TAG ?=		py$(shell echo $(PYTHON_VERSION) | sed 's/[^0-9]//g')
+
+
 .PHONY: all develop test test_local release release_pypi release_binary fclean
-.PHONY: install shell
+.PHONY: install shell release_pypi_once
 
 
 all:	develop
@@ -27,12 +31,21 @@ README.txt README.rst:	README.md
 
 
 release_pypi:
-	python2.7 setup.py register
-	python2.7 setup.py sdist upload
-	python2.6 setup.py bdist_egg upload
-	python2.7 setup.py bdist_egg upload
-	python2.6 setup.py bdist_wheel --python-tag=py26 upload
-	python2.7 setup.py bdist_wheel --python-tag=py27 upload
+	$(MAKE) release_pypi_once PYTHON_VERSION=2.6
+	$(MAKE) release_pypi_once PYTHON_VERSION=2.7
+
+
+release_pypi_once:
+	rm -rf venv$(PYTHON_VERSION)
+	virtualenv -p python$(PYTHON_VERSION) venv$(PYTHON_VERSION)
+
+	venv$(PYTHON_VERSION)/bin/pip install .
+	venv$(PYTHON_VERSION)/bin/pip install -e '.[release]'
+	venv$(PYTHON_VERSION)/bin/python setup.py register
+	venv$(PYTHON_VERSION)/bin/python setup.py sdist upload
+	venv$(PYTHON_VERSION)/bin/python setup.py bdist_egg upload
+	-venv$(PYTHON_VERSION)/bin/python setup.py bdist upload
+	venv$(PYTHON_VERSION)/bin/python setup.py bdist_wheel --python-tag=$(PYTHON_TAG) upload
 
 
 release_binary: dist/assh-Darwin-x86_64 dist/assh-Linux-x86_64
