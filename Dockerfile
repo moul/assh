@@ -5,15 +5,14 @@ RUN apt-get update && \
     apt-get -qq install openssh-client netcat-openbsd && \
     apt-get clean
 
-RUN mkdir /advanced_ssh_config
-WORKDIR /advanced_ssh_config
-VOLUME /advanced_ssh_config
+RUN mkdir /code/
+WORKDIR /code/
 
-RUN echo '#!/bin/bash \n pep8 advanced_ssh_config | grep -v tests \n python setup.py test' > /test.sh && \
-    chmod +x /test.sh
-
-ADD . /advanced_ssh_config
-RUN python setup.py install >/dev/null
-RUN python setup.py develop >/dev/null
-# Install test dependencies (probably a better way to do this)
-RUN python setup.py test >/dev/null 2>/dev/null || true
+ADD setup.py /code/
+ADD advanced_ssh_config/__init__.py /code/advanced_ssh_config/
+RUN pip install .
+RUN pip install -e '.[process_inspection]'
+RUN pip install -e '.[release]'
+# RUN pip install -e '.[tests]'
+ADD . /code/
+RUN chmod 777 /code/
