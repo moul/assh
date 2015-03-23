@@ -15,4 +15,4 @@ RUN pip install -e '.[process_inspection]'
 RUN pip install -e '.[release]'
 # RUN pip install -e '.[tests]'
 ADD . /code/
-RUN chmod 777 /code/
+RUN chmod 777 /code/ && chmod -R 777 /code/build
