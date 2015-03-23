@@ -143,7 +143,7 @@ Installation
 
 Download the latest build
 
-    # curl -L https://github.com/moul/advanced-ssh-config/releases/download/v0.17.0/assh-`uname -s`-`uname -m` > /usr/local/bin/assh
+    # curl -L https://github.com/moul/advanced-ssh-config/releases/download/v1.0.0/assh-`uname -s`-`uname -m` > /usr/local/bin/assh
     # chmod +x /usr/local/bin/assh
 
 Using Pypi
