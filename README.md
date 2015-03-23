@@ -10,7 +10,7 @@ Advanced SSH config
 [![Gitter chat](https://badges.gitter.im/moul/advanced-ssh-config.svg)](https://gitter.im/moul/advanced-ssh-config)
 
 
-<img src="https://raw.githubusercontent.com/moul/advanced-ssh-config/develop/assets/assh.jpg" width="400" />
+[![ASSH logo - Advanced SSH Config logo](https://raw.githubusercontent.com/moul/advanced-ssh-config/develop/assets/assh.jpg)](https://github.com/moul/advanced-ssh-config)
 
 Enhances `ssh_config` file capabilities
 

@@ -30,7 +30,7 @@ README.txt README.rst:	README.md
 	-pandoc -o $@ $<
 
 
-release_pypi:
+release_pypi:	README.rst
 	$(MAKE) release_pypi_once PYTHON_VERSION=2.6
 	$(MAKE) release_pypi_once PYTHON_VERSION=2.7
 
