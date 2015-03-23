@@ -71,7 +71,7 @@ Commands:
     # Must specify a COMMAND
     if not len(args):
         parser.print_help()
-        exit(-1)
+        sys.exit(-1)
 
     options.command = args[0]
 
@@ -82,14 +82,14 @@ Commands:
 
     if options.command == 'help':
         parser.print_help()
-        exit(-1)
+        sys.exit(-1)
 
     options.hostname = None
     # some COMMANDS needs a HOST as argument
     if options.command in ('connect', 'info'):
         if len(args) < 2:
             parser.print_help()
-            exit(-1)
+            sys.exit(-1)
         options.hostname = args[1]
         validate_host(options.hostname)
         if options.port is not None:
