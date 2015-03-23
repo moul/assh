@@ -12,3 +12,4 @@ nosetests.xml
 advanced-ssh-config.spec
 README.txt
 README.rst
+assh.spec
