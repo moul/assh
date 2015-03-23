@@ -13,3 +13,4 @@ advanced-ssh-config.spec
 README.txt
 README.rst
 assh.spec
+venv*
