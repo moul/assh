@@ -163,6 +163,7 @@ Automatically generate a new `.ssh/config.advanced` based on your
 current `.ssh/config` file:
 
     # assh init > ~/.ssh/config.advanced
+    # assh build -f
 
 Tests
 -----
