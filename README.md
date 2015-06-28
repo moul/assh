@@ -4,7 +4,7 @@ Advanced SSH config
 [![Travis](https://img.shields.io/travis/moul/advanced-ssh-config.svg)](https://travis-ci.org/moul/advanced-ssh-config)
 [![PyPI version](https://img.shields.io/pypi/v/advanced-ssh-config.svg)](https://pypi.python.org/pypi/advanced-ssh-config/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/advanced-ssh-config.svg)]()
-[![License](https://img.shields.io/pypi/l/advanced-ssh-config.svg?style=flat)](https://github.com/moul/advanced-ssh-config/blob/master/License.txt)
+[![License](https://img.shields.io/pypi/l/advanced-ssh-config.svg?style=flat)](https://github.com/moul/advanced-ssh-config/blob/develop/LICENSE.md)
 [![Requires.io](https://img.shields.io/requires/github/moul/advanced-ssh-config.svg)](https://requires.io/github/moul/advanced-ssh-config/requirements/)
 [![Gitter](https://img.shields.io/badge/chat-gitter-ff69b4.svg)](https://gitter.im/moul/advanced-ssh-config)
 
