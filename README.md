@@ -30,8 +30,7 @@ The `.ssh/config` file is automatically generated, you need to update
 `.ssh/config.advanced` file instead;
 With new features and a better regex engine for the hostnames.
 
-Usage
------
+## Usage
 
 ```console
 $ assh --help
@@ -57,8 +56,7 @@ Options:
   --dry-run
 ```
 
-Commmand line features
-----------------------
+## Commmand line features
 
 **Gateway chaining**
 
@@ -74,8 +72,7 @@ ssh foo.com/bar.com/baz.com
 
 Connect to `foo.com` using `bar.com/baz.com` which itself uses `baz.com`.
 
-Configuration features
-----------------------
+## Configuration features
 
 - **regex for hostnames**: `gw.school-.*.domain.net`
 - **aliases**: `gate` -> `gate.domain.tld`
@@ -86,8 +83,7 @@ Configuration features
 - **variable expansion**: `User = $USER` (take $USER from environment)
 - **smart proxycommand**: connect using `netcat`, `socat` or custom handler
 
-Config example
---------------
+## Config example
 
 `~/.ssh/config.advanced`
 
@@ -146,8 +142,7 @@ ControlPath = ~/.ssh/controlmaster/%h-%p-%r.sock
 EscapeChar = ~
 ```
 
-Installation
-------------
+## Installation
 
 Download the latest build
 
