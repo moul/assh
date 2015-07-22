@@ -42,25 +42,25 @@ Includes = {0}/include-1 {0}/include-2
 Includes = {0}/*.conf
 """
         config = set_config(contents)
-        self.assertEquals(config.loaded_files, [
+        self.assertEquals(sorted(config.loaded_files), sorted([
             DEFAULT_CONFIG,
             '{}/include-1.conf'.format(PREFIX),
             '{}/include-2.conf'.format(PREFIX),
             '{}/include-4.conf'.format(PREFIX),
-        ])
+        ]))
 
         contents = """
 [default]
 Includes = {0}/*
 """
         config = set_config(contents)
-        self.assertEquals(config.loaded_files, [
+        self.assertEquals(sorted(config.loaded_files), ([
             DEFAULT_CONFIG,
             '{}/include-1.conf'.format(PREFIX),
             '{}/include-2.conf'.format(PREFIX),
             '{}/include-3'.format(PREFIX),
             '{}/include-4.conf'.format(PREFIX),
-        ])
+        ]))
 
     def test_sections_simple(self):
         contents = """
