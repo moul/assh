@@ -31,24 +31,35 @@ Includes = {0}/include-1 {0}/include-2
             '{}/include-2'.format(PREFIX),
         ])
 
-    def test_include_not_exists(self):
-        contents = """
-[default]
-Includes = {0}/include-1 {0}/include-2
-"""
-        set_config(contents, load=False)
-        self.assertRaises(ConfigError, Config, [DEFAULT_CONFIG])
+    def test_include_glob(self):
+        write_config('', name='include-1.conf')
+        write_config('', name='include-2.conf')
+        write_config('', name='include-3')
+        write_config('', name='include-4.conf')
 
-    def test_include_same_file(self):
-        write_config('', name='include-1')
         contents = """
 [default]
-Includes = {0}/include-1 {0}/include-1
+Includes = {0}/*.conf
 """
         config = set_config(contents)
         self.assertEquals(config.loaded_files, [
             DEFAULT_CONFIG,
-            '{}/include-1'.format(PREFIX),
+            '{}/include-1.conf'.format(PREFIX),
+            '{}/include-2.conf'.format(PREFIX),
+            '{}/include-4.conf'.format(PREFIX),
+        ])
+
+        contents = """
+[default]
+Includes = {0}/*
+"""
+        config = set_config(contents)
+        self.assertEquals(config.loaded_files, [
+            DEFAULT_CONFIG,
+            '{}/include-1.conf'.format(PREFIX),
+            '{}/include-2.conf'.format(PREFIX),
+            '{}/include-3'.format(PREFIX),
+            '{}/include-4.conf'.format(PREFIX),
         ])
 
     def test_sections_simple(self):

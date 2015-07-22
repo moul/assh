@@ -96,7 +96,7 @@ class ConfigHost(object):
             config = dict(self.inherited.items() + config.items())
 
         # Ensure 'default' Host has a proxycommand
-        if self.host == 'default' and not 'proxycommand' in config:
+        if self.host == 'default' and 'proxycommand' not in config:
             config['proxycommand'] = ['assh connect %h --port=%p']
 
         if sort:
@@ -242,7 +242,7 @@ class Config(object):
                                                    config_file_entry)
                 self.full_cache[host] = conf
 
-            if not 'default' in self.full_cache:
+            if 'default' not in self.full_cache:
                 self.full_cache['default'] = ConfigHost(self, 'default')
 
         return self.full_cache
