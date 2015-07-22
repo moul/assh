@@ -4,8 +4,15 @@ import (
 	"fmt"
 
 	"github.com/codegangsta/cli"
+
+	"github.com/moul/advanced-ssh-config/config"
 )
 
 func cmdStats(c *cli.Context) {
-	fmt.Printf("stats: %v\n", c)
+	conf, err := config.Open()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%d hosts\n", len(conf.Hosts))
 }
