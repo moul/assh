@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import os
-import logging
-import ConfigParser
-import re
 from collections import OrderedDict
+import ConfigParser
+import glob
+import logging
+import os
+import re
 
 from .exceptions import ConfigError
 
@@ -198,11 +199,13 @@ class Config(object):
         # Load sub files
         includes = str(self.get('includes', 'default', '')).strip()
         for include in includes.split():
-            incpath = os.path.expanduser(include)
-            if os.path.exists(incpath):
-                self._load_file(incpath)
-            else:
-                raise ConfigError('\'{}\' include not found'.format(incpath))
+            for incpath in glob.glob(os.path.expanduser(include)):
+                if os.path.exists(incpath):
+                    self._load_file(incpath)
+                else:
+                    raise ConfigError(
+                        '\'{}\' include not found'.format(incpath)
+                    )
 
     @property
     def sections(self):
