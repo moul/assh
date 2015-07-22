@@ -77,7 +77,7 @@ Connect to `foo.com` using `bar.com/baz.com` which itself uses `baz.com`.
 - **regex for hostnames**: `gw.school-.*.domain.net`
 - **aliases**: `gate` -> `gate.domain.tld`
 - **gateways**: transparent ssh connections chaining
-- **includes**: split configuration into multiple files
+- **includes**: split configuration into multiple files, support globbing
 - **local command execution**: finally a way to execute a command locally on connection
 - **inheritance**: `inherits = gate.domain.tld`
 - **variable expansion**: `User = $USER` (take $USER from environment)
@@ -121,15 +121,19 @@ gateways = foo
 
 [^vm-[0-9]*\.joe\.com$]
 IdentityFile = ~/.ssh/root-joe
+
 gateways = direct joe.com joe.com/bar
 # Will try to ssh without proxy, then fallback to joe.com proxy, then
 # fallback to joe.com through bar
+
 DynamicForward = 43217
 LocalForward = 1723 localhost:1723
 ForwardX11 = yes
 
 [default]
-Includes = ~/.ssh/config.advanced2 ~/.ssh/config.advanced3
+Includes = ~/.ssh/config.advanced2 ~/.ssh/config.advanced3 ~/.ssh/configs/*/host.config
+# The `Includes` directive must be in the `[default]` section
+
 Port = 22
 User = root
 IdentityFile = ~/.ssh/id_rsa
