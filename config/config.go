@@ -1,8 +1,10 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v2"
 
@@ -10,14 +12,23 @@ import (
 )
 
 type Host struct {
-	Host string `yaml:"host,omitempty,flow"`
-	User string `yaml:"user,omitempty,flow"`
-	Port string `yaml:"port,omitempty,flow"`
+	Host string `yaml:"host,omitempty,flow" json:"host,omitempty"`
+	User string `yaml:"user,omitempty,flow" json:"user,omitempty"`
+	Port string `yaml:"port,omitempty,flow" json:"port,omitempty"`
 }
 
 type Config struct {
-	Hosts    map[string]Host
-	Defaults Host
+	Hosts    map[string]Host `json:"hosts"`
+	Defaults Host            `json:"defaults,omitempty"`
+}
+
+func (c *Config) PrettyPrint() error {
+	output, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "%s\n", output)
+	return nil
 }
 
 func Open() (*Config, error) {
@@ -39,6 +50,7 @@ func Open() (*Config, error) {
 		return nil, err
 	}
 
+	config.PrettyPrint()
 	fmt.Printf("Config: %v\n", config)
 
 	return &config, nil
