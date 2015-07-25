@@ -3,14 +3,12 @@ package commands
 import "github.com/codegangsta/cli"
 
 var Commands = []cli.Command{
-	/*
-		{
-			Name:        "proxy",
-			Usage:       "Connect to host SSH socket, used by ProxyCommand",
-			Description: "Argument is a host.",
-			Action:      cmdProxy,
-		},
-	*/
+	{
+		Name:        "proxy",
+		Usage:       "Connect to host SSH socket, used by ProxyCommand",
+		Description: "Argument is a host.",
+		Action:      cmdProxy,
+	},
 	/*
 		{
 			Name:        "info",

@@ -14,7 +14,7 @@ import (
 type Host struct {
 	Host string `yaml:"host,omitempty,flow" json:"host,omitempty"`
 	User string `yaml:"user,omitempty,flow" json:"user,omitempty"`
-	Port string `yaml:"port,omitempty,flow" json:"port,omitempty"`
+	Port uint   `yaml:"port,omitempty,flow" json:"port,omitempty"`
 }
 
 type Config struct {
@@ -50,8 +50,8 @@ func Open() (*Config, error) {
 		return nil, err
 	}
 
-	config.PrettyPrint()
-	fmt.Printf("Config: %v\n", config)
+	// config.PrettyPrint()
+	// fmt.Printf("Config: %v\n", config)
 
 	return &config, nil
 }
