@@ -23,27 +23,30 @@ func cmdProxy(c *cli.Context) {
 		panic(err)
 	}
 
-	if host, ok := conf.Hosts[dest]; ok {
-		// Dial
-		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, host.Port))
-		if err != nil {
-			panic(err)
-		}
+	// Get host configuration
+	host, err := conf.GetHost(dest)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(host)
 
-		defer conn.Close()
-
-		fmt.Fprintf(os.Stderr, "Connected to %s:%d\n", host.Host, host.Port)
-
-		// Create Stdio pipes
-		go io.Copy(conn, os.Stdin)
-		go io.Copy(os.Stdout, conn)
-		_, err = io.Copy(os.Stderr, conn)
-		if err != nil {
-			panic(err)
-		}
-
-		return
+	// Dial
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, host.Port))
+	if err != nil {
+		panic(err)
 	}
 
-	os.Exit(1)
+	defer conn.Close()
+
+	fmt.Fprintf(os.Stderr, "Connected to %s:%d\n", host.Host, host.Port)
+
+	// Create Stdio pipes
+	go io.Copy(conn, os.Stdin)
+	go io.Copy(os.Stdout, conn)
+	_, err = io.Copy(os.Stderr, conn)
+	if err != nil {
+		panic(err)
+	}
+
+	return
 }
