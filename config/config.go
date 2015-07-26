@@ -11,12 +11,6 @@ import (
 	"github.com/moul/advanced-ssh-config/utils"
 )
 
-type Host struct {
-	Host string `yaml:"host,omitempty,flow" json:"host,omitempty"`
-	User string `yaml:"user,omitempty,flow" json:"user,omitempty"`
-	Port uint   `yaml:"port,omitempty,flow" json:"port,omitempty"`
-}
-
 type Config struct {
 	Hosts    map[string]Host `json:"hosts"`
 	Defaults Host            `json:"defaults,omitempty"`
@@ -31,8 +25,7 @@ func (c *Config) PrettyPrint() error {
 	return nil
 }
 
-func Open() (*Config, error) {
-	filename := "~/.ssh/assh.yml"
+func LoadFile(filename string) (*Config, error) {
 	var config Config
 
 	filepath, err := utils.ExpandUser(filename)
@@ -54,4 +47,17 @@ func Open() (*Config, error) {
 	// fmt.Printf("Config: %v\n", config)
 
 	return &config, nil
+}
+
+func Open() (*Config, error) {
+	return LoadFile("~/.ssh/assh.yml")
+}
+
+func (c *Config) GetHost(name string) (*Host, error) {
+	if host, ok := c.Hosts[name]; ok {
+		var computedHost Host = host
+		computedHost.ApplyDefaults(c.Defaults)
+		return &computedHost, nil
+	}
+	return nil, fmt.Errorf("no such host: %s", name)
 }
