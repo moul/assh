@@ -28,10 +28,15 @@ func cmdProxy(c *cli.Context) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(host)
 
 	// Dial
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, host.Port))
+	var port uint
+	if c.Int("port") > 0 {
+		port = uint(c.Int("port"))
+	} else {
+		port = host.Port
+	}
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, port))
 	if err != nil {
 		panic(err)
 	}

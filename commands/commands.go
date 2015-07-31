@@ -8,6 +8,13 @@ var Commands = []cli.Command{
 		Usage:       "Connect to host SSH socket, used by ProxyCommand",
 		Description: "Argument is a host.",
 		Action:      cmdProxy,
+		Flags: []cli.Flag{
+			cli.IntFlag{
+				Name:  "port, p",
+				Value: 0,
+				Usage: "SSH destination port",
+			},
+		},
 	},
 	/*
 		{
