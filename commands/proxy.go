@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
 	"github.com/moul/advanced-ssh-config/config"
@@ -13,14 +14,24 @@ import (
 
 func cmdProxy(c *cli.Context) {
 	if len(c.Args()) < 1 {
-		os.Exit(1)
+		logrus.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
 	}
 
-	dest := c.Args()[0]
+	host, port, err := configGetHostPort(c.Args()[0], c.Int("port"))
+	if err != nil {
+		logrus.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
+	}
 
+	err = proxy(host, port)
+	if err != nil {
+		logrus.Fatalf("Proxy error: %v", err)
+	}
+}
+
+func configGetHostPort(dest string, portFlag int) (string, uint, error) {
 	conf, err := config.Open()
 	if err != nil {
-		panic(err)
+		return "", 0, err
 	}
 
 	// Get host configuration
@@ -28,37 +39,42 @@ func cmdProxy(c *cli.Context) {
 
 	// Dial
 	var port uint
-	if c.Int("port") > 0 {
-		port = uint(c.Int("port"))
+	if portFlag > 0 {
+		port = uint(portFlag)
 	} else {
 		port = host.Port
 	}
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, port))
+
+	return host.Host, port, nil
+}
+
+func proxy(host string, port uint) error {
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer conn.Close()
 
-	fmt.Fprintf(os.Stderr, "Connected to %s:%d\n", host.Host, host.Port)
+	logrus.Debugf("Connected to %s:%d\n", host, port)
 
 	// Create Stdio pipes
 	go func() {
 		_, err := io.Copy(conn, os.Stdin)
 		if err != nil {
-			panic(err)
+			logrus.Fatalf("Stdin pipe error: %v", err)
 		}
 	}()
 	go func() {
 		_, err := io.Copy(os.Stderr, conn)
 		if err != nil {
-			panic(err)
+			logrus.Fatalf("Stdout pipe error: %v", err)
 		}
 	}()
 	_, err = io.Copy(os.Stdout, conn)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	return
+	return nil
 }
