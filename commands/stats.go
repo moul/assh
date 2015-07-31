@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/codegangsta/cli"
+	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
 	"github.com/moul/advanced-ssh-config/config"
 )

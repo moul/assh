@@ -1,6 +1,6 @@
 package commands
 
-import "github.com/codegangsta/cli"
+import "github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
 var Commands = []cli.Command{
 	{
