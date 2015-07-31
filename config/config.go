@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 
 	"github.com/moul/advanced-ssh-config/utils"
 )
