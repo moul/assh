@@ -61,3 +61,15 @@ func (c *Config) GetHost(name string) (*Host, error) {
 	}
 	return nil, fmt.Errorf("no such host: %s", name)
 }
+
+func (c *Config) GetHostSafe(name string) *Host {
+	host, err := c.GetHost(name)
+	if err != nil {
+		host = &Host{
+			Host: name,
+		}
+		host.ApplyDefaults(c.Defaults)
+		return host
+	}
+	return host
+}

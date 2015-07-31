@@ -24,10 +24,7 @@ func cmdProxy(c *cli.Context) {
 	}
 
 	// Get host configuration
-	host, err := conf.GetHost(dest)
-	if err != nil {
-		panic(err)
-	}
+	host := conf.GetHostSafe(dest)
 
 	// Dial
 	var port uint
