@@ -1,6 +1,11 @@
+PACKAGES := $(shell go list ./... | grep -v vendor)
+
 build:
 	go get ./...
-	go build
+	go build -o assh ./cmd/assh
 
 test:
-	go test $(go list ./... | grep -v vendor)
+	go test $(PACKAGES)
+
+install:
+	go install $(PACKAGES)
