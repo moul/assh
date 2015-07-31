@@ -46,9 +46,19 @@ func cmdProxy(c *cli.Context) {
 	fmt.Fprintf(os.Stderr, "Connected to %s:%d\n", host.Host, host.Port)
 
 	// Create Stdio pipes
-	go io.Copy(conn, os.Stdin)
-	go io.Copy(os.Stdout, conn)
-	_, err = io.Copy(os.Stderr, conn)
+	go func() {
+		_, err := io.Copy(conn, os.Stdin)
+		if err != nil {
+			panic(err)
+		}
+	}()
+	go func() {
+		_, err := io.Copy(os.Stderr, conn)
+		if err != nil {
+			panic(err)
+		}
+	}()
+	_, err = io.Copy(os.Stdout, conn)
 	if err != nil {
 		panic(err)
 	}
