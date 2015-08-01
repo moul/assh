@@ -15,7 +15,7 @@ func main() {
 	app.Name = path.Base(os.Args[0])
 	app.Author = "Manfred Touron"
 	app.Email = "https://github.com/moul/advanced-ssh-config"
-	app.Version = version.VERSION + " (" + version.GITCOMMIT + ")"
+	app.Version = version.Version + " (" + version.GitCommit + ")"
 	app.Usage = "advanced ssh config"
 
 	app.Flags = []cli.Flag{

@@ -2,6 +2,7 @@ package commands
 
 import "github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
+// Commands is the list of cli commands
 var Commands = []cli.Command{
 	{
 		Name:        "proxy",

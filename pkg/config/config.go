@@ -9,12 +9,14 @@ import (
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 )
 
+// Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
 	Hosts    map[string]Host `json:"hosts"`
 	Defaults Host            `json:"defaults,omitempty"`
 }
 
-func (c *Config) PrettyPrint() error {
+// JsonString returns a string representing the JSON of a Config object
+func (c *Config) JsonString() error {
 	output, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
@@ -23,34 +25,7 @@ func (c *Config) PrettyPrint() error {
 	return nil
 }
 
-func LoadFile(filename string) (*Config, error) {
-	var config Config
-
-	filepath, err := expandUser(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	source, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		return nil, err
-	}
-
-	err = yaml.Unmarshal(source, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	// config.PrettyPrint()
-	// fmt.Printf("Config: %v\n", config)
-
-	return &config, nil
-}
-
-func Open() (*Config, error) {
-	return LoadFile("~/.ssh/assh.yml")
-}
-
+// GetHost returns a matching host form Config hosts list
 func (c *Config) GetHost(name string) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		var computedHost Host = host
@@ -60,6 +35,7 @@ func (c *Config) GetHost(name string) (*Host, error) {
 	return nil, fmt.Errorf("no such host: %s", name)
 }
 
+// GetHostSafe won't fail, in case the host is not found, it will returns a virtual host matching the pattern
 func (c *Config) GetHostSafe(name string) *Host {
 	host, err := c.GetHost(name)
 	if err != nil {
@@ -70,4 +46,39 @@ func (c *Config) GetHostSafe(name string) *Host {
 		return host
 	}
 	return host
+}
+
+// LoadFile loads the content of a configuration file in the Config object
+func (c *Config) LoadFile(filename string) error {
+	filepath, err := expandUser(filename)
+	if err != nil {
+		return err
+	}
+
+	source, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return err
+	}
+
+	err = yaml.Unmarshal(source, &c)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// New returns an instantiated Config object
+func New() *Config {
+	var config Config
+	return &config
+}
+
+// Open returns a Config object loaded with standard configuration file paths
+func Open() (*Config, error) {
+	config := New()
+	err := config.LoadFile("~/.ssh/assh.yml")
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
 }
