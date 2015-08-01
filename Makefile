@@ -9,3 +9,10 @@ test:
 
 install:
 	go install $(PACKAGES)
+
+cover:
+	rm -f profile.out file-profile.out
+	for package in $(PACKAGES); do \
+	  go test -coverprofile=file-profile.out $$package; \
+	  if [ -f file-profile.out ]; then cat file-profile.out | grep -v "mode: set" >> profile.out || true; rm -f file-profile.out; fi \
+	done
