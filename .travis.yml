@@ -1,10 +1,5 @@
 language: go
 
-env:
-- GIMME_OS=linux    GIMME_ARCH=amd64  RUN_TESTS=1
-- GIMME_OS=darwin   GIMME_ARCH=amd64
-- GIMME_OS=windows  GIMME_ARCH=amd64
-
 go:
 - 1.3
 - 1.4
