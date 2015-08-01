@@ -5,7 +5,7 @@ build:
 	go build -o assh ./cmd/assh
 
 test:
-	go test $(PACKAGES)
+	go test -v $(PACKAGES)
 
 install:
 	go install $(PACKAGES)
