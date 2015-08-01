@@ -1,4 +1,4 @@
-package utils
+package config
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func ExpandUser(path string) (string, error) {
+func expandUser(path string) (string, error) {
 	if path[:2] == "~/" {
 		homeDir := os.Getenv("HOME") // *nix
 		if homeDir == "" {           // Windows
