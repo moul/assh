@@ -7,8 +7,6 @@ import (
 	"os"
 
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
-
-	"github.com/moul/advanced-ssh-config/pkg/utils"
 )
 
 type Config struct {
@@ -28,7 +26,7 @@ func (c *Config) PrettyPrint() error {
 func LoadFile(filename string) (*Config, error) {
 	var config Config
 
-	filepath, err := utils.ExpandUser(filename)
+	filepath, err := expandUser(filename)
 	if err != nil {
 		return nil, err
 	}
