@@ -1,14 +1,23 @@
-PACKAGES := $(shell go list ./... | grep -v vendor)
+PACKAGES := $(addprefix ./,$(wildcard pkg/*))
+COMMANDS := $(addprefix ./,$(wildcard cmd/*))
+
+all: build
 
 build:
 	go get ./...
-	go build -o assh ./cmd/assh
+	gofmt -w $(PACKAGES) $(COMMANDS)
+	go test -i $(PACKAGES) $(COMMANDS)
+	for command in $(COMMANDS); do \
+	  go build -o `basename $$command` $$command; \
+	done
 
 test:
-	go test -v $(PACKAGES)
+	go get ./...
+	go test -i $(PACKAGES) $(COMMANDS)
+	go test -v $(PACKAGES) $(COMMANDS)
 
 install:
-	go install $(PACKAGES)
+	go install $(COMMANDS)
 
 cover:
 	rm -f profile.out file-profile.out
