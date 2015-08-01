@@ -8,7 +8,7 @@ import (
 
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 
-	"github.com/moul/advanced-ssh-config/utils"
+	"github.com/moul/advanced-ssh-config/pkg/utils"
 )
 
 type Config struct {

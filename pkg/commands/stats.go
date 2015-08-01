@@ -5,7 +5,7 @@ import (
 
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
-	"github.com/moul/advanced-ssh-config/config"
+	"github.com/moul/advanced-ssh-config/pkg/config"
 )
 
 func cmdStats(c *cli.Context) {
