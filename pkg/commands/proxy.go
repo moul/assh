@@ -9,7 +9,7 @@ import (
 	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
-	"github.com/moul/advanced-ssh-config/config"
+	"github.com/moul/advanced-ssh-config/pkg/config"
 )
 
 func cmdProxy(c *cli.Context) {
