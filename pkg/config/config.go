@@ -70,6 +70,7 @@ func (c *Config) LoadFile(filename string) error {
 // New returns an instantiated Config object
 func New() *Config {
 	var config Config
+	config.Hosts = make(map[string]Host)
 	return &config
 }
 
