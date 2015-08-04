@@ -5,7 +5,10 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/exec"
+	"strings"
 
+	shlex "github.com/flynn/go-shlex"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
@@ -22,7 +25,8 @@ func cmdProxy(c *cli.Context) {
 		logrus.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
 	}
 
-	err = proxy(host, port)
+	// err = proxyGo(host, port)
+	err = proxyCommand("nc -v -w 180 -G 5 {host} {port}", host, port)
 	if err != nil {
 		logrus.Fatalf("Proxy error: %v", err)
 	}
@@ -48,7 +52,21 @@ func configGetHostPort(dest string, portFlag int) (string, uint, error) {
 	return host.Host, port, nil
 }
 
-func proxy(host string, port uint) error {
+func proxyCommand(command string, host string, port uint) error {
+	command = strings.Replace(command, "{host}", host, -1)
+	command = strings.Replace(command, "{port}", fmt.Sprintf("%d", port), -1)
+	args, err := shlex.Split(command)
+	if err != nil {
+		return err
+	}
+	spawn := exec.Command(args[0], args[1:]...)
+	spawn.Stdout = os.Stdout
+	spawn.Stdin = os.Stdin
+	spawn.Stderr = os.Stderr
+	return spawn.Run()
+}
+
+func proxyGo(host string, port uint) error {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return err
