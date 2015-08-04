@@ -25,8 +25,8 @@ func cmdProxy(c *cli.Context) {
 		logrus.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
 	}
 
-	// err = proxyGo(host, port)
-	err = proxyCommand("nc -v -w 180 -G 5 {host} {port}", host, port)
+	err = proxyGo(host, port)
+	//err = proxyCommand("nc -v -w 180 -G 5 {host} {port}", host, port)
 	if err != nil {
 		logrus.Fatalf("Proxy error: %v", err)
 	}
@@ -77,22 +77,43 @@ func proxyGo(host string, port uint) error {
 	logrus.Debugf("Connected to %s:%d\n", host, port)
 
 	// Create Stdio pipes
-	go func() {
-		_, err := io.Copy(conn, os.Stdin)
-		if err != nil {
-			logrus.Fatalf("Stdin pipe error: %v", err)
-		}
-	}()
-	go func() {
-		_, err := io.Copy(os.Stderr, conn)
-		if err != nil {
-			logrus.Fatalf("Stdout pipe error: %v", err)
-		}
-	}()
-	_, err = io.Copy(os.Stdout, conn)
+	c1 := readAndWrite(conn, os.Stdout)
+	c2 := readAndWrite(os.Stdin, conn)
+
+	select {
+	case err = <-c1:
+	case err = <-c2:
+	}
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func readAndWrite(r io.Reader, w io.Writer) <-chan error {
+	// Fixme: add an error channel
+	buf := make([]byte, 1024)
+	c := make(chan error)
+
+	go func() {
+		for {
+			// Read
+			n, err := r.Read(buf)
+			if err != nil {
+				if err != io.EOF {
+					c <- err
+				}
+				break
+			}
+
+			// Write
+			_, err = w.Write(buf[0:n])
+			if err != nil {
+				c <- err
+			}
+		}
+		c <- nil
+	}()
+	return c
 }
