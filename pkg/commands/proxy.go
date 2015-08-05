@@ -20,41 +20,40 @@ func cmdProxy(c *cli.Context) {
 		logrus.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
 	}
 
-	host, port, err := configGetHostPort(c.Args()[0], c.Int("port"))
+	host, err := computeHost(c.Args()[0], c.Int("port"))
 	if err != nil {
 		logrus.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
 	}
 
-	err = proxyGo(host, port)
-	//err = proxyCommand("nc -v -w 180 -G 5 {host} {port}", host, port)
+	err = proxy(host)
 	if err != nil {
 		logrus.Fatalf("Proxy error: %v", err)
 	}
 }
 
-func configGetHostPort(dest string, portFlag int) (string, uint, error) {
+func computeHost(dest string, portOverride int) (*config.Host, error) {
 	conf, err := config.Open()
 	if err != nil {
-		return "", 0, err
+		return nil, err
 	}
 
-	// Get host configuration
 	host := conf.GetHostSafe(dest)
-
-	// Dial
-	var port uint
-	if portFlag > 0 {
-		port = uint(portFlag)
-	} else {
-		port = host.Port
+	if portOverride > 0 {
+		host.Port = uint(portOverride)
 	}
 
-	return host.Host, port, nil
+	return host, nil
 }
 
-func proxyCommand(command string, host string, port uint) error {
-	command = strings.Replace(command, "{host}", host, -1)
-	command = strings.Replace(command, "{port}", fmt.Sprintf("%d", port), -1)
+func proxy(host *config.Host) error {
+	// FIXME: gateways
+	// FIXME: proxyCommand(host, "nc -v -w 180 -G 5 {host} {port}")
+	return proxyGo(host)
+}
+
+func proxyCommand(host *config.Host, command string) error {
+	command = strings.Replace(command, "{host}", host.Host, -1)
+	command = strings.Replace(command, "{port}", fmt.Sprintf("%d", host.Port), -1)
 	args, err := shlex.Split(command)
 	if err != nil {
 		return err
@@ -66,15 +65,15 @@ func proxyCommand(command string, host string, port uint) error {
 	return spawn.Run()
 }
 
-func proxyGo(host string, port uint) error {
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+func proxyGo(host *config.Host) error {
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, host.Port))
 	if err != nil {
 		return err
 	}
 
 	defer conn.Close()
 
-	logrus.Debugf("Connected to %s:%d\n", host, port)
+	logrus.Debugf("Connected to %s:%d\n", host.Host, host.Port)
 
 	// Create Stdio pipes
 	c1 := readAndWrite(conn, os.Stdout)
