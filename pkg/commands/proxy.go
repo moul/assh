@@ -46,7 +46,26 @@ func computeHost(dest string, portOverride int) (*config.Host, error) {
 }
 
 func proxy(host *config.Host) error {
-	// FIXME: gateways
+	if len(host.Gateways) > 0 {
+		for _, gateway := range host.Gateways {
+			gatewayHost, err := computeHost(gateway, 0)
+			if err != nil {
+				logrus.Fatalf("Cannot get host '%s': %v", gateway, err)
+			}
+
+			command := fmt.Sprintf("ssh {host} {port} nc -v -w 180 -G 5 %s %d", host.Host, host.Port)
+
+			logrus.Debugf("Using gateway '%s': %s", gateway, command)
+			err = proxyCommand(gatewayHost, command)
+			if err != nil {
+				logrus.Errorf("Cannot use gateway '%s': %v", gateway, err)
+			}
+			if err == nil {
+				return nil
+			}
+		}
+		return fmt.Errorf("No such available gateway")
+	}
 	// FIXME: proxyCommand(host, "nc -v -w 180 -G 5 {host} {port}")
 	return proxyGo(host)
 }
