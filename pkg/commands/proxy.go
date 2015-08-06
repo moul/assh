@@ -8,9 +8,9 @@ import (
 	"os/exec"
 	"strings"
 
-	shlex "github.com/flynn/go-shlex"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
+	shlex "github.com/moul/advanced-ssh-config/vendor/github.com/flynn/go-shlex"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 )
