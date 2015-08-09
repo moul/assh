@@ -30,6 +30,7 @@ func (c *Config) GetHost(name string) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		var computedHost Host = host
 		computedHost.ApplyDefaults(c.Defaults)
+		host.Name = name
 		return &computedHost, nil
 	}
 	return nil, fmt.Errorf("no such host: %s", name)
@@ -41,10 +42,12 @@ func (c *Config) GetHostSafe(name string) *Host {
 	if err != nil {
 		host = &Host{
 			Host: name,
+			Name: name,
 		}
 		host.ApplyDefaults(c.Defaults)
 		return host
 	}
+	host.Name = name
 	return host
 }
 
