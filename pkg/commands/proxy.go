@@ -53,7 +53,7 @@ func proxy(host *config.Host) error {
 				logrus.Fatalf("Cannot get host '%s': %v", gateway, err)
 			}
 
-			command := fmt.Sprintf("ssh {host} {port} nc -v -w 180 -G 5 %s %d", host.Host, host.Port)
+			command := fmt.Sprintf("ssh {host} -p {port} -- nc -v -w 180 %s %d", host.Host, host.Port)
 
 			logrus.Debugf("Using gateway '%s': %s", gateway, command)
 			err = proxyCommand(gatewayHost, command)
@@ -74,6 +74,7 @@ func proxyCommand(host *config.Host, command string) error {
 	command = strings.Replace(command, "{host}", host.Host, -1)
 	command = strings.Replace(command, "{port}", fmt.Sprintf("%d", host.Port), -1)
 	args, err := shlex.Split(command)
+	logrus.Debugf("ProxyCommand: %s", command)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,6 @@ func proxyGo(host *config.Host) error {
 	if err != nil {
 		return err
 	}
-
 	defer conn.Close()
 
 	logrus.Debugf("Connected to %s:%d\n", host.Host, host.Port)
