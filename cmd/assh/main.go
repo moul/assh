@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/commands"
@@ -23,9 +24,30 @@ func main() {
 			Name:  "debug, D",
 			Usage: "Enable debug mode",
 		},
+		cli.BoolFlag{
+			Name:  "verbose, V",
+			Usage: "Enable verbose mode",
+		},
 	}
+
+	app.Before = hookBefore
 
 	app.Commands = commands.Commands
 
 	app.Run(os.Args)
+}
+
+func hookBefore(c *cli.Context) error {
+	initLogging(c.Bool("debug"), c.Bool("verbose"))
+	return nil
+}
+
+func initLogging(debug bool, verbose bool) {
+	if debug {
+		logrus.SetLevel(logrus.DebugLevel)
+	} else if verbose {
+		logrus.SetLevel(logrus.InfoLevel)
+	} else {
+		logrus.SetLevel(logrus.WarnLevel)
+	}
 }
