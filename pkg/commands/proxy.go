@@ -48,20 +48,27 @@ func computeHost(dest string, portOverride int) (*config.Host, error) {
 func proxy(host *config.Host) error {
 	if len(host.Gateways) > 0 {
 		for _, gateway := range host.Gateways {
-			gatewayHost, err := computeHost(gateway, 0)
-			if err != nil {
-				logrus.Fatalf("Cannot get host '%s': %v", gateway, err)
-			}
+			if gateway == "direct" {
+				err := proxyGo(host)
+				if err != nil {
+					logrus.Errorf("Failed to use 'direct' connection")
+				}
+			} else {
+				gatewayHost, err := computeHost(gateway, 0)
+				if err != nil {
+					logrus.Fatalf("Cannot get host '%s': %v", gateway, err)
+				}
 
-			command := fmt.Sprintf("ssh {host} -p {port} -- nc -v -w 180 %s %d", host.Host, host.Port)
+				command := fmt.Sprintf("ssh {host} -p {port} -- nc -v -w 180 %s %d", host.Host, host.Port)
 
-			logrus.Debugf("Using gateway '%s': %s", gateway, command)
-			err = proxyCommand(gatewayHost, command)
-			if err != nil {
-				logrus.Errorf("Cannot use gateway '%s': %v", gateway, err)
-			}
-			if err == nil {
-				return nil
+				logrus.Debugf("Using gateway '%s': %s", gateway, command)
+				err = proxyCommand(gatewayHost, command)
+				if err != nil {
+					logrus.Errorf("Cannot use gateway '%s': %v", gateway, err)
+				}
+				if err == nil {
+					return nil
+				}
 			}
 		}
 		return fmt.Errorf("No such available gateway")
