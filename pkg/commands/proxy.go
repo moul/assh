@@ -96,13 +96,17 @@ func proxyCommand(host *config.Host, command string) error {
 }
 
 func proxyGo(host *config.Host) error {
+	if host.Host == "" {
+		host.Host = host.Name
+	}
+	logrus.Debugf("Connecting to %s:%d", host.Host, host.Port)
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, host.Port))
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	logrus.Debugf("Connected to %s:%d\n", host.Host, host.Port)
+	logrus.Debugf("Connected to %s:%d", host.Host, host.Port)
 
 	// Create Stdio pipes
 	c1 := readAndWrite(conn, os.Stdout)
