@@ -7,6 +7,7 @@ type Host struct {
 	User               string   `yaml:"user,omitempty,flow" json:"user,omitempty"`
 	Port               uint     `yaml:"port,omitempty,flow" json:"port,omitempty"`
 	ProxyCommand       string   `yaml:"proxycommand,omitempty,flow" json:"proxycommand,omitempty"`
+	ControlPath        string   `yaml:"controlpath,omitempty,flow" json:"controlpath,omitempty"`
 	Gateways           []string `yaml:"gateways,omitempty,flow" json:"gateways,omitempty"`
 	ResolveNameservers []string `yaml:"resolve_nameservers,omitempty,flow" json:"resolve_nameservers,omitempty"`
 	ResolveCommand     string   `yaml:"resolve_command,omitempty,flow" json:"resolve_command,omitempty"`
@@ -34,6 +35,9 @@ func (h *Host) ApplyDefaults(defaults Host) {
 	}
 	if h.ResolveCommand == "" {
 		h.ResolveCommand = defaults.ResolveCommand
+	}
+	if h.ControlPath == "" {
+		h.ControlPath = defaults.ControlPath
 	}
 
 	// Extra defaults
