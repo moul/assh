@@ -50,7 +50,7 @@ func proxy(host *config.Host) error {
 		logrus.Debugf("Trying gateways: %s", host.Gateways)
 		for _, gateway := range host.Gateways {
 			if gateway == "direct" {
-				err := proxyGo(host)
+				err := proxyDirect(host)
 				if err != nil {
 					logrus.Errorf("Failed to use 'direct' connection")
 				}
@@ -60,7 +60,10 @@ func proxy(host *config.Host) error {
 					logrus.Fatalf("Cannot get host '%s': %v", gateway, err)
 				}
 
-				command := fmt.Sprintf("ssh {name} -- nc %s %d", host.Host, host.Port)
+				if host.ProxyCommand == "" {
+					host.ProxyCommand = "nc %h %d"
+				}
+				command := "ssh %name -- " + commandApplyHost(host.ProxyCommand, host)
 
 				logrus.Debugf("Using gateway '%s': %s", gateway, command)
 				err = proxyCommand(gatewayHost, command)
@@ -74,15 +77,27 @@ func proxy(host *config.Host) error {
 		}
 		return fmt.Errorf("No such available gateway")
 	}
-	// FIXME: proxyCommand(host, "nc -v -w 180 -G 5 {host} {port}")
+
 	logrus.Debugf("Connecting without gateway")
+	return proxyDirect(host)
+}
+
+func commandApplyHost(command string, host *config.Host) string {
+	command = strings.Replace(command, "%name", host.Name, -1)
+	command = strings.Replace(command, "%h", host.Host, -1)
+	command = strings.Replace(command, "%p", fmt.Sprintf("%d", host.Port), -1)
+	return command
+}
+
+func proxyDirect(host *config.Host) error {
+	if host.ProxyCommand != "" {
+		return proxyCommand(host, host.ProxyCommand)
+	}
 	return proxyGo(host)
 }
 
 func proxyCommand(host *config.Host, command string) error {
-	command = strings.Replace(command, "{name}", host.Name, -1)
-	command = strings.Replace(command, "{host}", host.Host, -1)
-	command = strings.Replace(command, "{port}", fmt.Sprintf("%d", host.Port), -1)
+	command = commandApplyHost(command, host)
 	args, err := shlex.Split(command)
 	logrus.Debugf("ProxyCommand: %s", command)
 	if err != nil {
