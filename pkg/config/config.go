@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"regexp"
+	"path"
 
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 )
@@ -36,7 +36,7 @@ func (c *Config) GetHost(name string) (*Host, error) {
 	}
 
 	for pattern, host := range c.Hosts {
-		matched, err := regexp.MatchString(pattern, name)
+		matched, err := path.Match(pattern, name)
 		if err != nil {
 			return nil, err
 		}
