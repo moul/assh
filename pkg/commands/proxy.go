@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
@@ -48,6 +49,12 @@ func computeHost(dest string, portOverride int, conf *config.Config) (*config.Ho
 	return host, nil
 }
 
+func prepareHostControlPath(host, gateway *config.Host) error {
+	controlPathDir := path.Dir(os.ExpandEnv(strings.Replace(host.ControlPath, "~", "$HOME", -1)))
+	gatewayControlPath := path.Join(controlPathDir, gateway.Name)
+	return os.MkdirAll(gatewayControlPath, 0700)
+}
+
 func proxy(host *config.Host, conf *config.Config) error {
 	if len(host.Gateways) > 0 {
 		logrus.Debugf("Trying gateways: %s", host.Gateways)
@@ -60,19 +67,22 @@ func proxy(host *config.Host, conf *config.Config) error {
 			} else {
 				gatewayHost := conf.GetGatewaySafe(gateway)
 
+				err := prepareHostControlPath(host, gatewayHost)
+				if err != nil {
+					return err
+				}
+
 				if host.ProxyCommand == "" {
 					host.ProxyCommand = "nc %h %p"
 				}
 				command := "ssh %name -- " + commandApplyHost(host.ProxyCommand, host)
 
 				logrus.Debugf("Using gateway '%s': %s", gateway, command)
-				err := proxyCommand(gatewayHost, command)
-				if err != nil {
-					logrus.Errorf("Cannot use gateway '%s': %v", gateway, err)
-				}
+				err = proxyCommand(gatewayHost, command)
 				if err == nil {
 					return nil
 				}
+				logrus.Errorf("Cannot use gateway '%s': %v", gateway, err)
 			}
 		}
 		return fmt.Errorf("No such available gateway")
