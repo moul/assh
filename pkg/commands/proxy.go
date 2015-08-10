@@ -47,6 +47,7 @@ func computeHost(dest string, portOverride int) (*config.Host, error) {
 
 func proxy(host *config.Host) error {
 	if len(host.Gateways) > 0 {
+		logrus.Debugf("Trying gateways: %s", host.Gateways)
 		for _, gateway := range host.Gateways {
 			if gateway == "direct" {
 				err := proxyGo(host)
@@ -74,6 +75,7 @@ func proxy(host *config.Host) error {
 		return fmt.Errorf("No such available gateway")
 	}
 	// FIXME: proxyCommand(host, "nc -v -w 180 -G 5 {host} {port}")
+	logrus.Debugf("Connecting without gateway")
 	return proxyGo(host)
 }
 
