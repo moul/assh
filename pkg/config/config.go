@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 )
@@ -33,6 +34,20 @@ func (c *Config) GetHost(name string) (*Host, error) {
 		host.Name = name
 		return &computedHost, nil
 	}
+
+	for pattern, host := range c.Hosts {
+		matched, err := regexp.MatchString(pattern, name)
+		if err != nil {
+			return nil, err
+		}
+		if matched {
+			var computedHost Host = host
+			computedHost.ApplyDefaults(c.Defaults)
+			host.Name = name
+			return &computedHost, nil
+		}
+	}
+
 	return nil, fmt.Errorf("no such host: %s", name)
 }
 
