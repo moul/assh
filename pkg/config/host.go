@@ -7,6 +7,7 @@ type Host struct {
 	User     string   `yaml:"user,omitempty,flow" json:"user,omitempty"`
 	Port     uint     `yaml:"port,omitempty,flow" json:"port,omitempty"`
 	Gateways []string `yaml:"gateways,omitempty,flow" json:"gateways,omitempty"`
+	Resolve  string   `yaml:"resolve,omitempty,flow" json:"resolve,omitempty"`
 }
 
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults
