@@ -20,6 +20,8 @@ func cmdProxy(c *cli.Context) {
 		logrus.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
 	}
 
+	// FIXME: handle complete host with json
+
 	host, err := computeHost(c.Args()[0], c.Int("port"))
 	if err != nil {
 		logrus.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
@@ -115,8 +117,8 @@ func proxyGo(host *config.Host) error {
 		host.Host = host.Name
 	}
 
-	if host.Resolve != "" {
-		logrus.Debugf("Resolving host: '%s' using '%s'", host.Host, host.Resolve)
+	if len(host.ResolveNameservers) > 0 {
+		logrus.Debugf("Resolving host: '%s' using nameservers %s", host.Host, host.ResolveNameservers)
 		// FIXME: resolve using custom dns server
 		results, err := net.LookupAddr(host.Host)
 		if err != nil {
@@ -125,6 +127,24 @@ func proxyGo(host *config.Host) error {
 		if len(results) > 0 {
 			host.Host = results[0]
 		}
+		logrus.Debugf("Resolved host is: %s", host.Host)
+	}
+	if host.ResolveCommand != "" {
+		command := commandApplyHost(host.ResolveCommand, host)
+		logrus.Debugf("Resolving host: '%s' using command: '%s'", host.Host, command)
+
+		args, err := shlex.Split(command)
+		if err != nil {
+			return err
+		}
+
+		out, err := exec.Command(args[0], args[1:]...).Output()
+		if err != nil {
+			return err
+		}
+
+		host.Host = strings.TrimSpace(fmt.Sprintf("%s", out))
+		logrus.Debugf("Resolved host is: %s", host.Host)
 	}
 
 	logrus.Debugf("Connecting to %s:%d", host.Host, host.Port)
