@@ -99,6 +99,19 @@ func proxyGo(host *config.Host) error {
 	if host.Host == "" {
 		host.Host = host.Name
 	}
+
+	if host.Resolve != "" {
+		logrus.Debugf("Resolving host: '%s' using '%s'", host.Host, host.Resolve)
+		// FIXME: resolve using custom dns server
+		results, err := net.LookupAddr(host.Host)
+		if err != nil {
+			return err
+		}
+		if len(results) > 0 {
+			host.Host = results[0]
+		}
+	}
+
 	logrus.Debugf("Connecting to %s:%d", host.Host, host.Port)
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Host, host.Port))
 	if err != nil {
