@@ -20,26 +20,27 @@ func cmdProxy(c *cli.Context) {
 		logrus.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
 	}
 
+	conf, err := config.Open()
+	if err != nil {
+		logrus.Fatalf("Cannot open configuration file: %v", err)
+	}
+
 	// FIXME: handle complete host with json
 
-	host, err := computeHost(c.Args()[0], c.Int("port"))
+	host, err := computeHost(c.Args()[0], c.Int("port"), conf)
 	if err != nil {
 		logrus.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
 	}
 
-	err = proxy(host)
+	err = proxy(host, conf)
 	if err != nil {
 		logrus.Fatalf("Proxy error: %v", err)
 	}
 }
 
-func computeHost(dest string, portOverride int) (*config.Host, error) {
-	conf, err := config.Open()
-	if err != nil {
-		return nil, err
-	}
-
+func computeHost(dest string, portOverride int, conf *config.Config) (*config.Host, error) {
 	host := conf.GetHostSafe(dest)
+
 	if portOverride > 0 {
 		host.Port = uint(portOverride)
 	}
@@ -47,7 +48,7 @@ func computeHost(dest string, portOverride int) (*config.Host, error) {
 	return host, nil
 }
 
-func proxy(host *config.Host) error {
+func proxy(host *config.Host, conf *config.Config) error {
 	if len(host.Gateways) > 0 {
 		logrus.Debugf("Trying gateways: %s", host.Gateways)
 		for _, gateway := range host.Gateways {
@@ -57,18 +58,15 @@ func proxy(host *config.Host) error {
 					logrus.Errorf("Failed to use 'direct' connection")
 				}
 			} else {
-				gatewayHost, err := computeHost(gateway, 0)
-				if err != nil {
-					logrus.Fatalf("Cannot get host '%s': %v", gateway, err)
-				}
+				gatewayHost := conf.GetGatewaySafe(gateway)
 
 				if host.ProxyCommand == "" {
-					host.ProxyCommand = "nc %h %d"
+					host.ProxyCommand = "nc %h %p"
 				}
 				command := "ssh %name -- " + commandApplyHost(host.ProxyCommand, host)
 
 				logrus.Debugf("Using gateway '%s': %s", gateway, command)
-				err = proxyCommand(gatewayHost, command)
+				err := proxyCommand(gatewayHost, command)
 				if err != nil {
 					logrus.Errorf("Cannot use gateway '%s': %v", gateway, err)
 				}

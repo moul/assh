@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 )
@@ -26,8 +27,7 @@ func (c *Config) JsonString() error {
 	return nil
 }
 
-// GetHost returns a matching host form Config hosts list
-func (c *Config) GetHost(name string) (*Host, error) {
+func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		var computedHost Host = host
 		computedHost.ApplyDefaults(c.Defaults)
@@ -48,21 +48,54 @@ func (c *Config) GetHost(name string) (*Host, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no such host: %s", name)
-}
-
-// GetHostSafe won't fail, in case the host is not found, it will returns a virtual host matching the pattern
-func (c *Config) GetHostSafe(name string) *Host {
-	host, err := c.GetHost(name)
-	if err != nil {
-		host = &Host{
+	if safe {
+		host := &Host{
 			Host: name,
 			Name: name,
 		}
 		host.ApplyDefaults(c.Defaults)
-		return host
+		return host, nil
 	}
+
+	return nil, fmt.Errorf("no such host: %s", name)
+}
+
+func (c *Config) getHostByPath(path string, safe bool) (*Host, error) {
+	parts := strings.SplitN(path, "/", 2)
+
+	host, err := c.getHostByName(parts[0], safe)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(parts) > 1 {
+		host.Gateways = []string{parts[1]}
+	}
+
+	return host, nil
+}
+
+// GetGatewaySafe returns gateway Host configuration, a gateway is like a Host, except, the host path is not resolved
+func (c *Config) GetGatewaySafe(name string) *Host {
+	host, err := c.getHostByName(name, true)
 	host.Name = name
+	if err != nil {
+		panic(err)
+	}
+	return host
+}
+
+// GetHost returns a matching host form Config hosts list
+func (c *Config) GetHost(name string) (*Host, error) {
+	return c.getHostByPath(name, false)
+}
+
+// GetHostSafe won't fail, in case the host is not found, it will returns a virtual host matching the pattern
+func (c *Config) GetHostSafe(name string) *Host {
+	host, err := c.getHostByPath(name, true)
+	if err != nil {
+		panic(err)
+	}
 	return host
 }
 
