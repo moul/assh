@@ -31,7 +31,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		var computedHost Host = host
 		computedHost.ApplyDefaults(c.Defaults)
-		host.Name = name
+		computedHost.Name = name
 		return &computedHost, nil
 	}
 
@@ -43,7 +43,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 		if matched {
 			var computedHost Host = host
 			computedHost.ApplyDefaults(c.Defaults)
-			host.Name = name
+			computedHost.Name = name
 			return &computedHost, nil
 		}
 	}
@@ -78,7 +78,6 @@ func (c *Config) getHostByPath(path string, safe bool) (*Host, error) {
 // GetGatewaySafe returns gateway Host configuration, a gateway is like a Host, except, the host path is not resolved
 func (c *Config) GetGatewaySafe(name string) *Host {
 	host, err := c.getHostByName(name, true)
-	host.Name = name
 	if err != nil {
 		panic(err)
 	}
