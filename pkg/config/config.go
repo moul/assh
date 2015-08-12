@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 )
 

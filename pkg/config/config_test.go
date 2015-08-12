@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/moul/advanced-ssh-config/vendor/github.com/stretchr/testify/assert"
 )
 
 func dummyConfig() *Config {
