@@ -1,6 +1,11 @@
 package config
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func dummyConfig() *Config {
 	config := New()
@@ -22,27 +27,47 @@ func dummyConfig() *Config {
 func TestNew(t *testing.T) {
 	config := New()
 
-	if len(config.Hosts) != 0 {
-		t.Fatalf("Expected len(config.Hosts)=0 got %d", len(config.Hosts))
-	}
-
-	if config.Defaults.Port != 0 {
-		t.Fatalf("Expected config.Defaults.Port=0 got %d", config.Defaults.Port)
-	}
+	assert.Equal(t, len(config.Hosts), 0)
+	assert.Equal(t, config.Defaults.Port, uint(0))
+	assert.Equal(t, config.Defaults.Host, "")
+	assert.Equal(t, config.Defaults.User, "")
 }
 
 func TestConfig(t *testing.T) {
 	config := dummyConfig()
 
-	if len(config.Hosts) != 2 {
-		t.Fatalf("Expected len(config.Hosts)=2 got %d", len(config.Hosts))
-	}
+	assert.Equal(t, len(config.Hosts), 2)
+	assert.Equal(t, config.Hosts["toto"].Host, "1.2.3.4")
+	assert.Equal(t, config.Defaults.Port, uint(22))
+}
 
-	if config.Hosts["toto"].Host != "1.2.3.4" {
-		t.Fatalf("Expected config.Hosts[\"toto\"].Host=1.2.3.4 got %s", config.Hosts["toto"].Host)
-	}
-
-	if config.Defaults.Port != 22 {
-		t.Fatalf("Expected config.Defaults.Port=22 got %d", config.Defaults.Port)
-	}
+func TestConfigLoadFile(t *testing.T) {
+	config := New()
+	err := config.LoadConfig(strings.NewReader(`
+hosts:
+  aaa:
+    host: 1.2.3.4
+  bbb:
+    port: 21
+  ccc:
+    host: 5.6.7.8
+    port: 24
+    user: toor
+defaults:
+  port: 22
+  user: root
+`))
+	assert.Nil(t, err)
+	assert.Equal(t, len(config.Hosts), 3)
+	assert.Equal(t, config.Hosts["aaa"].Host, "1.2.3.4")
+	assert.Equal(t, config.Hosts["aaa"].Port, uint(0))
+	assert.Equal(t, config.Hosts["aaa"].User, "")
+	assert.Equal(t, config.Hosts["bbb"].Host, "")
+	assert.Equal(t, config.Hosts["bbb"].Port, uint(21))
+	assert.Equal(t, config.Hosts["bbb"].User, "")
+	assert.Equal(t, config.Hosts["ccc"].Host, "5.6.7.8")
+	assert.Equal(t, config.Hosts["ccc"].Port, uint(24))
+	assert.Equal(t, config.Hosts["ccc"].User, "toor")
+	assert.Equal(t, config.Defaults.Port, uint(22))
+	assert.Equal(t, config.Defaults.User, "root")
 }
