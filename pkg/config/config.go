@@ -6,15 +6,20 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
 )
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
 	Hosts    map[string]Host `json:"hosts"`
-	Defaults Host            `json:"defaults,omitempty"`
+	Defaults Host            `json:"defaults",omitempty`
+	Includes []string        `json:"includes",omitempty`
+
+	includedFiles map[string]bool
 }
 
 // JsonString returns a string representing the JSON of a Config object
@@ -100,20 +105,65 @@ func (c *Config) GetHostSafe(name string) *Host {
 
 // LoadFile loads the content of a configuration file in the Config object
 func (c *Config) LoadFile(filename string) error {
+	// Resolve '~' and '$HOME'
 	filepath, err := expandUser(filename)
 	if err != nil {
 		return err
 	}
+	logrus.Debugf("Loading config file '%s'", filepath)
 
+	// Anti-loop protection
+	if _, ok := c.includedFiles[filepath]; ok {
+		logrus.Debugf("File %s already loaded", filepath)
+		return nil
+	}
+	c.includedFiles[filepath] = false
+
+	// Read file
 	source, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return err
 	}
 
+	// Unmarshal to Golang structure
 	err = yaml.Unmarshal(source, &c)
 	if err != nil {
 		return err
 	}
+
+	// Successful loading
+	c.includedFiles[filepath] = true
+
+	// Handling includes
+	for _, include := range c.Includes {
+		c.LoadFiles(include)
+	}
+
+	return nil
+}
+
+// Loadfiles will try to glob the pattern and load each maching entries
+func (c *Config) LoadFiles(pattern string) error {
+	// Resolve '~' and '$HOME'
+	expandedPattern, err := expandUser(pattern)
+	if err != nil {
+		return err
+	}
+
+	// Globbing
+	filepaths, err := filepath.Glob(expandedPattern)
+	if err != nil {
+		return err
+	}
+
+	// Load files iteratively
+	for _, filepath := range filepaths {
+		err := c.LoadFile(filepath)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -121,6 +171,7 @@ func (c *Config) LoadFile(filename string) error {
 func New() *Config {
 	var config Config
 	config.Hosts = make(map[string]Host)
+	config.includedFiles = make(map[string]bool)
 	return &config
 }
 
