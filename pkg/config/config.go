@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -35,7 +36,7 @@ func (c *Config) JsonString() error {
 func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		var computedHost Host = host
-		computedHost.ApplyDefaults(c.Defaults)
+		computedHost.ApplyDefaults(&c.Defaults)
 		computedHost.Name = name
 		return &computedHost, nil
 	}
@@ -47,7 +48,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 		}
 		if matched {
 			var computedHost Host = host
-			computedHost.ApplyDefaults(c.Defaults)
+			computedHost.ApplyDefaults(&c.Defaults)
 			computedHost.Name = name
 			return &computedHost, nil
 		}
@@ -58,7 +59,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 			Host: name,
 			Name: name,
 		}
-		host.ApplyDefaults(c.Defaults)
+		host.ApplyDefaults(&c.Defaults)
 		return host, nil
 	}
 
@@ -103,6 +104,15 @@ func (c *Config) GetHostSafe(name string) *Host {
 	return host
 }
 
+// LoadConfig loads the content of an io.Reader source
+func (c *Config) LoadConfig(source io.Reader) error {
+	buf, err := ioutil.ReadAll(source)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal(buf, &c)
+}
+
 // LoadFile loads the content of a configuration file in the Config object
 func (c *Config) LoadFile(filename string) error {
 	// Resolve '~' and '$HOME'
@@ -120,13 +130,13 @@ func (c *Config) LoadFile(filename string) error {
 	c.includedFiles[filepath] = false
 
 	// Read file
-	source, err := ioutil.ReadFile(filepath)
+	source, err := os.Open(filepath)
 	if err != nil {
 		return err
 	}
 
-	// Unmarshal to Golang structure
-	err = yaml.Unmarshal(source, &c)
+	// Load config stream
+	err = c.LoadConfig(source)
 	if err != nil {
 		return err
 	}

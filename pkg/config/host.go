@@ -14,7 +14,7 @@ type Host struct {
 }
 
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults
-func (h *Host) ApplyDefaults(defaults Host) {
+func (h *Host) ApplyDefaults(defaults *Host) {
 	if h.Host == "" {
 		h.Host = defaults.Host
 	}
