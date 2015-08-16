@@ -24,13 +24,9 @@ type Config struct {
 }
 
 // JsonString returns a string representing the JSON of a Config object
-func (c *Config) JsonString() error {
+func (c *Config) JsonString() ([]byte, error) {
 	output, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(os.Stderr, "%s\n", output)
-	return nil
+	return output, err
 }
 
 func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
