@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/stretchr/testify/assert"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func dummyConfig() *Config {
@@ -25,25 +25,31 @@ func dummyConfig() *Config {
 }
 
 func TestNew(t *testing.T) {
-	config := New()
+	Convey("Testing New()", t, func() {
+		config := New()
 
-	assert.Equal(t, len(config.Hosts), 0)
-	assert.Equal(t, config.Defaults.Port, uint(0))
-	assert.Equal(t, config.Defaults.Host, "")
-	assert.Equal(t, config.Defaults.User, "")
+		So(len(config.Hosts), ShouldEqual, 0)
+		So(config.Defaults.Port, ShouldEqual, uint(0))
+		So(config.Defaults.Host, ShouldEqual, "")
+		So(config.Defaults.User, ShouldEqual, "")
+	})
 }
 
 func TestConfig(t *testing.T) {
-	config := dummyConfig()
+	Convey("Testing Config", t, func() {
+		config := dummyConfig()
 
-	assert.Equal(t, len(config.Hosts), 2)
-	assert.Equal(t, config.Hosts["toto"].Host, "1.2.3.4")
-	assert.Equal(t, config.Defaults.Port, uint(22))
+		So(len(config.Hosts), ShouldEqual, 2)
+		So(config.Hosts["toto"].Host, ShouldEqual, "1.2.3.4")
+		So(config.Defaults.Port, ShouldEqual, uint(22))
+	})
 }
 
-func TestConfigLoadFile(t *testing.T) {
-	config := New()
-	err := config.LoadConfig(strings.NewReader(`
+func TestConfig_LoadConfig(t *testing.T) {
+	Convey("Testing Config.LoadConfig", t, func() {
+
+		config := New()
+		err := config.LoadConfig(strings.NewReader(`
 hosts:
   aaa:
     host: 1.2.3.4
@@ -57,17 +63,18 @@ defaults:
   port: 22
   user: root
 `))
-	assert.Nil(t, err)
-	assert.Equal(t, len(config.Hosts), 3)
-	assert.Equal(t, config.Hosts["aaa"].Host, "1.2.3.4")
-	assert.Equal(t, config.Hosts["aaa"].Port, uint(0))
-	assert.Equal(t, config.Hosts["aaa"].User, "")
-	assert.Equal(t, config.Hosts["bbb"].Host, "")
-	assert.Equal(t, config.Hosts["bbb"].Port, uint(21))
-	assert.Equal(t, config.Hosts["bbb"].User, "")
-	assert.Equal(t, config.Hosts["ccc"].Host, "5.6.7.8")
-	assert.Equal(t, config.Hosts["ccc"].Port, uint(24))
-	assert.Equal(t, config.Hosts["ccc"].User, "toor")
-	assert.Equal(t, config.Defaults.Port, uint(22))
-	assert.Equal(t, config.Defaults.User, "root")
+		So(err, ShouldBeNil)
+		So(len(config.Hosts), ShouldEqual, 3)
+		So(config.Hosts["aaa"].Host, ShouldEqual, "1.2.3.4")
+		So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["aaa"].User, ShouldEqual, "")
+		So(config.Hosts["bbb"].Host, ShouldEqual, "")
+		So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
+		So(config.Hosts["bbb"].User, ShouldEqual, "")
+		So(config.Hosts["ccc"].Host, ShouldEqual, "5.6.7.8")
+		So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
+		So(config.Hosts["ccc"].User, ShouldEqual, "toor")
+		So(config.Defaults.Port, ShouldEqual, uint(22))
+		So(config.Defaults.User, ShouldEqual, "root")
+	})
 }
