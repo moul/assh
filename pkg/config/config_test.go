@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	. "github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey"
 )
 
 func dummyConfig() *Config {

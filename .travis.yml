@@ -14,9 +14,6 @@ matrix:
   allow_failures:
   - go: tip
 
-install:
-- go get -t -d -v ./...
-
 script:
 - go build -v $(go list ./... | grep -v vendor)
 - go test -v $(go list ./... | grep -v vendor)
