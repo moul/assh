@@ -15,7 +15,7 @@ matrix:
   - go: tip
 
 install:
-- go get -d -v ./...
+- go get -t -d -v ./...
 
 script:
 - go build -v $(go list ./... | grep -v vendor)
