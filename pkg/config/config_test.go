@@ -1,10 +1,31 @@
 package config
 
 import (
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
 	. "github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey"
+)
+
+var (
+	configExample string = `
+hosts:
+  aaa:
+    host: 1.2.3.4
+  bbb:
+    port: 21
+  ccc:
+    host: 5.6.7.8
+    port: 24
+    user: toor
+  "*.ddd":
+    host: 1.3.5.7
+defaults:
+  port: 22
+  user: root
+`
 )
 
 func dummyConfig() *Config {
@@ -52,22 +73,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 	Convey("Testing Config.LoadConfig", t, func() {
 
 		config := New()
-		err := config.LoadConfig(strings.NewReader(`
-hosts:
-  aaa:
-    host: 1.2.3.4
-  bbb:
-    port: 21
-  ccc:
-    host: 5.6.7.8
-    port: 24
-    user: toor
-  "*.ddd":
-    host: 1.3.5.7
-defaults:
-  port: 22
-  user: root
-`))
+		err := config.LoadConfig(strings.NewReader(configExample))
 		So(err, ShouldBeNil)
 		So(len(config.Hosts), ShouldEqual, 4)
 		So(config.Hosts["aaa"].Host, ShouldEqual, "1.2.3.4")
@@ -185,6 +191,98 @@ func TestConfig_getHostByName(t *testing.T) {
 			So(len(host.Gateways), ShouldEqual, 0)
 		})
 	})
+}
+
+func TestConfig_GetGatewaySafe(t *testing.T) {
+	Convey("Testing Config.GetGatewaySafe", t, func() {
+
+		config := dummyConfig()
+		var host *Host
+
+		Convey("Without gateway", func() {
+			host = config.GetGatewaySafe("titi")
+			So(host.Name, ShouldEqual, "titi")
+
+			host = config.GetGatewaySafe("dontexists")
+			So(host.Name, ShouldEqual, "dontexists")
+
+			host = config.GetGatewaySafe("regex.ddd")
+			So(host.Name, ShouldEqual, "regex.ddd")
+			So(host.Host, ShouldEqual, "1.3.5.7")
+		})
+
+		Convey("With gateway", func() {
+			host = config.GetGatewaySafe("titi/gateway")
+			So(host.Name, ShouldEqual, "titi/gateway")
+			So(len(host.Gateways), ShouldEqual, 0)
+
+			host = config.GetGatewaySafe("dontexists/gateway")
+			So(host.Name, ShouldEqual, "dontexists/gateway")
+			So(len(host.Gateways), ShouldEqual, 0)
+
+			host = config.GetGatewaySafe("regex.ddd/gateway")
+			So(host.Name, ShouldEqual, "regex.ddd/gateway")
+			So(host.Host, ShouldNotEqual, "1.3.5.7")
+			So(len(host.Gateways), ShouldEqual, 0)
+		})
+	})
+}
+
+func TestConfig_LoadFiles(t *testing.T) {
+	Convey("Testing Config.LoadFiles", t, func() {
+		config := New()
+		file, err := ioutil.TempFile(os.TempDir(), "assh-tests")
+		So(err, ShouldBeNil)
+		defer os.Remove(file.Name())
+		file.Write([]byte(configExample))
+
+		Convey("Loading a simple file", func() {
+			err = config.LoadFiles(file.Name())
+
+			So(err, ShouldBeNil)
+			So(config.includedFiles[file.Name()], ShouldEqual, true)
+			So(len(config.includedFiles), ShouldEqual, 1)
+			So(len(config.Hosts), ShouldEqual, 4)
+			So(config.Hosts["aaa"].Host, ShouldEqual, "1.2.3.4")
+			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["aaa"].User, ShouldEqual, "")
+			So(config.Hosts["bbb"].Host, ShouldEqual, "")
+			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
+			So(config.Hosts["bbb"].User, ShouldEqual, "")
+			So(config.Hosts["ccc"].Host, ShouldEqual, "5.6.7.8")
+			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
+			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
+			So(config.Hosts["*.ddd"].Host, ShouldEqual, "1.3.5.7")
+			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
+			So(config.Defaults.Port, ShouldEqual, uint(22))
+			So(config.Defaults.User, ShouldEqual, "root")
+		})
+		Convey("Loading the same file again", func() {
+			config.LoadFiles(file.Name())
+			err = config.LoadFiles(file.Name())
+
+			So(err, ShouldBeNil)
+			So(config.includedFiles[file.Name()], ShouldEqual, true)
+			So(len(config.includedFiles), ShouldEqual, 1)
+			So(len(config.Hosts), ShouldEqual, 4)
+			So(config.Hosts["aaa"].Host, ShouldEqual, "1.2.3.4")
+			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["aaa"].User, ShouldEqual, "")
+			So(config.Hosts["bbb"].Host, ShouldEqual, "")
+			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
+			So(config.Hosts["bbb"].User, ShouldEqual, "")
+			So(config.Hosts["ccc"].Host, ShouldEqual, "5.6.7.8")
+			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
+			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
+			So(config.Hosts["*.ddd"].Host, ShouldEqual, "1.3.5.7")
+			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
+			So(config.Defaults.Port, ShouldEqual, uint(22))
+			So(config.Defaults.User, ShouldEqual, "root")
+		})
+	})
+	// FIXME: test globbing
 }
 
 func TestConfig_getHostByPath(t *testing.T) {
