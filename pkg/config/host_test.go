@@ -10,7 +10,7 @@ func TestHost_ApplyDefaults(t *testing.T) {
 	Convey("Testing Host.ApplyDefaults", t, func() {
 		Convey("Standard configuration", func() {
 			host := &Host{
-				Name: "example",
+				name: "example",
 				Host: "example.com",
 				User: "root",
 			}
@@ -20,7 +20,7 @@ func TestHost_ApplyDefaults(t *testing.T) {
 			}
 			host.ApplyDefaults(defaults)
 			So(host.Port, ShouldEqual, uint(42))
-			So(host.Name, ShouldEqual, "example")
+			So(host.Name(), ShouldEqual, "example")
 			So(host.Host, ShouldEqual, "example.com")
 			So(host.User, ShouldEqual, "root")
 			So(len(host.Gateways), ShouldEqual, 0)
@@ -34,7 +34,7 @@ func TestHost_ApplyDefaults(t *testing.T) {
 			defaults := &Host{}
 			host.ApplyDefaults(defaults)
 			So(host.Port, ShouldEqual, uint(22))
-			So(host.Name, ShouldEqual, "")
+			So(host.Name(), ShouldEqual, "")
 			So(host.Host, ShouldEqual, "")
 			So(host.User, ShouldEqual, "")
 			So(len(host.Gateways), ShouldEqual, 0)
