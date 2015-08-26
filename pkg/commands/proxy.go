@@ -51,7 +51,7 @@ func computeHost(dest string, portOverride int, conf *config.Config) (*config.Ho
 
 func prepareHostControlPath(host, gateway *config.Host) error {
 	controlPathDir := path.Dir(os.ExpandEnv(strings.Replace(host.ControlPath, "~", "$HOME", -1)))
-	gatewayControlPath := path.Join(controlPathDir, gateway.Name)
+	gatewayControlPath := path.Join(controlPathDir, gateway.Name())
 	return os.MkdirAll(gatewayControlPath, 0700)
 }
 
@@ -93,7 +93,7 @@ func proxy(host *config.Host, conf *config.Config) error {
 }
 
 func commandApplyHost(command string, host *config.Host) string {
-	command = strings.Replace(command, "%name", host.Name, -1)
+	command = strings.Replace(command, "%name", host.Name(), -1)
 	command = strings.Replace(command, "%h", host.Host, -1)
 	command = strings.Replace(command, "%p", fmt.Sprintf("%d", host.Port), -1)
 	return command
@@ -122,7 +122,7 @@ func proxyCommand(host *config.Host, command string) error {
 
 func proxyGo(host *config.Host) error {
 	if host.Host == "" {
-		host.Host = host.Name
+		host.Host = host.Name()
 	}
 
 	if len(host.ResolveNameservers) > 0 {

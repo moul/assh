@@ -33,7 +33,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		var computedHost Host = host
 		computedHost.ApplyDefaults(&c.Defaults)
-		computedHost.Name = name
+		computedHost.name = name
 		return &computedHost, nil
 	}
 
@@ -45,7 +45,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 		if matched {
 			var computedHost Host = host
 			computedHost.ApplyDefaults(&c.Defaults)
-			computedHost.Name = name
+			computedHost.name = name
 			return &computedHost, nil
 		}
 	}
@@ -53,7 +53,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 	if safe {
 		host := &Host{
 			Host: name,
-			Name: name,
+			name: name,
 		}
 		host.ApplyDefaults(&c.Defaults)
 		return host, nil
