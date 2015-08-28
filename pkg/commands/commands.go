@@ -33,13 +33,11 @@ var Commands = []cli.Command{
 			Action:      cmdInit,
 		},
 	*/
-	/*
-		{
-			Name:   "build",
-			Usage:  "Build .ssh/config",
-			Action: cmdBuild,
-		},
-	*/
+	{
+		Name:   "build",
+		Usage:  "Build .ssh/config",
+		Action: cmdBuild,
+	},
 	/*
 		{
 			Name:        "etc-hosts",
