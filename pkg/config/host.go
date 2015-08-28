@@ -1,13 +1,21 @@
 package config
 
+import (
+	"fmt"
+	"io"
+)
+
 // Host defines the configuration flags of a host
 type Host struct {
 	// ssh-config fields
-	Host         string `yaml:"host,omitempty,flow" json:"host,omitempty"`
-	User         string `yaml:"user,omitempty,flow" json:"user,omitempty"`
-	Port         uint   `yaml:"port,omitempty,flow" json:"port,omitempty"`
+	Host string `yaml:"host,omitempty,flow" json:"host,omitempty"`
+	// FIXME: rename Host -> Hostname
+	User        string `yaml:"user,omitempty,flow" json:"user,omitempty"`
+	Port        uint   `yaml:"port,omitempty,flow" json:"port,omitempty"`
+	ControlPath string `yaml:"controlpath,omitempty,flow" json:"controlpath,omitempty"`
+
+	// ssh-config fields with a different behavior
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"proxycommand,omitempty"`
-	ControlPath  string `yaml:"controlpath,omitempty,flow" json:"controlpath,omitempty"`
 
 	// assh fields
 	name               string   `yaml:- json:"name,omitempty"`
@@ -51,4 +59,22 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	if h.Port == 0 {
 		h.Port = 22
 	}
+}
+
+func (h *Host) WriteSshConfigTo(w io.Writer) error {
+	fmt.Fprintf(w, "Host %s\n", h.Name())
+	if h.Host != "" {
+		fmt.Fprintf(w, "  HostName %s\n", h.Host)
+	}
+	if h.Port != 0 {
+		fmt.Fprintf(w, "  Port %d\n", h.Port)
+	}
+	if h.User != "" {
+		fmt.Fprintf(w, "  User %s\n", h.User)
+	}
+	if h.ControlPath != "" {
+		fmt.Fprintf(w, "  ControlPath %s\n", h.ControlPath)
+	}
+	fmt.Fprintln(w)
+	return nil
 }
