@@ -8,19 +8,19 @@ import (
 // Host defines the configuration flags of a host
 type Host struct {
 	// ssh-config fields
-	Hostname    string `yaml:"hostname,omitempty,flow" json:"host,omitempty"`
-	User        string `yaml:"user,omitempty,flow" json:"user,omitempty"`
-	Port        uint   `yaml:"port,omitempty,flow" json:"port,omitempty"`
-	ControlPath string `yaml:"controlpath,omitempty,flow" json:"controlpath,omitempty"`
+	Hostname    string `yaml:"Hostname,omitempty,flow" json:"Hostname,omitempty"`
+	User        string `yaml:"User,omitempty,flow" json:"User,omitempty"`
+	Port        uint   `yaml:"Port,omitempty,flow" json:"Port,omitempty"`
+	ControlPath string `yaml:"Controlpath,omitempty,flow" json:"Controlpath,omitempty"`
 
 	// ssh-config fields with a different behavior
-	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"proxycommand,omitempty"`
+	ProxyCommand string `yaml:"ProxyCommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// assh fields
-	name               string   `yaml:- json:"name,omitempty"`
-	Gateways           []string `yaml:"gateways,omitempty,flow" json:"gateways,omitempty"`
-	ResolveNameservers []string `yaml:"resolve_nameservers,omitempty,flow" json:"resolve_nameservers,omitempty"`
-	ResolveCommand     string   `yaml:"resolve_command,omitempty,flow" json:"resolve_command,omitempty"`
+	name               string   `yaml:- json:-`
+	Gateways           []string `yaml:"Gateways,omitempty,flow" json:"Gateways,omitempty"`
+	ResolveNameservers []string `yaml:"ResolveNameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
+	ResolveCommand     string   `yaml:"ResolveCommand,omitempty,flow" json:"ResolveCommand,omitempty"`
 }
 
 func (h *Host) Name() string {
