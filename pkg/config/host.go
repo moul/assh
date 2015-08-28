@@ -8,8 +8,7 @@ import (
 // Host defines the configuration flags of a host
 type Host struct {
 	// ssh-config fields
-	Host string `yaml:"host,omitempty,flow" json:"host,omitempty"`
-	// FIXME: rename Host -> Hostname
+	Hostname    string `yaml:"hostname,omitempty,flow" json:"host,omitempty"`
 	User        string `yaml:"user,omitempty,flow" json:"user,omitempty"`
 	Port        uint   `yaml:"port,omitempty,flow" json:"port,omitempty"`
 	ControlPath string `yaml:"controlpath,omitempty,flow" json:"controlpath,omitempty"`
@@ -30,8 +29,8 @@ func (h *Host) Name() string {
 
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults
 func (h *Host) ApplyDefaults(defaults *Host) {
-	if h.Host == "" {
-		h.Host = defaults.Host
+	if h.Hostname == "" {
+		h.Hostname = defaults.Hostname
 	}
 	if h.User == "" {
 		h.User = defaults.User
@@ -63,8 +62,8 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 
 func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	fmt.Fprintf(w, "Host %s\n", h.Name())
-	if h.Host != "" {
-		fmt.Fprintf(w, "  HostName %s\n", h.Host)
+	if h.Hostname != "" {
+		fmt.Fprintf(w, "  HostName %s\n", h.Hostname)
 	}
 	if h.Port != 0 {
 		fmt.Fprintf(w, "  Port %d\n", h.Port)
