@@ -14,18 +14,18 @@ var (
 	configExample string = `
 hosts:
   aaa:
-    hostname: 1.2.3.4
+    Hostname: 1.2.3.4
   bbb:
-    port: 21
+    Port: 21
   ccc:
-    hostname: 5.6.7.8
-    port: 24
-    user: toor
+    Hostname: 5.6.7.8
+    Port: 24
+    User: toor
   "*.ddd":
-    hostname: 1.3.5.7
+    Hostname: 1.3.5.7
 defaults:
-  port: 22
-  user: root
+  Port: 22
+  User: root
 `
 )
 
@@ -101,20 +101,20 @@ func TestConfig_JsonSring(t *testing.T) {
 		expected := `{
   "hosts": {
     "*.ddd": {
-      "host": "1.3.5.7"
+      "Hostname": "1.3.5.7"
     },
     "titi": {
-      "host": "tata",
-      "user": "moul",
-      "port": 23
+      "Hostname": "tata",
+      "User": "moul",
+      "Port": 23
     },
     "toto": {
-      "host": "1.2.3.4"
+      "Hostname": "1.2.3.4"
     }
   },
   "defaults": {
-    "user": "root",
-    "port": 22
+    "User": "root",
+    "Port": 22
   },
   "includes": null
 }`
