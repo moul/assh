@@ -53,8 +53,8 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 
 	if safe {
 		host := &Host{
-			Host: name,
-			name: name,
+			Hostname: name,
+			name:     name,
 		}
 		host.ApplyDefaults(&c.Defaults)
 		return host, nil

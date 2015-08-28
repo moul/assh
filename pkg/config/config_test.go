@@ -14,15 +14,15 @@ var (
 	configExample string = `
 hosts:
   aaa:
-    host: 1.2.3.4
+    hostname: 1.2.3.4
   bbb:
     port: 21
   ccc:
-    host: 5.6.7.8
+    hostname: 5.6.7.8
     port: 24
     user: toor
   "*.ddd":
-    host: 1.3.5.7
+    hostname: 1.3.5.7
 defaults:
   port: 22
   user: root
@@ -32,15 +32,15 @@ defaults:
 func dummyConfig() *Config {
 	config := New()
 	config.Hosts["toto"] = Host{
-		Host: "1.2.3.4",
+		Hostname: "1.2.3.4",
 	}
 	config.Hosts["titi"] = Host{
-		Host: "tata",
-		Port: 23,
-		User: "moul",
+		Hostname: "tata",
+		Port:     23,
+		User:     "moul",
 	}
 	config.Hosts["*.ddd"] = Host{
-		Host: "1.3.5.7",
+		Hostname: "1.3.5.7",
 	}
 	config.Defaults = Host{
 		Port: 22,
@@ -56,7 +56,7 @@ func TestNew(t *testing.T) {
 
 		So(len(config.Hosts), ShouldEqual, 0)
 		So(config.Defaults.Port, ShouldEqual, uint(0))
-		So(config.Defaults.Host, ShouldEqual, "")
+		So(config.Defaults.Hostname, ShouldEqual, "")
 		So(config.Defaults.User, ShouldEqual, "")
 	})
 }
@@ -66,7 +66,7 @@ func TestConfig(t *testing.T) {
 		config := dummyConfig()
 
 		So(len(config.Hosts), ShouldEqual, 3)
-		So(config.Hosts["toto"].Host, ShouldEqual, "1.2.3.4")
+		So(config.Hosts["toto"].Hostname, ShouldEqual, "1.2.3.4")
 		So(config.Defaults.Port, ShouldEqual, uint(22))
 	})
 }
@@ -78,16 +78,16 @@ func TestConfig_LoadConfig(t *testing.T) {
 		err := config.LoadConfig(strings.NewReader(configExample))
 		So(err, ShouldBeNil)
 		So(len(config.Hosts), ShouldEqual, 4)
-		So(config.Hosts["aaa"].Host, ShouldEqual, "1.2.3.4")
+		So(config.Hosts["aaa"].Hostname, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 		So(config.Hosts["aaa"].User, ShouldEqual, "")
-		So(config.Hosts["bbb"].Host, ShouldEqual, "")
+		So(config.Hosts["bbb"].Hostname, ShouldEqual, "")
 		So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
 		So(config.Hosts["bbb"].User, ShouldEqual, "")
-		So(config.Hosts["ccc"].Host, ShouldEqual, "5.6.7.8")
+		So(config.Hosts["ccc"].Hostname, ShouldEqual, "5.6.7.8")
 		So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
 		So(config.Hosts["ccc"].User, ShouldEqual, "toor")
-		So(config.Hosts["*.ddd"].Host, ShouldEqual, "1.3.5.7")
+		So(config.Hosts["*.ddd"].Hostname, ShouldEqual, "1.3.5.7")
 		So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
 		So(config.Hosts["*.ddd"].User, ShouldEqual, "")
 		So(config.Defaults.Port, ShouldEqual, uint(22))
@@ -151,12 +151,12 @@ func TestConfig_getHostByName(t *testing.T) {
 			host, err = config.getHostByName("regex.ddd", false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 
 			host, err = config.getHostByName("regex.ddd", true)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 		})
 
 		Convey("With gateway", func() {
@@ -185,7 +185,7 @@ func TestConfig_getHostByName(t *testing.T) {
 			host, err = config.getHostByName("regex.ddd/gateway", true)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd/gateway")
-			So(host.Host, ShouldNotEqual, "1.3.5.7")
+			So(host.Hostname, ShouldNotEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 		})
 	})
@@ -206,7 +206,7 @@ func TestConfig_GetGatewaySafe(t *testing.T) {
 
 			host = config.GetGatewaySafe("regex.ddd")
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 		})
 
 		Convey("With gateway", func() {
@@ -220,7 +220,7 @@ func TestConfig_GetGatewaySafe(t *testing.T) {
 
 			host = config.GetGatewaySafe("regex.ddd/gateway")
 			So(host.Name(), ShouldEqual, "regex.ddd/gateway")
-			So(host.Host, ShouldNotEqual, "1.3.5.7")
+			So(host.Hostname, ShouldNotEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 		})
 	})
@@ -241,16 +241,16 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
 			So(len(config.Hosts), ShouldEqual, 4)
-			So(config.Hosts["aaa"].Host, ShouldEqual, "1.2.3.4")
+			So(config.Hosts["aaa"].Hostname, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
-			So(config.Hosts["bbb"].Host, ShouldEqual, "")
+			So(config.Hosts["bbb"].Hostname, ShouldEqual, "")
 			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
 			So(config.Hosts["bbb"].User, ShouldEqual, "")
-			So(config.Hosts["ccc"].Host, ShouldEqual, "5.6.7.8")
+			So(config.Hosts["ccc"].Hostname, ShouldEqual, "5.6.7.8")
 			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
 			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
-			So(config.Hosts["*.ddd"].Host, ShouldEqual, "1.3.5.7")
+			So(config.Hosts["*.ddd"].Hostname, ShouldEqual, "1.3.5.7")
 			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
 			So(config.Defaults.Port, ShouldEqual, uint(22))
@@ -264,16 +264,16 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
 			So(len(config.Hosts), ShouldEqual, 4)
-			So(config.Hosts["aaa"].Host, ShouldEqual, "1.2.3.4")
+			So(config.Hosts["aaa"].Hostname, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
-			So(config.Hosts["bbb"].Host, ShouldEqual, "")
+			So(config.Hosts["bbb"].Hostname, ShouldEqual, "")
 			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
 			So(config.Hosts["bbb"].User, ShouldEqual, "")
-			So(config.Hosts["ccc"].Host, ShouldEqual, "5.6.7.8")
+			So(config.Hosts["ccc"].Hostname, ShouldEqual, "5.6.7.8")
 			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
 			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
-			So(config.Hosts["*.ddd"].Host, ShouldEqual, "1.3.5.7")
+			So(config.Hosts["*.ddd"].Hostname, ShouldEqual, "1.3.5.7")
 			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
 			So(config.Defaults.Port, ShouldEqual, uint(22))
@@ -313,13 +313,13 @@ func TestConfig_getHostByPath(t *testing.T) {
 			host, err = config.getHostByPath("regex.ddd", false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 
 			host, err = config.getHostByPath("regex.ddd", true)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 		})
 
@@ -346,13 +346,13 @@ func TestConfig_getHostByPath(t *testing.T) {
 			host, err = config.getHostByPath("regex.ddd/gateway", false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 1)
 
 			host, err = config.getHostByPath("regex.ddd/gateway", true)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 1)
 		})
 	})
@@ -378,7 +378,7 @@ func TestConfig_GetHost(t *testing.T) {
 			host, err = config.GetHost("regex.ddd")
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 		})
 
@@ -396,7 +396,7 @@ func TestConfig_GetHost(t *testing.T) {
 			host, err = config.GetHost("regex.ddd/gateway")
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 1)
 		})
 	})
@@ -419,7 +419,7 @@ func TestConfig_GetHostSafe(t *testing.T) {
 
 			host = config.GetHostSafe("regex.ddd")
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 		})
 
@@ -434,7 +434,7 @@ func TestConfig_GetHostSafe(t *testing.T) {
 
 			host = config.GetHostSafe("regex.ddd/gateway")
 			So(host.Name(), ShouldEqual, "regex.ddd")
-			So(host.Host, ShouldEqual, "1.3.5.7")
+			So(host.Hostname, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 1)
 		})
 	})
