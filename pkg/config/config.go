@@ -53,7 +53,7 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 
 	if safe {
 		host := &Host{
-			Hostname: name,
+			HostName: name,
 			name:     name,
 		}
 		host.ApplyDefaults(&c.Defaults)
@@ -207,6 +207,7 @@ func (c *Config) WriteSshConfigTo(w io.Writer) error {
 	for _, name := range c.sortedNames() {
 		host := c.Hosts[name]
 		host.WriteSshConfigTo(w)
+		fmt.Fprintln(w)
 	}
 
 	fmt.Fprintln(w, "# global configuration")
