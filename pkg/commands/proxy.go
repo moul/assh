@@ -94,7 +94,7 @@ func proxy(host *config.Host, conf *config.Config) error {
 
 func commandApplyHost(command string, host *config.Host) string {
 	command = strings.Replace(command, "%name", host.Name(), -1)
-	command = strings.Replace(command, "%h", host.Hostname, -1)
+	command = strings.Replace(command, "%h", host.HostName, -1)
 	command = strings.Replace(command, "%p", fmt.Sprintf("%d", host.Port), -1)
 	return command
 }
@@ -121,25 +121,25 @@ func proxyCommand(host *config.Host, command string) error {
 }
 
 func proxyGo(host *config.Host) error {
-	if host.Hostname == "" {
-		host.Hostname = host.Name()
+	if host.HostName == "" {
+		host.HostName = host.Name()
 	}
 
 	if len(host.ResolveNameservers) > 0 {
-		logrus.Debugf("Resolving host: '%s' using nameservers %s", host.Hostname, host.ResolveNameservers)
+		logrus.Debugf("Resolving host: '%s' using nameservers %s", host.HostName, host.ResolveNameservers)
 		// FIXME: resolve using custom dns server
-		results, err := net.LookupAddr(host.Hostname)
+		results, err := net.LookupAddr(host.HostName)
 		if err != nil {
 			return err
 		}
 		if len(results) > 0 {
-			host.Hostname = results[0]
+			host.HostName = results[0]
 		}
-		logrus.Debugf("Resolved host is: %s", host.Hostname)
+		logrus.Debugf("Resolved host is: %s", host.HostName)
 	}
 	if host.ResolveCommand != "" {
 		command := commandApplyHost(host.ResolveCommand, host)
-		logrus.Debugf("Resolving host: '%s' using command: '%s'", host.Hostname, command)
+		logrus.Debugf("Resolving host: '%s' using command: '%s'", host.HostName, command)
 
 		args, err := shlex.Split(command)
 		if err != nil {
@@ -151,18 +151,18 @@ func proxyGo(host *config.Host) error {
 			return err
 		}
 
-		host.Hostname = strings.TrimSpace(fmt.Sprintf("%s", out))
-		logrus.Debugf("Resolved host is: %s", host.Hostname)
+		host.HostName = strings.TrimSpace(fmt.Sprintf("%s", out))
+		logrus.Debugf("Resolved host is: %s", host.HostName)
 	}
 
-	logrus.Debugf("Connecting to %s:%d", host.Hostname, host.Port)
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.Hostname, host.Port))
+	logrus.Debugf("Connecting to %s:%d", host.HostName, host.Port)
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.HostName, host.Port))
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	logrus.Debugf("Connected to %s:%d", host.Hostname, host.Port)
+	logrus.Debugf("Connected to %s:%d", host.HostName, host.Port)
 
 	// Create Stdio pipes
 	c1 := readAndWrite(conn, os.Stdout)

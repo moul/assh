@@ -11,7 +11,7 @@ func TestHost_ApplyDefaults(t *testing.T) {
 		Convey("Standard configuration", func() {
 			host := &Host{
 				name:     "example",
-				Hostname: "example.com",
+				HostName: "example.com",
 				User:     "root",
 			}
 			defaults := &Host{
@@ -21,7 +21,7 @@ func TestHost_ApplyDefaults(t *testing.T) {
 			host.ApplyDefaults(defaults)
 			So(host.Port, ShouldEqual, uint(42))
 			So(host.Name(), ShouldEqual, "example")
-			So(host.Hostname, ShouldEqual, "example.com")
+			So(host.HostName, ShouldEqual, "example.com")
 			So(host.User, ShouldEqual, "root")
 			So(len(host.Gateways), ShouldEqual, 0)
 			So(host.ProxyCommand, ShouldEqual, "")
@@ -35,7 +35,7 @@ func TestHost_ApplyDefaults(t *testing.T) {
 			host.ApplyDefaults(defaults)
 			So(host.Port, ShouldEqual, uint(22))
 			So(host.Name(), ShouldEqual, "")
-			So(host.Hostname, ShouldEqual, "")
+			So(host.HostName, ShouldEqual, "")
 			So(host.User, ShouldEqual, "")
 			So(len(host.Gateways), ShouldEqual, 0)
 			So(host.ProxyCommand, ShouldEqual, "")
