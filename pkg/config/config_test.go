@@ -29,15 +29,40 @@ defaults:
 `
 )
 
+func TestNew(t *testing.T) {
+	Convey("Testing New()", t, func() {
+		config := New()
+
+		So(len(config.Hosts), ShouldEqual, 0)
+		So(config.Defaults.Port, ShouldEqual, uint(0))
+		So(config.Defaults.HostName, ShouldEqual, "")
+		So(config.Defaults.User, ShouldEqual, "")
+	})
+}
+
 func dummyConfig() *Config {
 	config := New()
 	config.Hosts["toto"] = Host{
 		HostName: "1.2.3.4",
 	}
 	config.Hosts["titi"] = Host{
-		HostName: "tata",
-		Port:     23,
-		User:     "moul",
+		HostName:     "tata",
+		Port:         23,
+		User:         "moul",
+		ProxyCommand: "nc -v 4242",
+	}
+	config.Hosts["tonton"] = Host{
+		ResolveNameservers: []string{"a.com", "1.2.3.4"},
+	}
+	config.Hosts["toutou"] = Host{
+		ResolveCommand: "dig -t %h",
+	}
+	config.Hosts["tutu"] = Host{
+		Gateways: []string{"titi", "direct", "1.2.3.4"},
+	}
+	config.Hosts["empty"] = Host{}
+	config.Hosts["tata"] = Host{
+	//Inherits: []string{"tutu", "titi", "toto", "tutu"},
 	}
 	config.Hosts["*.ddd"] = Host{
 		HostName: "1.3.5.7",
@@ -50,24 +75,44 @@ func dummyConfig() *Config {
 	return config
 }
 
-func TestNew(t *testing.T) {
-	Convey("Testing New()", t, func() {
-		config := New()
-
-		So(len(config.Hosts), ShouldEqual, 0)
-		So(config.Defaults.Port, ShouldEqual, uint(0))
-		So(config.Defaults.HostName, ShouldEqual, "")
-		So(config.Defaults.User, ShouldEqual, "")
-	})
-}
-
 func TestConfig(t *testing.T) {
-	Convey("Testing Config", t, func() {
+	Convey("Testing dummyConfig", t, func() {
 		config := dummyConfig()
 
-		So(len(config.Hosts), ShouldEqual, 3)
+		So(len(config.Hosts), ShouldEqual, 8)
+
 		So(config.Hosts["toto"].HostName, ShouldEqual, "1.2.3.4")
+		So(config.Hosts["toto"].Port, ShouldEqual, 0)
+		So(config.Hosts["toto"].name, ShouldEqual, "toto")
+		So(config.Hosts["toto"].isDefault, ShouldEqual, false)
+
+		So(config.Hosts["titi"].HostName, ShouldEqual, "tata")
+		So(config.Hosts["titi"].User, ShouldEqual, "moul")
+		So(config.Hosts["titi"].ProxyCommand, ShouldEqual, "nc -v 4242")
+		So(config.Hosts["titi"].Port, ShouldEqual, 23)
+		So(config.Hosts["titi"].isDefault, ShouldEqual, false)
+
+		So(config.Hosts["tonton"].isDefault, ShouldEqual, false)
+		So(config.Hosts["tonton"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["tonton"].ResolveNameservers, ShouldResemble, []string{"a.com", "1.2.3.4"})
+
+		So(config.Hosts["toutou"].isDefault, ShouldEqual, false)
+		So(config.Hosts["toutou"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["toutou"].ResolveCommand, ShouldEqual, "dig -t %h")
+
+		So(config.Hosts["tutu"].isDefault, ShouldEqual, false)
+		So(config.Hosts["tutu"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["tutu"].Gateways, ShouldResemble, []string{"titi", "direct", "1.2.3.4"})
+
+		So(config.Hosts["*.ddd"].isDefault, ShouldEqual, false)
+		So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
+
+		So(config.Hosts["empty"].isDefault, ShouldEqual, false)
+		So(config.Hosts["empty"].Port, ShouldEqual, uint(0))
+
+		So(config.Defaults.User, ShouldEqual, "root")
 		So(config.Defaults.Port, ShouldEqual, uint(22))
+		So(config.Defaults.isDefault, ShouldEqual, true)
 	})
 }
 
@@ -103,13 +148,32 @@ func TestConfig_JsonSring(t *testing.T) {
     "*.ddd": {
       "HostName": "1.3.5.7"
     },
+    "empty": {},
+    "tata": {},
     "titi": {
       "HostName": "tata",
       "Port": 23,
-      "User": "moul"
+      "User": "moul",
+      "ProxyCommand": "nc -v 4242"
+    },
+    "tonton": {
+      "ResolveNameservers": [
+        "a.com",
+        "1.2.3.4"
+      ]
     },
     "toto": {
       "HostName": "1.2.3.4"
+    },
+    "toutou": {
+      "ResolveCommand": "dig -t %h"
+    },
+    "tutu": {
+      "Gateways": [
+        "titi",
+        "direct",
+        "1.2.3.4"
+      ]
     }
   },
   "defaults": {
@@ -126,7 +190,6 @@ func TestConfig_JsonSring(t *testing.T) {
 
 func TestConfig_getHostByName(t *testing.T) {
 	Convey("Testing Config.getHostByName", t, func() {
-
 		config := dummyConfig()
 		var host *Host
 		var err error
@@ -360,7 +423,6 @@ func TestConfig_getHostByPath(t *testing.T) {
 
 func TestConfig_GetHost(t *testing.T) {
 	Convey("Testing Config.GetHost", t, func() {
-
 		config := dummyConfig()
 		var host *Host
 		var err error
@@ -455,13 +517,24 @@ func TestConfig_WriteSshConfig(t *testing.T) {
 Host *.ddd
   HostName 1.3.5.7
 
+Host empty
+
+Host tata
+
 Host titi
   HostName tata
   Port 23
   User moul
+#  ProxyCommand nc -v 4242
+
+Host tonton
 
 Host toto
   HostName 1.2.3.4
+
+Host toutou
+
+Host tutu
 
 # global configuration
 Host *
