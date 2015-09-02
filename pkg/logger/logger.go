@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
-	"github.com/shirou/gopsutil/process"
+	"github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/process"
 )
 
 var Logger = logrus.New()
