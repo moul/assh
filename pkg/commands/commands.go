@@ -1,6 +1,10 @@
 package commands
 
-import "github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
+import (
+	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
+
+	// . "github.com/moul/advanced-ssh-config/pkg/logger"
+)
 
 // Commands is the list of cli commands
 var Commands = []cli.Command{
