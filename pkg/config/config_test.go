@@ -467,6 +467,7 @@ Host toto
 Host *
   Port 22
   User root
+  ProxyCommand assh proxy %h %p
 `
 		So(buffer.String(), ShouldEqual, expected)
 	})
