@@ -31,12 +31,51 @@ func (c *Config) JsonString() ([]byte, error) {
 	return output, err
 }
 
-func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
+// computeHost applies defaults, inherits hosts and configure internal fields
+func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Host, error) {
+	var computedHost Host
+	if host != nil {
+		computedHost = *host
+	}
+
+	// name internal field
+	computedHost.name = name
+	computedHost.inherited = make(map[string]bool, 0)
+	// self is already inherited
+	computedHost.inherited[name] = true
+
+	if fullCompute {
+		// apply defaults based on "Host *"
+		computedHost.ApplyDefaults(&config.Defaults)
+
+		// Inheritance
+		// FIXME: allow deeper inheritance:
+		//     currently not resolving inherited hosts
+		//     we should resolve all inherited hosts and pass the
+		//     currently resolved hosts to avoid computing an host twice
+		for _, name := range host.Inherits {
+			_, found := computedHost.inherited[name]
+			if found {
+				Logger.Debugf("Detected circular loop inheritance, skiping...")
+				continue
+			}
+			computedHost.inherited[name] = true
+
+			target, err := config.getHostByPath(name, false, false)
+			if err != nil {
+				Logger.Warnf("Cannot inherits from %q: %v", name, err)
+				continue
+			}
+			computedHost.ApplyDefaults(target)
+		}
+	}
+
+	return &computedHost, nil
+}
+
+func (c *Config) getHostByName(name string, safe bool, compute bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
-		var computedHost Host = host
-		computedHost.ApplyDefaults(&c.Defaults)
-		computedHost.name = name
-		return &computedHost, nil
+		return computeHost(&host, c, name, compute)
 	}
 
 	for pattern, host := range c.Hosts {
@@ -45,29 +84,24 @@ func (c *Config) getHostByName(name string, safe bool) (*Host, error) {
 			return nil, err
 		}
 		if matched {
-			var computedHost Host = host
-			computedHost.ApplyDefaults(&c.Defaults)
-			computedHost.name = name
-			return &computedHost, nil
+			return computeHost(&host, c, name, compute)
 		}
 	}
 
 	if safe {
-		host := &Host{
+		host := Host{
 			HostName: name,
-			name:     name,
 		}
-		host.ApplyDefaults(&c.Defaults)
-		return host, nil
+		return computeHost(&host, c, name, compute)
 	}
 
 	return nil, fmt.Errorf("no such host: %s", name)
 }
 
-func (c *Config) getHostByPath(path string, safe bool) (*Host, error) {
+func (c *Config) getHostByPath(path string, safe bool, compute bool) (*Host, error) {
 	parts := strings.SplitN(path, "/", 2)
 
-	host, err := c.getHostByName(parts[0], safe)
+	host, err := c.getHostByName(parts[0], safe, compute)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +115,7 @@ func (c *Config) getHostByPath(path string, safe bool) (*Host, error) {
 
 // GetGatewaySafe returns gateway Host configuration, a gateway is like a Host, except, the host path is not resolved
 func (c *Config) GetGatewaySafe(name string) *Host {
-	host, err := c.getHostByName(name, true)
+	host, err := c.getHostByName(name, true, true) // FIXME: fullCompute for gateway ?
 	if err != nil {
 		panic(err)
 	}
@@ -90,12 +124,12 @@ func (c *Config) GetGatewaySafe(name string) *Host {
 
 // GetHost returns a matching host form Config hosts list
 func (c *Config) GetHost(name string) (*Host, error) {
-	return c.getHostByPath(name, false)
+	return c.getHostByPath(name, false, true)
 }
 
 // GetHostSafe won't fail, in case the host is not found, it will returns a virtual host matching the pattern
 func (c *Config) GetHostSafe(name string) *Host {
-	host, err := c.getHostByPath(name, true)
+	host, err := c.getHostByPath(name, true, true)
 	if err != nil {
 		panic(err)
 	}
