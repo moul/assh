@@ -44,11 +44,16 @@ func hookBefore(c *cli.Context) error {
 }
 
 func initLogging(debug bool, verbose bool) {
+	options := LoggerOptions{}
+
+	options.InspectParent = true
+
 	if debug {
-		LoggerSetLevel(logrus.DebugLevel)
+		options.Level = logrus.DebugLevel
 	} else if verbose {
-		LoggerSetLevel(logrus.InfoLevel)
+		options.Level = logrus.InfoLevel
 	} else {
-		LoggerSetLevel(logrus.WarnLevel)
+		options.Level = logrus.WarnLevel
 	}
+	SetupLogging(options)
 }
