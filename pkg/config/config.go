@@ -11,8 +11,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
+
+	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
@@ -130,11 +131,11 @@ func (c *Config) LoadFile(filename string) error {
 	if err != nil {
 		return err
 	}
-	logrus.Debugf("Loading config file '%s'", filepath)
+	Logger.Debugf("Loading config file '%s'", filepath)
 
 	// Anti-loop protection
 	if _, ok := c.includedFiles[filepath]; ok {
-		logrus.Debugf("File %s already loaded", filepath)
+		Logger.Debugf("File %s already loaded", filepath)
 		return nil
 	}
 	c.includedFiles[filepath] = false

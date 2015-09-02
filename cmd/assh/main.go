@@ -8,6 +8,7 @@ import (
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/commands"
+	. "github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/version"
 )
 
@@ -44,10 +45,10 @@ func hookBefore(c *cli.Context) error {
 
 func initLogging(debug bool, verbose bool) {
 	if debug {
-		logrus.SetLevel(logrus.DebugLevel)
+		LoggerSetLevel(logrus.DebugLevel)
 	} else if verbose {
-		logrus.SetLevel(logrus.InfoLevel)
+		LoggerSetLevel(logrus.InfoLevel)
 	} else {
-		logrus.SetLevel(logrus.WarnLevel)
+		LoggerSetLevel(logrus.WarnLevel)
 	}
 }

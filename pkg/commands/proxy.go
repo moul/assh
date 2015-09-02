@@ -9,33 +9,33 @@ import (
 	"path"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 	shlex "github.com/moul/advanced-ssh-config/vendor/github.com/flynn/go-shlex"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
+	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdProxy(c *cli.Context) {
 	if len(c.Args()) < 1 {
-		logrus.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
+		Logger.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
 	}
 
 	conf, err := config.Open()
 	if err != nil {
-		logrus.Fatalf("Cannot open configuration file: %v", err)
+		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
 	// FIXME: handle complete host with json
 
 	host, err := computeHost(c.Args()[0], c.Int("port"), conf)
 	if err != nil {
-		logrus.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
+		Logger.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
 	}
 
 	err = proxy(host, conf)
 	if err != nil {
-		logrus.Fatalf("Proxy error: %v", err)
+		Logger.Fatalf("Proxy error: %v", err)
 	}
 }
 
@@ -57,12 +57,12 @@ func prepareHostControlPath(host, gateway *config.Host) error {
 
 func proxy(host *config.Host, conf *config.Config) error {
 	if len(host.Gateways) > 0 {
-		logrus.Debugf("Trying gateways: %s", host.Gateways)
+		Logger.Debugf("Trying gateways: %s", host.Gateways)
 		for _, gateway := range host.Gateways {
 			if gateway == "direct" {
 				err := proxyDirect(host)
 				if err != nil {
-					logrus.Errorf("Failed to use 'direct' connection")
+					Logger.Errorf("Failed to use 'direct' connection")
 				}
 			} else {
 				gatewayHost := conf.GetGatewaySafe(gateway)
@@ -77,18 +77,18 @@ func proxy(host *config.Host, conf *config.Config) error {
 				}
 				command := "ssh %name -- " + commandApplyHost(host.ProxyCommand, host)
 
-				logrus.Debugf("Using gateway '%s': %s", gateway, command)
+				Logger.Debugf("Using gateway '%s': %s", gateway, command)
 				err = proxyCommand(gatewayHost, command)
 				if err == nil {
 					return nil
 				}
-				logrus.Errorf("Cannot use gateway '%s': %v", gateway, err)
+				Logger.Errorf("Cannot use gateway '%s': %v", gateway, err)
 			}
 		}
 		return fmt.Errorf("No such available gateway")
 	}
 
-	logrus.Debugf("Connecting without gateway")
+	Logger.Debugf("Connecting without gateway")
 	return proxyDirect(host)
 }
 
@@ -109,7 +109,7 @@ func proxyDirect(host *config.Host) error {
 func proxyCommand(host *config.Host, command string) error {
 	command = commandApplyHost(command, host)
 	args, err := shlex.Split(command)
-	logrus.Debugf("ProxyCommand: %s", command)
+	Logger.Debugf("ProxyCommand: %s", command)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func proxyGo(host *config.Host) error {
 	}
 
 	if len(host.ResolveNameservers) > 0 {
-		logrus.Debugf("Resolving host: '%s' using nameservers %s", host.HostName, host.ResolveNameservers)
+		Logger.Debugf("Resolving host: '%s' using nameservers %s", host.HostName, host.ResolveNameservers)
 		// FIXME: resolve using custom dns server
 		results, err := net.LookupAddr(host.HostName)
 		if err != nil {
@@ -135,11 +135,11 @@ func proxyGo(host *config.Host) error {
 		if len(results) > 0 {
 			host.HostName = results[0]
 		}
-		logrus.Debugf("Resolved host is: %s", host.HostName)
+		Logger.Debugf("Resolved host is: %s", host.HostName)
 	}
 	if host.ResolveCommand != "" {
 		command := commandApplyHost(host.ResolveCommand, host)
-		logrus.Debugf("Resolving host: '%s' using command: '%s'", host.HostName, command)
+		Logger.Debugf("Resolving host: '%s' using command: '%s'", host.HostName, command)
 
 		args, err := shlex.Split(command)
 		if err != nil {
@@ -152,17 +152,17 @@ func proxyGo(host *config.Host) error {
 		}
 
 		host.HostName = strings.TrimSpace(fmt.Sprintf("%s", out))
-		logrus.Debugf("Resolved host is: %s", host.HostName)
+		Logger.Debugf("Resolved host is: %s", host.HostName)
 	}
 
-	logrus.Debugf("Connecting to %s:%d", host.HostName, host.Port)
+	Logger.Debugf("Connecting to %s:%d", host.HostName, host.Port)
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.HostName, host.Port))
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	logrus.Debugf("Connected to %s:%d", host.HostName, host.Port)
+	Logger.Debugf("Connected to %s:%d", host.HostName, host.Port)
 
 	// Create Stdio pipes
 	c1 := readAndWrite(conn, os.Stdout)
