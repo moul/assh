@@ -122,6 +122,7 @@ func (c *Config) applyMissingNames() {
 		host.name = key
 		c.Hosts[key] = host
 	}
+	c.Defaults.isDefault = true
 }
 
 // LoadFile loads the content of a configuration file in the Config object

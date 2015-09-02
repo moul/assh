@@ -97,6 +97,7 @@ type Host struct {
 
 	// assh fields
 	name               string   `yaml:- json:-`
+	isDefault          bool     `yaml:- json:-`
 	Gateways           []string `yaml:"Gateways,omitempty,flow" json:"Gateways,omitempty"`
 	ResolveNameservers []string `yaml:"ResolveNameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
 	ResolveCommand     string   `yaml:"ResolveCommand,omitempty,flow" json:"ResolveCommand,omitempty"`
@@ -639,8 +640,13 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	}
 
 	// ssh-config fields with a different behavior
-	if h.ProxyCommand != "" {
-		fmt.Fprintf(w, "  ProxyCommand %s\n", h.ProxyCommand)
+	if h.isDefault {
+		asshBinary := "assh"
+		fmt.Fprintf(w, "  ProxyCommand %s proxy %%h %%p\n", asshBinary)
+	} else {
+		if h.ProxyCommand != "" {
+			fmt.Fprintf(w, "#  ProxyCommand %s\n", h.ProxyCommand)
+		}
 	}
 
 	// assh fields
