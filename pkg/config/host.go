@@ -95,12 +95,16 @@ type Host struct {
 	// ssh-config fields with a different behavior
 	ProxyCommand string `yaml:"ProxyCommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
-	// assh fields
-	name               string   `yaml:- json:-`
-	isDefault          bool     `yaml:- json:-`
+	// exposed assh fields
+	Inherits           []string `yaml:"Inherits,omitempty,flow" json:"Inherits,omitempty"`
 	Gateways           []string `yaml:"Gateways,omitempty,flow" json:"Gateways,omitempty"`
 	ResolveNameservers []string `yaml:"ResolveNameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
 	ResolveCommand     string   `yaml:"ResolveCommand,omitempty,flow" json:"ResolveCommand,omitempty"`
+
+	// private assh fields
+	name      string          `yaml:- json:-`
+	isDefault bool            `yaml:- json:-`
+	inherited map[string]bool `yaml:- json:-`
 }
 
 func (h *Host) Name() string {
@@ -368,7 +372,7 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.ProxyCommand = defaults.ProxyCommand
 	}
 
-	// assh fields
+	// exposed assh fields
 	if len(h.ResolveNameservers) == 0 {
 		h.ResolveNameservers = defaults.ResolveNameservers
 	}
@@ -378,6 +382,12 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	if len(h.Gateways) == 0 {
 		h.Gateways = defaults.Gateways
 	}
+	if len(h.Inherits) == 0 {
+		h.Inherits = defaults.Inherits
+	}
+
+	// private assh fields
+	// h.inherited = make(map[string]bool, 0)
 
 	// Extra defaults
 	if h.Port == 0 {
@@ -650,7 +660,7 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	}
 
 	// assh fields
-	// ...
+	// FIXME: add assh fields in the config file as comments
 
 	return nil
 }
