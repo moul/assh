@@ -16,6 +16,8 @@ import (
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
+const defaultSshConfigPath string = "~/.ssh/config"
+
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
 	Hosts    map[string]Host `json:"hosts"`
@@ -23,6 +25,7 @@ type Config struct {
 	Includes []string        `json:"includes",omitempty`
 
 	includedFiles map[string]bool
+	sshConfigPath string
 }
 
 // JsonString returns a string representing the JSON of a Config object
@@ -159,6 +162,24 @@ func (c *Config) applyMissingNames() {
 	c.Defaults.isDefault = true
 }
 
+// SaveSshConfig saves the configuration to ~/.ssh/config
+func (c *Config) SaveSshConfig() error {
+	if c.sshConfigPath == "" {
+		return fmt.Errorf("no Config.sshConfigPath configured")
+	}
+	filepath, err := expandUser(c.sshConfigPath)
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	Logger.Debugf("Writing SSH config file to %q", filepath)
+	return c.WriteSshConfigTo(file)
+}
+
 // LoadFile loads the content of a configuration file in the Config object
 func (c *Config) LoadFile(filename string) error {
 	// Resolve '~' and '$HOME'
@@ -261,6 +282,7 @@ func New() *Config {
 	var config Config
 	config.Hosts = make(map[string]Host)
 	config.includedFiles = make(map[string]bool)
+	config.sshConfigPath = defaultSshConfigPath
 	return &config
 }
 

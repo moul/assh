@@ -33,6 +33,11 @@ func cmdProxy(c *cli.Context) {
 		Logger.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
 	}
 
+	err = conf.SaveSshConfig()
+	if err != nil {
+		Logger.Fatalf("Cannot save SSH config file: %v", err)
+	}
+
 	err = proxy(host, conf)
 	if err != nil {
 		Logger.Fatalf("Proxy error: %v", err)
