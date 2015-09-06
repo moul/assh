@@ -166,14 +166,14 @@ func (c *Config) LoadFile(filename string) error {
 	if err != nil {
 		return err
 	}
-	Logger.Debugf("Loading config file '%s'", filepath)
 
 	// Anti-loop protection
 	if _, ok := c.includedFiles[filepath]; ok {
-		Logger.Debugf("File %s already loaded", filepath)
 		return nil
 	}
 	c.includedFiles[filepath] = false
+
+	Logger.Debugf("Loading config file '%s'", filepath)
 
 	// Read file
 	source, err := os.Open(filepath)
