@@ -192,7 +192,10 @@ func (c *Config) LoadFile(filename string) error {
 
 	// Handling includes
 	for _, include := range c.Includes {
-		c.LoadFiles(include)
+		err = c.LoadFiles(include)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
