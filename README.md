@@ -1,5 +1,8 @@
 # Advanced SSH config
 [![Travis](https://img.shields.io/travis/moul/advanced-ssh-config.svg)](https://travis-ci.org/moul/advanced-ssh-config)
+[![GoDoc](https://godoc.org/github.com/moul/advanced-ssh-config?status.svg)](https://godoc.org/github.com/moul/advanced-ssh-config)
+![License](https://img.shields.io/github/license/moul/advanced-ssh-config.svg)
+
 
 #### Table of Contents
 
