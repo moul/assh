@@ -199,6 +199,24 @@ go get -u github.com/moul/advanced-ssh-config/...
 
 ## Changelog
 
+### v2.0.0 (2015-09-07)
+
+* First Golang version
+* Compatibility issue: complete switch from `.ini` file format to `.yml`, the `~/.ssh/assh.yml` file needs to be manually crafted
+* Features
+  * Parses `~/.ssh/assh.yml` and generates `~/.ssh/config` dynamically
+  * CLI: Use gateways from CLI without any configuration needed
+  * Config: Declares gateways in coniguration
+  * Config: Host inheritance
+  * Config: Support of `includes`
+  * Config: Support of Regex
+  * Config: Handling all sshconfig fields
+  * Config: Support of host `ProxyCommand` (inception)
+  * Under the hood: Inspecting parent process **verbose**/**debug** mode
+  * Under the hook: dynamic proxy using **raw TCP**, **netcat**
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/be4fea1632b1e9f8aa60585187338777baaf1210...v2.0.0)
+
 ### [v1](https://github.com/moul/advanced-ssh-config/tree/v1.1.0) (2015-07-22)
 
 * Last Python version
