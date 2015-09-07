@@ -12,8 +12,9 @@
 4. [Usage](#usage)
 5. [Install](#install)
 6. [Getting started](#getting-started)
-7. [Alternative version](#alternative-version)
-8. [License](#license)
+7. [Changelog](#changelog)
+8. [Alternative version](#alternative-version)
+9. [License](#license)
 
 ## Overview
 
@@ -195,6 +196,16 @@ go get -u github.com/moul/advanced-ssh-config/...
 2. Create a new `~/.ssh/assh.yml` file
 3. Run `assh proxy localhost` to validates the syntax of your `~/.ssh/assh.yml` file and automatically build your `~/.ssh/config` file
 4. You are ready!
+
+## Changelog
+
+### [v1](https://github.com/moul/advanced-ssh-config/tree/v1.1.0) (2015-07-22)
+
+* Last Python version
+
+### [POC](https://github.com/moul/advanced-ssh-config/commit/550f86c225d30292728ad24bc883b6d3a3e3f1b1) (2010-08-26)
+
+* First Python version (POC)
 
 ## Alternative version
 
