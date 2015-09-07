@@ -2,3 +2,4 @@
 /assh
 /cmd/assh/assh
 profile.out
+dist/
