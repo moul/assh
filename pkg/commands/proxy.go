@@ -144,7 +144,7 @@ func proxyGo(host *config.Host) error {
 	}
 	if host.ResolveCommand != "" {
 		command := commandApplyHost(host.ResolveCommand, host)
-		Logger.Debugf("Resolving host: '%s' using command: '%s'", host.HostName, command)
+		Logger.Debugf("Resolving host: %q using command: %q", host.HostName, command)
 
 		args, err := shlex.Split(command)
 		if err != nil {
