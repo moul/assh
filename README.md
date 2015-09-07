@@ -190,6 +190,8 @@ Get the latest version using:
 go get -u github.com/moul/advanced-ssh-config/...
 ```
 
+Get a released version on: https://github.com/moul/advanced-ssh-config/releases
+
 ## Getting started
 
 1. Backup your old `~/.ssh/config`: `cp ~/.ssh/config ~/.ssh/config.backup`
