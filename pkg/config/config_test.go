@@ -582,7 +582,7 @@ Host tutu
 Host *
   Port 22
   User root
-  ProxyCommand assh proxy %h %p
+  ProxyCommand assh proxy --port=%p %h
 `
 		So(buffer.String(), ShouldEqual, expected)
 	})
