@@ -204,6 +204,12 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.0.0...master)
+
 ### v2.0.0 (2015-09-07)
 
 * First Golang version
