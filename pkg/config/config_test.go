@@ -566,25 +566,31 @@ Host tata
   PasswordAuthentication yes
   Port 22
   User moul
-#  ProxyCommand nc -v 4242
+  # ProxyCommand nc -v 4242
+  # Inherits: [tutu, titi, toto, tutu]
+  # Gateways: [titi, direct, 1.2.3.4]
 
 Host titi
   HostName tata
   Port 23
   User moul
-#  ProxyCommand nc -v 4242
+  # ProxyCommand nc -v 4242
 
 Host tonton
+  # ResolveNameservers: [a.com, 1.2.3.4]
 
 Host toto
   HostName 1.2.3.4
 
 Host toutou
+  # ResolveCommand: dig -t %h
 
 Host tutu
   HostName 1.2.3.4
   PasswordAuthentication yes
   Port 22
+  # Inherits: [toto, tutu, *.ddd]
+  # Gateways: [titi, direct, 1.2.3.4]
 
 # global configuration
 Host *
