@@ -34,7 +34,7 @@ func (c *Config) JsonString() ([]byte, error) {
 	return output, err
 }
 
-// computeHost applies defaults, inherits hosts and configure internal fields
+// computeHost returns a copy of the host with applied defaults, resolved inheritances and configured internal fields
 func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Host, error) {
 	var computedHost Host
 	if host != nil {
@@ -47,30 +47,33 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	// self is already inherited
 	computedHost.inherited[name] = true
 
+	// Inheritance
+	// FIXME: allow deeper inheritance:
+	//     currently not resolving inherited hosts
+	//     we should resolve all inherited hosts and pass the
+	//     currently resolved hosts to avoid computing an host twice
+	for _, name := range host.Inherits {
+		_, found := computedHost.inherited[name]
+		if found {
+			Logger.Debugf("Detected circular loop inheritance, skiping...")
+			continue
+		}
+		computedHost.inherited[name] = true
+
+		target, err := config.getHostByPath(name, false, false)
+		if err != nil {
+			Logger.Warnf("Cannot inherits from %q: %v", name, err)
+			continue
+		}
+		computedHost.ApplyDefaults(target)
+	}
+
+	// fullCompute applies config.Defaults
+	// config.Defaults should be applied when proxying
+	// but should not when exporting .ssh/config file
 	if fullCompute {
 		// apply defaults based on "Host *"
 		computedHost.ApplyDefaults(&config.Defaults)
-
-		// Inheritance
-		// FIXME: allow deeper inheritance:
-		//     currently not resolving inherited hosts
-		//     we should resolve all inherited hosts and pass the
-		//     currently resolved hosts to avoid computing an host twice
-		for _, name := range host.Inherits {
-			_, found := computedHost.inherited[name]
-			if found {
-				Logger.Debugf("Detected circular loop inheritance, skiping...")
-				continue
-			}
-			computedHost.inherited[name] = true
-
-			target, err := config.getHostByPath(name, false, false)
-			if err != nil {
-				Logger.Warnf("Cannot inherits from %q: %v", name, err)
-				continue
-			}
-			computedHost.ApplyDefaults(target)
-		}
 	}
 
 	return &computedHost, nil
@@ -266,7 +269,11 @@ func (c *Config) WriteSshConfigTo(w io.Writer) error {
 	fmt.Fprintln(w, "# host-based configuration")
 	for _, name := range c.sortedNames() {
 		host := c.Hosts[name]
-		host.WriteSshConfigTo(w)
+		computedHost, err := computeHost(&host, c, name, false)
+		if err != nil {
+			return err
+		}
+		computedHost.WriteSshConfigTo(w)
 		fmt.Fprintln(w)
 	}
 

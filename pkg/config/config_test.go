@@ -487,9 +487,9 @@ func TestConfig_GetHost(t *testing.T) {
 				"toto": true,
 			})
 			So(host.ProxyCommand, ShouldEqual, "nc -v 4242")
-			So(host.User, ShouldEqual, "root")
+			So(host.User, ShouldEqual, "moul")
 			So(host.Gateways, ShouldResemble, []string{"titi", "direct", "1.2.3.4"})
-			So(host.PasswordAuthentication, ShouldEqual, "")
+			So(host.PasswordAuthentication, ShouldEqual, "yes")
 
 			host, err = config.GetHost("tutu")
 			So(err, ShouldBeNil)
@@ -562,6 +562,11 @@ Host *.ddd
 Host empty
 
 Host tata
+  HostName 1.2.3.4
+  PasswordAuthentication yes
+  Port 22
+  User moul
+#  ProxyCommand nc -v 4242
 
 Host titi
   HostName tata
@@ -577,6 +582,9 @@ Host toto
 Host toutou
 
 Host tutu
+  HostName 1.2.3.4
+  PasswordAuthentication yes
+  Port 22
 
 # global configuration
 Host *

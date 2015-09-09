@@ -206,7 +206,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
-* No entry
+* Fix: inheritance was not working for non assh-related fields ([#54](https://github.com/moul/advanced-ssh-config/issues/54))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.0.0...master)
 
