@@ -3,7 +3,7 @@ package version
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	. "github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey"
 )
 
 func Test(t *testing.T) {

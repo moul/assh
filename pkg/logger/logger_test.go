@@ -3,8 +3,8 @@ package logger
 import (
 	"testing"
 
-	"github.com/Sirupsen/logrus"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
+	. "github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey"
 )
 
 func Test(t *testing.T) {
