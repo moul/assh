@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
+	"github.com/BurntSushi/toml"
 
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
@@ -20,9 +20,9 @@ const defaultSshConfigPath string = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
-	Hosts    map[string]Host `json:"hosts"`
-	Defaults Host            `json:"defaults",omitempty`
-	Includes []string        `json:"includes",omitempty`
+	Hosts    map[string]Host `toml:"Hosts" json:"hosts"`
+	Defaults Host            `toml:"Defaults" json:"defaults",omitempty`
+	Includes []string        `toml:"Includes" json:"includes",omitempty`
 
 	includedFiles map[string]bool
 	sshConfigPath string
@@ -148,7 +148,7 @@ func (c *Config) LoadConfig(source io.Reader) error {
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(buf, &c)
+	err = toml.Unmarshal(buf, &c)
 	if err != nil {
 		return err
 	}
