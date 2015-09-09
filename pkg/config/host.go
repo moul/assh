@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io"
+	"strings"
 )
 
 // Host defines the configuration flags of a host
@@ -655,12 +656,23 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 		fmt.Fprintf(w, "  ProxyCommand %s proxy --port=%%p %%h\n", asshBinary)
 	} else {
 		if h.ProxyCommand != "" {
-			fmt.Fprintf(w, "#  ProxyCommand %s\n", h.ProxyCommand)
+			fmt.Fprintf(w, "  # ProxyCommand %s\n", h.ProxyCommand)
 		}
 	}
 
 	// assh fields
-	// FIXME: add assh fields in the config file as comments
+	if len(h.Inherits) > 0 {
+		fmt.Fprintf(w, "  # Inherits: [%s]\n", strings.Join(h.Inherits, ", "))
+	}
+	if len(h.Gateways) > 0 {
+		fmt.Fprintf(w, "  # Gateways: [%s]\n", strings.Join(h.Gateways, ", "))
+	}
+	if len(h.ResolveNameservers) > 0 {
+		fmt.Fprintf(w, "  # ResolveNameservers: [%s]\n", strings.Join(h.ResolveNameservers, ", "))
+	}
+	if h.ResolveCommand != "" {
+		fmt.Fprintf(w, "  # ResolveCommand: %s\n", h.ResolveCommand)
+	}
 
 	return nil
 }
