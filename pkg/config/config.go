@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/BurntSushi/toml"
+	"github.com/moul/advanced-ssh-config/vendor/github.com/BurntSushi/toml"
 
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
