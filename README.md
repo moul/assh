@@ -82,72 +82,70 @@ The `~/.ssh/config` file is now managed by `assh`, take care to keep a backup yo
 * a `defaults` section containing global flags
 * and an `includes` section containing path to other configuration files
 
-```yaml
-hosts:
+```toml
+Includes = [
+  "~/.ssh/assh.d/*.yml",
+  "/etc/assh.yml"
+]
 
-  homer:
+[Hosts]
+
+  [Hosts.homer]
     # ssh homer ->  ssh 1.2.3.4 -p 2222 -u robert
-    HostName: 1.2.3.4
-    User: robert
-    Port: 2222
+    HostName = "1.2.3.4"
+    User = "robert"
+    Port = 2222
 
-  bart:
+  [Hosts.bart]
     # ssh bart ->   ssh 5.6.7.8 -u bart           <- direct access
     #            or ssh 5.6.7.8/homer -u bart     <- using homer as a gateway
-    HostName: 5.6.7.8
-    User: bart
-    Gateways:
-    - direct                   # tries a direct access first
-    - homer                    # fallback on homer gateway
+    HostName = "5.6.7.8"
+    User = "bart"
+    Gateways = [ "direct", "homer" ]
+    # tries a direct access first
+    # fallback on homer gateway
 
-  maggie:
+  [Hosts.maggie]
     # ssh maggie ->   ssh 5.6.7.8 -u maggie       <- direct access
     #              or ssh 5.6.7.8/homer -u maggie   <- using homer as a gateway
-    User: maggie
-    Inherits:
-    - bart                     # inherits rules from "bart"
+    User = "maggie"
+    Inherits = [ "bart" ]   # inherits rules from "bart"
 
-  schooltemplate:
-    User: student
-    IdentityFile: ~/.ssh/school-rsa
-    ForwardX11: yes
+  [Hosts.schooltemplate]
+    User = "student"
+    IdentityFile = "~/.ssh/school-rsa"
+    ForwardX11 = "yes"
 
-  schoolgw:
+  [Hosts.schoolgw]
     # ssh school ->   ssh gw.school.com -l student -o ForwardX11=no -i ~/.ssh/school-rsa
-    Hostname: gw.school.com
-    ForwardX11: no
-    Inherits:
-    - schooltemplate
+    Hostname = "gw.school.com"
+    ForwardX11 = "no"
+    Inherits = [ "schooltemplate" ]
 
 
-  vm-*.school.com:
+  [Hosts."vm-*.school.com"]
     # ssh vm-42.school.com ->   ssh vm-42.school.com/gw.school.com -l student -o ForwardX11=yes -i ~/.ssh/school-rsa
-    Gateways:
-    - schoolgw
-    Inherits:
-    - schooltemplate
+    Gateways = [ "schoolgw" ]
+    Inherits = [ "schooltemplate" ]
 
-  "*.scw":
+  [Hosts."*.scw"]
     # ssh toto.scw -> 1. dynamically resolves the IP address
     #                 2. ssh {resolved ip address} -u root -p 22 -o UserKnownHostsFile=null -o StrictHostKeyChecking=no
     # requires github.com/scaleway/scaleway-cli
-    ResolveCommand: /bin/sh -c "scw inspect -f {{.PublicAddress.IP}} server:$(echo %h | sed s/.scw//)"
-    User: root
-    Port: 22
-    UserKnownHostsFile: /dev/null
-    StrictHostKeyChecking: no
+    ResolveCommand = "/bin/sh -c \"scw inspect -f {{.PublicAddress.IP}} server:$(echo %h | sed s/.scw//)\""
+    User = "root"
+    Port = 22
+    UserKnownHostsFile = "/dev/null"
+    StrictHostKeyChecking = "no"
 
-defaults:
+[Defaults]
   # Defaults are applied to each hosts
-  ControlMaster: auto
-  ControlPath: ~/tmp/.ssh/cm/%h-%p-%r.sock
-  ControlPersist: yes
-  Port: 22
-  User: bob
+  ControlMaster = "auto"
+  ControlPath = "~/tmp/.ssh/cm/%h-%p-%r.sock"
+  ControlPersist = "yes"
+  Port = 22
+  User = "bob"
 
-includes:
-- ~/.ssh/assh.d/*.yml
-- /etc/assh.yml
 ```
 
 ---
