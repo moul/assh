@@ -12,20 +12,33 @@ import (
 
 var (
 	configExample string = `
-hosts:
-  aaa:
-    HostName: 1.2.3.4
-  bbb:
-    Port: 21
-  ccc:
-    HostName: 5.6.7.8
-    Port: 24
-    User: toor
-  "*.ddd":
-    HostName: 1.3.5.7
-defaults:
-  Port: 22
-  User: root
+Includes = [
+  "~/i/dont/exist/*.yml",
+  "/i/dont/exist.yml"
+]
+
+[Hosts]
+
+  [Hosts.aaa]
+    HostName = "1.2.3.4"
+
+  [Hosts.bbb]
+    Port = 21
+
+  [Hosts.ccc]
+    HostName = "5.6.7.8"
+    Port = 24
+    User = "toor"
+
+  [Hosts."*.ddd"]
+    HostName = "1.3.5.7"
+
+  [Hosts.eee]
+    Inherits = ["*.ddd", "aaa"]
+
+[Defaults]
+  Port = 22
+  User = "root"
 `
 )
 
@@ -73,6 +86,7 @@ func dummyConfig() *Config {
 		Port: 22,
 		User: "root",
 	}
+	config.Includes = []string{"~/i/dont/exist/*.yml", "/i/dont/exist.yml"}
 	config.applyMissingNames()
 	return config
 }
@@ -119,12 +133,12 @@ func TestConfig(t *testing.T) {
 }
 
 func TestConfig_LoadConfig(t *testing.T) {
-	Convey("Testing Config.LoadConfig", t, func() {
+	Convey("Testing Config.LoadConfig", t, FailureContinues, func() {
 
 		config := New()
 		err := config.LoadConfig(strings.NewReader(configExample))
 		So(err, ShouldBeNil)
-		So(len(config.Hosts), ShouldEqual, 4)
+		So(len(config.Hosts), ShouldEqual, 5)
 		So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 		So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -137,8 +151,11 @@ func TestConfig_LoadConfig(t *testing.T) {
 		So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
 		So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
 		So(config.Hosts["*.ddd"].User, ShouldEqual, "")
+		So(config.Hosts["eee"].HostName, ShouldEqual, "")
+		So(config.Hosts["eee"].Inherits, ShouldResemble, []string{"*.ddd", "aaa"})
 		So(config.Defaults.Port, ShouldEqual, uint(22))
 		So(config.Defaults.User, ShouldEqual, "root")
+		So(len(config.Includes), ShouldEqual, 2)
 	})
 }
 
@@ -195,7 +212,10 @@ func TestConfig_JsonSring(t *testing.T) {
     "Port": 22,
     "User": "root"
   },
-  "includes": null
+  "includes": [
+    "~/i/dont/exist/*.yml",
+    "/i/dont/exist.yml"
+  ]
 }`
 		json, err := config.JsonString()
 		So(err, ShouldBeNil)
@@ -318,7 +338,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 4)
+			So(len(config.Hosts), ShouldEqual, 5)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -331,6 +351,8 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
 			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
+			So(config.Hosts["eee"].HostName, ShouldEqual, "")
+			So(config.Hosts["eee"].Inherits, ShouldResemble, []string{"*.ddd", "aaa"})
 			So(config.Defaults.Port, ShouldEqual, uint(22))
 			So(config.Defaults.User, ShouldEqual, "root")
 		})
@@ -341,7 +363,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 4)
+			So(len(config.Hosts), ShouldEqual, 5)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -354,6 +376,8 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
 			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
+			So(config.Hosts["eee"].HostName, ShouldEqual, "")
+			So(config.Hosts["eee"].Inherits, ShouldResemble, []string{"*.ddd", "aaa"})
 			So(config.Defaults.Port, ShouldEqual, uint(22))
 			So(config.Defaults.User, ShouldEqual, "root")
 		})
