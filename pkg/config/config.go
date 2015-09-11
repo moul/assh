@@ -74,6 +74,14 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	if fullCompute {
 		// apply defaults based on "Host *"
 		computedHost.ApplyDefaults(&config.Defaults)
+
+		if computedHost.HostName == "" {
+			computedHost.HostName = name
+		}
+		// expands variables in host
+		// i.e: %h.some.zone -> {name}.some.zone
+		hostname := strings.Replace(computedHost.HostName, "%h", "%n", -1)
+		computedHost.HostName = computedHost.ExpandString(hostname)
 	}
 
 	return computedHost, nil
