@@ -108,6 +108,13 @@ type Host struct {
 	inherited map[string]bool `yaml:- json:-`
 }
 
+// NewHost returns a host with name
+func NewHost(name string) *Host {
+	return &Host{
+		name: name,
+	}
+}
+
 func (h *Host) Name() string {
 	return h.name
 }

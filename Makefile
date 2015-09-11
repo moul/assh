@@ -25,12 +25,14 @@ install:
 
 
 cover:
-	rm -f profile.out file-profile.out
+	find . -name profile.out -delete
 	for package in $(PACKAGES); do \
-	  go test -coverprofile=file-profile.out $$package; \
-	  if [ -f file-profile.out ]; then cat file-profile.out | grep -v "mode: set" >> profile.out || true; rm -f file-profile.out; fi \
+	  rm -f $$package/profile.out; \
+	  go test -covermode=count -coverpkg=./pkg/... -coverprofile=$$package/profile.out $$package; \
 	done
-	echo "mode: set" | cat - profile.out > profile.out.tmp && mv profile.out.tmp profile.out
+	echo "mode: count" > profile.out.tmp
+	cat `find . -name profile.out` | grep -v mode: | sort -r | awk '{if($$1 != last) {print $$0;last=$$1}}' >> profile.out.tmp
+	mv profile.out.tmp profile.out
 
 
 .PHONY: convey

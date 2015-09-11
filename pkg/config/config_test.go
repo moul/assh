@@ -11,21 +11,58 @@ import (
 )
 
 var (
-	configExample string = `
+	yamlConfig string = `
 hosts:
+
   aaa:
     HostName: 1.2.3.4
+
   bbb:
     Port: 21
+
   ccc:
     HostName: 5.6.7.8
     Port: 24
     User: toor
   "*.ddd":
     HostName: 1.3.5.7
+
+  eee:
+    Inherits:
+    - aaa
+    - bbb
+    - aaa
+
+  fff:
+    Inherits:
+    - bbb
+    - eee
+    - "*.ddd"
+
+  ggg:
+    Gateways:
+    - direct
+    - fff
+
+  hhh:
+    Gateways:
+    - ggg
+    - direct
+
+  iii:
+    Gateways:
+    - test.ddd
+
+  jjj:
+    HostName: "%h.jjjjj"
+
 defaults:
   Port: 22
   User: root
+
+includes:
+  - /path/to/dir/*.yml
+  - /path/to/file.yml
 `
 )
 
@@ -122,9 +159,9 @@ func TestConfig_LoadConfig(t *testing.T) {
 	Convey("Testing Config.LoadConfig", t, func() {
 
 		config := New()
-		err := config.LoadConfig(strings.NewReader(configExample))
+		err := config.LoadConfig(strings.NewReader(yamlConfig))
 		So(err, ShouldBeNil)
-		So(len(config.Hosts), ShouldEqual, 4)
+		So(len(config.Hosts), ShouldEqual, 10)
 		So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 		So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -144,8 +181,9 @@ func TestConfig_LoadConfig(t *testing.T) {
 
 func TestConfig_JsonSring(t *testing.T) {
 	Convey("Testing Config.JsonString", t, func() {
-		config := dummyConfig()
-		expected := `{
+		Convey("dummyConfig", func() {
+			config := dummyConfig()
+			expected := `{
   "hosts": {
     "*.ddd": {
       "HostName": "1.3.5.7",
@@ -197,9 +235,78 @@ func TestConfig_JsonSring(t *testing.T) {
   },
   "includes": null
 }`
-		json, err := config.JsonString()
-		So(err, ShouldBeNil)
-		So(string(json), ShouldEqual, expected)
+			json, err := config.JsonString()
+			So(err, ShouldBeNil)
+			So(string(json), ShouldEqual, expected)
+		})
+		Convey("yamlConfig", func() {
+			config := New()
+			err := config.LoadConfig(strings.NewReader(yamlConfig))
+			So(err, ShouldBeNil)
+			expected := `{
+  "hosts": {
+    "*.ddd": {
+      "HostName": "1.3.5.7"
+    },
+    "aaa": {
+      "HostName": "1.2.3.4"
+    },
+    "bbb": {
+      "Port": 21
+    },
+    "ccc": {
+      "HostName": "5.6.7.8",
+      "Port": 24,
+      "User": "toor"
+    },
+    "eee": {
+      "Inherits": [
+        "aaa",
+        "bbb",
+        "aaa"
+      ]
+    },
+    "fff": {
+      "Inherits": [
+        "bbb",
+        "eee",
+        "*.ddd"
+      ]
+    },
+    "ggg": {
+      "Gateways": [
+        "direct",
+        "fff"
+      ]
+    },
+    "hhh": {
+      "Gateways": [
+        "ggg",
+        "direct"
+      ]
+    },
+    "iii": {
+      "Gateways": [
+        "test.ddd"
+      ]
+    },
+    "jjj": {
+      "HostName": "%h.jjjjj"
+    }
+  },
+  "defaults": {
+    "Port": 22,
+    "User": "root"
+  },
+  "includes": [
+    "/path/to/dir/*.yml",
+    "/path/to/file.yml"
+  ]
+}`
+			json, err := config.JsonString()
+			So(err, ShouldBeNil)
+			So(string(json), ShouldEqual, expected)
+		})
 	})
 }
 
@@ -310,7 +417,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 		file, err := ioutil.TempFile(os.TempDir(), "assh-tests")
 		So(err, ShouldBeNil)
 		defer os.Remove(file.Name())
-		file.Write([]byte(configExample))
+		file.Write([]byte(yamlConfig))
 
 		Convey("Loading a simple file", func() {
 			err = config.LoadFiles(file.Name())
@@ -318,7 +425,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 4)
+			So(len(config.Hosts), ShouldEqual, 10)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -341,7 +448,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 4)
+			So(len(config.Hosts), ShouldEqual, 10)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
