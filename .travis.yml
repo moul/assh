@@ -19,4 +19,4 @@ script:
 - go build -v $(go list ./... | grep -v vendor)
 - go test -v $(go list ./... | grep -v vendor)
 - make cover
-- goveralls -service=travis-ci -v -coverprofile=profile.out
+- goveralls -service=travis-ci -v -covermode=count -coverprofile=profile.out
