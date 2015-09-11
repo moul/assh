@@ -54,33 +54,3 @@ func TestComputeHost(t *testing.T) {
 		So(host.Port, ShouldEqual, 42)
 	})
 }
-
-func TestCommandApplyHost(t *testing.T) {
-	Convey("Testing commandApplyHost()", t, func() {
-		host := config.NewHost("abc")
-		host.HostName = "1.2.3.4"
-		host.Port = 42
-
-		var input, output, expected string
-
-		input = "ls -la"
-		output = commandApplyHost(input, host)
-		expected = "ls -la"
-		So(output, ShouldEqual, expected)
-
-		input = "nc %h %p"
-		output = commandApplyHost(input, host)
-		expected = "nc 1.2.3.4 42"
-		So(output, ShouldEqual, expected)
-
-		input = "ssh %name"
-		output = commandApplyHost(input, host)
-		expected = "ssh abc"
-		So(output, ShouldEqual, expected)
-
-		input = "echo %h %p %name %h %p %name"
-		output = commandApplyHost(input, host)
-		expected = "echo 1.2.3.4 42 abc 1.2.3.4 42 abc"
-		So(output, ShouldEqual, expected)
-	})
-}

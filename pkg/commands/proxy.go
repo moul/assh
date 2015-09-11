@@ -83,7 +83,7 @@ func proxy(host *config.Host, conf *config.Config) error {
 				if host.ProxyCommand == "" {
 					host.ProxyCommand = "nc %h %p"
 				}
-				command := "ssh %name -- " + commandApplyHost(host.ProxyCommand, host)
+				command := "ssh %name -- " + host.ExpandString(host.ProxyCommand)
 
 				Logger.Debugf("Using gateway '%s': %s", gateway, command)
 				err = proxyCommand(gatewayHost, command)
@@ -100,13 +100,6 @@ func proxy(host *config.Host, conf *config.Config) error {
 	return proxyDirect(host)
 }
 
-func commandApplyHost(command string, host *config.Host) string {
-	command = strings.Replace(command, "%name", host.Name(), -1)
-	command = strings.Replace(command, "%h", host.HostName, -1)
-	command = strings.Replace(command, "%p", fmt.Sprintf("%d", host.Port), -1)
-	return command
-}
-
 func proxyDirect(host *config.Host) error {
 	if host.ProxyCommand != "" {
 		return proxyCommand(host, host.ProxyCommand)
@@ -115,7 +108,7 @@ func proxyDirect(host *config.Host) error {
 }
 
 func proxyCommand(host *config.Host, command string) error {
-	command = commandApplyHost(command, host)
+	command = host.ExpandString(command)
 	args, err := shlex.Split(command)
 	Logger.Debugf("ProxyCommand: %s", command)
 	if err != nil {
@@ -146,7 +139,7 @@ func proxyGo(host *config.Host) error {
 		Logger.Debugf("Resolved host is: %s", host.HostName)
 	}
 	if host.ResolveCommand != "" {
-		command := commandApplyHost(host.ResolveCommand, host)
+		command := host.ExpandString(host.ResolveCommand)
 		Logger.Debugf("Resolving host: %q using command: %q", host.HostName, command)
 
 		args, err := shlex.Split(command)
