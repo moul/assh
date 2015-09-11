@@ -56,6 +56,9 @@ hosts:
   jjj:
     HostName: "%h.jjjjj"
 
+  "*.kkk":
+    HostName: "%h.kkkkk"
+
 defaults:
   Port: 22
   User: root
@@ -161,7 +164,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 		config := New()
 		err := config.LoadConfig(strings.NewReader(yamlConfig))
 		So(err, ShouldBeNil)
-		So(len(config.Hosts), ShouldEqual, 10)
+		So(len(config.Hosts), ShouldEqual, 11)
 		So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 		So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -248,6 +251,9 @@ func TestConfig_JsonSring(t *testing.T) {
     "*.ddd": {
       "HostName": "1.3.5.7"
     },
+    "*.kkk": {
+      "HostName": "%h.kkkkk"
+    },
     "aaa": {
       "HostName": "1.2.3.4"
     },
@@ -306,6 +312,37 @@ func TestConfig_JsonSring(t *testing.T) {
 			json, err := config.JsonString()
 			So(err, ShouldBeNil)
 			So(string(json), ShouldEqual, expected)
+		})
+	})
+}
+
+func TestComputeHost(t *testing.T) {
+	Convey("Testing computeHost()", t, func() {
+		config := New()
+		err := config.LoadConfig(strings.NewReader(yamlConfig))
+		So(err, ShouldBeNil)
+
+		Convey("Standard", func() {
+
+		})
+		Convey("Expand variables in HostName", func() {
+			host := config.Hosts["jjj"]
+			computed, err := computeHost(&host, config, "jjj", false)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "%h.jjjjj")
+
+			computed, err = computeHost(&host, config, "jjj", true)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "jjj.jjjjj")
+
+			host = config.Hosts["*.kkk"]
+			computed, err = computeHost(&host, config, "test.kkk", false)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "%h.kkkkk")
+
+			computed, err = computeHost(&host, config, "test.kkk", true)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "test.kkk.kkkkk")
 		})
 	})
 }
@@ -425,7 +462,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 10)
+			So(len(config.Hosts), ShouldEqual, 11)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -448,7 +485,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 10)
+			So(len(config.Hosts), ShouldEqual, 11)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
