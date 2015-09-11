@@ -36,9 +36,9 @@ func (c *Config) JsonString() ([]byte, error) {
 
 // computeHost returns a copy of the host with applied defaults, resolved inheritances and configured internal fields
 func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Host, error) {
-	var computedHost Host
+	computedHost := NewHost(name)
 	if host != nil {
-		computedHost = *host
+		*computedHost = *host
 	}
 
 	// name internal field
@@ -76,7 +76,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 		computedHost.ApplyDefaults(&config.Defaults)
 	}
 
-	return &computedHost, nil
+	return computedHost, nil
 }
 
 func (c *Config) getHostByName(name string, safe bool, compute bool) (*Host, error) {
@@ -95,10 +95,9 @@ func (c *Config) getHostByName(name string, safe bool, compute bool) (*Host, err
 	}
 
 	if safe {
-		host := Host{
-			HostName: name,
-		}
-		return computeHost(&host, c, name, compute)
+		host := NewHost(name)
+		host.HostName = name
+		return computeHost(host, c, name, compute)
 	}
 
 	return nil, fmt.Errorf("no such host: %s", name)
