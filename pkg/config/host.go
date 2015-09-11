@@ -104,6 +104,7 @@ type Host struct {
 
 	// private assh fields
 	name      string          `yaml:- json:-`
+	inputName string          `yaml:- json:-`
 	isDefault bool            `yaml:- json:-`
 	inherited map[string]bool `yaml:- json:-`
 }
@@ -396,6 +397,9 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 
 	// private assh fields
 	// h.inherited = make(map[string]bool, 0)
+	if h.inputName == "" {
+		h.inputName = h.name
+	}
 
 	// Extra defaults
 	if h.Port == 0 {
@@ -686,8 +690,25 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 
 func (h *Host) ExpandString(input string) string {
 	output := input
+
+	// name of the host in config
 	output = strings.Replace(output, "%name", h.Name(), -1)
+
+	// original target host name specified on the command line
+	output = strings.Replace(output, "%n", h.inputName, -1)
+
+	// target host name
 	output = strings.Replace(output, "%h", h.HostName, -1)
+
+	// port
 	output = strings.Replace(output, "%p", fmt.Sprintf("%d", h.Port), -1)
+
+	// FIXME: add
+	//   %L -> first component of the local host name
+	//   %l -> local host name
+	//   %r -> remote login username
+	//   %u -> username of the user running assh
+	//   %r -> remote login username
+
 	return output
 }

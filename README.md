@@ -119,6 +119,9 @@ hosts:
     Inherits:
     - schooltemplate
 
+  "somehost[0-7]*":
+    # ssh somehost2042 ->       ssh somehost2042.some.zone
+    HostName: "%h.some.zone"
 
   vm-*.school.com:
     # ssh vm-42.school.com ->   ssh vm-42.school.com/gw.school.com -l student -o ForwardX11=yes -i ~/.ssh/school-rsa
@@ -207,6 +210,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 ### master (unreleased)
 
 * Fix: inheritance was not working for non assh-related fields ([#54](https://github.com/moul/advanced-ssh-config/issues/54))
+* Fix: expanding variables in HostName ([#56](https://github.com/moul/advanced-ssh-config/issues/56))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.0.0...master)
 
