@@ -683,3 +683,11 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 
 	return nil
 }
+
+func (h *Host) ExpandString(input string) string {
+	output := input
+	output = strings.Replace(output, "%name", h.Name(), -1)
+	output = strings.Replace(output, "%h", h.HostName, -1)
+	output = strings.Replace(output, "%p", fmt.Sprintf("%d", h.Port), -1)
+	return output
+}
