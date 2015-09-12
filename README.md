@@ -240,6 +240,19 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 * First Python version (POC)
 
+## Docker
+
+Experimental: `assh` may run in Docker, however you will have limitations:
+
+* The `assh` containers does not have any binaries except `assh`, you can't use `ProxyCommand`, `ResolveCommand`...
+* Docker may run on another host, `ssh localhost` will ssh to Docker host
+
+```console
+docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
+```
+
+`assh` in Docker is slower and has more limitations, but it may be useful for testing or if you plan to use a Docker host as a remote Gateway
+
 ## Alternative version
 
 * [v1](https://github.com/moul/advanced-ssh-config/tree/v1) (2009-2015) - The original implementation. It worked quite well, but was a lot slower, less portable, harder to install for the user and harder to work on to develop new features and fix bugs
