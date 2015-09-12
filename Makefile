@@ -39,3 +39,14 @@ cover:
 convey:
 	go get github.com/smartystreets/goconvey
 	goconvey -cover -port=9042 -workDir="$(realpath .)/pkg" -depth=-1
+
+
+.PHONY: docker/assh
+docker/assh:
+	goxc -bc=linux,386 -d=docker -o="{{.Dest}}{{.PS}}{{.ExeName}}{{.Ext}}" -include="" compile
+
+
+.PHONY: docker
+docker: docker/assh
+	docker build -t moul/assh:latest docker
+	docker run -it --rm moul/assh --version
