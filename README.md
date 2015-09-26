@@ -209,6 +209,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Configuration is now case insensitive ([#51](https://github.com/moul/advanced-ssh-config/issues/51))
 * Fix: inheritance was not working for non assh-related fields ([#54](https://github.com/moul/advanced-ssh-config/issues/54))
 * Fix: expanding variables in HostName ([#56](https://github.com/moul/advanced-ssh-config/issues/56))
 
