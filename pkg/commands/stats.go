@@ -16,4 +16,6 @@ func cmdStats(c *cli.Context) {
 	}
 
 	fmt.Printf("%d hosts\n", len(conf.Hosts))
+	fmt.Printf("%d templates\n", len(conf.Templates))
+	fmt.Printf("%d included files\n", len(conf.IncludedFiles()))
 }
