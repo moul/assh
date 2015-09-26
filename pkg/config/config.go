@@ -28,6 +28,15 @@ type Config struct {
 	sshConfigPath string
 }
 
+// IncludedFiles returns the list of the included files
+func (c *Config) IncludedFiles() []string {
+	includedFiles := []string{}
+	for file, _ := range c.includedFiles {
+		includedFiles = append(includedFiles, file)
+	}
+	return includedFiles
+}
+
 // JsonString returns a string representing the JSON of a Config object
 func (c *Config) JsonString() ([]byte, error) {
 	output, err := json.MarshalIndent(c, "", "  ")

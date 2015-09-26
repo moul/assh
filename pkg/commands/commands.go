@@ -51,8 +51,8 @@ var Commands = []cli.Command{
 		},
 	*/
 	{
-		Name:   "stats",
-		Usage:  "Print statistics",
-		Action: cmdStats,
+		Name:   "info",
+		Usage:  "Display system-wide information",
+		Action: cmdInfo,
 	},
 }
