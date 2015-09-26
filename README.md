@@ -40,7 +40,8 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includ
 * **gateways** -> transparent ssh connection chaining
 * **includes**: split configuration in multiple files
 * **local command execution**: finally the reverse of **RemoteCommand**
-* **inheritance**: make hosts inherits from host templates
+* **templates**: equivalent to host but you can't connect directly to a template, perfect for inheritance
+* **inheritance**: make hosts inherits from host hosts or templates
 * **variable expansion**: resolve variables from environment
 * **smart proxycommand**: RAW tcp connection when possible with `netcat` and `socat` as default fallbacks
 
@@ -107,6 +108,18 @@ hosts:
     Inherits:
     - bart                     # inherits rules from "bart"
 
+  bart-access:
+    # ssh bart-access ->  ssh home.simpson.springfield.us -u bart
+    Inherits:
+    - bart-template
+    - simpson-template
+
+  lisa-access:
+    # ssh lisa-access ->  ssh home.simpson.springfield.us -u lisa
+    Inherits:
+    - lisa-template
+    - simpson-template
+
   schooltemplate:
     User: student
     IdentityFile: ~/.ssh/school-rsa
@@ -139,6 +152,16 @@ hosts:
     Port: 22
     UserKnownHostsFile: /dev/null
     StrictHostKeyChecking: no
+
+templates:
+  # Templates are similar to Hosts, you can inherits from them
+  # but you cannot ssh to a template
+  bart-template:
+    User: bart
+  lisa-template:
+    User: lisa
+  simpson-template:
+    Host: home.simpson.springfield.us
 
 defaults:
   # Defaults are applied to each hosts
@@ -209,6 +232,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Templates support ([#52](https://github.com/moul/advanced-ssh-config/issues/52))
 * Configuration is now case insensitive ([#51](https://github.com/moul/advanced-ssh-config/issues/51))
 * Fix: inheritance was not working for non assh-related fields ([#54](https://github.com/moul/advanced-ssh-config/issues/54))
 * Fix: expanding variables in HostName ([#56](https://github.com/moul/advanced-ssh-config/issues/56))
