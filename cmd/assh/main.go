@@ -22,8 +22,9 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name:  "debug, D",
-			Usage: "Enable debug mode",
+			Name:   "debug, D",
+			EnvVar: "ASSH_DEBUG",
+			Usage:  "Enable debug mode",
 		},
 		cli.BoolFlag{
 			Name:  "verbose, V",
@@ -39,6 +40,9 @@ func main() {
 }
 
 func hookBefore(c *cli.Context) error {
+	if c.Bool("debug") {
+		os.Setenv("ASSH_DEBUG", "1")
+	}
 	initLogging(c.Bool("debug"), c.Bool("verbose"))
 	return nil
 }
