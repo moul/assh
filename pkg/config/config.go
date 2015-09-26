@@ -11,8 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
-
+	"github.com/moul/advanced-ssh-config/pkg/flexyaml"
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
@@ -20,9 +19,9 @@ const defaultSshConfigPath string = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
-	Hosts    map[string]Host `json:"hosts"`
-	Defaults Host            `json:"defaults",omitempty`
-	Includes []string        `json:"includes",omitempty`
+	Hosts    map[string]Host `yaml:"hosts,omitempty,flow" json:"hosts"`
+	Defaults Host            `yaml:"defaults,omitempty,flow" json:"defaults",omitempty`
+	Includes []string        `yaml:"includes,omitempty,flow" json:"includes",omitempty`
 
 	includedFiles map[string]bool
 	sshConfigPath string
@@ -155,7 +154,7 @@ func (c *Config) LoadConfig(source io.Reader) error {
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(buf, &c)
+	err = flexyaml.Unmarshal(buf, &c)
 	if err != nil {
 		return err
 	}
