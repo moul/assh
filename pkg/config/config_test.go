@@ -59,6 +59,24 @@ hosts:
   "*.kkk":
     HostName: "%h.kkkkk"
 
+  nnn:
+    Inherits:
+    - mmm
+    User: nnnn
+
+templates:
+
+  kkk:
+    Port: 25
+    User: kkkk
+
+  lll:
+    HostName: 5.5.5.5
+
+  mmm:
+    Inherits:
+    - iii
+
 defaults:
   Port: 22
   User: root
@@ -113,6 +131,16 @@ func dummyConfig() *Config {
 		Port: 22,
 		User: "root",
 	}
+	config.Templates["mmm"] = Host{
+		Port:     25,
+		User:     "mmmm",
+		HostName: "5.5.5.5",
+		Inherits: []string{"tata"},
+	}
+	config.Hosts["nnn"] = Host{
+		Port:     26,
+		Inherits: []string{"mmm"},
+	}
 	config.applyMissingNames()
 	return config
 }
@@ -121,7 +149,7 @@ func TestConfig(t *testing.T) {
 	Convey("Testing dummyConfig", t, func() {
 		config := dummyConfig()
 
-		So(len(config.Hosts), ShouldEqual, 8)
+		So(len(config.Hosts), ShouldEqual, 9)
 
 		So(config.Hosts["toto"].HostName, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["toto"].Port, ShouldEqual, 0)
@@ -152,6 +180,8 @@ func TestConfig(t *testing.T) {
 		So(config.Hosts["empty"].isDefault, ShouldEqual, false)
 		So(config.Hosts["empty"].Port, ShouldEqual, uint(0))
 
+		So(len(config.Templates), ShouldEqual, 1)
+
 		So(config.Defaults.User, ShouldEqual, "root")
 		So(config.Defaults.Port, ShouldEqual, uint(22))
 		So(config.Defaults.isDefault, ShouldEqual, true)
@@ -164,7 +194,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 		config := New()
 		err := config.LoadConfig(strings.NewReader(yamlConfig))
 		So(err, ShouldBeNil)
-		So(len(config.Hosts), ShouldEqual, 11)
+		So(len(config.Hosts), ShouldEqual, 12)
 		So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 		So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -179,6 +209,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 		So(config.Hosts["*.ddd"].User, ShouldEqual, "")
 		So(config.Defaults.Port, ShouldEqual, uint(22))
 		So(config.Defaults.User, ShouldEqual, "root")
+		So(len(config.Templates), ShouldEqual, 3)
 	})
 }
 
@@ -193,6 +224,12 @@ func TestConfig_JsonSring(t *testing.T) {
       "PasswordAuthentication": "yes"
     },
     "empty": {},
+    "nnn": {
+      "Port": 26,
+      "Inherits": [
+        "mmm"
+      ]
+    },
     "tata": {
       "Inherits": [
         "tutu",
@@ -229,6 +266,16 @@ func TestConfig_JsonSring(t *testing.T) {
         "titi",
         "direct",
         "1.2.3.4"
+      ]
+    }
+  },
+  "templates": {
+    "mmm": {
+      "HostName": "5.5.5.5",
+      "Port": 25,
+      "User": "mmmm",
+      "Inherits": [
+        "tata"
       ]
     }
   },
@@ -298,6 +345,26 @@ func TestConfig_JsonSring(t *testing.T) {
     },
     "jjj": {
       "HostName": "%h.jjjjj"
+    },
+    "nnn": {
+      "User": "nnnn",
+      "Inherits": [
+        "mmm"
+      ]
+    }
+  },
+  "templates": {
+    "kkk": {
+      "Port": 25,
+      "User": "kkkk"
+    },
+    "lll": {
+      "HostName": "5.5.5.5"
+    },
+    "mmm": {
+      "Inherits": [
+        "iii"
+      ]
     }
   },
   "defaults": {
@@ -354,57 +421,57 @@ func TestConfig_getHostByName(t *testing.T) {
 		var err error
 
 		Convey("Without gateway", func() {
-			host, err = config.getHostByName("titi", false, true)
+			host, err = config.getHostByName("titi", false, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 
-			host, err = config.getHostByName("titi", true, true)
+			host, err = config.getHostByName("titi", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 
-			host, err = config.getHostByName("dontexists", false, true)
+			host, err = config.getHostByName("dontexists", false, true, false)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("dontexists", true, true)
+			host, err = config.getHostByName("dontexists", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists")
 
-			host, err = config.getHostByName("regex.ddd", false, true)
+			host, err = config.getHostByName("regex.ddd", false, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 
-			host, err = config.getHostByName("regex.ddd", true, true)
+			host, err = config.getHostByName("regex.ddd", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 		})
 
 		Convey("With gateway", func() {
-			host, err = config.getHostByName("titi/gateway", false, true)
+			host, err = config.getHostByName("titi/gateway", false, true, false)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("titi/gateway", true, true)
+			host, err = config.getHostByName("titi/gateway", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi/gateway")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByName("dontexists/gateway", false, true)
+			host, err = config.getHostByName("dontexists/gateway", false, true, false)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("dontexists/gateway", true, true)
+			host, err = config.getHostByName("dontexists/gateway", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists/gateway")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByName("regex.ddd/gateway", false, true)
+			host, err = config.getHostByName("regex.ddd/gateway", false, true, false)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("regex.ddd/gateway", true, true)
+			host, err = config.getHostByName("regex.ddd/gateway", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd/gateway")
 			So(host.HostName, ShouldNotEqual, "1.3.5.7")
@@ -462,7 +529,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 11)
+			So(len(config.Hosts), ShouldEqual, 12)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -477,6 +544,9 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
 			So(config.Defaults.Port, ShouldEqual, uint(22))
 			So(config.Defaults.User, ShouldEqual, "root")
+			So(len(config.Templates), ShouldEqual, 3)
+			So(config.Templates["kkk"].Port, ShouldEqual, 25)
+			So(config.Templates["kkk"].User, ShouldEqual, "kkkk")
 		})
 		Convey("Loading the same file again", func() {
 			config.LoadFiles(file.Name())
@@ -485,7 +555,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 11)
+			So(len(config.Hosts), ShouldEqual, 12)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -500,6 +570,9 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
 			So(config.Defaults.Port, ShouldEqual, uint(22))
 			So(config.Defaults.User, ShouldEqual, "root")
+			So(len(config.Templates), ShouldEqual, 3)
+			So(config.Templates["kkk"].Port, ShouldEqual, 25)
+			So(config.Templates["kkk"].User, ShouldEqual, "kkkk")
 		})
 	})
 	// FIXME: test globbing
@@ -513,32 +586,32 @@ func TestConfig_getHostByPath(t *testing.T) {
 		var err error
 
 		Convey("Without gateway", func() {
-			host, err = config.getHostByPath("titi", false, true)
+			host, err = config.getHostByPath("titi", false, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("titi", true, true)
+			host, err = config.getHostByPath("titi", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("dontexists", false, true)
+			host, err = config.getHostByPath("dontexists", false, true, false)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByPath("dontexists", true, true)
+			host, err = config.getHostByPath("dontexists", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("regex.ddd", false, true)
+			host, err = config.getHostByPath("regex.ddd", false, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("regex.ddd", true, true)
+			host, err = config.getHostByPath("regex.ddd", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
@@ -546,32 +619,32 @@ func TestConfig_getHostByPath(t *testing.T) {
 		})
 
 		Convey("With gateway", func() {
-			host, err = config.getHostByPath("titi/gateway", false, true)
+			host, err = config.getHostByPath("titi/gateway", false, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("titi/gateway", true, true)
+			host, err = config.getHostByPath("titi/gateway", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("dontexists/gateway", false, true)
+			host, err = config.getHostByPath("dontexists/gateway", false, true, false)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByPath("dontexists/gateway", true, true)
+			host, err = config.getHostByPath("dontexists/gateway", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("regex.ddd/gateway", false, true)
+			host, err = config.getHostByPath("regex.ddd/gateway", false, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("regex.ddd/gateway", true, true)
+			host, err = config.getHostByPath("regex.ddd/gateway", true, true, false)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
@@ -645,6 +718,16 @@ func TestConfig_GetHost(t *testing.T) {
 			So(host.User, ShouldEqual, "root")
 			So(host.Gateways, ShouldResemble, []string{"titi", "direct", "1.2.3.4"})
 			So(host.PasswordAuthentication, ShouldEqual, "yes")
+
+			host, err = config.GetHost("nnn")
+			So(err, ShouldBeNil)
+			So(host.inherited, ShouldResemble, map[string]bool{
+				"nnn": true,
+				"mmm": true,
+			})
+			So(host.User, ShouldEqual, "mmmm")
+			So(host.Port, ShouldEqual, 26)
+			So(host.Gateways, ShouldResemble, []string{"titi", "direct", "1.2.3.4"})
 		})
 	})
 }
@@ -704,6 +787,15 @@ Host *.ddd
   PasswordAuthentication yes
 
 Host empty
+
+Host nnn
+  HostName 5.5.5.5
+  PasswordAuthentication yes
+  Port 26
+  User mmmm
+  # ProxyCommand nc -v 4242
+  # Inherits: [mmm]
+  # Gateways: [titi, direct, 1.2.3.4]
 
 Host tata
   HostName 1.2.3.4
