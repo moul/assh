@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/bugsnag/osext"
+	"github.com/moul/advanced-ssh-config/vendor/github.com/bugsnag/osext"
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
