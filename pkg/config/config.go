@@ -19,9 +19,10 @@ const defaultSshConfigPath string = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
-	Hosts    map[string]Host `yaml:"hosts,omitempty,flow" json:"hosts"`
-	Defaults Host            `yaml:"defaults,omitempty,flow" json:"defaults",omitempty`
-	Includes []string        `yaml:"includes,omitempty,flow" json:"includes",omitempty`
+	Hosts     map[string]Host `yaml:"hosts,omitempty,flow" json:"hosts"`
+	Templates map[string]Host `yaml:"templates,omitempty,flow" json:"templates"`
+	Defaults  Host            `yaml:"defaults,omitempty,flow" json:"defaults",omitempty`
+	Includes  []string        `yaml:"includes,omitempty,flow" json:"includes",omitempty`
 
 	includedFiles map[string]bool
 	sshConfigPath string
@@ -59,7 +60,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 		}
 		computedHost.inherited[name] = true
 
-		target, err := config.getHostByPath(name, false, false)
+		target, err := config.getHostByPath(name, false, false, true)
 		if err != nil {
 			Logger.Warnf("Cannot inherits from %q: %v", name, err)
 			continue
@@ -86,7 +87,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	return computedHost, nil
 }
 
-func (c *Config) getHostByName(name string, safe bool, compute bool) (*Host, error) {
+func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		return computeHost(&host, c, name, compute)
 	}
@@ -101,6 +102,18 @@ func (c *Config) getHostByName(name string, safe bool, compute bool) (*Host, err
 		}
 	}
 
+	if allowTemplate {
+		for pattern, template := range c.Templates {
+			matched, err := path.Match(pattern, name)
+			if err != nil {
+				return nil, err
+			}
+			if matched {
+				return computeHost(&template, c, name, compute)
+			}
+		}
+	}
+
 	if safe {
 		host := NewHost(name)
 		host.HostName = name
@@ -110,10 +123,10 @@ func (c *Config) getHostByName(name string, safe bool, compute bool) (*Host, err
 	return nil, fmt.Errorf("no such host: %s", name)
 }
 
-func (c *Config) getHostByPath(path string, safe bool, compute bool) (*Host, error) {
+func (c *Config) getHostByPath(path string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
 	parts := strings.SplitN(path, "/", 2)
 
-	host, err := c.getHostByName(parts[0], safe, compute)
+	host, err := c.getHostByName(parts[0], safe, compute, allowTemplate)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +140,7 @@ func (c *Config) getHostByPath(path string, safe bool, compute bool) (*Host, err
 
 // GetGatewaySafe returns gateway Host configuration, a gateway is like a Host, except, the host path is not resolved
 func (c *Config) GetGatewaySafe(name string) *Host {
-	host, err := c.getHostByName(name, true, true) // FIXME: fullCompute for gateway ?
+	host, err := c.getHostByName(name, true, true, false) // FIXME: fullCompute for gateway ?
 	if err != nil {
 		panic(err)
 	}
@@ -136,12 +149,12 @@ func (c *Config) GetGatewaySafe(name string) *Host {
 
 // GetHost returns a matching host form Config hosts list
 func (c *Config) GetHost(name string) (*Host, error) {
-	return c.getHostByPath(name, false, true)
+	return c.getHostByPath(name, false, true, false)
 }
 
 // GetHostSafe won't fail, in case the host is not found, it will returns a virtual host matching the pattern
 func (c *Config) GetHostSafe(name string) *Host {
-	host, err := c.getHostByPath(name, true, true)
+	host, err := c.getHostByPath(name, true, true, false)
 	if err != nil {
 		panic(err)
 	}
@@ -167,6 +180,12 @@ func (c *Config) applyMissingNames() {
 		host := c.Hosts[key]
 		host.name = key
 		c.Hosts[key] = host
+	}
+	for key, _ := range c.Templates {
+		template := c.Templates[key]
+		template.name = key
+		template.isTemplate = true
+		c.Templates[key] = template
 	}
 	c.Defaults.isDefault = true
 }
@@ -294,6 +313,7 @@ func (c *Config) WriteSshConfigTo(w io.Writer) error {
 func New() *Config {
 	var config Config
 	config.Hosts = make(map[string]Host)
+	config.Templates = make(map[string]Host)
 	config.includedFiles = make(map[string]bool)
 	config.sshConfigPath = defaultSshConfigPath
 	return &config
