@@ -213,11 +213,27 @@ GLOBAL OPTIONS:
 
 ## Install
 
-Get the latest version using:
+Get the latest version using GO (recommended way):
 
 ```bash
 go get -u github.com/moul/advanced-ssh-config/...
 ```
+
+---
+
+Get the latest version using homebrew (Mac OS X):
+
+```bash
+brew install https://raw.githubusercontent.com/moul/advanced-ssh-config/master/contrib/homebrew/assh.rb --HEAD
+```
+
+or the latest released version:
+
+```bash
+brew install https://raw.githubusercontent.com/moul/advanced-ssh-config/master/contrib/homebrew/assh.rb
+```
+
+---
 
 Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
@@ -232,6 +248,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Add homebrew support ([#73](https://github.com/moul/advanced-ssh-config/issues/73))
 * Add a 'ssh info' command ([#71](https://github.com/moul/advanced-ssh-config/issues/71))
 * Templates support ([#52](https://github.com/moul/advanced-ssh-config/issues/52))
 * Configuration is now case insensitive ([#51](https://github.com/moul/advanced-ssh-config/issues/51))
