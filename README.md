@@ -216,7 +216,7 @@ GLOBAL OPTIONS:
 Get the latest version using GO (recommended way):
 
 ```bash
-go get -u github.com/moul/advanced-ssh-config/...
+go get -u github.com/moul/advanced-ssh-config/cmd/assh
 ```
 
 ---
