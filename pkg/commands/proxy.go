@@ -36,11 +36,13 @@ func cmdProxy(c *cli.Context) {
 	defer w.Close()
 	host.WriteSshConfigTo(w)
 
+	Logger.Debugf("Saving SSH config")
 	err = conf.SaveSshConfig()
 	if err != nil {
 		Logger.Fatalf("Cannot save SSH config file: %v", err)
 	}
 
+	Logger.Debugf("Proxying")
 	err = proxy(host, conf)
 	if err != nil {
 		Logger.Fatalf("Proxy error: %v", err)
@@ -83,6 +85,12 @@ func proxy(host *config.Host, conf *config.Config) error {
 				if host.ProxyCommand == "" {
 					host.ProxyCommand = "nc %h %p"
 				}
+				// FIXME: dynamically add "-v" flags
+
+				if err = hostPrepare(host); err != nil {
+					return err
+				}
+
 				command := "ssh %name -- " + host.ExpandString(host.ProxyCommand)
 
 				Logger.Debugf("Using gateway '%s': %s", gateway, command)
@@ -121,7 +129,7 @@ func proxyCommand(host *config.Host, command string) error {
 	return spawn.Run()
 }
 
-func proxyGo(host *config.Host) error {
+func hostPrepare(host *config.Host) error {
 	if host.HostName == "" {
 		host.HostName = host.Name()
 	}
@@ -138,6 +146,7 @@ func proxyGo(host *config.Host) error {
 		}
 		Logger.Debugf("Resolved host is: %s", host.HostName)
 	}
+
 	if host.ResolveCommand != "" {
 		command := host.ExpandString(host.ResolveCommand)
 		Logger.Debugf("Resolving host: %q using command: %q", host.HostName, command)
@@ -154,6 +163,14 @@ func proxyGo(host *config.Host) error {
 
 		host.HostName = strings.TrimSpace(fmt.Sprintf("%s", out))
 		Logger.Debugf("Resolved host is: %s", host.HostName)
+	}
+	return nil
+}
+
+func proxyGo(host *config.Host) error {
+	Logger.Debugf("Preparing host object")
+	if err := hostPrepare(host); err != nil {
+		return err
 	}
 
 	Logger.Debugf("Connecting to %s:%d", host.HostName, host.Port)

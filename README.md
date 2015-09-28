@@ -252,6 +252,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 * Add a 'ssh info' command ([#71](https://github.com/moul/advanced-ssh-config/issues/71))
 * Templates support ([#52](https://github.com/moul/advanced-ssh-config/issues/52))
 * Configuration is now case insensitive ([#51](https://github.com/moul/advanced-ssh-config/issues/51))
+* Fix: resolving host fields for gateways ([#79](https://github.com/moul/advanced-ssh-config/issues/79))
 * Fix: inheritance was not working for non assh-related fields ([#54](https://github.com/moul/advanced-ssh-config/issues/54))
 * Fix: expanding variables in HostName ([#56](https://github.com/moul/advanced-ssh-config/issues/56))
 
