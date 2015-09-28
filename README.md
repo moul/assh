@@ -3,6 +3,7 @@
 [![GoDoc](https://godoc.org/github.com/moul/advanced-ssh-config?status.svg)](https://godoc.org/github.com/moul/advanced-ssh-config)
 ![License](https://img.shields.io/github/license/moul/advanced-ssh-config.svg)
 
+<img src="https://raw.githubusercontent.com/moul/advanced-ssh-config/master/resources/assh.png" width="400" />
 
 #### Table of Contents
 
