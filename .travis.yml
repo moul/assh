@@ -13,6 +13,7 @@ before_install:
 
 matrix:
   allow_failures:
+  - go: 1.3
   - go: tip
 
 script:
