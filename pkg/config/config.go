@@ -98,6 +98,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 
 func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
+		Logger.Debugf("getHostByName direct matching: %q", name)
 		return computeHost(&host, c, name, compute)
 	}
 
@@ -107,6 +108,7 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 			return nil, err
 		}
 		if matched {
+			Logger.Debugf("getHostByName pattern matching: %q => %q", pattern, name)
 			return computeHost(&host, c, name, compute)
 		}
 	}
@@ -255,6 +257,8 @@ func (c *Config) LoadFile(filename string) error {
 			return err
 		}
 	}
+
+	Logger.Debugf("Loaded config file '%s'", filepath)
 
 	return nil
 }
