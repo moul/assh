@@ -190,26 +190,27 @@ func TestConfig(t *testing.T) {
 
 func TestConfig_LoadConfig(t *testing.T) {
 	Convey("Testing Config.LoadConfig", t, func() {
-
-		config := New()
-		err := config.LoadConfig(strings.NewReader(yamlConfig))
-		So(err, ShouldBeNil)
-		So(len(config.Hosts), ShouldEqual, 12)
-		So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
-		So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
-		So(config.Hosts["aaa"].User, ShouldEqual, "")
-		So(config.Hosts["bbb"].HostName, ShouldEqual, "")
-		So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
-		So(config.Hosts["bbb"].User, ShouldEqual, "")
-		So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
-		So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
-		So(config.Hosts["ccc"].User, ShouldEqual, "toor")
-		So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
-		So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
-		So(config.Hosts["*.ddd"].User, ShouldEqual, "")
-		So(config.Defaults.Port, ShouldEqual, uint(22))
-		So(config.Defaults.User, ShouldEqual, "root")
-		So(len(config.Templates), ShouldEqual, 3)
+		Convey("standard", func() {
+			config := New()
+			err := config.LoadConfig(strings.NewReader(yamlConfig))
+			So(err, ShouldBeNil)
+			So(len(config.Hosts), ShouldEqual, 12)
+			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
+			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["aaa"].User, ShouldEqual, "")
+			So(config.Hosts["bbb"].HostName, ShouldEqual, "")
+			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
+			So(config.Hosts["bbb"].User, ShouldEqual, "")
+			So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
+			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
+			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
+			So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
+			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
+			So(config.Defaults.Port, ShouldEqual, uint(22))
+			So(config.Defaults.User, ShouldEqual, "root")
+			So(len(config.Templates), ShouldEqual, 3)
+		})
 	})
 }
 
@@ -574,6 +575,33 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Templates["kkk"].Port, ShouldEqual, 25)
 			So(config.Templates["kkk"].User, ShouldEqual, "kkkk")
 		})
+		Convey("Expand includes environment", func() {
+			config := New()
+			file, err := ioutil.TempFile(os.TempDir(), "assh-tests")
+			So(err, ShouldBeNil)
+			defer os.Remove(file.Name())
+			file.Write([]byte(`
+includes:
+- $DUMMY_ENV_VAR/assh-tests*
+`))
+			tempDir, err := ioutil.TempDir(os.TempDir(), "assh-tests")
+			So(err, ShouldBeNil)
+			defer os.RemoveAll(tempDir)
+
+			file2, err := ioutil.TempFile(tempDir, "assh-tests")
+			So(err, ShouldBeNil)
+			defer os.Remove(file2.Name())
+			os.Setenv("DUMMY_ENV_VAR", tempDir)
+
+			config.LoadFiles(file.Name())
+
+			So(err, ShouldBeNil)
+			So(config.includedFiles[file.Name()], ShouldEqual, true)
+			So(config.includedFiles[file2.Name()], ShouldEqual, true)
+			So(len(config.includedFiles), ShouldEqual, 2)
+
+		})
+
 	})
 	// FIXME: test globbing
 }
