@@ -252,6 +252,12 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.1.0...master)
+
 ### v2.1.0 (2015-10-05)
 
 * Expand environment variables ([#86](https://github.com/moul/advanced-ssh-config/issues/86))
@@ -263,7 +269,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 * Fix: inheritance was not working for non assh-related fields ([#54](https://github.com/moul/advanced-ssh-config/issues/54))
 * Fix: expanding variables in HostName ([#56](https://github.com/moul/advanced-ssh-config/issues/56))
 
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.0.0...master)
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.0.0...v2.1.0)
 
 ### v2.0.0 (2015-09-07)
 
