@@ -252,7 +252,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ## Changelog
 
-### master (unreleased)
+### v2.1.0 (2015-10-05)
 
 * Expand environment variables ([#86](https://github.com/moul/advanced-ssh-config/issues/86))
 * Add homebrew support ([#73](https://github.com/moul/advanced-ssh-config/issues/73))
