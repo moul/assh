@@ -422,6 +422,29 @@ func TestComputeHost(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "test.kkk.kkkkk")
 		})
+		Convey("Expand variables using environment", func() {
+			host := config.Hosts["bbb"]
+			So(host.HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
+			So(host.Port, ShouldEqual, "${ENV_VAR_PORT}")
+			So(host.IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(host.LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
+			So(host.User, ShouldEqual, "user-$ENV_VAR_USER-user")
+
+			os.Setenv("ENV_VAR_HOSTNAME", "aaa")
+			os.Setenv("ENV_VAR_PORT", "42")
+			os.Unsetenv("NON_EXISTING_ENV_VAR")
+			//os.Setenv("ENV_VAR_LOCALCOMMAND", "bbb")
+			os.Setenv("ENV_VAR_USER", "ccc")
+
+			computed, err := computeHost(&host, config, "bbb", true)
+			So(err, ShouldBeNil)
+
+			So(computed.HostName, ShouldEqual, "aaa")
+			So(computed.Port, ShouldEqual, "42")
+			So(computed.IdentityFile, ShouldEqual, "")
+			So(computed.LocalCommand, ShouldEqual, "") // FIXME: it should be "hello"
+			So(computed.User, ShouldEqual, "user-ccc-user")
+		})
 	})
 }
 
