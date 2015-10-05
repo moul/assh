@@ -175,6 +175,7 @@ defaults:
 includes:
 - ~/.ssh/assh.d/*.yml
 - /etc/assh.yml
+- $ENV_VAR/blah-blah-*/*.yml
 ```
 
 ---
@@ -249,6 +250,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Expand environment variables in `includes` ([#86](https://github.com/moul/advanced-ssh-config/issues/86))
 * Add homebrew support ([#73](https://github.com/moul/advanced-ssh-config/issues/73))
 * Add a 'ssh info' command ([#71](https://github.com/moul/advanced-ssh-config/issues/71))
 * Templates support ([#52](https://github.com/moul/advanced-ssh-config/issues/52))
