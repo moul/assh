@@ -18,7 +18,11 @@ hosts:
     HostName: 1.2.3.4
 
   bbb:
-    Port: 21
+    Port: ${ENV_VAR_PORT}
+    HostName: $ENV_VAR_HOSTNAME
+    User: user-$ENV_VAR_USER-user
+    LocalCommand: ${ENV_VAR_LOCALCOMMAND:-hello}
+    IdentityFile: ${NON_EXISTING_ENV_VAR}
 
   ccc:
     HostName: 5.6.7.8
@@ -92,7 +96,7 @@ func TestNew(t *testing.T) {
 		config := New()
 
 		So(len(config.Hosts), ShouldEqual, 0)
-		So(config.Defaults.Port, ShouldEqual, uint(0))
+		So(config.Defaults.Port, ShouldEqual, "")
 		So(config.Defaults.HostName, ShouldEqual, "")
 		So(config.Defaults.User, ShouldEqual, "")
 	})
@@ -105,7 +109,7 @@ func dummyConfig() *Config {
 	}
 	config.Hosts["titi"] = Host{
 		HostName:     "tata",
-		Port:         23,
+		Port:         "23",
 		User:         "moul",
 		ProxyCommand: "nc -v 4242",
 	}
@@ -128,17 +132,17 @@ func dummyConfig() *Config {
 		PasswordAuthentication: "yes",
 	}
 	config.Defaults = Host{
-		Port: 22,
+		Port: "22",
 		User: "root",
 	}
 	config.Templates["mmm"] = Host{
-		Port:     25,
+		Port:     "25",
 		User:     "mmmm",
 		HostName: "5.5.5.5",
 		Inherits: []string{"tata"},
 	}
 	config.Hosts["nnn"] = Host{
-		Port:     26,
+		Port:     "26",
 		Inherits: []string{"mmm"},
 	}
 	config.applyMissingNames()
@@ -152,38 +156,38 @@ func TestConfig(t *testing.T) {
 		So(len(config.Hosts), ShouldEqual, 9)
 
 		So(config.Hosts["toto"].HostName, ShouldEqual, "1.2.3.4")
-		So(config.Hosts["toto"].Port, ShouldEqual, 0)
+		So(config.Hosts["toto"].Port, ShouldEqual, "")
 		So(config.Hosts["toto"].name, ShouldEqual, "toto")
 		So(config.Hosts["toto"].isDefault, ShouldEqual, false)
 
 		So(config.Hosts["titi"].HostName, ShouldEqual, "tata")
 		So(config.Hosts["titi"].User, ShouldEqual, "moul")
 		So(config.Hosts["titi"].ProxyCommand, ShouldEqual, "nc -v 4242")
-		So(config.Hosts["titi"].Port, ShouldEqual, 23)
+		So(config.Hosts["titi"].Port, ShouldEqual, "23")
 		So(config.Hosts["titi"].isDefault, ShouldEqual, false)
 
 		So(config.Hosts["tonton"].isDefault, ShouldEqual, false)
-		So(config.Hosts["tonton"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["tonton"].Port, ShouldEqual, "")
 		So(config.Hosts["tonton"].ResolveNameservers, ShouldResemble, []string{"a.com", "1.2.3.4"})
 
 		So(config.Hosts["toutou"].isDefault, ShouldEqual, false)
-		So(config.Hosts["toutou"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["toutou"].Port, ShouldEqual, "")
 		So(config.Hosts["toutou"].ResolveCommand, ShouldEqual, "dig -t %h")
 
 		So(config.Hosts["tutu"].isDefault, ShouldEqual, false)
-		So(config.Hosts["tutu"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["tutu"].Port, ShouldEqual, "")
 		So(config.Hosts["tutu"].Gateways, ShouldResemble, []string{"titi", "direct", "1.2.3.4"})
 
 		So(config.Hosts["*.ddd"].isDefault, ShouldEqual, false)
 		So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
 
 		So(config.Hosts["empty"].isDefault, ShouldEqual, false)
-		So(config.Hosts["empty"].Port, ShouldEqual, uint(0))
+		So(config.Hosts["empty"].Port, ShouldEqual, "")
 
 		So(len(config.Templates), ShouldEqual, 1)
 
 		So(config.Defaults.User, ShouldEqual, "root")
-		So(config.Defaults.Port, ShouldEqual, uint(22))
+		So(config.Defaults.Port, ShouldEqual, "22")
 		So(config.Defaults.isDefault, ShouldEqual, true)
 	})
 }
@@ -196,18 +200,20 @@ func TestConfig_LoadConfig(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(config.Hosts), ShouldEqual, 12)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
-			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
-			So(config.Hosts["bbb"].HostName, ShouldEqual, "")
-			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
-			So(config.Hosts["bbb"].User, ShouldEqual, "")
+			So(config.Hosts["bbb"].HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
+			So(config.Hosts["bbb"].Port, ShouldEqual, "${ENV_VAR_PORT}")
+			So(config.Hosts["bbb"].User, ShouldEqual, "user-$ENV_VAR_USER-user")
+			So(config.Hosts["bbb"].IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(config.Hosts["bbb"].LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
-			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
+			So(config.Hosts["ccc"].Port, ShouldEqual, "24")
 			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
 			So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
-			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["*.ddd"].Port, ShouldEqual, "")
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
-			So(config.Defaults.Port, ShouldEqual, uint(22))
+			So(config.Defaults.Port, ShouldEqual, "22")
 			So(config.Defaults.User, ShouldEqual, "root")
 			So(len(config.Templates), ShouldEqual, 3)
 		})
@@ -226,7 +232,7 @@ func TestConfig_JsonSring(t *testing.T) {
     },
     "empty": {},
     "nnn": {
-      "Port": 26,
+      "Port": "26",
       "Inherits": [
         "mmm"
       ]
@@ -241,7 +247,7 @@ func TestConfig_JsonSring(t *testing.T) {
     },
     "titi": {
       "HostName": "tata",
-      "Port": 23,
+      "Port": "23",
       "User": "moul",
       "ProxyCommand": "nc -v 4242"
     },
@@ -273,7 +279,7 @@ func TestConfig_JsonSring(t *testing.T) {
   "templates": {
     "mmm": {
       "HostName": "5.5.5.5",
-      "Port": 25,
+      "Port": "25",
       "User": "mmmm",
       "Inherits": [
         "tata"
@@ -281,7 +287,7 @@ func TestConfig_JsonSring(t *testing.T) {
     }
   },
   "defaults": {
-    "Port": 22,
+    "Port": "22",
     "User": "root"
   },
   "includes": null
@@ -306,11 +312,15 @@ func TestConfig_JsonSring(t *testing.T) {
       "HostName": "1.2.3.4"
     },
     "bbb": {
-      "Port": 21
+      "HostName": "$ENV_VAR_HOSTNAME",
+      "IdentityFile": "${NON_EXISTING_ENV_VAR}",
+      "LocalCommand": "${ENV_VAR_LOCALCOMMAND:-hello}",
+      "Port": "${ENV_VAR_PORT}",
+      "User": "user-$ENV_VAR_USER-user"
     },
     "ccc": {
       "HostName": "5.6.7.8",
-      "Port": 24,
+      "Port": "24",
       "User": "toor"
     },
     "eee": {
@@ -356,7 +366,7 @@ func TestConfig_JsonSring(t *testing.T) {
   },
   "templates": {
     "kkk": {
-      "Port": 25,
+      "Port": "25",
       "User": "kkkk"
     },
     "lll": {
@@ -369,7 +379,7 @@ func TestConfig_JsonSring(t *testing.T) {
     }
   },
   "defaults": {
-    "Port": 22,
+    "Port": "22",
     "User": "root"
   },
   "includes": [
@@ -532,21 +542,23 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(len(config.includedFiles), ShouldEqual, 1)
 			So(len(config.Hosts), ShouldEqual, 12)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
-			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
-			So(config.Hosts["bbb"].HostName, ShouldEqual, "")
-			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
-			So(config.Hosts["bbb"].User, ShouldEqual, "")
+			So(config.Hosts["bbb"].HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
+			So(config.Hosts["bbb"].Port, ShouldEqual, "${ENV_VAR_PORT}")
+			So(config.Hosts["bbb"].User, ShouldEqual, "user-$ENV_VAR_USER-user")
+			So(config.Hosts["bbb"].IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(config.Hosts["bbb"].LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
-			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
+			So(config.Hosts["ccc"].Port, ShouldEqual, "24")
 			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
 			So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
-			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["*.ddd"].Port, ShouldEqual, "")
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
-			So(config.Defaults.Port, ShouldEqual, uint(22))
+			So(config.Defaults.Port, ShouldEqual, "22")
 			So(config.Defaults.User, ShouldEqual, "root")
 			So(len(config.Templates), ShouldEqual, 3)
-			So(config.Templates["kkk"].Port, ShouldEqual, 25)
+			So(config.Templates["kkk"].Port, ShouldEqual, "25")
 			So(config.Templates["kkk"].User, ShouldEqual, "kkkk")
 		})
 		Convey("Loading the same file again", func() {
@@ -558,21 +570,23 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(len(config.includedFiles), ShouldEqual, 1)
 			So(len(config.Hosts), ShouldEqual, 12)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
-			So(config.Hosts["aaa"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
-			So(config.Hosts["bbb"].HostName, ShouldEqual, "")
-			So(config.Hosts["bbb"].Port, ShouldEqual, uint(21))
-			So(config.Hosts["bbb"].User, ShouldEqual, "")
+			So(config.Hosts["bbb"].HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
+			So(config.Hosts["bbb"].Port, ShouldEqual, "${ENV_VAR_PORT}")
+			So(config.Hosts["bbb"].User, ShouldEqual, "user-$ENV_VAR_USER-user")
+			So(config.Hosts["bbb"].IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(config.Hosts["bbb"].LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
-			So(config.Hosts["ccc"].Port, ShouldEqual, uint(24))
+			So(config.Hosts["ccc"].Port, ShouldEqual, "24")
 			So(config.Hosts["ccc"].User, ShouldEqual, "toor")
 			So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
-			So(config.Hosts["*.ddd"].Port, ShouldEqual, uint(0))
+			So(config.Hosts["*.ddd"].Port, ShouldEqual, "")
 			So(config.Hosts["*.ddd"].User, ShouldEqual, "")
-			So(config.Defaults.Port, ShouldEqual, uint(22))
+			So(config.Defaults.Port, ShouldEqual, "22")
 			So(config.Defaults.User, ShouldEqual, "root")
 			So(len(config.Templates), ShouldEqual, 3)
-			So(config.Templates["kkk"].Port, ShouldEqual, 25)
+			So(config.Templates["kkk"].Port, ShouldEqual, "25")
 			So(config.Templates["kkk"].User, ShouldEqual, "kkkk")
 		})
 		Convey("Expand includes environment", func() {
@@ -754,7 +768,7 @@ func TestConfig_GetHost(t *testing.T) {
 				"mmm": true,
 			})
 			So(host.User, ShouldEqual, "mmmm")
-			So(host.Port, ShouldEqual, 26)
+			So(host.Port, ShouldEqual, "26")
 			So(host.Gateways, ShouldResemble, []string{"titi", "direct", "1.2.3.4"})
 		})
 	})
