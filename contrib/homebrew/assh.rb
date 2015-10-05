@@ -3,8 +3,8 @@ require "language/go"
 class Assh < Formula
   desc "assh: Advanced SSH config - A transparent wrapper that adds regex, aliases, gateways, includes, dynamic hostnames to SSH"
   homepage "https://github.com/moul/advanced-ssh-config"
-  url "https://github.com/moul/advanced-ssh-config/archive/v2.0.0.tar.gz"
-  sha256 "946d1ebe22807318f9202ab006899691f339ebe60f66b11c4ec58d49b03870e9"
+  url "https://github.com/moul/advanced-ssh-config/archive/v2.1.0.tar.gz"
+  sha256 "c6566457f1734afe1cc83740d53705a7aa5ef7e775bc429561901b7c9d48d6e1"
 
   head "https://github.com/moul/advanced-ssh-config.git"
 
