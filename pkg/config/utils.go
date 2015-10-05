@@ -23,3 +23,11 @@ func expandUser(path string) (string, error) {
 	}
 	return path, nil
 }
+
+// expandField expands environment variables in field
+func expandField(input string) string {
+	if input == "" {
+		return ""
+	}
+	return os.ExpandEnv(input)
+}
