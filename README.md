@@ -133,7 +133,7 @@ hosts:
     Inherits:
     - schooltemplate
 
-  "somehost[0-7]*":
+  "expanded-host[0-7]*":
     # ssh somehost2042 ->       ssh somehost2042.some.zone
     HostName: "%h.some.zone"
 
@@ -153,6 +153,10 @@ hosts:
     Port: 22
     UserKnownHostsFile: /dev/null
     StrictHostKeyChecking: no
+
+  my-env-host:
+    User: user-$USER
+    HostName: ${HOSTNAME}${HOSTNAME_SUFFIX}
 
 templates:
   # Templates are similar to Hosts, you can inherits from them
@@ -250,7 +254,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
-* Expand environment variables in `includes` ([#86](https://github.com/moul/advanced-ssh-config/issues/86))
+* Expand environment variables ([#86](https://github.com/moul/advanced-ssh-config/issues/86))
 * Add homebrew support ([#73](https://github.com/moul/advanced-ssh-config/issues/73))
 * Add a 'ssh info' command ([#71](https://github.com/moul/advanced-ssh-config/issues/71))
 * Templates support ([#52](https://github.com/moul/advanced-ssh-config/issues/52))
