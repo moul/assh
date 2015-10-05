@@ -65,7 +65,7 @@ type Host struct {
 	PasswordAuthentication           string `yaml:"passwordauthentication,omitempty,flow" json:"PasswordAuthentication,omitempty"`
 	PermitLocalCommand               string `yaml:"permitlocalcommand,omitempty,flow" json:"PermitLocalCommand,omitempty"`
 	PKCS11Provider                   string `yaml:"pkcs11provider,omitempty,flow" json:"PKCS11Provider,omitempty"`
-	Port                             uint   `yaml:"port,omitempty,flow" json:"Port,omitempty"`
+	Port                             string `yaml:"port,omitempty,flow" json:"Port,omitempty"`
 	PreferredAuthentications         string `yaml:"preferredauthentications,omitempty,flow" json:"PreferredAuthentications,omitempty"`
 	Protocol                         string `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
 	ProxyUseFdpass                   string `yaml:"proxyusefdpass,omitempty,flow" json:"ProxyUseFdpass,omitempty"`
@@ -292,7 +292,7 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	if h.PKCS11Provider == "" {
 		h.PKCS11Provider = defaults.PKCS11Provider
 	}
-	if h.Port == 0 {
+	if h.Port == "" {
 		h.Port = defaults.Port
 	}
 	if h.PreferredAuthentications == "" {
@@ -403,8 +403,8 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 
 	// Extra defaults
-	if h.Port == 0 {
-		h.Port = 22
+	if h.Port == "" {
+		h.Port = "22"
 	}
 }
 
@@ -580,8 +580,8 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	if h.PKCS11Provider != "" {
 		fmt.Fprintf(w, "  PKCS11Provider %s\n", h.PKCS11Provider)
 	}
-	if h.Port != 0 {
-		fmt.Fprintf(w, "  Port %d\n", h.Port)
+	if h.Port != "" {
+		fmt.Fprintf(w, "  Port %s\n", h.Port)
 	}
 	if h.PreferredAuthentications != "" {
 		fmt.Fprintf(w, "  PreferredAuthentications %s\n", h.PreferredAuthentications)
@@ -702,7 +702,7 @@ func (h *Host) ExpandString(input string) string {
 	output = strings.Replace(output, "%h", h.HostName, -1)
 
 	// port
-	output = strings.Replace(output, "%p", fmt.Sprintf("%d", h.Port), -1)
+	output = strings.Replace(output, "%p", fmt.Sprintf("%s", h.Port), -1)
 
 	// FIXME: add
 	//   %L -> first component of the local host name

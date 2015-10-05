@@ -16,10 +16,10 @@ func TestHost_ApplyDefaults(t *testing.T) {
 			}
 			defaults := &Host{
 				User: "bobby",
-				Port: 42,
+				Port: "42",
 			}
 			host.ApplyDefaults(defaults)
-			So(host.Port, ShouldEqual, uint(42))
+			So(host.Port, ShouldEqual, "42")
 			So(host.Name(), ShouldEqual, "example")
 			So(host.HostName, ShouldEqual, "example.com")
 			So(host.User, ShouldEqual, "root")
@@ -33,7 +33,7 @@ func TestHost_ApplyDefaults(t *testing.T) {
 			host := &Host{}
 			defaults := &Host{}
 			host.ApplyDefaults(defaults)
-			So(host.Port, ShouldEqual, uint(22))
+			So(host.Port, ShouldEqual, "22")
 			So(host.Name(), ShouldEqual, "")
 			So(host.HostName, ShouldEqual, "")
 			So(host.User, ShouldEqual, "")
@@ -50,7 +50,7 @@ func TestHost_ExpandString(t *testing.T) {
 	Convey("Testing Host.ExpandString()", t, func() {
 		host := NewHost("abc")
 		host.HostName = "1.2.3.4"
-		host.Port = 42
+		host.Port = "42"
 
 		var input, output, expected string
 

@@ -33,24 +33,24 @@ func TestComputeHost(t *testing.T) {
 		host, err := computeHost("aaa", 0, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "1.2.3.4")
-		So(host.Port, ShouldEqual, 22)
+		So(host.Port, ShouldEqual, "22")
 
 		err = config.LoadConfig(strings.NewReader(configExample))
 		host, err = computeHost("aaa", 42, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "1.2.3.4")
-		So(host.Port, ShouldEqual, 42)
+		So(host.Port, ShouldEqual, "42")
 
 		err = config.LoadConfig(strings.NewReader(configExample))
 		host, err = computeHost("eee", 0, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "eee")
-		So(host.Port, ShouldEqual, 22)
+		So(host.Port, ShouldEqual, "22")
 
 		err = config.LoadConfig(strings.NewReader(configExample))
 		host, err = computeHost("eee", 42, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "eee")
-		So(host.Port, ShouldEqual, 42)
+		So(host.Port, ShouldEqual, "42")
 	})
 }
