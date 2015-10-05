@@ -7,6 +7,9 @@ import (
 )
 
 func expandUser(path string) (string, error) {
+	// Expand variables
+	path = os.ExpandEnv(path)
+
 	if path[:2] == "~/" {
 		homeDir := os.Getenv("HOME") // *nix
 		if homeDir == "" {           // Windows
@@ -19,4 +22,12 @@ func expandUser(path string) (string, error) {
 		return strings.Replace(path, "~", homeDir, 1), nil
 	}
 	return path, nil
+}
+
+// expandField expands environment variables in field
+func expandField(input string) string {
+	if input == "" {
+		return ""
+	}
+	return os.ExpandEnv(input)
 }

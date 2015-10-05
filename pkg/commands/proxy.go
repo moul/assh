@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
@@ -53,7 +54,7 @@ func computeHost(dest string, portOverride int, conf *config.Config) (*config.Ho
 	host := conf.GetHostSafe(dest)
 
 	if portOverride > 0 {
-		host.Port = uint(portOverride)
+		host.Port = strconv.Itoa(portOverride)
 	}
 
 	return host, nil
@@ -173,14 +174,14 @@ func proxyGo(host *config.Host) error {
 		return err
 	}
 
-	Logger.Debugf("Connecting to %s:%d", host.HostName, host.Port)
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host.HostName, host.Port))
+	Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
+	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port))
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	Logger.Debugf("Connected to %s:%d", host.HostName, host.Port)
+	Logger.Debugf("Connected to %s:%s", host.HostName, host.Port)
 
 	// Create Stdio pipes
 	c1 := readAndWrite(conn, os.Stdout)
