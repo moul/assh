@@ -221,6 +221,8 @@ func (c *Config) SaveSshConfig() error {
 
 // LoadFile loads the content of a configuration file in the Config object
 func (c *Config) LoadFile(filename string) error {
+	beforeHostsCount := len(c.Hosts)
+
 	// Resolve '~' and '$HOME'
 	filepath, err := expandUser(filename)
 	if err != nil {
@@ -249,6 +251,9 @@ func (c *Config) LoadFile(filename string) error {
 
 	// Successful loading
 	c.includedFiles[filepath] = true
+	afterHostsCount := len(c.Hosts)
+	diffHostsCount := afterHostsCount - beforeHostsCount
+	Logger.Debugf("Loaded config file '%s' (%d + %d => %d hosts)", filepath, beforeHostsCount, afterHostsCount, diffHostsCount)
 
 	// Handling includes
 	for _, include := range c.Includes {
@@ -257,8 +262,6 @@ func (c *Config) LoadFile(filename string) error {
 			return err
 		}
 	}
-
-	Logger.Debugf("Loaded config file '%s'", filepath)
 
 	return nil
 }
