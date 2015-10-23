@@ -255,7 +255,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
-* No entry
+* Avoid exiting when an included file contains errors ([#95](https://github.com/moul/advanced-ssh-config/issues/95))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.1.0...master)
 
