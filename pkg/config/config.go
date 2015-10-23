@@ -257,8 +257,7 @@ func (c *Config) LoadFile(filename string) error {
 
 	// Handling includes
 	for _, include := range c.Includes {
-		err = c.LoadFiles(include)
-		if err != nil {
+		if err = c.LoadFiles(include); err != nil {
 			return err
 		}
 	}
@@ -282,9 +281,8 @@ func (c *Config) LoadFiles(pattern string) error {
 
 	// Load files iteratively
 	for _, filepath := range filepaths {
-		err := c.LoadFile(filepath)
-		if err != nil {
-			return err
+		if err := c.LoadFile(filepath); err != nil {
+			Logger.Warnf("Cannot include %q: %v", filepath, err)
 		}
 	}
 
