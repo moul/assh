@@ -25,7 +25,7 @@
 
 A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includes**, **dynamic hostnames** to **SSH**.
 
-**Advanced SSH config** is wrapped in [lib-ssh](https://www.libssh.org) as a [ProxyCommand](http://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat), it means that it works seamlessly with:
+**Advanced SSH config** is wrapped in [lib-ssh](https://www.libssh.org) as a [ProxyCommand](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat), it means that it works seamlessly with:
 
 * [ssh](http://www.openbsd.org/cgi-bin/man.cgi?query=ssh&sektion=1)
 * [scp](http://www.openbsd.org/cgi-bin/man.cgi?query=scp&sektion=1)
