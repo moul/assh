@@ -3,7 +3,7 @@ package flexyaml
 import (
 	"testing"
 
-	. "github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMakeFlexible(t *testing.T) {
