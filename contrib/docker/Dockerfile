@@ -1,3 +1,3 @@
 FROM scratch
-ADD ./assh /assh
+ADD ./entrypoint /assh
 ENTRYPOINT ["/assh"]
