@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey/gotest"
+	"github.com/smartystreets/goconvey/convey/gotest"
 )
 
 ////////////////// ScopeReport ////////////////////
@@ -76,10 +76,12 @@ func removePackagePath(name string) string {
 
 /////////////////// FailureView ////////////////////////
 
+// This struct is also declared in github.com/smartystreets/assertions.
+// The json struct tags should be equal in both declarations.
 type FailureView struct {
-	Message  string
-	Expected string
-	Actual   string
+	Message  string `json:"Message"`
+	Expected string `json:"Expected"`
+	Actual   string `json:"Actual"`
 }
 
 ////////////////////AssertionResult //////////////////////

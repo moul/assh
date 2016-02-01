@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/assertions/internal/oglematchers"
+	"github.com/smartystreets/assertions/internal/oglematchers"
 )
 
 // default acceptable delta for ShouldAlmostEqual
@@ -29,7 +29,14 @@ func shouldEqual(actual, expected interface{}) (message string) {
 	}()
 
 	if matchError := oglematchers.Equals(expected).Matches(actual); matchError != nil {
-		message = serializer.serialize(expected, actual, fmt.Sprintf(shouldHaveBeenEqual, expected, actual))
+		expectedSyntax := fmt.Sprintf("%v", expected)
+		actualSyntax := fmt.Sprintf("%v", actual)
+		if expectedSyntax == actualSyntax && reflect.TypeOf(expected) != reflect.TypeOf(actual) {
+			message = fmt.Sprintf(shouldHaveBeenEqualTypeMismatch, expected, expected, actual, actual)
+		} else {
+			message = fmt.Sprintf(shouldHaveBeenEqual, expected, actual)
+		}
+		message = serializer.serialize(expected, actual, message)
 		return
 	}
 
@@ -146,7 +153,7 @@ func ShouldResemble(actual interface{}, expected ...interface{}) string {
 		actualSyntax := fmt.Sprintf("%#v", actual)
 		var message string
 		if expectedSyntax == actualSyntax {
-			message = fmt.Sprintf(shouldHaveResembledTypeMismatch, expected[0], actual, expected[0], actual)
+			message = fmt.Sprintf(shouldHaveResembledTypeMismatch, expected[0], expected[0], actual, actual)
 		} else {
 			message = fmt.Sprintf(shouldHaveResembled, expected[0], actual)
 		}

@@ -18,6 +18,8 @@ type Command struct {
 	Usage string
 	// A longer explanation of how the command works
 	Description string
+	// A short description of the arguments of this command
+	ArgsUsage string
 	// The function to call when checking for bash command completions
 	BashComplete func(context *Context)
 	// An action to execute before any sub-subcommands are run, but after the context is ready
@@ -37,6 +39,8 @@ type Command struct {
 	// Boolean to hide built-in help command
 	HideHelp bool
 
+	// Full name of command for help, defaults to full command name, including parent commands.
+	HelpName        string
 	commandNamePath []string
 }
 
@@ -50,8 +54,8 @@ func (c Command) FullName() string {
 }
 
 // Invokes the command given the context, parses ctx.Args() to generate command-specific flags
-func (c Command) Run(ctx *Context) error {
-	if len(c.Subcommands) > 0 || c.Before != nil || c.After != nil {
+func (c Command) Run(ctx *Context) (err error) {
+	if len(c.Subcommands) > 0 {
 		return c.startApp(ctx)
 	}
 
@@ -70,34 +74,39 @@ func (c Command) Run(ctx *Context) error {
 	set := flagSet(c.Name, c.Flags)
 	set.SetOutput(ioutil.Discard)
 
-	firstFlagIndex := -1
-	terminatorIndex := -1
-	for index, arg := range ctx.Args() {
-		if arg == "--" {
-			terminatorIndex = index
-			break
-		} else if strings.HasPrefix(arg, "-") && firstFlagIndex == -1 {
-			firstFlagIndex = index
+	if !c.SkipFlagParsing {
+		firstFlagIndex := -1
+		terminatorIndex := -1
+		for index, arg := range ctx.Args() {
+			if arg == "--" {
+				terminatorIndex = index
+				break
+			} else if strings.HasPrefix(arg, "-") && firstFlagIndex == -1 {
+				firstFlagIndex = index
+			}
 		}
-	}
 
-	var err error
-	if firstFlagIndex > -1 && !c.SkipFlagParsing {
-		args := ctx.Args()
-		regularArgs := make([]string, len(args[1:firstFlagIndex]))
-		copy(regularArgs, args[1:firstFlagIndex])
+		if firstFlagIndex > -1 {
+			args := ctx.Args()
+			regularArgs := make([]string, len(args[1:firstFlagIndex]))
+			copy(regularArgs, args[1:firstFlagIndex])
 
-		var flagArgs []string
-		if terminatorIndex > -1 {
-			flagArgs = args[firstFlagIndex:terminatorIndex]
-			regularArgs = append(regularArgs, args[terminatorIndex:]...)
+			var flagArgs []string
+			if terminatorIndex > -1 {
+				flagArgs = args[firstFlagIndex:terminatorIndex]
+				regularArgs = append(regularArgs, args[terminatorIndex:]...)
+			} else {
+				flagArgs = args[firstFlagIndex:]
+			}
+
+			err = set.Parse(append(flagArgs, regularArgs...))
 		} else {
-			flagArgs = args[firstFlagIndex:]
+			err = set.Parse(ctx.Args().Tail())
 		}
-
-		err = set.Parse(append(flagArgs, regularArgs...))
 	} else {
-		err = set.Parse(ctx.Args().Tail())
+		if c.SkipFlagParsing {
+			err = set.Parse(append([]string{"--"}, ctx.Args().Tail()...))
+		}
 	}
 
 	if err != nil {
@@ -123,6 +132,30 @@ func (c Command) Run(ctx *Context) error {
 	if checkCommandHelp(context, c.Name) {
 		return nil
 	}
+
+	if c.After != nil {
+		defer func() {
+			afterErr := c.After(context)
+			if afterErr != nil {
+				if err != nil {
+					err = NewMultiError(err, afterErr)
+				} else {
+					err = afterErr
+				}
+			}
+		}()
+	}
+
+	if c.Before != nil {
+		err := c.Before(context)
+		if err != nil {
+			fmt.Fprintln(ctx.App.Writer, err)
+			fmt.Fprintln(ctx.App.Writer)
+			ShowCommandHelp(ctx, c.Name)
+			return err
+		}
+	}
+
 	context.Command = c
 	c.Action(context)
 	return nil
@@ -153,6 +186,12 @@ func (c Command) startApp(ctx *Context) error {
 
 	// set the name and usage
 	app.Name = fmt.Sprintf("%s %s", ctx.App.Name, c.Name)
+	if c.HelpName == "" {
+		app.HelpName = c.HelpName
+	} else {
+		app.HelpName = fmt.Sprintf("%s %s", ctx.App.Name, c.Name)
+	}
+
 	if c.Description != "" {
 		app.Usage = c.Description
 	} else {

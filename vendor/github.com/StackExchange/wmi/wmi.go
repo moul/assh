@@ -37,8 +37,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/go-ole/go-ole"
-	"github.com/moul/advanced-ssh-config/vendor/github.com/go-ole/go-ole/oleutil"
+	"github.com/go-ole/go-ole"
+	"github.com/go-ole/go-ole/oleutil"
 )
 
 var l = log.New(os.Stdout, "", log.LstdFlags)

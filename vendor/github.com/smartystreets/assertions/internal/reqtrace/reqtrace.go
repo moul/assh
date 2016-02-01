@@ -18,7 +18,7 @@ package reqtrace
 import (
 	"flag"
 
-	"github.com/moul/advanced-ssh-config/vendor/golang.org/x/net/context"
+	"golang.org/x/net/context"
 )
 
 type contextKey int
