@@ -11,10 +11,10 @@ import (
 	"strings"
 	"syscall"
 
-	common "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/common"
-	cpu "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/cpu"
-	host "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/host"
-	net "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/net"
+	common "github.com/shirou/gopsutil/common"
+	cpu "github.com/shirou/gopsutil/cpu"
+	host "github.com/shirou/gopsutil/host"
+	net "github.com/shirou/gopsutil/net"
 )
 
 const (

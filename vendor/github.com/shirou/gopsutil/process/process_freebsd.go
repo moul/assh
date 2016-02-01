@@ -7,9 +7,9 @@ import (
 	"encoding/binary"
 	"unsafe"
 
-	common "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/common"
-	cpu "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/cpu"
-	net "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/net"
+	common "github.com/shirou/gopsutil/common"
+	cpu "github.com/shirou/gopsutil/cpu"
+	net "github.com/shirou/gopsutil/net"
 )
 
 // MemoryInfoExStat is different between OSes

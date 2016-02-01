@@ -8,19 +8,18 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/StackExchange/wmi"
+	"github.com/StackExchange/wmi"
 
-	common "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/common"
+	common "github.com/shirou/gopsutil/common"
 )
 
 type Win32_Processor struct {
-	LoadPercentage            uint16
-	L2CacheSize               uint32
+	LoadPercentage            *uint16
 	Family                    uint16
 	Manufacturer              string
 	Name                      string
 	NumberOfLogicalProcessors uint32
-	ProcessorId               string
+	ProcessorId               *string
 	Stepping                  *string
 	MaxClockSpeed             uint32
 }
@@ -63,15 +62,21 @@ func CPUInfo() ([]CPUInfoStat, error) {
 	if err != nil {
 		return ret, err
 	}
+
+	var procID string
 	for i, l := range dst {
+		procID = ""
+		if l.ProcessorId != nil {
+			procID = *l.ProcessorId
+		}
+
 		cpu := CPUInfoStat{
 			CPU:        int32(i),
 			Family:     fmt.Sprintf("%d", l.Family),
-			CacheSize:  int32(l.L2CacheSize),
 			VendorID:   l.Manufacturer,
 			ModelName:  l.Name,
 			Cores:      int32(l.NumberOfLogicalProcessors),
-			PhysicalID: l.ProcessorId,
+			PhysicalID: procID,
 			Mhz:        float64(l.MaxClockSpeed),
 			Flags:      []string{},
 		}
@@ -91,7 +96,10 @@ func CPUPercent(interval time.Duration, percpu bool) ([]float64, error) {
 	}
 	for _, l := range dst {
 		// use range but windows can only get one percent.
-		ret = append(ret, float64(l.LoadPercentage)/100.0)
+		if l.LoadPercentage == nil {
+			continue
+		}
+		ret = append(ret, float64(*l.LoadPercentage))
 	}
 	return ret, nil
 }

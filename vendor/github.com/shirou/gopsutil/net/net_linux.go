@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	common "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/common"
+	common "github.com/shirou/gopsutil/common"
 )
 
 // NetIOCounters returnes network I/O statistics for every network

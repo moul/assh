@@ -1,7 +1,7 @@
 package convey
 
 import (
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey/reporting"
+	"github.com/smartystreets/goconvey/convey/reporting"
 )
 
 type nilReporter struct{}

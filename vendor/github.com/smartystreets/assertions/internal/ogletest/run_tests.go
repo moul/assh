@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/assertions/internal/reqtrace"
+	"github.com/smartystreets/assertions/internal/reqtrace"
 )
 
 var fTestFilter = flag.String(

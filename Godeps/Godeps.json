@@ -1,0 +1,96 @@
+{
+	"ImportPath": "github.com/moul/advanced-ssh-config",
+	"GoVersion": "go1.5",
+	"Packages": [
+		"github.com/moul/advanced-ssh-config/pkg/commands",
+		"github.com/moul/advanced-ssh-config/pkg/config",
+		"github.com/moul/advanced-ssh-config/pkg/flexyaml",
+		"github.com/moul/advanced-ssh-config/pkg/logger",
+		"github.com/moul/advanced-ssh-config/pkg/version",
+		"github.com/moul/advanced-ssh-config/cmd/assh"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.7-55-gf7f79f7",
+			"Rev": "f7f79f729e0fbe2fcc061db48a9ba0263f588252"
+		},
+		{
+			"ImportPath": "github.com/StackExchange/wmi",
+			"Rev": "f3e2bae1e0cb5aef83e319133eabfee30013a4a5"
+		},
+		{
+			"ImportPath": "github.com/bugsnag/osext",
+			"Rev": "0dd3f918b21bec95ace9dc86c7e70266cfc5c702"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-193-gf9cc300",
+			"Rev": "f9cc3001e04f9783cb4ad08ca6791aa07134787c"
+		},
+		{
+			"ImportPath": "github.com/flynn/go-shlex",
+			"Rev": "3f9db97f856818214da2e1057f8ad84803971cff"
+		},
+		{
+			"ImportPath": "github.com/go-ole/go-ole",
+			"Comment": "v1.1.1-37-g0ab5ae4",
+			"Rev": "0ab5ae452fd706dd8b6f4d83ffe5254cd748cdd2"
+		},
+		{
+			"ImportPath": "github.com/gopherjs/gopherjs/js",
+			"Rev": "fb8ec00c0f9c3047be6e4eeef4407b33e855efe0"
+		},
+		{
+			"ImportPath": "github.com/jtolds/gls",
+			"Rev": "8ddce2a84170772b95dd5d576c48d517b22cac63"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/common",
+			"Comment": "1.0.0-127-g773d9d3",
+			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/cpu",
+			"Comment": "1.0.0-127-g773d9d3",
+			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/host",
+			"Comment": "1.0.0-127-g773d9d3",
+			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/net",
+			"Comment": "1.0.0-127-g773d9d3",
+			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/process",
+			"Comment": "1.0.0-127-g773d9d3",
+			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+		},
+		{
+			"ImportPath": "github.com/shirou/w32",
+			"Rev": "ada3ba68f000aa1b58580e45c9d308fe0b7fc5c5"
+		},
+		{
+			"ImportPath": "github.com/smartystreets/assertions",
+			"Comment": "1.5.0-409-g5de9043",
+			"Rev": "5de9043ec1a39cc97edc838ef7236538a55b30a4"
+		},
+		{
+			"ImportPath": "github.com/smartystreets/goconvey/convey",
+			"Comment": "1.6.0-10-g995f5b2",
+			"Rev": "995f5b2e021c69b8b028ba6d0b05c1dd500783db"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "eb2c74142fd19a79b3f237334c7384d5167b1b46"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "7ad95dd0798a40da1ccdff6dff35fd177b5edf40"
+		}
+	]
+}
