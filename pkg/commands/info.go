@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/bugsnag/osext"
 	"github.com/codegangsta/cli"
@@ -25,8 +26,10 @@ func cmdInfo(c *cli.Context) {
 	fmt.Printf("OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 	fmt.Println("")
 	fmt.Printf("RC files:\n")
+	homeDir := config.GetHomeDir()
 	for _, filename := range conf.IncludedFiles() {
-		fmt.Printf("- %s\n", filename)
+		relativeFilename := strings.Replace(filename, homeDir, "~", -1)
+		fmt.Printf("- %s\n", relativeFilename)
 	}
 	fmt.Println("")
 	fmt.Println("Statistics:")
