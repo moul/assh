@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/common"
+	"github.com/shirou/gopsutil/common"
 )
 
 func NetIOCounters(pernic bool) ([]NetIOCountersStat, error) {

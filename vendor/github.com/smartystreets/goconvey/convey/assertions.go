@@ -1,6 +1,6 @@
 package convey
 
-import "github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/assertions"
+import "github.com/smartystreets/assertions"
 
 var (
 	ShouldEqual          = assertions.ShouldEqual
@@ -34,6 +34,7 @@ var (
 	ShouldNotBeIn       = assertions.ShouldNotBeIn
 	ShouldBeEmpty       = assertions.ShouldBeEmpty
 	ShouldNotBeEmpty    = assertions.ShouldNotBeEmpty
+	ShouldHaveLength    = assertions.ShouldHaveLength
 
 	ShouldStartWith           = assertions.ShouldStartWith
 	ShouldNotStartWith        = assertions.ShouldNotStartWith

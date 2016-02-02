@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/assertions/internal/oglematchers"
+	"github.com/smartystreets/assertions/internal/oglematchers"
 )
 
 // ShouldContain receives exactly two parameters. The first is a slice and the
@@ -192,4 +192,59 @@ func ShouldNotBeEmpty(actual interface{}, expected ...interface{}) string {
 		return success
 	}
 	return fmt.Sprintf(shouldNotHaveBeenEmpty, actual)
+}
+
+// ShouldHaveLength receives 2 parameters. The first is a collection to check
+// the length of, the second being the expected length. It obeys the rules
+// specified by the len function for determining length:
+// http://golang.org/pkg/builtin/#len
+func ShouldHaveLength(actual interface{}, expected ...interface{}) string {
+	if fail := need(1, expected); fail != success {
+		return fail
+	}
+
+	var expectedLen int64
+	lenValue := reflect.ValueOf(expected[0])
+	switch lenValue.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		expectedLen = lenValue.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		expectedLen = int64(lenValue.Uint())
+	default:
+		return fmt.Sprintf(shouldHaveBeenAValidInteger, reflect.TypeOf(expected[0]))
+	}
+
+	if expectedLen < 0 {
+		return fmt.Sprintf(shouldHaveBeenAValidLength, expected[0])
+	}
+
+	value := reflect.ValueOf(actual)
+	switch value.Kind() {
+	case reflect.Slice:
+		if int64(value.Len()) == expectedLen {
+			return success
+		}
+	case reflect.Chan:
+		if int64(value.Len()) == expectedLen {
+			return success
+		}
+	case reflect.Map:
+		if int64(value.Len()) == expectedLen {
+			return success
+		}
+	case reflect.String:
+		if int64(value.Len()) == expectedLen {
+			return success
+		}
+	case reflect.Ptr:
+		elem := value.Elem()
+		kind := elem.Kind()
+		if (kind == reflect.Slice || kind == reflect.Array) && int64(elem.Len()) == expectedLen {
+			return success
+		}
+	default:
+		return fmt.Sprintf(shouldHaveBeenAValidCollection, reflect.TypeOf(actual))
+	}
+
+	return fmt.Sprintf(shouldHaveHadLength, actual, expectedLen)
 }

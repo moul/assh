@@ -18,9 +18,9 @@ package ogletest
 import (
 	"sync"
 
-	"github.com/moul/advanced-ssh-config/vendor/golang.org/x/net/context"
+	"golang.org/x/net/context"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/assertions/internal/oglemock"
+	"github.com/smartystreets/assertions/internal/oglemock"
 )
 
 // TestInfo represents information about a currently running or previously-run

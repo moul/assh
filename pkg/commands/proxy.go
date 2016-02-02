@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
-	shlex "github.com/moul/advanced-ssh-config/vendor/github.com/flynn/go-shlex"
+	"github.com/codegangsta/cli"
+	shlex "github.com/flynn/go-shlex"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	. "github.com/moul/advanced-ssh-config/pkg/logger"

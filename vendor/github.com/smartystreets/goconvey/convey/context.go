@@ -3,8 +3,8 @@ package convey
 import (
 	"fmt"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/jtolds/gls"
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey/reporting"
+	"github.com/jtolds/gls"
+	"github.com/smartystreets/goconvey/convey/reporting"
 )
 
 type conveyErr struct {

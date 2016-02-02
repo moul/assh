@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
+	"github.com/codegangsta/cli"
 
 	// . "github.com/moul/advanced-ssh-config/pkg/logger"
 )
