@@ -257,6 +257,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 * Avoid exiting when an included file contains errors ([#95](https://github.com/moul/advanced-ssh-config/issues/95))
 * Anonymize paths in `assh info`
+* Support of `assh proxy --dry-run` option
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.1.0...master)
 
