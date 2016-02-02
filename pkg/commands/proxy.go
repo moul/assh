@@ -84,23 +84,24 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 					Logger.Errorf("Failed to use 'direct' connection: %v", err)
 				}
 			} else {
+				hostCopy := host.Clone()
 				gatewayHost := conf.GetGatewaySafe(gateway)
 
-				err := prepareHostControlPath(host, gatewayHost)
+				err := prepareHostControlPath(hostCopy, gatewayHost)
 				if err != nil {
 					return err
 				}
 
-				if host.ProxyCommand == "" {
-					host.ProxyCommand = "nc %h %p"
+				if hostCopy.ProxyCommand == "" {
+					hostCopy.ProxyCommand = "nc %h %p"
 				}
 				// FIXME: dynamically add "-v" flags
 
-				if err = hostPrepare(host); err != nil {
+				if err = hostPrepare(hostCopy); err != nil {
 					return err
 				}
 
-				command := "ssh %name -- " + host.ExpandString(host.ProxyCommand)
+				command := "ssh %name -- " + hostCopy.ExpandString(hostCopy.ProxyCommand)
 
 				Logger.Debugf("Using gateway '%s': %s", gateway, command)
 				err = proxyCommand(gatewayHost, command, dryRun)
