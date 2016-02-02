@@ -1,52 +1,88 @@
-PACKAGES := $(addprefix ./,$(wildcard pkg/*))
-COMMANDS := $(addprefix ./,$(wildcard cmd/*))
+BINARIES ?=	assh
+GODIR ?=	github.com/moul/advanced-ssh-config
+
+PKG_BASE_DIR ?=	./pkg
+CONVEY_PORT ?=	9042
+SOURCES :=	$(shell find . -type f -name "*.go")
+COMMANDS :=	$(shell go list ./... | grep -v /vendor/ | grep /cmd/)
+PACKAGES :=	$(shell go list ./... | grep -v /vendor/ | grep -v /cmd/)
+REL_COMMANDS := $(subst $(GODIR),./,$(COMMANDS))
+REL_PACKAGES := $(subst $(GODIR),./,$(PACKAGES))
+GOENV ?=	GO15VENDOREXPERIMENT=1
+GO ?=		$(GOENV) go
+GODEP ?=	$(GOENV) godep
+USER ?=		$(shell whoami)
 
 
-all: build
+
+all:	build
 
 
-build:
-	go get ./...
-	gofmt -w $(PACKAGES) $(COMMANDS)
-	go test -i $(PACKAGES) $(COMMANDS)
-	for command in $(COMMANDS); do \
-	  go build -o `basename $$command` $$command; \
-	done
+.PHONY: build
+build:	$(BINARIES)
 
 
+$(BINARIES):	$(SOURCES)
+	$(GO) build -o $@ ./cmd/$@
+
+
+.PHONY: test
 test:
-	go get ./...
-	go test -i $(PACKAGES) $(COMMANDS)
-	go test -v $(PACKAGES) $(COMMANDS)
+	#$(GO) get -t ./...
+	$(GO) test -i $(PACKAGES) $(COMMANDS)
+	$(GO) test -v $(PACKAGES) $(COMMANDS)
 
 
+.PHONY: install
 install:
-	go install $(COMMANDS)
+	$(GO) install $(COMMANDS)
 
 
-cover:
+.PHONY: godep-save
+godep-save:
+	$(GODEP) save $(PACKAGES) $(COMMANDS)
+
+
+.PHONY: clean
+clean:
+	rm -f $(BINARIES)
+
+
+.PHONY: re
+re:	clean all
+
+
+.PHONY: convey
+convey:
+	$(GO) get github.com/smartystreets/goconvey
+	goconvey -cover -port=$(CONVEY_PORT) -workDir="$(realpath $(PKG_BASE_DIR))" -depth=1
+
+
+.PHONY:	cover
+cover:	profile.out
+
+
+profile.out:	$(SOURCES)
+	rm -f $@
 	find . -name profile.out -delete
-	for package in $(PACKAGES); do \
+	for package in $(REL_PACKAGES); do \
 	  rm -f $$package/profile.out; \
-	  go test -covermode=count -coverpkg=./pkg/... -coverprofile=$$package/profile.out $$package; \
+	  $(GO) test -covermode=count -coverpkg=$(PKG_BASE_DIR)/... -coverprofile=$$package/profile.out $$package; \
 	done
 	echo "mode: count" > profile.out.tmp
 	cat `find . -name profile.out` | grep -v mode: | sort -r | awk '{if($$1 != last) {print $$0;last=$$1}}' >> profile.out.tmp
 	mv profile.out.tmp profile.out
 
 
-.PHONY: convey
-convey:
-	go get github.com/smartystreets/goconvey
-	goconvey -cover -port=9042 -workDir="$(realpath .)/pkg" -depth=-1
-
-
-.PHONY: docker/assh
-docker/assh:
-	goxc -bc=linux,386 -d=docker -o="{{.Dest}}{{.PS}}{{.ExeName}}{{.Ext}}" -include="" compile
-
-
-.PHONY: docker
-docker: docker/assh
-	docker build -t moul/assh:latest docker
-	docker run -it --rm moul/assh --version
+.PHONY: docker-build
+docker-build:
+	go get github.com/laher/goxc
+	rm -rf contrib/docker/linux_386
+	for binary in $(BINARIES); do                                             \
+	  goxc -bc="linux,386" -d . -pv contrib/docker -n $$binary xc;            \
+	  mv contrib/docker/linux_386/$$binary contrib/docker/entrypoint;         \
+	  docker build -t $(USER)/$$binary contrib/docker;                        \
+	  docker run -it --rm $(USER)/$$binary || true;                           \
+	  docker inspect --type=image --format="{{ .Id }}" moul/$$binary || true; \
+	  echo "Now you can run 'docker push $(USER)/$$binary'";                  \
+	done

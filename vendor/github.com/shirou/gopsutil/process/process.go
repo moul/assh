@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	cpu "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/cpu"
+	cpu "github.com/shirou/gopsutil/cpu"
 )
 
 type Process struct {

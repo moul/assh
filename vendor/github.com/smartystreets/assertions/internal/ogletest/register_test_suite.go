@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/assertions/internal/ogletest/srcutil"
+	"github.com/smartystreets/assertions/internal/ogletest/srcutil"
 )
 
 // Test suites that implement this interface have special meaning to

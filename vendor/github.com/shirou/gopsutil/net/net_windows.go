@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	common "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/common"
+	common "github.com/shirou/gopsutil/common"
 )
 
 var (

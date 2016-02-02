@@ -16,7 +16,7 @@
 package ogletest
 
 import (
-	"github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/assertions/internal/oglematchers"
+	"github.com/smartystreets/assertions/internal/oglematchers"
 )
 
 // AssertEq(e, a) is equivalent to AssertThat(a, oglematchers.Equals(e)).

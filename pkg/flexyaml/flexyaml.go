@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/vendor/gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 func MakeFlexible(in []byte) ([]byte, error) {

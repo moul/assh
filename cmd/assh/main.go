@@ -4,8 +4,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/moul/advanced-ssh-config/vendor/github.com/Sirupsen/logrus"
-	"github.com/moul/advanced-ssh-config/vendor/github.com/codegangsta/cli"
+	"github.com/Sirupsen/logrus"
+	"github.com/codegangsta/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/commands"
 	. "github.com/moul/advanced-ssh-config/pkg/logger"

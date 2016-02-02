@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/moul/advanced-ssh-config/vendor/github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (

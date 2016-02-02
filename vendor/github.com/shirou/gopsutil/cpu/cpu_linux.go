@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	common "github.com/moul/advanced-ssh-config/vendor/github.com/shirou/gopsutil/common"
+	common "github.com/shirou/gopsutil/common"
 )
 
 var cpu_tick = float64(100)
