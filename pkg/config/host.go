@@ -117,8 +117,15 @@ func NewHost(name string) *Host {
 	}
 }
 
+// Name returns the name of a host
 func (h *Host) Name() string {
 	return h.name
+}
+
+// Clone returns a copy of an existing Host
+func (h *Host) Clone() *Host {
+	newHost := *h
+	return &newHost
 }
 
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults

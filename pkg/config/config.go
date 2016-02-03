@@ -90,7 +90,17 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 		// expands variables in host
 		// i.e: %h.some.zone -> {name}.some.zone
 		hostname := strings.Replace(computedHost.HostName, "%h", "%n", -1)
-		computedHost.HostName = computedHost.ExpandString(hostname)
+
+		// ssh resolve '%h' in hostnames
+		// -> we bypass the string expansion if the input matches
+		//    an already resolved hostname
+		// See https://github.com/moul/advanced-ssh-config/issues/103
+		pattern := strings.Replace(hostname, "%n", "*", -1)
+		if match, _ := path.Match(pattern, computedHost.inputName); match {
+			computedHost.HostName = computedHost.inputName
+		} else {
+			computedHost.HostName = computedHost.ExpandString(hostname)
+		}
 	}
 
 	return computedHost, nil
