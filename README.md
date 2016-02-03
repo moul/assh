@@ -253,14 +253,14 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ## Changelog
 
-### master (unreleased)
+### v2.2.0 (2016-02-03)
 
 * Avoid exiting when an included file contains errors ([#95](https://github.com/moul/advanced-ssh-config/issues/95))
 * Anonymize paths in `assh info`
 * Support of `assh proxy --dry-run` option
 * Fix: do not resolve variables in hostnames twice ([#103](https://github.com/moul/advanced-ssh-config/issues/103))
 
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.1.0...master)
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.1.0...v2.2.0)
 
 ### v2.1.0 (2015-10-05)
 
@@ -320,7 +320,7 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 
 ## License
 
-© 2009-2015 Manfred Touron - MIT License
+© 2009-2016 Manfred Touron - MIT License
 
 
 [![ASSH logo - Advanced SSH Config logo](https://raw.githubusercontent.com/moul/advanced-ssh-config/develop/assets/assh.jpg)](https://github.com/moul/advanced-ssh-config)
