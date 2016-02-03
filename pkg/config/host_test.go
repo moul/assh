@@ -75,3 +75,19 @@ func TestHost_ExpandString(t *testing.T) {
 		So(output, ShouldEqual, expected)
 	})
 }
+
+func TestHost_Clone(t *testing.T) {
+	Convey("Testing Host.Clone()", t, func() {
+		a := NewHost("abc")
+		a.HostName = "1.2.3.4"
+		a.Port = "42"
+
+		b := a.Clone()
+
+		So(a, ShouldNotEqual, b)
+		So(a.HostName, ShouldEqual, "1.2.3.4")
+		So(b.HostName, ShouldEqual, "1.2.3.4")
+		So(a.Port, ShouldEqual, "42")
+		So(b.Port, ShouldEqual, "42")
+	})
+}
