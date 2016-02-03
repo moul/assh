@@ -63,6 +63,9 @@ hosts:
   "*.kkk":
     HostName: "%h.kkkkk"
 
+  "lll-*":
+    HostName: "%h.lll"
+
   nnn:
     Inherits:
     - mmm
@@ -198,7 +201,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 			config := New()
 			err := config.LoadConfig(strings.NewReader(yamlConfig))
 			So(err, ShouldBeNil)
-			So(len(config.Hosts), ShouldEqual, 12)
+			So(len(config.Hosts), ShouldEqual, 13)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -357,6 +360,9 @@ func TestConfig_JsonSring(t *testing.T) {
     "jjj": {
       "HostName": "%h.jjjjj"
     },
+    "lll-*": {
+      "HostName": "%h.lll"
+    },
     "nnn": {
       "User": "nnnn",
       "Inherits": [
@@ -421,6 +427,16 @@ func TestComputeHost(t *testing.T) {
 			computed, err = computeHost(&host, config, "test.kkk", true)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "test.kkk.kkkkk")
+		})
+		Convey("Do not expand variables twice", func() {
+			host := config.Hosts["lll-*"]
+			computed, err := computeHost(&host, config, "lll-42", true)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "lll-42.lll")
+
+			computed, err = computeHost(&host, config, "lll-43.lll", true)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "lll-43.lll")
 		})
 		Convey("Expand variables using environment", func() {
 			host := config.Hosts["bbb"]
@@ -563,7 +579,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 12)
+			So(len(config.Hosts), ShouldEqual, 13)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -591,7 +607,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 12)
+			So(len(config.Hosts), ShouldEqual, 13)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")

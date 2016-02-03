@@ -19,6 +19,10 @@ var Commands = []cli.Command{
 				Value: 0,
 				Usage: "SSH destination port",
 			},
+			cli.BoolFlag{
+				Name:  "dry-run",
+				Usage: "Only show how assh would connect but don't actually do it",
+			},
 		},
 	},
 	/*
