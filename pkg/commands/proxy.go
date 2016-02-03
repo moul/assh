@@ -18,6 +18,8 @@ import (
 )
 
 func cmdProxy(c *cli.Context) {
+	Logger.Debugf("assh args: %s", c.Args())
+
 	if len(c.Args()) < 1 {
 		Logger.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
 	}
