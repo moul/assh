@@ -248,7 +248,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 1. Backup your old `~/.ssh/config`: `cp ~/.ssh/config ~/.ssh/config.backup`
 2. Create a new `~/.ssh/assh.yml` file
-3. Run `assh proxy localhost` to validates the syntax of your `~/.ssh/assh.yml` file and automatically build your `~/.ssh/config` file
+3. Run `assh proxy localhost` to validate the syntax of your `~/.ssh/assh.yml` file and automatically build your `~/.ssh/config` file
 4. You are ready!
 
 ## Changelog
