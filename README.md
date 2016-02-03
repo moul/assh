@@ -253,6 +253,12 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.2.0...master)
+
 ### v2.2.0 (2016-02-03)
 
 * Avoid exiting when an included file contains errors ([#95](https://github.com/moul/advanced-ssh-config/issues/95))
