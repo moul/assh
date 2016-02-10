@@ -90,14 +90,14 @@ hosts:
 
   homer:
     # ssh homer ->  ssh 1.2.3.4 -p 2222 -u robert
-    HostName: 1.2.3.4
+    Hostname: 1.2.3.4
     User: robert
     Port: 2222
 
   bart:
     # ssh bart ->   ssh 5.6.7.8 -u bart           <- direct access
     #            or ssh 5.6.7.8/homer -u bart     <- using homer as a gateway
-    HostName: 5.6.7.8
+    Hostname: 5.6.7.8
     User: bart
     Gateways:
     - direct                   # tries a direct access first
@@ -136,7 +136,7 @@ hosts:
 
   "expanded-host[0-7]*":
     # ssh somehost2042 ->       ssh somehost2042.some.zone
-    HostName: "%h.some.zone"
+    Hostname: "%h.some.zone"
 
   vm-*.school.com:
     # ssh vm-42.school.com ->   ssh vm-42.school.com/gw.school.com -l student -o ForwardX11=yes -i ~/.ssh/school-rsa
@@ -157,7 +157,7 @@ hosts:
 
   my-env-host:
     User: user-$USER
-    HostName: ${HOSTNAME}${HOSTNAME_SUFFIX}
+    Hostname: ${HOSTNAME}${HOSTNAME_SUFFIX}
 
 templates:
   # Templates are similar to Hosts, you can inherits from them
