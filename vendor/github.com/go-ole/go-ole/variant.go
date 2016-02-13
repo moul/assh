@@ -26,7 +26,9 @@ func (v *VARIANT) ToIDispatch() *IDispatch {
 // ToArray converts variant to SafeArray helper.
 func (v *VARIANT) ToArray() *SafeArrayConversion {
 	if v.VT != VT_SAFEARRAY {
-		return nil
+		if v.VT&VT_ARRAY == 0 {
+			return nil
+		}
 	}
 	var safeArray *SafeArray = (*SafeArray)(unsafe.Pointer(uintptr(v.Val)))
 	return &SafeArrayConversion{safeArray}
@@ -64,26 +66,34 @@ func (v *VARIANT) Value() interface{} {
 		return uint16(v.Val)
 	case VT_I4:
 		return int32(v.Val)
-	case VT_UINT:
-		return uint32(v.Val)
-	case VT_INT_PTR:
-		return uintptr(v.Val) // TODO
-	case VT_UINT_PTR:
-		return uintptr(v.Val)
 	case VT_UI4:
 		return uint32(v.Val)
 	case VT_I8:
 		return int64(v.Val)
 	case VT_UI8:
 		return uint64(v.Val)
+	case VT_INT:
+		return int(v.Val)
+	case VT_UINT:
+		return uint(v.Val)
+	case VT_INT_PTR:
+		return uintptr(v.Val) // TODO
+	case VT_UINT_PTR:
+		return uintptr(v.Val)
 	case VT_R4:
-		return float32(v.Val)
+		return *(*float32)(unsafe.Pointer(&v.Val))
 	case VT_R8:
-		return float64(v.Val)
+		return *(*float64)(unsafe.Pointer(&v.Val))
 	case VT_BSTR:
 		return v.ToString()
-	//case VT_DATE:
-	//	return v.ToIDispatch() // TODO: use VariantTimeToSystemTime
+	case VT_DATE:
+		// VT_DATE type will either return float64 or time.Time.
+		d := float64(v.Val)
+		date, err := GetVariantDate(d)
+		if err != nil {
+			return d
+		}
+		return date
 	case VT_UNKNOWN:
 		return v.ToIUnknown()
 	case VT_DISPATCH:

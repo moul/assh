@@ -4,6 +4,8 @@ package process
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,11 +13,13 @@ import (
 	"strings"
 	"syscall"
 
-	common "github.com/shirou/gopsutil/common"
-	cpu "github.com/shirou/gopsutil/cpu"
-	host "github.com/shirou/gopsutil/host"
-	net "github.com/shirou/gopsutil/net"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/internal/common"
+	"github.com/shirou/gopsutil/net"
 )
+
+var ErrorNoChildren = errors.New("process does not have children")
 
 const (
 	PrioProcess = 0 // linux/resource.h
@@ -94,15 +98,38 @@ func (p *Process) Cwd() (string, error) {
 	return p.fillFromCwd()
 }
 func (p *Process) Parent() (*Process, error) {
-	return nil, common.NotImplementedError
+	r, err := callLsof("R", p.Pid)
+	if err != nil {
+		return nil, err
+	}
+	if len(r) != 1 { // TODO: pid 1
+		return nil, fmt.Errorf("wrong number of parents")
+	}
+	v, err := strconv.Atoi(r[0])
+	if err != nil {
+		return nil, err
+	}
+	return NewProcess(int32(v))
 }
 func (p *Process) Status() (string, error) {
+	err := p.fillFromStatus()
+	if err != nil {
+		return "", err
+	}
 	return p.status, nil
 }
 func (p *Process) Uids() ([]int32, error) {
+	err := p.fillFromStatus()
+	if err != nil {
+		return []int32{}, err
+	}
 	return p.uids, nil
 }
 func (p *Process) Gids() ([]int32, error) {
+	err := p.fillFromStatus()
+	if err != nil {
+		return []int32{}, err
+	}
 	return p.gids, nil
 }
 func (p *Process) Terminal() (string, error) {
@@ -129,6 +156,10 @@ func (p *Process) IOCounters() (*IOCountersStat, error) {
 	return p.fillFromIO()
 }
 func (p *Process) NumCtxSwitches() (*NumCtxSwitchesStat, error) {
+	err := p.fillFromStatus()
+	if err != nil {
+		return nil, err
+	}
 	return p.numCtxSwitches, nil
 }
 func (p *Process) NumFDs() (int32, error) {
@@ -136,6 +167,10 @@ func (p *Process) NumFDs() (int32, error) {
 	return numFds, err
 }
 func (p *Process) NumThreads() (int32, error) {
+	err := p.fillFromStatus()
+	if err != nil {
+		return 0, err
+	}
 	return p.numThreads, nil
 }
 func (p *Process) Threads() (map[string]string, error) {
@@ -153,7 +188,11 @@ func (p *Process) CPUAffinity() ([]int32, error) {
 	return nil, common.NotImplementedError
 }
 func (p *Process) MemoryInfo() (*MemoryInfoStat, error) {
-	return p.memInfo, nil
+	meminfo, _, err := p.fillFromStatm()
+	if err != nil {
+		return nil, err
+	}
+	return meminfo, nil
 }
 func (p *Process) MemoryInfoEx() (*MemoryInfoExStat, error) {
 	_, memInfoEx, err := p.fillFromStatm()
@@ -167,15 +206,44 @@ func (p *Process) MemoryPercent() (float32, error) {
 }
 
 func (p *Process) Children() ([]*Process, error) {
-	return nil, common.NotImplementedError
+	pids, err := common.CallPgrep(invoke, p.Pid)
+	if err != nil {
+		if pids == nil || len(pids) == 0 {
+			return nil, ErrorNoChildren
+		}
+		return nil, err
+	}
+	ret := make([]*Process, 0, len(pids))
+	for _, pid := range pids {
+		np, err := NewProcess(pid)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, np)
+	}
+	return ret, nil
 }
 
 func (p *Process) OpenFiles() ([]OpenFilesStat, error) {
-	return nil, common.NotImplementedError
+	_, ofs, err := p.fillFromfd()
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]OpenFilesStat, 0, len(ofs))
+	for i, o := range ofs {
+		ret[i] = *o
+	}
+
+	return ret, nil
 }
 
 func (p *Process) Connections() ([]net.NetConnectionStat, error) {
-	return nil, common.NotImplementedError
+	return net.NetConnectionsPid("all", p.Pid)
+}
+
+func (p *Process) NetIOCounters(pernic bool) ([]net.NetIOCountersStat, error) {
+	filename := common.HostProc(strconv.Itoa(int(p.Pid)), "net/dev")
+	return net.NetIOCountersByFile(pernic, filename)
 }
 
 func (p *Process) IsRunning() (bool, error) {
@@ -186,7 +254,7 @@ func (p *Process) IsRunning() (bool, error) {
 func (p *Process) MemoryMaps(grouped bool) (*[]MemoryMapsStat, error) {
 	pid := p.Pid
 	var ret []MemoryMapsStat
-	smapsPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "smaps")
+	smapsPath := common.HostProc(strconv.Itoa(int(pid)), "smaps")
 	contents, err := ioutil.ReadFile(smapsPath)
 	if err != nil {
 		return nil, err
@@ -267,7 +335,7 @@ func (p *Process) MemoryMaps(grouped bool) (*[]MemoryMapsStat, error) {
 // Get num_fds from /proc/(pid)/fd
 func (p *Process) fillFromfd() (int32, []*OpenFilesStat, error) {
 	pid := p.Pid
-	statPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "fd")
+	statPath := common.HostProc(strconv.Itoa(int(pid)), "fd")
 	d, err := os.Open(statPath)
 	if err != nil {
 		return 0, nil, err
@@ -300,7 +368,7 @@ func (p *Process) fillFromfd() (int32, []*OpenFilesStat, error) {
 // Get cwd from /proc/(pid)/cwd
 func (p *Process) fillFromCwd() (string, error) {
 	pid := p.Pid
-	cwdPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "cwd")
+	cwdPath := common.HostProc(strconv.Itoa(int(pid)), "cwd")
 	cwd, err := os.Readlink(cwdPath)
 	if err != nil {
 		return "", err
@@ -311,7 +379,7 @@ func (p *Process) fillFromCwd() (string, error) {
 // Get exe from /proc/(pid)/exe
 func (p *Process) fillFromExe() (string, error) {
 	pid := p.Pid
-	exePath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "exe")
+	exePath := common.HostProc(strconv.Itoa(int(pid)), "exe")
 	exe, err := os.Readlink(exePath)
 	if err != nil {
 		return "", err
@@ -322,7 +390,7 @@ func (p *Process) fillFromExe() (string, error) {
 // Get cmdline from /proc/(pid)/cmdline
 func (p *Process) fillFromCmdline() (string, error) {
 	pid := p.Pid
-	cmdPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "cmdline")
+	cmdPath := common.HostProc(strconv.Itoa(int(pid)), "cmdline")
 	cmdline, err := ioutil.ReadFile(cmdPath)
 	if err != nil {
 		return "", err
@@ -340,7 +408,7 @@ func (p *Process) fillFromCmdline() (string, error) {
 // Get IO status from /proc/(pid)/io
 func (p *Process) fillFromIO() (*IOCountersStat, error) {
 	pid := p.Pid
-	ioPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "io")
+	ioPath := common.HostProc(strconv.Itoa(int(pid)), "io")
 	ioline, err := ioutil.ReadFile(ioPath)
 	if err != nil {
 		return nil, err
@@ -379,7 +447,7 @@ func (p *Process) fillFromIO() (*IOCountersStat, error) {
 // Get memory info from /proc/(pid)/statm
 func (p *Process) fillFromStatm() (*MemoryInfoStat, *MemoryInfoExStat, error) {
 	pid := p.Pid
-	memPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "statm")
+	memPath := common.HostProc(strconv.Itoa(int(pid)), "statm")
 	contents, err := ioutil.ReadFile(memPath)
 	if err != nil {
 		return nil, nil, err
@@ -431,7 +499,7 @@ func (p *Process) fillFromStatm() (*MemoryInfoStat, *MemoryInfoExStat, error) {
 // Get various status from /proc/(pid)/status
 func (p *Process) fillFromStatus() error {
 	pid := p.Pid
-	statPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "status")
+	statPath := common.HostProc(strconv.Itoa(int(pid)), "status")
 	contents, err := ioutil.ReadFile(statPath)
 	if err != nil {
 		return err
@@ -518,33 +586,38 @@ func (p *Process) fillFromStatus() error {
 
 func (p *Process) fillFromStat() (string, int32, *cpu.CPUTimesStat, int64, int32, error) {
 	pid := p.Pid
-	statPath := filepath.Join("/", "proc", strconv.Itoa(int(pid)), "stat")
+	statPath := common.HostProc(strconv.Itoa(int(pid)), "stat")
 	contents, err := ioutil.ReadFile(statPath)
 	if err != nil {
 		return "", 0, nil, 0, 0, err
 	}
 	fields := strings.Fields(string(contents))
 
+	i := 1
+	for !strings.HasSuffix(fields[i], ")") {
+		i++
+	}
+
 	termmap, err := getTerminalMap()
 	terminal := ""
 	if err == nil {
-		t, err := strconv.ParseUint(fields[6], 10, 64)
+		t, err := strconv.ParseUint(fields[i+5], 10, 64)
 		if err != nil {
 			return "", 0, nil, 0, 0, err
 		}
 		terminal = termmap[t]
 	}
 
-	ppid, err := strconv.ParseInt(fields[3], 10, 32)
+	ppid, err := strconv.ParseInt(fields[i+2], 10, 32)
 	if err != nil {
 		return "", 0, nil, 0, 0, err
 	}
-	utime, err := strconv.ParseFloat(fields[13], 64)
+	utime, err := strconv.ParseFloat(fields[i+12], 64)
 	if err != nil {
 		return "", 0, nil, 0, 0, err
 	}
 
-	stime, err := strconv.ParseFloat(fields[14], 64)
+	stime, err := strconv.ParseFloat(fields[i+13], 64)
 	if err != nil {
 		return "", 0, nil, 0, 0, err
 	}
@@ -556,12 +629,12 @@ func (p *Process) fillFromStat() (string, int32, *cpu.CPUTimesStat, int64, int32
 	}
 
 	bootTime, _ := host.BootTime()
-	t, err := strconv.ParseUint(fields[21], 10, 64)
+	t, err := strconv.ParseUint(fields[i+20], 10, 64)
 	if err != nil {
 		return "", 0, nil, 0, 0, err
 	}
-	ctime := (t / uint64(ClockTicks)) + uint64(bootTime)*1000
-	createTime := int64(ctime)
+	ctime := (t / uint64(ClockTicks)) + uint64(bootTime)
+	createTime := int64(ctime * 1000)
 
 	//	p.Nice = mustParseInt32(fields[18])
 	// use syscall instead of parse Stat file
@@ -574,7 +647,7 @@ func (p *Process) fillFromStat() (string, int32, *cpu.CPUTimesStat, int64, int32
 func Pids() ([]int32, error) {
 	var ret []int32
 
-	d, err := os.Open("/proc")
+	d, err := os.Open(common.HostProc())
 	if err != nil {
 		return nil, err
 	}
@@ -591,6 +664,29 @@ func Pids() ([]int32, error) {
 			continue
 		}
 		ret = append(ret, int32(pid))
+	}
+
+	return ret, nil
+}
+
+func callLsof(arg string, pid int32) ([]string, error) {
+	var cmd []string
+	if pid == 0 { // will get from all processes.
+		cmd = []string{"-F" + arg}
+	} else {
+		cmd = []string{"-a", "-F" + arg, "-p", strconv.Itoa(int(pid))}
+	}
+	out, err := invoke.Command("/usr/bin/lsof", cmd...)
+	if err != nil {
+		return []string{}, err
+	}
+	lines := strings.Split(string(out), "\n")
+
+	var ret []string
+	for _, l := range lines[1:] {
+		if strings.HasPrefix(l, arg) {
+			ret = append(ret, l[1:]) // delete first char
+		}
 	}
 
 	return ret, nil

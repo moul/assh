@@ -6,9 +6,14 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"strconv"
 	"strings"
+	"sync"
+	"syscall"
+
+	"golang.org/x/net/context"
 
 	"github.com/codegangsta/cli"
 	shlex "github.com/flynn/go-shlex"
@@ -199,48 +204,62 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
-
 	Logger.Debugf("Connected to %s:%s", host.HostName, host.Port)
 
-	// Create Stdio pipes
-	c1 := readAndWrite(conn, os.Stdout)
-	c2 := readAndWrite(os.Stdin, conn)
+	// Ignore SIGHUP
+	signal.Ignore(syscall.SIGHUP)
 
+	waitGroup := sync.WaitGroup{}
+	ctx, cancel := context.WithCancel(context.Background())
+	ctx = context.WithValue(ctx, "sync", &waitGroup)
+
+	waitGroup.Add(2)
+	c1 := readAndWrite(ctx, conn, os.Stdout)
+	c2 := readAndWrite(ctx, os.Stdin, conn)
 	select {
 	case err = <-c1:
 	case err = <-c2:
 	}
-	if err != nil {
-		return err
+	if err != nil && err == io.EOF {
+		err = nil
 	}
-
-	return nil
+	conn.Close()
+	cancel()
+	waitGroup.Wait()
+	return err
 }
 
-func readAndWrite(r io.Reader, w io.Writer) <-chan error {
-	// Fixme: add an error channel
-	buf := make([]byte, 1024)
-	c := make(chan error)
+func readAndWrite(ctx context.Context, r io.Reader, w io.Writer) <-chan error {
+	var written uint64
+	buff := make([]byte, 1024)
+	c := make(chan error, 1)
 
 	go func() {
-		for {
-			// Read
-			n, err := r.Read(buf)
-			if err != nil {
-				if err != io.EOF {
-					c <- err
-				}
-				break
-			}
+		defer ctx.Value("sync").(*sync.WaitGroup).Done()
 
-			// Write
-			_, err = w.Write(buf[0:n])
-			if err != nil {
-				c <- err
+		for {
+			select {
+			case <-ctx.Done():
+				c <- nil
+				return
+			default:
+				nr, err := r.Read(buff)
+				if err != nil {
+					c <- err
+					return
+				}
+				if nr > 0 {
+					wr, err := w.Write(buff[:nr])
+					if err != nil {
+						c <- err
+						return
+					}
+					if wr > 0 {
+						written += uint64(wr)
+					}
+				}
 			}
 		}
-		c <- nil
 	}()
 	return c
 }

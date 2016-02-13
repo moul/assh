@@ -2,6 +2,7 @@
 package gls
 
 import (
+	"runtime"
 	"sync"
 )
 
@@ -18,6 +19,11 @@ var (
 // Values is simply a map of key types to value types. Used by SetValues to
 // set multiple values at once.
 type Values map[interface{}]interface{}
+
+func currentStack(skip int) []uintptr {
+	stack := make([]uintptr, maxCallers)
+	return stack[:runtime.Callers(2+skip, stack)]
+}
 
 // ContextManager is the main entrypoint for interacting with
 // Goroutine-local-storage. You can have multiple independent ContextManagers
@@ -62,7 +68,7 @@ func (m *ContextManager) SetValues(new_values Values, context_call func()) {
 		return
 	}
 
-	tags := readStackTags(1)
+	tags := readStackTags(currentStack(1))
 
 	m.mtx.Lock()
 	values := new_values
@@ -97,7 +103,7 @@ func (m *ContextManager) SetValues(new_values Values, context_call func()) {
 // will be false.
 func (m *ContextManager) GetValue(key interface{}) (value interface{}, ok bool) {
 
-	tags := readStackTags(1)
+	tags := readStackTags(currentStack(1))
 	m.mtx.RLock()
 	defer m.mtx.RUnlock()
 	for _, tag := range tags {
@@ -110,7 +116,7 @@ func (m *ContextManager) GetValue(key interface{}) (value interface{}, ok bool) 
 }
 
 func (m *ContextManager) getValues() Values {
-	tags := readStackTags(2)
+	tags := readStackTags(currentStack(2))
 	m.mtx.RLock()
 	defer m.mtx.RUnlock()
 	for _, tag := range tags {

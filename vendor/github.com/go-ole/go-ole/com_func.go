@@ -2,7 +2,10 @@
 
 package ole
 
-import "unsafe"
+import (
+	"time"
+	"unsafe"
+)
 
 // coInitialize initializes COM library on current thread.
 //
@@ -164,4 +167,8 @@ func GetMessage(msg *Msg, hwnd uint32, MsgFilterMin uint32, MsgFilterMax uint32)
 // DispatchMessage to window procedure.
 func DispatchMessage(msg *Msg) int32 {
 	return int32(0)
+}
+
+func GetVariantDate(value float64) (time.Time, error) {
+	return time.Now(), NewError(E_NOTIMPL)
 }

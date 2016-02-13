@@ -3,33 +3,36 @@
 package ole
 
 import (
+	"errors"
 	"syscall"
+	"time"
 	"unicode/utf16"
 	"unsafe"
 )
 
 var (
-	procCoInitialize, _       = modole32.FindProc("CoInitialize")
-	procCoInitializeEx, _     = modole32.FindProc("CoInitializeEx")
-	procCoUninitialize, _     = modole32.FindProc("CoUninitialize")
-	procCoCreateInstance, _   = modole32.FindProc("CoCreateInstance")
-	procCoTaskMemFree, _      = modole32.FindProc("CoTaskMemFree")
-	procCLSIDFromProgID, _    = modole32.FindProc("CLSIDFromProgID")
-	procCLSIDFromString, _    = modole32.FindProc("CLSIDFromString")
-	procStringFromCLSID, _    = modole32.FindProc("StringFromCLSID")
-	procStringFromIID, _      = modole32.FindProc("StringFromIID")
-	procIIDFromString, _      = modole32.FindProc("IIDFromString")
-	procGetUserDefaultLCID, _ = modkernel32.FindProc("GetUserDefaultLCID")
-	procCopyMemory, _         = modkernel32.FindProc("RtlMoveMemory")
-	procVariantInit, _        = modoleaut32.FindProc("VariantInit")
-	procVariantClear, _       = modoleaut32.FindProc("VariantClear")
-	procSysAllocString, _     = modoleaut32.FindProc("SysAllocString")
-	procSysAllocStringLen, _  = modoleaut32.FindProc("SysAllocStringLen")
-	procSysFreeString, _      = modoleaut32.FindProc("SysFreeString")
-	procSysStringLen, _       = modoleaut32.FindProc("SysStringLen")
-	procCreateDispTypeInfo, _ = modoleaut32.FindProc("CreateDispTypeInfo")
-	procCreateStdDispatch, _  = modoleaut32.FindProc("CreateStdDispatch")
-	procGetActiveObject, _    = modoleaut32.FindProc("GetActiveObject")
+	procCoInitialize, _            = modole32.FindProc("CoInitialize")
+	procCoInitializeEx, _          = modole32.FindProc("CoInitializeEx")
+	procCoUninitialize, _          = modole32.FindProc("CoUninitialize")
+	procCoCreateInstance, _        = modole32.FindProc("CoCreateInstance")
+	procCoTaskMemFree, _           = modole32.FindProc("CoTaskMemFree")
+	procCLSIDFromProgID, _         = modole32.FindProc("CLSIDFromProgID")
+	procCLSIDFromString, _         = modole32.FindProc("CLSIDFromString")
+	procStringFromCLSID, _         = modole32.FindProc("StringFromCLSID")
+	procStringFromIID, _           = modole32.FindProc("StringFromIID")
+	procIIDFromString, _           = modole32.FindProc("IIDFromString")
+	procGetUserDefaultLCID, _      = modkernel32.FindProc("GetUserDefaultLCID")
+	procCopyMemory, _              = modkernel32.FindProc("RtlMoveMemory")
+	procVariantInit, _             = modoleaut32.FindProc("VariantInit")
+	procVariantClear, _            = modoleaut32.FindProc("VariantClear")
+	procVariantTimeToSystemTime, _ = modoleaut32.FindProc("VariantTimeToSystemTime")
+	procSysAllocString, _          = modoleaut32.FindProc("SysAllocString")
+	procSysAllocStringLen, _       = modoleaut32.FindProc("SysAllocStringLen")
+	procSysFreeString, _           = modoleaut32.FindProc("SysFreeString")
+	procSysStringLen, _            = modoleaut32.FindProc("SysStringLen")
+	procCreateDispTypeInfo, _      = modoleaut32.FindProc("CreateDispTypeInfo")
+	procCreateStdDispatch, _       = modoleaut32.FindProc("CreateStdDispatch")
+	procGetActiveObject, _         = modoleaut32.FindProc("GetActiveObject")
 
 	procGetMessageW, _      = moduser32.FindProc("GetMessageW")
 	procDispatchMessageW, _ = moduser32.FindProc("DispatchMessageW")
@@ -313,4 +316,14 @@ func DispatchMessage(msg *Msg) (ret int32) {
 	r0, _, _ := procDispatchMessageW.Call(uintptr(unsafe.Pointer(msg)))
 	ret = int32(r0)
 	return
+}
+
+// GetVariantDate converts COM Variant Time value to Go time.Time.
+func GetVariantDate(value float64) (time.Time, error) {
+	var st syscall.Systemtime
+	r, _, _ := procVariantTimeToSystemTime.Call(uintptr(unsafe.Pointer(&value)), uintptr(unsafe.Pointer(&st)))
+	if r != 0 {
+		return time.Date(int(st.Year), time.Month(st.Month), int(st.Day), int(st.Hour), int(st.Minute), int(st.Second), int(st.Milliseconds/1000), nil), nil
+	}
+	return time.Now(), errors.New("Could not convert to time, passing current time.")
 }

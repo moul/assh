@@ -4,15 +4,17 @@ package process
 
 import (
 	"bytes"
+	"encoding/binary"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
 
-	common "github.com/shirou/gopsutil/common"
-	cpu "github.com/shirou/gopsutil/cpu"
-	net "github.com/shirou/gopsutil/net"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/internal/common"
+	"github.com/shirou/gopsutil/net"
 )
 
 // copied from sys/sysctl.h
@@ -93,7 +95,22 @@ func (p *Process) Cwd() (string, error) {
 	return "", common.NotImplementedError
 }
 func (p *Process) Parent() (*Process, error) {
-	return p, common.NotImplementedError
+	rr, err := common.CallLsof(invoke, p.Pid, "-FR")
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range rr {
+		if strings.HasPrefix(r, "p") { // skip if process
+			continue
+		}
+		l := string(r)
+		v, err := strconv.Atoi(strings.Replace(l, "R", "", 1))
+		if err != nil {
+			return nil, err
+		}
+		return NewProcess(int32(v))
+	}
+	return nil, fmt.Errorf("could not find parent line")
 }
 func (p *Process) Status() (string, error) {
 	r, err := callPs("state", p.Pid, false)
@@ -109,11 +126,10 @@ func (p *Process) Uids() ([]int32, error) {
 		return nil, err
 	}
 
-	uids := make([]int32, 0, 3)
+	// See: http://unix.superglobalmegacorp.com/Net2/newsrc/sys/ucred.h.html
+	userEffectiveUID := int32(k.Eproc.Ucred.Uid)
 
-	uids = append(uids, int32(k.Eproc.Pcred.P_ruid), int32(k.Eproc.Ucred.Uid), int32(k.Eproc.Pcred.P_svuid))
-
-	return uids, nil
+	return []int32{userEffectiveUID}, nil
 }
 func (p *Process) Gids() ([]int32, error) {
 	k, err := p.getKProc()
@@ -167,15 +183,6 @@ func (p *Process) NumFDs() (int32, error) {
 	return 0, common.NotImplementedError
 }
 func (p *Process) NumThreads() (int32, error) {
-	/*
-		k, err := p.getKProc()
-		if err != nil {
-			return 0, err
-		}
-
-			return k.KiNumthreads, nil
-	*/
-
 	r, err := callPs("utime,stime", p.Pid, true)
 	if err != nil {
 		return 0, err
@@ -215,6 +222,10 @@ func convertCpuTimes(s string) (ret float64, err error) {
 func (p *Process) CPUTimes() (*cpu.CPUTimesStat, error) {
 	r, err := callPs("utime,stime", p.Pid, false)
 
+	if err != nil {
+		return nil, err
+	}
+
 	utime, err := convertCpuTimes(r[0][0])
 	if err != nil {
 		return nil, err
@@ -253,8 +264,8 @@ func (p *Process) MemoryInfo() (*MemoryInfoStat, error) {
 	}
 
 	ret := &MemoryInfoStat{
-		RSS:  uint64(rss),
-		VMS:  uint64(vms),
+		RSS:  uint64(rss) * 1024,
+		VMS:  uint64(vms) * 1024,
 		Swap: uint64(pagein),
 	}
 
@@ -268,7 +279,19 @@ func (p *Process) MemoryPercent() (float32, error) {
 }
 
 func (p *Process) Children() ([]*Process, error) {
-	return nil, common.NotImplementedError
+	pids, err := common.CallPgrep(invoke, p.Pid)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Process, 0, len(pids))
+	for _, pid := range pids {
+		np, err := NewProcess(pid)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, np)
+	}
+	return ret, nil
 }
 
 func (p *Process) OpenFiles() ([]OpenFilesStat, error) {
@@ -276,6 +299,10 @@ func (p *Process) OpenFiles() ([]OpenFilesStat, error) {
 }
 
 func (p *Process) Connections() ([]net.NetConnectionStat, error) {
+	return net.NetConnectionsPid("all", p.Pid)
+}
+
+func (p *Process) NetIOCounters(pernic bool) ([]net.NetIOCountersStat, error) {
 	return nil, common.NotImplementedError
 }
 
@@ -336,7 +363,7 @@ func parseKinfoProc(buf []byte) (KinfoProc, error) {
 	var k KinfoProc
 	br := bytes.NewReader(buf)
 
-	err := Read(br, LittleEndian, &k)
+	err := common.Read(br, binary.LittleEndian, &k)
 	if err != nil {
 		return k, err
 	}
@@ -344,6 +371,8 @@ func parseKinfoProc(buf []byte) (KinfoProc, error) {
 	return k, nil
 }
 
+// Returns a proc as defined here:
+// http://unix.superglobalmegacorp.com/Net2/newsrc/sys/kinfo_proc.h.html
 func (p *Process) getKProc() (*KinfoProc, error) {
 	mib := []int32{CTLKern, KernProc, KernProcPID, p.Pid}
 	procK := KinfoProc{}
@@ -379,15 +408,20 @@ func NewProcess(pid int32) (*Process, error) {
 // And splited by Space. Caller have responsibility to manage.
 // If passed arg pid is 0, get information from all process.
 func callPs(arg string, pid int32, threadOption bool) ([][]string, error) {
+	bin, err := exec.LookPath("ps")
+	if err != nil {
+		return [][]string{}, err
+	}
+
 	var cmd []string
 	if pid == 0 { // will get from all processes.
-		cmd = []string{"-x", "-o", arg}
+		cmd = []string{"-ax", "-o", arg}
 	} else if threadOption {
 		cmd = []string{"-x", "-o", arg, "-M", "-p", strconv.Itoa(int(pid))}
 	} else {
 		cmd = []string{"-x", "-o", arg, "-p", strconv.Itoa(int(pid))}
 	}
-	out, err := exec.Command("/bin/ps", cmd...).Output()
+	out, err := invoke.Command(bin, cmd...)
 	if err != nil {
 		return [][]string{}, err
 	}

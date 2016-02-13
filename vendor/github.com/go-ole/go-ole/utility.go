@@ -5,6 +5,22 @@ import (
 	"unsafe"
 )
 
+// ClassIDFrom retrieves class ID whether given is program ID or application string.
+//
+// Helper that provides check against both Class ID from Program ID and Class ID from string. It is
+// faster, if you know which you are using, to use the individual functions, but this will check
+// against available functions for you.
+func ClassIDFrom(programID string) (classID *GUID, err error) {
+	classID, err = CLSIDFromProgID(programID)
+	if err != nil {
+		classID, err = CLSIDFromString(programID)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // BytePtrToString converts byte pointer to a Go string.
 func BytePtrToString(p *byte) string {
 	a := (*[10000]uint8)(unsafe.Pointer(p))

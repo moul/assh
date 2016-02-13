@@ -11,10 +11,14 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
 
-	common "github.com/shirou/gopsutil/common"
+	"github.com/shirou/gopsutil/internal/common"
 )
+
+// from utmpx.h
+const USER_PROCESS = 7
 
 func HostInfo() (*HostInfoStat, error) {
 	ret := &HostInfoStat{
@@ -23,10 +27,9 @@ func HostInfo() (*HostInfoStat, error) {
 	}
 
 	hostname, err := os.Hostname()
-	if err != nil {
-		return ret, err
+	if err == nil {
+		ret.Hostname = hostname
 	}
-	ret.Hostname = hostname
 
 	platform, family, version, err := GetPlatformInformation()
 	if err == nil {
@@ -40,15 +43,10 @@ func HostInfo() (*HostInfoStat, error) {
 		ret.VirtualizationRole = role
 	}
 
-	values, err := common.DoSysctrl("kern.boottime")
+	boot, err := BootTime()
 	if err == nil {
-		// ex: { sec = 1392261637, usec = 627534 } Thu Feb 13 12:20:37 2014
-		v := strings.Replace(values[2], ",", "", 1)
-		t, err := strconv.ParseUint(v, 10, 64)
-		if err != nil {
-			return ret, err
-		}
-		ret.Uptime = t
+		ret.BootTime = boot
+		ret.Uptime = uptime(boot)
 	}
 
 	return ret, nil
@@ -61,13 +59,24 @@ func BootTime() (uint64, error) {
 	}
 	// ex: { sec = 1392261637, usec = 627534 } Thu Feb 13 12:20:37 2014
 	v := strings.Replace(values[2], ",", "", 1)
-
 	boottime, err := strconv.ParseInt(v, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 
 	return uint64(boottime), nil
+}
+
+func uptime(boot uint64) uint64 {
+	return uint64(time.Now().Unix()) - boot
+}
+
+func Uptime() (uint64, error) {
+	boot, err := BootTime()
+	if err != nil {
+		return 0, err
+	}
+	return uptime(boot), nil
 }
 
 func Users() ([]UserStat, error) {
@@ -97,7 +106,7 @@ func Users() ([]UserStat, error) {
 		if err != nil {
 			continue
 		}
-		if u.Type != 7 { // skip if not USERPROCESS
+		if u.Type != USER_PROCESS {
 			continue
 		}
 		user := UserStat{
