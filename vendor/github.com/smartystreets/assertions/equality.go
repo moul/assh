@@ -29,14 +29,7 @@ func shouldEqual(actual, expected interface{}) (message string) {
 	}()
 
 	if matchError := oglematchers.Equals(expected).Matches(actual); matchError != nil {
-		expectedSyntax := fmt.Sprintf("%v", expected)
-		actualSyntax := fmt.Sprintf("%v", actual)
-		if expectedSyntax == actualSyntax && reflect.TypeOf(expected) != reflect.TypeOf(actual) {
-			message = fmt.Sprintf(shouldHaveBeenEqualTypeMismatch, expected, expected, actual, actual)
-		} else {
-			message = fmt.Sprintf(shouldHaveBeenEqual, expected, actual)
-		}
-		message = serializer.serialize(expected, actual, message)
+		message = serializer.serialize(expected, actual, fmt.Sprintf(shouldHaveBeenEqual, expected, actual))
 		return
 	}
 
@@ -153,7 +146,7 @@ func ShouldResemble(actual interface{}, expected ...interface{}) string {
 		actualSyntax := fmt.Sprintf("%#v", actual)
 		var message string
 		if expectedSyntax == actualSyntax {
-			message = fmt.Sprintf(shouldHaveResembledTypeMismatch, expected[0], expected[0], actual, actual)
+			message = fmt.Sprintf(shouldHaveResembledTypeMismatch, expected[0], actual, expected[0], actual)
 		} else {
 			message = fmt.Sprintf(shouldHaveResembled, expected[0], actual)
 		}

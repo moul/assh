@@ -5,8 +5,15 @@ import (
 	"runtime"
 	"time"
 
-	cpu "github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/internal/common"
 )
+
+var invoke common.Invoker
+
+func init() {
+	invoke = common.Invoke{}
+}
 
 type Process struct {
 	Pid            int32 `json:"pid"`
@@ -99,24 +106,15 @@ func PidExists(pid int32) (bool, error) {
 // If interval is 0, return difference from last call(non-blocking).
 // If interval > 0, wait interval sec and return diffrence between start and end.
 func (p *Process) CPUPercent(interval time.Duration) (float64, error) {
-	numcpu := runtime.NumCPU()
-	calculate := func(t1, t2 *cpu.CPUTimesStat, delta float64) float64 {
-		if delta == 0 {
-			return 0
-		}
-		delta_proc := (t2.User - t1.User) + (t2.System - t1.System)
-		overall_percent := ((delta_proc / delta) * 100) * float64(numcpu)
-		return overall_percent
-	}
-
 	cpuTimes, err := p.CPUTimes()
 	if err != nil {
 		return 0, err
 	}
+	now := time.Now()
 
 	if interval > 0 {
 		p.lastCPUTimes = cpuTimes
-		p.lastCPUTime = time.Now()
+		p.lastCPUTime = now
 		time.Sleep(interval)
 		cpuTimes, err = p.CPUTimes()
 		if err != nil {
@@ -125,18 +123,25 @@ func (p *Process) CPUPercent(interval time.Duration) (float64, error) {
 	} else {
 		if p.lastCPUTimes == nil {
 			// invoked first time
-			p.lastCPUTimes, err = p.CPUTimes()
-			if err != nil {
-				return 0, err
-			}
-			p.lastCPUTime = time.Now()
+			p.lastCPUTimes = cpuTimes
+			p.lastCPUTime = now
 			return 0, nil
 		}
 	}
 
-	delta := (time.Now().Sub(p.lastCPUTime).Seconds()) * float64(numcpu)
-	ret := calculate(p.lastCPUTimes, cpuTimes, float64(delta))
+	numcpu := runtime.NumCPU()
+	delta := (now.Sub(p.lastCPUTime).Seconds()) * float64(numcpu)
+	ret := calculatePercent(p.lastCPUTimes, cpuTimes, delta, numcpu)
 	p.lastCPUTimes = cpuTimes
-	p.lastCPUTime = time.Now()
+	p.lastCPUTime = now
 	return ret, nil
+}
+
+func calculatePercent(t1, t2 *cpu.CPUTimesStat, delta float64, numcpu int) float64 {
+	if delta == 0 {
+		return 0
+	}
+	delta_proc := t2.Total() - t1.Total()
+	overall_percent := ((delta_proc / delta) * 100) * float64(numcpu)
+	return overall_percent
 }

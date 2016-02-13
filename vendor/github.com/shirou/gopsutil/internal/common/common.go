@@ -9,15 +9,64 @@ package common
 import (
 	"bufio"
 	"errors"
+	"io/ioutil"
+	"net/url"
 	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 )
 
+type Invoker interface {
+	Command(string, ...string) ([]byte, error)
+}
+
+type Invoke struct{}
+
+func (i Invoke) Command(name string, arg ...string) ([]byte, error) {
+	return exec.Command(name, arg...).Output()
+}
+
+type FakeInvoke struct {
+	CommandExpectedDir string // CommandExpectedDir specifies dir which includes expected outputs.
+	Suffix             string // Suffix species expected file name suffix such as "fail"
+	Error              error  // If Error specfied, return the error.
+}
+
+// Command in FakeInvoke returns from expected file if exists.
+func (i FakeInvoke) Command(name string, arg ...string) ([]byte, error) {
+	if i.Error != nil {
+		return []byte{}, i.Error
+	}
+
+	arch := runtime.GOOS
+
+	fname := strings.Join(append([]string{name}, arg...), "")
+	fname = url.QueryEscape(fname)
+	var dir string
+	if i.CommandExpectedDir == "" {
+		dir = "expected"
+	} else {
+		dir = i.CommandExpectedDir
+	}
+	fpath := path.Join(dir, arch, fname)
+	if i.Suffix != "" {
+		fpath += "_" + i.Suffix
+	}
+	if PathExists(fpath) {
+		return ioutil.ReadFile(fpath)
+	} else {
+		return exec.Command(name, arg...).Output()
+	}
+}
+
 var NotImplementedError = errors.New("not implemented yet")
 
-// ReadLines reads contents from file and splits them by new line.
+// ReadLines reads contents from a file and splits them by new lines.
 // A convenience wrapper to ReadLinesOffsetN(filename, 0, -1).
 func ReadLines(filename string) ([]string, error) {
 	return ReadLinesOffsetN(filename, 0, -1)
@@ -92,6 +141,33 @@ func ByteToString(orig []byte) string {
 	return string(orig[l:n])
 }
 
+// ReadInts reads contents from single line file and returns them as []int32.
+func ReadInts(filename string) ([]int64, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return []int64{}, err
+	}
+	defer f.Close()
+
+	var ret []int64
+
+	r := bufio.NewReader(f)
+
+	// The int files that this is concerned with should only be one liners.
+	line, err := r.ReadString('\n')
+	if err != nil {
+		return []int64{}, err
+	}
+
+	i, err := strconv.ParseInt(strings.Trim(line, "\n"), 10, 32)
+	if err != nil {
+		return []int64{}, err
+	}
+	ret = append(ret, i)
+
+	return ret, nil
+}
+
 // Parse to int32 without error
 func mustParseInt32(val string) int32 {
 	vv, _ := strconv.ParseInt(val, 10, 32)
@@ -110,7 +186,7 @@ func mustParseFloat64(val string) float64 {
 	return vv
 }
 
-// StringsHas checks the target string slice containes src or not
+// StringsHas checks the target string slice contains src or not
 func StringsHas(target []string, src string) bool {
 	for _, t := range target {
 		if strings.TrimSpace(t) == src {
@@ -158,4 +234,33 @@ func PathExists(filename string) bool {
 		return true
 	}
 	return false
+}
+
+//GetEnv retrieves the environment variable key. If it does not exist it returns the default.
+func GetEnv(key string, dfault string, combineWith ...string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		value = dfault
+	}
+
+	switch len(combineWith) {
+	case 0:
+		return value
+	case 1:
+		return filepath.Join(value, combineWith[0])
+	default:
+		all := make([]string, len(combineWith)+1)
+		all[0] = value
+		copy(all[1:], combineWith)
+		return filepath.Join(all...)
+	}
+	panic("invalid switch case")
+}
+
+func HostProc(combineWith ...string) string {
+	return GetEnv("HOST_PROC", "/proc", combineWith...)
+}
+
+func HostSys(combineWith ...string) string {
+	return GetEnv("HOST_SYS", "/sys", combineWith...)
 }

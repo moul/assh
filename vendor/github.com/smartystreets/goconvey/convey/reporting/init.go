@@ -43,7 +43,7 @@ func BuildSilentReporter() Reporter {
 	out := NewPrinter(NewConsole())
 	return NewReporters(
 		NewGoTestReporter(),
-		NewSilentProblemReporter(out))
+		NewProblemReporter(out))
 }
 
 var (

@@ -183,24 +183,6 @@ func ShouldEqual(actual interface{}, expected ...interface{}) string
 ```
 ShouldEqual receives exactly two parameters and does an equality check.
 
-#### func  ShouldEqualTrimSpace
-
-```go
-func ShouldEqualTrimSpace(actual interface{}, expected ...interface{}) string
-```
-ShouldEqualTrimSpace receives exactly 2 string parameters and ensures that the
-first is equal to the second after removing all leading and trailing whitespace
-using strings.TrimSpace(first).
-
-#### func  ShouldEqualWithout
-
-```go
-func ShouldEqualWithout(actual interface{}, expected ...interface{}) string
-```
-ShouldEqualWithout receives exactly 3 string parameters and ensures that the
-first is equal to the second after removing all instances of the third from the
-first using strings.Replace(first, third, "", -1).
-
 #### func  ShouldHappenAfter
 
 ```go
@@ -257,14 +239,6 @@ func ShouldHappenWithin(actual interface{}, expected ...interface{}) string
 ShouldHappenWithin receives a time.Time, a time.Duration, and a time.Time (3
 arguments) and asserts that the first time.Time happens within or on the
 duration specified relative to the other time.Time.
-
-#### func  ShouldHaveLength
-
-```go
-func ShouldHaveLength(actual interface{}, expected ...interface{}) string
-```
-ShouldHaveLength receives a collection and a positive integer and asserts that
-the length of the collection is equal to the integer provided.
 
 #### func  ShouldHaveSameTypeAs
 

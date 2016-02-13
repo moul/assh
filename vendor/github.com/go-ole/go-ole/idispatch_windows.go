@@ -80,10 +80,14 @@ func invoke(disp *IDispatch, dispid int32, dispatch int16, params ...interface{}
 				}
 			case *bool:
 				vargs[n] = NewVariant(VT_BOOL|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*bool)))))
-			case byte:
-				vargs[n] = NewVariant(VT_I1, int64(v.(byte)))
-			case *byte:
-				vargs[n] = NewVariant(VT_I1|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*byte)))))
+			case uint8:
+				vargs[n] = NewVariant(VT_I1, int64(v.(uint8)))
+			case *uint8:
+				vargs[n] = NewVariant(VT_I1|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*uint8)))))
+			case int8:
+				vargs[n] = NewVariant(VT_I1, int64(v.(int8)))
+			case *int8:
+				vargs[n] = NewVariant(VT_I1|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*uint8)))))
 			case int16:
 				vargs[n] = NewVariant(VT_I2, int64(v.(int16)))
 			case *int16:
@@ -92,22 +96,30 @@ func invoke(disp *IDispatch, dispid int32, dispatch int16, params ...interface{}
 				vargs[n] = NewVariant(VT_UI2, int64(v.(uint16)))
 			case *uint16:
 				vargs[n] = NewVariant(VT_UI2|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*uint16)))))
-			case int, int32:
-				vargs[n] = NewVariant(VT_I4, int64(v.(int)))
-			case *int, *int32:
-				vargs[n] = NewVariant(VT_I4|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*int)))))
-			case uint, uint32:
-				vargs[n] = NewVariant(VT_UI4, int64(v.(uint)))
-			case *uint, *uint32:
-				vargs[n] = NewVariant(VT_UI4|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*uint)))))
+			case int32:
+				vargs[n] = NewVariant(VT_I4, int64(v.(int32)))
+			case *int32:
+				vargs[n] = NewVariant(VT_I4|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*int32)))))
+			case uint32:
+				vargs[n] = NewVariant(VT_UI4, int64(v.(uint32)))
+			case *uint32:
+				vargs[n] = NewVariant(VT_UI4|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*uint32)))))
 			case int64:
 				vargs[n] = NewVariant(VT_I8, int64(v.(int64)))
 			case *int64:
 				vargs[n] = NewVariant(VT_I8|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*int64)))))
 			case uint64:
-				vargs[n] = NewVariant(VT_UI8, v.(int64))
+				vargs[n] = NewVariant(VT_UI8, int64(uintptr(v.(uint64))))
 			case *uint64:
 				vargs[n] = NewVariant(VT_UI8|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*uint64)))))
+			case int:
+				vargs[n] = NewVariant(VT_I4, int64(v.(int)))
+			case *int:
+				vargs[n] = NewVariant(VT_I4|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*int)))))
+			case uint:
+				vargs[n] = NewVariant(VT_UI4, int64(v.(uint)))
+			case *uint:
+				vargs[n] = NewVariant(VT_UI4|VT_BYREF, int64(uintptr(unsafe.Pointer(v.(*uint)))))
 			case float32:
 				vargs[n] = NewVariant(VT_R4, *(*int64)(unsafe.Pointer(&vv)))
 			case *float32:
@@ -138,6 +150,10 @@ func invoke(disp *IDispatch, dispid int32, dispatch int16, params ...interface{}
 				safeByteArray := safeArrayFromByteSlice(v.([]byte))
 				vargs[n] = NewVariant(VT_ARRAY|VT_UI1, int64(uintptr(unsafe.Pointer(safeByteArray))))
 				defer VariantClear(&vargs[n])
+			case []string:
+				safeByteArray := safeArrayFromStringSlice(v.([]string))
+				vargs[n] = NewVariant(VT_ARRAY|VT_BSTR, int64(uintptr(unsafe.Pointer(safeByteArray))))
+				defer VariantClear(&vargs[n])
 			default:
 				panic("unknown type")
 			}
@@ -164,17 +180,14 @@ func invoke(disp *IDispatch, dispid int32, dispatch int16, params ...interface{}
 	if hr != 0 {
 		err = NewErrorWithSubError(hr, BstrToString(excepInfo.bstrDescription), excepInfo)
 	}
-	for _, varg := range vargs {
+	for i, varg := range vargs {
+		n := len(params) - i - 1
 		if varg.VT == VT_BSTR && varg.Val != 0 {
 			SysFreeString(((*int16)(unsafe.Pointer(uintptr(varg.Val)))))
 		}
-		/*
-			if varg.VT == (VT_BSTR|VT_BYREF) && varg.Val != 0 {
-				*(params[n].(*string)) = LpOleStrToString((*uint16)(unsafe.Pointer(uintptr(varg.Val))))
-				println(*(params[n].(*string)))
-				fmt.Fprintln(os.Stderr, *(params[n].(*string)))
-			}
-		*/
+		if varg.VT == (VT_BSTR|VT_BYREF) && varg.Val != 0 {
+			*(params[n].(*string)) = LpOleStrToString(*(**uint16)(unsafe.Pointer(uintptr(varg.Val))))
+		}
 	}
 	return
 }

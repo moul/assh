@@ -4,14 +4,7 @@ import ole "github.com/go-ole/go-ole"
 
 // ClassIDFrom retrieves class ID whether given is program ID or application string.
 func ClassIDFrom(programID string) (classID *ole.GUID, err error) {
-	classID, err = ole.CLSIDFromProgID(programID)
-	if err != nil {
-		classID, err = ole.CLSIDFromString(programID)
-		if err != nil {
-			return
-		}
-	}
-	return
+	return ole.ClassIDFrom(programID)
 }
 
 // CreateObject creates object from programID based on interface type.
@@ -20,7 +13,7 @@ func ClassIDFrom(programID string) (classID *ole.GUID, err error) {
 //
 // Program ID can be either program ID or application string.
 func CreateObject(programID string) (unknown *ole.IUnknown, err error) {
-	classID, err := ClassIDFrom(programID)
+	classID, err := ole.ClassIDFrom(programID)
 	if err != nil {
 		return
 	}
@@ -40,7 +33,7 @@ func CreateObject(programID string) (unknown *ole.IUnknown, err error) {
 //
 // Program ID can be either program ID or application string.
 func GetActiveObject(programID string) (unknown *ole.IUnknown, err error) {
-	classID, err := ClassIDFrom(programID)
+	classID, err := ole.ClassIDFrom(programID)
 	if err != nil {
 		return
 	}
@@ -55,19 +48,7 @@ func GetActiveObject(programID string) (unknown *ole.IUnknown, err error) {
 
 // CallMethod calls method on IDispatch with parameters.
 func CallMethod(disp *ole.IDispatch, name string, params ...interface{}) (result *ole.VARIANT, err error) {
-	var dispid []int32
-	dispid, err = disp.GetIDsOfName([]string{name})
-	if err != nil {
-		return
-	}
-
-	if len(params) < 1 {
-		result, err = disp.Invoke(dispid[0], ole.DISPATCH_METHOD)
-	} else {
-		result, err = disp.Invoke(dispid[0], ole.DISPATCH_METHOD, params...)
-	}
-
-	return
+	return disp.InvokeWithOptionalArgs(name, ole.DISPATCH_METHOD, params)
 }
 
 // MustCallMethod calls method on IDispatch with parameters or panics.
@@ -81,19 +62,7 @@ func MustCallMethod(disp *ole.IDispatch, name string, params ...interface{}) (re
 
 // GetProperty retrieves property from IDispatch.
 func GetProperty(disp *ole.IDispatch, name string, params ...interface{}) (result *ole.VARIANT, err error) {
-	var dispid []int32
-	dispid, err = disp.GetIDsOfName([]string{name})
-	if err != nil {
-		return
-	}
-
-	if len(params) < 1 {
-		result, err = disp.Invoke(dispid[0], ole.DISPATCH_PROPERTYGET)
-	} else {
-		result, err = disp.Invoke(dispid[0], ole.DISPATCH_PROPERTYGET, params...)
-	}
-
-	return
+	return disp.InvokeWithOptionalArgs(name, ole.DISPATCH_PROPERTYGET, params)
 }
 
 // MustGetProperty retrieves property from IDispatch or panics.
@@ -107,19 +76,7 @@ func MustGetProperty(disp *ole.IDispatch, name string, params ...interface{}) (r
 
 // PutProperty mutates property.
 func PutProperty(disp *ole.IDispatch, name string, params ...interface{}) (result *ole.VARIANT, err error) {
-	var dispid []int32
-	dispid, err = disp.GetIDsOfName([]string{name})
-	if err != nil {
-		return
-	}
-
-	if len(params) < 1 {
-		result, err = disp.Invoke(dispid[0], ole.DISPATCH_PROPERTYPUT)
-	} else {
-		result, err = disp.Invoke(dispid[0], ole.DISPATCH_PROPERTYPUT, params...)
-	}
-
-	return
+	return disp.InvokeWithOptionalArgs(name, ole.DISPATCH_PROPERTYPUT, params)
 }
 
 // MustPutProperty mutates property or panics.
