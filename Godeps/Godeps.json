@@ -12,8 +12,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.8.7-55-gf7f79f7",
-			"Rev": "f7f79f729e0fbe2fcc061db48a9ba0263f588252"
+			"Comment": "v0.9.0",
+			"Rev": "be52937128b38f1d99787bb476c789e2af1147f1"
 		},
 		{
 			"ImportPath": "github.com/StackExchange/wmi",
@@ -25,8 +25,8 @@
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-193-gf9cc300",
-			"Rev": "f9cc3001e04f9783cb4ad08ca6791aa07134787c"
+			"Comment": "1.2.0-215-g0ab42fd",
+			"Rev": "0ab42fd482c27cf2c95e7794ad3bb2082c2ab2d7"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-shlex",
@@ -34,63 +34,63 @@
 		},
 		{
 			"ImportPath": "github.com/go-ole/go-ole",
-			"Comment": "v1.1.1-37-g0ab5ae4",
-			"Rev": "0ab5ae452fd706dd8b6f4d83ffe5254cd748cdd2"
-		},
-		{
-			"ImportPath": "github.com/gopherjs/gopherjs/js",
-			"Rev": "fb8ec00c0f9c3047be6e4eeef4407b33e855efe0"
+			"Comment": "v1.2.0-8-g4528ca3",
+			"Rev": "4528ca3fd1f79aeff5cad74425d0a60fb18a5761"
 		},
 		{
 			"ImportPath": "github.com/jtolds/gls",
-			"Rev": "8ddce2a84170772b95dd5d576c48d517b22cac63"
-		},
-		{
-			"ImportPath": "github.com/shirou/gopsutil/common",
-			"Comment": "1.0.0-127-g773d9d3",
-			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+			"Rev": "9a4a02dbe491bef4bab3c24fd9f3087d6c4c6690"
 		},
 		{
 			"ImportPath": "github.com/shirou/gopsutil/cpu",
-			"Comment": "1.0.0-127-g773d9d3",
-			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+			"Comment": "1.0.0-274-g956f927",
+			"Rev": "956f92742f460d9081fd36ba719f595809ab15b2"
 		},
 		{
 			"ImportPath": "github.com/shirou/gopsutil/host",
-			"Comment": "1.0.0-127-g773d9d3",
-			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+			"Comment": "1.0.0-274-g956f927",
+			"Rev": "956f92742f460d9081fd36ba719f595809ab15b2"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/internal/common",
+			"Comment": "1.0.0-274-g956f927",
+			"Rev": "956f92742f460d9081fd36ba719f595809ab15b2"
 		},
 		{
 			"ImportPath": "github.com/shirou/gopsutil/net",
-			"Comment": "1.0.0-127-g773d9d3",
-			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+			"Comment": "1.0.0-274-g956f927",
+			"Rev": "956f92742f460d9081fd36ba719f595809ab15b2"
 		},
 		{
 			"ImportPath": "github.com/shirou/gopsutil/process",
-			"Comment": "1.0.0-127-g773d9d3",
-			"Rev": "773d9d3caa6e775585eb3b893d4ec5feaf6c39eb"
+			"Comment": "1.0.0-274-g956f927",
+			"Rev": "956f92742f460d9081fd36ba719f595809ab15b2"
 		},
 		{
 			"ImportPath": "github.com/shirou/w32",
-			"Rev": "ada3ba68f000aa1b58580e45c9d308fe0b7fc5c5"
+			"Rev": "3c9377fc6748f222729a8270fe2775d149a249ad"
 		},
 		{
 			"ImportPath": "github.com/smartystreets/assertions",
-			"Comment": "1.5.0-409-g5de9043",
-			"Rev": "5de9043ec1a39cc97edc838ef7236538a55b30a4"
+			"Comment": "1.5.0-397-gac6b6f6",
+			"Rev": "ac6b6f68ca3d6ac00a360d0fad0c844859ad131b"
 		},
 		{
 			"ImportPath": "github.com/smartystreets/goconvey/convey",
-			"Comment": "1.6.0-10-g995f5b2",
-			"Rev": "995f5b2e021c69b8b028ba6d0b05c1dd500783db"
+			"Comment": "1.5.0-412-gbf05a3a",
+			"Rev": "bf05a3a16dad006e63e899124a2c6125028f6b31"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "7654728e381988afd88e58cabfd6363a5ea91810"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
-			"Rev": "eb2c74142fd19a79b3f237334c7384d5167b1b46"
+			"Rev": "50c6bc5e4292a1d4e65c6e9be5f53be28bcbe28e"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
-			"Rev": "7ad95dd0798a40da1ccdff6dff35fd177b5edf40"
+			"Rev": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4"
 		}
 	]
 }

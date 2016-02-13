@@ -3,40 +3,39 @@
 package host
 
 import (
-	"os"
 	"fmt"
-	"time"
+	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/StackExchange/wmi"
 
-	common "github.com/shirou/gopsutil/common"
+	"github.com/shirou/gopsutil/internal/common"
 	process "github.com/shirou/gopsutil/process"
 )
 
 var (
 	procGetSystemTimeAsFileTime = common.Modkernel32.NewProc("GetSystemTimeAsFileTime")
-	osInfo *Win32_OperatingSystem
+	osInfo                      *Win32_OperatingSystem
 )
 
 type Win32_OperatingSystem struct {
-	Version     string
-	Caption     string
-	ProductType uint32
-	BuildNumber string
+	Version        string
+	Caption        string
+	ProductType    uint32
+	BuildNumber    string
 	LastBootUpTime time.Time
 }
 
 func HostInfo() (*HostInfoStat, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
+	ret := &HostInfoStat{
+		OS: runtime.GOOS,
 	}
 
-	ret := &HostInfoStat{
-		Hostname: hostname,
-		OS:       runtime.GOOS,
+	hostname, err := os.Hostname()
+	if err == nil {
+		ret.Hostname = hostname
 	}
 
 	platform, family, version, err := GetPlatformInformation()
@@ -45,14 +44,15 @@ func HostInfo() (*HostInfoStat, error) {
 		ret.PlatformFamily = family
 		ret.PlatformVersion = version
 	} else {
-	  return ret, err
-	}
-	
-	ret.Uptime, err = BootTime()
-	if err != nil {
 		return ret, err
 	}
-	
+
+	boot, err := BootTime()
+	if err == nil {
+		ret.BootTime = boot
+		ret.Uptime = uptime(boot)
+	}
+
 	procs, err := process.Pids()
 	if err != nil {
 		return ret, err
@@ -70,9 +70,9 @@ func GetOSInfo() (Win32_OperatingSystem, error) {
 	if err != nil {
 		return Win32_OperatingSystem{}, err
 	}
-	
+
 	osInfo = &dst[0]
-	
+
 	return dst[0], nil
 }
 
@@ -88,6 +88,18 @@ func BootTime() (uint64, error) {
 	return uint64(now.Sub(t).Seconds()), nil
 }
 
+func uptime(boot uint64) uint64 {
+	return uint64(time.Now().Unix()) - boot
+}
+
+func Uptime() (uint64, error) {
+	boot, err := BootTime()
+	if err != nil {
+		return 0, err
+	}
+	return uptime(boot), nil
+}
+
 func GetPlatformInformation() (platform string, family string, version string, err error) {
 	if osInfo == nil {
 		_, err = GetOSInfo()
@@ -98,7 +110,7 @@ func GetPlatformInformation() (platform string, family string, version string, e
 
 	// Platform
 	platform = strings.Trim(osInfo.Caption, " ")
-	
+
 	// PlatformFamily
 	switch osInfo.ProductType {
 	case 1:
@@ -108,7 +120,7 @@ func GetPlatformInformation() (platform string, family string, version string, e
 	case 3:
 		family = "Server"
 	}
-	
+
 	// Platform Version
 	version = fmt.Sprintf("%s Build %s", osInfo.Version, osInfo.BuildNumber)
 

@@ -34,7 +34,6 @@ var (
 	ShouldNotBeIn       = assertions.ShouldNotBeIn
 	ShouldBeEmpty       = assertions.ShouldBeEmpty
 	ShouldNotBeEmpty    = assertions.ShouldNotBeEmpty
-	ShouldHaveLength    = assertions.ShouldHaveLength
 
 	ShouldStartWith           = assertions.ShouldStartWith
 	ShouldNotStartWith        = assertions.ShouldNotStartWith

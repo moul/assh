@@ -13,9 +13,10 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
 
-	common "github.com/shirou/gopsutil/common"
+	"github.com/shirou/gopsutil/internal/common"
 )
 
 type LSB struct {
@@ -25,15 +26,17 @@ type LSB struct {
 	Description string
 }
 
+// from utmp.h
+const USER_PROCESS = 7
+
 func HostInfo() (*HostInfoStat, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
+	ret := &HostInfoStat{
+		OS: runtime.GOOS,
 	}
 
-	ret := &HostInfoStat{
-		Hostname: hostname,
-		OS:       runtime.GOOS,
+	hostname, err := os.Hostname()
+	if err == nil {
+		ret.Hostname = hostname
 	}
 
 	platform, family, version, err := GetPlatformInformation()
@@ -47,9 +50,10 @@ func HostInfo() (*HostInfoStat, error) {
 		ret.VirtualizationSystem = system
 		ret.VirtualizationRole = role
 	}
-	uptime, err := BootTime()
+	boot, err := BootTime()
 	if err == nil {
-		ret.Uptime = uptime
+		ret.BootTime = boot
+		ret.Uptime = uptime(boot)
 	}
 
 	return ret, nil
@@ -57,7 +61,8 @@ func HostInfo() (*HostInfoStat, error) {
 
 // BootTime returns the system boot time expressed in seconds since the epoch.
 func BootTime() (uint64, error) {
-	lines, err := common.ReadLines("/proc/stat")
+	filename := common.HostProc("stat")
+	lines, err := common.ReadLines(filename)
 	if err != nil {
 		return 0, err
 	}
@@ -76,6 +81,18 @@ func BootTime() (uint64, error) {
 	}
 
 	return 0, fmt.Errorf("could not find btime")
+}
+
+func uptime(boot uint64) uint64 {
+	return uint64(time.Now().Unix()) - boot
+}
+
+func Uptime() (uint64, error) {
+	boot, err := BootTime()
+	if err != nil {
+		return 0, err
+	}
+	return uptime(boot), nil
 }
 
 func Users() ([]UserStat, error) {
@@ -104,6 +121,9 @@ func Users() ([]UserStat, error) {
 		br := bytes.NewReader(b)
 		err := binary.Read(br, binary.LittleEndian, &u)
 		if err != nil {
+			continue
+		}
+		if u.Type != USER_PROCESS {
 			continue
 		}
 		user := UserStat{
@@ -233,7 +253,7 @@ func GetPlatformInformation() (platform string, family string, version string, e
 		// TODO: slackware detecion
 	} else if common.PathExists("/etc/arch-release") {
 		platform = "arch"
-		// TODO: exherbo detection
+		version = lsb.Release
 	} else if lsb.ID == "RedHat" {
 		platform = "redhat"
 		version = lsb.Release
@@ -321,12 +341,13 @@ func GetVirtualization() (string, string, error) {
 	var system string
 	var role string
 
-	if common.PathExists("/proc/xen") {
+	filename := common.HostProc("xen")
+	if common.PathExists(filename) {
 		system = "xen"
 		role = "guest" // assume guest
 
-		if common.PathExists("/proc/xen/capabilities") {
-			contents, err := common.ReadLines("/proc/xen/capabilities")
+		if common.PathExists(filename + "/capabilities") {
+			contents, err := common.ReadLines(filename + "/capabilities")
 			if err == nil {
 				if common.StringsHas(contents, "control_d") {
 					role = "host"
@@ -334,8 +355,10 @@ func GetVirtualization() (string, string, error) {
 			}
 		}
 	}
-	if common.PathExists("/proc/modules") {
-		contents, err := common.ReadLines("/proc/modules")
+
+	filename = common.HostProc("modules")
+	if common.PathExists(filename) {
+		contents, err := common.ReadLines(filename)
 		if err == nil {
 			if common.StringsContains(contents, "kvm") {
 				system = "kvm"
@@ -350,8 +373,9 @@ func GetVirtualization() (string, string, error) {
 		}
 	}
 
-	if common.PathExists("/proc/cpuinfo") {
-		contents, err := common.ReadLines("/proc/cpuinfo")
+	filename = common.HostProc("cpuinfo")
+	if common.PathExists(filename) {
+		contents, err := common.ReadLines(filename)
 		if err == nil {
 			if common.StringsHas(contents, "QEMU Virtual CPU") ||
 				common.StringsHas(contents, "Common KVM processor") ||
@@ -362,18 +386,18 @@ func GetVirtualization() (string, string, error) {
 		}
 	}
 
-	if common.PathExists("/proc/bc/0") {
+	filename = common.HostProc()
+	if common.PathExists(filename + "/bc/0") {
 		system = "openvz"
 		role = "host"
-	} else if common.PathExists("/proc/vz") {
+	} else if common.PathExists(filename + "/vz") {
 		system = "openvz"
 		role = "guest"
 	}
 
 	// not use dmidecode because it requires root
-
-	if common.PathExists("/proc/self/status") {
-		contents, err := common.ReadLines("/proc/self/status")
+	if common.PathExists(filename + "/self/status") {
+		contents, err := common.ReadLines(filename + "/self/status")
 		if err == nil {
 
 			if common.StringsHas(contents, "s_context:") ||
@@ -384,8 +408,8 @@ func GetVirtualization() (string, string, error) {
 		}
 	}
 
-	if common.PathExists("/proc/self/cgroup") {
-		contents, err := common.ReadLines("/proc/self/cgroup")
+	if common.PathExists(filename + "/self/cgroup") {
+		contents, err := common.ReadLines(filename + "/self/cgroup")
 		if err == nil {
 			if common.StringsHas(contents, "lxc") ||
 				common.StringsHas(contents, "docker") {
