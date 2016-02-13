@@ -189,6 +189,11 @@ func hostPrepare(host *config.Host) error {
 	return nil
 }
 
+type exportReadWrite struct {
+	written uint64
+	err     error
+}
+
 func proxyGo(host *config.Host, dryRun bool) error {
 	Logger.Debugf("Preparing host object")
 	if err := hostPrepare(host); err != nil {
@@ -210,6 +215,8 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	signal.Ignore(syscall.SIGHUP)
 
 	waitGroup := sync.WaitGroup{}
+	result := exportReadWrite{}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = context.WithValue(ctx, "sync", &waitGroup)
 
@@ -217,45 +224,53 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	c1 := readAndWrite(ctx, conn, os.Stdout)
 	c2 := readAndWrite(ctx, os.Stdin, conn)
 	select {
-	case err = <-c1:
-	case err = <-c2:
+	case result = <-c1:
+	case result = <-c2:
 	}
-	if err != nil && err == io.EOF {
-		err = nil
+	if result.err != nil && result.err == io.EOF {
+		result.err = nil
+	}
+	select {
+	case res := <-c2:
+		Logger.Debugf("Byte written %v", res.written)
+	default:
+		Logger.Debugf("Byte written %v", result.written)
 	}
 	conn.Close()
 	cancel()
 	waitGroup.Wait()
-	return err
+	return result.err
 }
 
-func readAndWrite(ctx context.Context, r io.Reader, w io.Writer) <-chan error {
-	var written uint64
+func readAndWrite(ctx context.Context, r io.Reader, w io.Writer) <-chan exportReadWrite {
 	buff := make([]byte, 1024)
-	c := make(chan error, 1)
+	c := make(chan exportReadWrite, 1)
 
 	go func() {
 		defer ctx.Value("sync").(*sync.WaitGroup).Done()
 
+		export := exportReadWrite{}
 		for {
 			select {
 			case <-ctx.Done():
-				c <- nil
+				c <- export
 				return
 			default:
 				nr, err := r.Read(buff)
 				if err != nil {
-					c <- err
+					export.err = err
+					c <- export
 					return
 				}
 				if nr > 0 {
 					wr, err := w.Write(buff[:nr])
 					if err != nil {
-						c <- err
+						export.err = err
+						c <- export
 						return
 					}
 					if wr > 0 {
-						written += uint64(wr)
+						export.written += uint64(wr)
 					}
 				}
 			}
