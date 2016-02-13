@@ -12,8 +12,8 @@ import (
 	"github.com/StackExchange/wmi"
 	"github.com/shirou/w32"
 
-	common "github.com/shirou/gopsutil/common"
 	cpu "github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/internal/common"
 	net "github.com/shirou/gopsutil/net"
 )
 
@@ -240,6 +240,10 @@ func (p *Process) OpenFiles() ([]OpenFilesStat, error) {
 }
 
 func (p *Process) Connections() ([]net.NetConnectionStat, error) {
+	return nil, common.NotImplementedError
+}
+
+func (p *Process) NetIOCounters(pernic bool) ([]net.NetIOCountersStat, error) {
 	return nil, common.NotImplementedError
 }
 

@@ -1,9 +1,20 @@
+# Version 1.x.x
+
+* **Add more test cases and reference new test COM server project.** (Placeholder for future additions)
+
 # Version 1.2.0-alphaX
 
- * Add CI configuration for Travis-CI and AppVeyor.
- * Add test InterfaceID and ClassID for the COM Test Server project.
- * Add more inline documentation.
- * **Add more test cases and reference new test COM server project.** (Placeholder for future additions)
+**Minimum supported version is now Go 1.4. Go 1.1 support is deprecated, but should still build.**
+
+ * Added CI configuration for Travis-CI and AppVeyor.
+ * Added test InterfaceID and ClassID for the COM Test Server project.
+ * Added more inline documentation (#83).
+ * Added IEnumVARIANT implementation (#88).
+ * Added IEnumVARIANT test cases (#99, #100, #101).
+ * Added support for retrieving `time.Time` from VARIANT (#92).
+ * Added test case for IUnknown (#64).
+ * Added test case for IDispatch (#64).
+ * Added test cases for scalar variants (#64, #76).
 
 # Version 1.1.1
 

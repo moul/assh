@@ -16,6 +16,8 @@ type Command struct {
 	Aliases []string
 	// A short description of the usage of this command
 	Usage string
+	// Custom text to show on USAGE section of help
+	UsageText string
 	// A longer explanation of how the command works
 	Description string
 	// A short description of the arguments of this command
@@ -30,6 +32,10 @@ type Command struct {
 	After func(context *Context) error
 	// The function to call when this command is invoked
 	Action func(context *Context)
+	// Execute this function, if an usage error occurs. This is useful for displaying customized usage error messages.
+	// This function is able to replace the original error messages.
+	// If this function is not set, the "Incorrect usage" is displayed and the execution is interrupted.
+	OnUsageError func(context *Context, err error) error
 	// List of child commands
 	Subcommands []Command
 	// List of flags to parse
@@ -81,6 +87,9 @@ func (c Command) Run(ctx *Context) (err error) {
 			if arg == "--" {
 				terminatorIndex = index
 				break
+			} else if arg == "-" {
+				// Do nothing. A dash alone is not really a flag.
+				continue
 			} else if strings.HasPrefix(arg, "-") && firstFlagIndex == -1 {
 				firstFlagIndex = index
 			}
@@ -110,10 +119,15 @@ func (c Command) Run(ctx *Context) (err error) {
 	}
 
 	if err != nil {
-		fmt.Fprintln(ctx.App.Writer, "Incorrect Usage.")
-		fmt.Fprintln(ctx.App.Writer)
-		ShowCommandHelp(ctx, c.Name)
-		return err
+		if c.OnUsageError != nil {
+			err := c.OnUsageError(ctx, err)
+			return err
+		} else {
+			fmt.Fprintln(ctx.App.Writer, "Incorrect Usage.")
+			fmt.Fprintln(ctx.App.Writer)
+			ShowCommandHelp(ctx, c.Name)
+			return err
+		}
 	}
 
 	nerr := normalizeFlags(c.Flags, set)
@@ -189,7 +203,7 @@ func (c Command) startApp(ctx *Context) error {
 	if c.HelpName == "" {
 		app.HelpName = c.HelpName
 	} else {
-		app.HelpName = fmt.Sprintf("%s %s", ctx.App.Name, c.Name)
+		app.HelpName = app.Name
 	}
 
 	if c.Description != "" {
@@ -228,12 +242,9 @@ func (c Command) startApp(ctx *Context) error {
 		app.Action = helpSubcommand.Action
 	}
 
-	var newCmds []Command
-	for _, cc := range app.Commands {
-		cc.commandNamePath = []string{c.Name, cc.Name}
-		newCmds = append(newCmds, cc)
+	for index, cc := range app.Commands {
+		app.Commands[index].commandNamePath = []string{c.Name, cc.Name}
 	}
-	app.Commands = newCmds
 
 	return app.RunAsSubcommand(ctx)
 }

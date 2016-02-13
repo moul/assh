@@ -3,15 +3,16 @@
 package net
 
 import (
+	"errors"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	"github.com/shirou/gopsutil/common"
+	"github.com/shirou/gopsutil/internal/common"
 )
 
 func NetIOCounters(pernic bool) ([]NetIOCountersStat, error) {
-	out, err := exec.Command("/usr/bin/netstat", "-ibdn").Output()
+	out, err := exec.Command("/usr/bin/netstat", "-ibdnW").Output()
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +32,9 @@ func NetIOCounters(pernic bool) ([]NetIOCountersStat, error) {
 		}
 		exists = append(exists, values[0])
 
+		if len(values) < 12 {
+			continue
+		}
 		base := 1
 		// sometimes Address is ommitted
 		if len(values) < 13 {
@@ -80,4 +84,21 @@ func NetIOCounters(pernic bool) ([]NetIOCountersStat, error) {
 	}
 
 	return ret, nil
+}
+
+// NetIOCountersByFile is an method which is added just a compatibility for linux.
+func NetIOCountersByFile(pernic bool, filename string) ([]NetIOCountersStat, error) {
+	return NetIOCounters(pernic)
+}
+
+func NetFilterCounters() ([]NetFilterStat, error) {
+	return nil, errors.New("NetFilterCounters not implemented for freebsd")
+}
+
+// NetProtoCounters returns network statistics for the entire system
+// If protocols is empty then all protocols are returned, otherwise
+// just the protocols in the list are returned.
+// Not Implemented for FreeBSD
+func NetProtoCounters(protocols []string) ([]NetProtoCountersStat, error) {
+	return nil, errors.New("NetProtoCounters not implemented for freebsd")
 }

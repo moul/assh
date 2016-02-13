@@ -3,10 +3,11 @@
 package net
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
-	common "github.com/shirou/gopsutil/common"
+	"github.com/shirou/gopsutil/internal/common"
 )
 
 // NetIOCounters returnes network I/O statistics for every network
@@ -15,7 +16,11 @@ import (
 // every network interface installed on the system is returned
 // separately.
 func NetIOCounters(pernic bool) ([]NetIOCountersStat, error) {
-	filename := "/proc/net/dev"
+	filename := common.HostProc("net/dev")
+	return NetIOCountersByFile(pernic, filename)
+}
+
+func NetIOCountersByFile(pernic bool, filename string) ([]NetIOCountersStat, error) {
 	lines, err := common.ReadLines(filename)
 	if err != nil {
 		return nil, err
@@ -88,4 +93,102 @@ func NetIOCounters(pernic bool) ([]NetIOCountersStat, error) {
 	}
 
 	return ret, nil
+}
+
+var netProtocols = []string{
+	"ip",
+	"icmp",
+	"icmpmsg",
+	"tcp",
+	"udp",
+	"udplite",
+}
+
+// NetProtoCounters returns network statistics for the entire system
+// If protocols is empty then all protocols are returned, otherwise
+// just the protocols in the list are returned.
+// Available protocols:
+//   ip,icmp,icmpmsg,tcp,udp,udplite
+func NetProtoCounters(protocols []string) ([]NetProtoCountersStat, error) {
+	if len(protocols) == 0 {
+		protocols = netProtocols
+	}
+
+	stats := make([]NetProtoCountersStat, 0, len(protocols))
+	protos := make(map[string]bool, len(protocols))
+	for _, p := range protocols {
+		protos[p] = true
+	}
+
+	filename := common.HostProc("net/snmp")
+	lines, err := common.ReadLines(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	linecount := len(lines)
+	for i := 0; i < linecount; i++ {
+		line := lines[i]
+		r := strings.IndexRune(line, ':')
+		if r == -1 {
+			return nil, errors.New(filename + " is not fomatted correctly, expected ':'.")
+		}
+		proto := strings.ToLower(line[:r])
+		if !protos[proto] {
+			// skip protocol and data line
+			i++
+			continue
+		}
+
+		// Read header line
+		statNames := strings.Split(line[r+2:], " ")
+
+		// Read data line
+		i++
+		statValues := strings.Split(lines[i][r+2:], " ")
+		if len(statNames) != len(statValues) {
+			return nil, errors.New(filename + " is not fomatted correctly, expected same number of columns.")
+		}
+		stat := NetProtoCountersStat{
+			Protocol: proto,
+			Stats:    make(map[string]int64, len(statNames)),
+		}
+		for j := range statNames {
+			value, err := strconv.ParseInt(statValues[j], 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			stat.Stats[statNames[j]] = value
+		}
+		stats = append(stats, stat)
+	}
+	return stats, nil
+}
+
+// NetFilterCounters returns iptables conntrack statistics
+// the currently in use conntrack count and the max.
+// If the file does not exist or is invalid it will return nil.
+func NetFilterCounters() ([]NetFilterStat, error) {
+	countfile := common.HostProc("sys/net/netfilter/nf_conntrack_count")
+	maxfile := common.HostProc("sys/net/netfilter/nf_conntrack_max")
+
+	count, err := common.ReadInts(countfile)
+
+	if err != nil {
+		return nil, err
+	}
+	stats := make([]NetFilterStat, 0, 1)
+
+	max, err := common.ReadInts(maxfile)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := NetFilterStat{
+		ConnTrackCount: count[0],
+		ConnTrackMax:   max[0],
+	}
+
+	stats = append(stats, payload)
+	return stats, nil
 }
