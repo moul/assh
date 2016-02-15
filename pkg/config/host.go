@@ -103,11 +103,11 @@ type Host struct {
 	ResolveCommand     string   `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
 
 	// private assh fields
-	name       string          `yaml:- json:-`
-	inputName  string          `yaml:- json:-`
-	isDefault  bool            `yaml:- json:-`
-	isTemplate bool            `yaml:- json:-`
-	inherited  map[string]bool `yaml:- json:-`
+	name       string          `yaml:"-" json:"-"`
+	inputName  string          `yaml:"-" json:"-"`
+	isDefault  bool            `yaml:"-" json:"-"`
+	isTemplate bool            `yaml:"-" json:"-"`
+	inherited  map[string]bool `yaml:"-" json:"-"`
 }
 
 // NewHost returns a host with name

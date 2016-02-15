@@ -21,8 +21,8 @@ const defaultSshConfigPath string = "~/.ssh/config"
 type Config struct {
 	Hosts     map[string]Host `yaml:"hosts,omitempty,flow" json:"hosts"`
 	Templates map[string]Host `yaml:"templates,omitempty,flow" json:"templates"`
-	Defaults  Host            `yaml:"defaults,omitempty,flow" json:"defaults",omitempty`
-	Includes  []string        `yaml:"includes,omitempty,flow" json:"includes",omitempty`
+	Defaults  Host            `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
+	Includes  []string        `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
 
 	includedFiles map[string]bool
 	sshConfigPath string

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	yamlConfig string = `
+	yamlConfig = `
 hosts:
 
   aaa:
@@ -223,7 +223,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 	})
 }
 
-func TestConfig_JsonSring(t *testing.T) {
+func TestConfig_JsonString(t *testing.T) {
 	Convey("Testing Config.JsonString", t, func() {
 		Convey("dummyConfig", func() {
 			config := dummyConfig()
@@ -292,8 +292,7 @@ func TestConfig_JsonSring(t *testing.T) {
   "defaults": {
     "Port": "22",
     "User": "root"
-  },
-  "includes": null
+  }
 }`
 			json, err := config.JsonString()
 			So(err, ShouldBeNil)
