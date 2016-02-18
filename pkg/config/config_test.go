@@ -863,48 +863,48 @@ func TestConfig_WriteSshConfig(t *testing.T) {
 
 # host-based configuration
 Host *.ddd
-  HostName 1.3.5.7
   PasswordAuthentication yes
+  # HostName: 1.3.5.7
 
 Host empty
 
 Host nnn
-  HostName 5.5.5.5
   PasswordAuthentication yes
   Port 26
   User mmmm
   # ProxyCommand nc -v 4242
+  # HostName: 5.5.5.5
   # Inherits: [mmm]
   # Gateways: [titi, direct, 1.2.3.4]
 
 Host tata
-  HostName 1.2.3.4
   PasswordAuthentication yes
   Port 22
   User moul
   # ProxyCommand nc -v 4242
+  # HostName: 1.2.3.4
   # Inherits: [tutu, titi, toto, tutu]
   # Gateways: [titi, direct, 1.2.3.4]
 
 Host titi
-  HostName tata
   Port 23
   User moul
   # ProxyCommand nc -v 4242
+  # HostName: tata
 
 Host tonton
   # ResolveNameservers: [a.com, 1.2.3.4]
 
 Host toto
-  HostName 1.2.3.4
+  # HostName: 1.2.3.4
 
 Host toutou
   # ResolveCommand: dig -t %h
 
 Host tutu
-  HostName 1.2.3.4
   PasswordAuthentication yes
   Port 22
+  # HostName: 1.2.3.4
   # Inherits: [toto, tutu, *.ddd]
   # Gateways: [titi, direct, 1.2.3.4]
 
