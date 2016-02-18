@@ -709,9 +709,6 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	if h.HostKeyAlias != "" {
 		fmt.Fprintf(w, "  HostKeyAlias %s\n", h.HostKeyAlias)
 	}
-	if h.HostName != "" {
-		fmt.Fprintf(w, "  HostName %s\n", h.HostName)
-	}
 	if h.IdentitiesOnly != "" {
 		fmt.Fprintf(w, "  IdentitiesOnly %s\n", h.IdentitiesOnly)
 	}
@@ -856,6 +853,9 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	}
 
 	// assh fields
+	if h.HostName != "" {
+		fmt.Fprintf(w, "  # HostName: %s\n", h.HostName)
+	}
 	if len(h.Inherits) > 0 {
 		fmt.Fprintf(w, "  # Inherits: [%s]\n", strings.Join(h.Inherits, ", "))
 	}
