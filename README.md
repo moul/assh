@@ -249,7 +249,8 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
-* No entry
+* Ignore SIGHUP, close goroutines and export written bytes ([#112](https://github.com/moul/advanced-ssh-config/pull/112)) ([@QuentinPerez](https://github.com/QuentinPerez))
+* Various documentation improvements ([@ashmatadeen](https://github.com/ashmatadeen), [@loliee](https://github.com/loliee), [@cerisier](https://github.com/cerisier))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.2.0...master)
 
