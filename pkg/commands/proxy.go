@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -178,12 +179,17 @@ func hostPrepare(host *config.Host) error {
 			return err
 		}
 
-		out, err := exec.Command(args[0], args[1:]...).Output()
-		if err != nil {
+		cmd := exec.Command(args[0], args[1:]...)
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			Logger.Errorf("ResolveCommand failed: %s", stderr.String())
 			return err
 		}
 
-		host.HostName = strings.TrimSpace(fmt.Sprintf("%s", out))
+		host.HostName = strings.TrimSpace(fmt.Sprintf("%s", stdout.String()))
 		Logger.Debugf("Resolved host is: %s", host.HostName)
 	}
 	return nil
