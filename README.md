@@ -144,6 +144,12 @@ hosts:
     - schoolgw
     Inherits:
     - schooltemplate
+    
+  "*.shortcut1":
+    ResolveCommand: /bin/sh -c "echo %h | sed s/.shortcut1/.my-long-domain-name.com/"
+
+  "*.shortcut2":
+    ResolveCommand: /bin/sh -c "echo $(echo %h | sed s/.shortcut2//).my-other-long-domain-name.com"
 
   "*.scw":
     # ssh toto.scw -> 1. dynamically resolves the IP address
@@ -201,18 +207,19 @@ USAGE:
    assh [global options] command [command options] [arguments...]
 
 VERSION:
-   2.0.0 (HEAD)
+   2.2.0 (HEAD)
 
 AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
 
 COMMANDS:
-   proxy         Open an SSH connection to HOST
-   stats         Print statistics
+   proxy         Connect to host SSH socket, used by ProxyCommand
+   build         Build .ssh/config
+   info          Display system-wide information
    help, h       Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-  --debug, -D       Enable debug mode
+  --debug, -D       Enable debug mode [$ASSH_DEBUG]
   --verbose, -V     Enable verbose mode
   --help, -h        show help
   --version, -v     print the version
