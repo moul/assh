@@ -60,7 +60,7 @@ Equivalent to `ssh -o ProxyCommand="ssh hostb nc %h %p" hosta`
 
 ---
 
-Connect to `host` using `hostb` as a gateway using `hostc` as a gateway.
+Connect to `hosta` using `hostb` as a gateway using `hostc` as a gateway.
 
 ```console
 $ ssh hosta/hostb/hostc
