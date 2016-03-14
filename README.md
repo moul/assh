@@ -73,7 +73,7 @@ Equivalent to `ssh -o ProxyCommand="ssh -o ProxyCommand='ssh hostc nc %h %p' hos
 
 * Automatically regenerates `~/.ssh/config` file when needed
 * Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically be ran in debug mode)
-* Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option
+* Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be disabled with the `NoControlMasterMkdir: true` configuration in host or globally.
 
 ## Configuration
 
