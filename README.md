@@ -144,7 +144,7 @@ hosts:
     - schoolgw
     Inherits:
     - schooltemplate
-    
+
   "*.shortcut1":
     ResolveCommand: /bin/sh -c "echo %h | sed s/.shortcut1/.my-long-domain-name.com/"
 
@@ -256,6 +256,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Add `NoControlMasterMkdir` option to disable automatic creation of directories for gateways ([#124](https://github.com/moul/advanced-ssh-config/issues/124))
 * Fix: Allow `$(...)` syntax in the `ResolveCommand` function ([#117](https://github.com/moul/advanced-ssh-config/issues/117))
 * Printing the error of a failing `ResolveCommand` ([#117](https://github.com/moul/advanced-ssh-config/issues/117))
 * Fix: `Gateways` field is no longer ignored when the `HostName` field is present ([#102](https://github.com/moul/advanced-ssh-config/issues/102))
