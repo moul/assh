@@ -144,6 +144,8 @@ hosts:
     - schoolgw
     Inherits:
     - schooltemplate
+    # do not automatically create `ControlPath` -> may result in error
+    NoControlMasterMkdir: true
 
   "*.shortcut1":
     ResolveCommand: /bin/sh -c "echo %h | sed s/.shortcut1/.my-long-domain-name.com/"
