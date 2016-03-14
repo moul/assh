@@ -97,10 +97,11 @@ type Host struct {
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
-	Inherits           []string `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
-	Gateways           []string `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
-	ResolveNameservers []string `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
-	ResolveCommand     string   `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
+	Inherits             []string `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
+	Gateways             []string `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
+	ResolveNameservers   []string `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
+	ResolveCommand       string   `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
+	NoControlMasterMkdir string   `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
 
 	// private assh fields
 	name       string          `yaml:"-" json:"-"`
@@ -567,6 +568,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.ResolveCommand = defaults.ResolveCommand
 	}
 	h.ResolveCommand = expandField(h.ResolveCommand)
+
+	if h.NoControlMasterMkdir == "" {
+		h.NoControlMasterMkdir = defaults.NoControlMasterMkdir
+	}
+	h.NoControlMasterMkdir = expandField(h.NoControlMasterMkdir)
 
 	if len(h.Gateways) == 0 {
 		h.Gateways = defaults.Gateways
