@@ -862,6 +862,9 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	if h.HostName != "" {
 		fmt.Fprintf(w, "  # HostName: %s\n", h.HostName)
 	}
+	if BoolVal(h.NoControlMasterMkdir) {
+		fmt.Fprintf(w, "  # NoControlMasterMkdir: true\n")
+	}
 	if len(h.Inherits) > 0 {
 		fmt.Fprintf(w, "  # Inherits: [%s]\n", strings.Join(h.Inherits, ", "))
 	}
