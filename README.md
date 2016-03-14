@@ -73,7 +73,7 @@ Equivalent to `ssh -o ProxyCommand="ssh -o ProxyCommand='ssh hostc nc %h %p' hos
 
 * Automatically regenerates `~/.ssh/config` file when needed
 * Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically be ran in debug mode)
-* Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option
+* Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be disabled with the `NoControlMasterMkdir: true` configuration in host or globally.
 
 ## Configuration
 
@@ -144,7 +144,9 @@ hosts:
     - schoolgw
     Inherits:
     - schooltemplate
-    
+    # do not automatically create `ControlPath` -> may result in error
+    NoControlMasterMkdir: true
+
   "*.shortcut1":
     ResolveCommand: /bin/sh -c "echo %h | sed s/.shortcut1/.my-long-domain-name.com/"
 
@@ -256,6 +258,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Add `NoControlMasterMkdir` option to disable automatic creation of directories for gateways ([#124](https://github.com/moul/advanced-ssh-config/issues/124))
 * Fix: Allow `$(...)` syntax in the `ResolveCommand` function ([#117](https://github.com/moul/advanced-ssh-config/issues/117))
 * Printing the error of a failing `ResolveCommand` ([#117](https://github.com/moul/advanced-ssh-config/issues/117))
 * Fix: `Gateways` field is no longer ignored when the `HostName` field is present ([#102](https://github.com/moul/advanced-ssh-config/issues/102))
