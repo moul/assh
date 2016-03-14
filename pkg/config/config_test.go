@@ -36,6 +36,7 @@ hosts:
     - aaa
     - bbb
     - aaa
+    NoControlMasterMkdir: true
 
   fff:
     Inherits:
@@ -111,10 +112,11 @@ func dummyConfig() *Config {
 		HostName: "1.2.3.4",
 	}
 	config.Hosts["titi"] = Host{
-		HostName:     "tata",
-		Port:         "23",
-		User:         "moul",
-		ProxyCommand: "nc -v 4242",
+		HostName:             "tata",
+		Port:                 "23",
+		User:                 "moul",
+		ProxyCommand:         "nc -v 4242",
+		NoControlMasterMkdir: "true",
 	}
 	config.Hosts["tonton"] = Host{
 		ResolveNameservers: []string{"a.com", "1.2.3.4"},
@@ -166,6 +168,7 @@ func TestConfig(t *testing.T) {
 		So(config.Hosts["titi"].HostName, ShouldEqual, "tata")
 		So(config.Hosts["titi"].User, ShouldEqual, "moul")
 		So(config.Hosts["titi"].ProxyCommand, ShouldEqual, "nc -v 4242")
+		So(BoolVal(config.Hosts["titi"].NoControlMasterMkdir), ShouldBeTrue)
 		So(config.Hosts["titi"].Port, ShouldEqual, "23")
 		So(config.Hosts["titi"].isDefault, ShouldEqual, false)
 
@@ -252,7 +255,8 @@ func TestConfig_JsonString(t *testing.T) {
       "HostName": "tata",
       "Port": "23",
       "User": "moul",
-      "ProxyCommand": "nc -v 4242"
+      "ProxyCommand": "nc -v 4242",
+      "NoControlMasterMkdir": "true"
     },
     "tonton": {
       "ResolveNameservers": [
@@ -330,7 +334,8 @@ func TestConfig_JsonString(t *testing.T) {
         "aaa",
         "bbb",
         "aaa"
-      ]
+      ],
+      "NoControlMasterMkdir": "true"
     },
     "fff": {
       "Inherits": [
@@ -874,6 +879,7 @@ Host nnn
   User mmmm
   # ProxyCommand nc -v 4242
   # HostName: 5.5.5.5
+  # NoControlMasterMkdir: true
   # Inherits: [mmm]
   # Gateways: [titi, direct, 1.2.3.4]
 
@@ -883,6 +889,7 @@ Host tata
   User moul
   # ProxyCommand nc -v 4242
   # HostName: 1.2.3.4
+  # NoControlMasterMkdir: true
   # Inherits: [tutu, titi, toto, tutu]
   # Gateways: [titi, direct, 1.2.3.4]
 
@@ -891,6 +898,7 @@ Host titi
   User moul
   # ProxyCommand nc -v 4242
   # HostName: tata
+  # NoControlMasterMkdir: true
 
 Host tonton
   # ResolveNameservers: [a.com, 1.2.3.4]

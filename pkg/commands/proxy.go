@@ -79,6 +79,9 @@ func computeHost(dest string, portOverride int, conf *config.Config) (*config.Ho
 func prepareHostControlPath(host, gateway *config.Host) error {
 	controlPathDir := path.Dir(os.ExpandEnv(strings.Replace(host.ControlPath, "~", "$HOME", -1)))
 	gatewayControlPath := path.Join(controlPathDir, gateway.Name())
+	if config.BoolVal(host.NoControlMasterMkdir) {
+		return nil
+	}
 	return os.MkdirAll(gatewayControlPath, 0700)
 }
 
