@@ -10,6 +10,7 @@ import (
 type Host struct {
 	// ssh-config fields
 	AddressFamily                    string `yaml:"addressfamily,omitempty,flow" json:"AddressFamily,omitempty"`
+	AskPassGUI                       string `yaml:"askpassgui,omitempty,flow" json:"AskPassGUI,omitempty"`
 	BatchMode                        string `yaml:"batchmode,omitempty,flow" json:"BatchMode,omitempty"`
 	BindAddress                      string `yaml:"bindaddress,omitempty,flow" json:"BindAddress,omitempty"`
 	CanonicalDomains                 string `yaml:"canonicaldomains,omitempty,flow" json:"CanonicalDomains,omitempty"`
@@ -41,13 +42,17 @@ type Host struct {
 	GatewayPorts                     string `yaml:"gatewayports,omitempty,flow" json:"GatewayPorts,omitempty"`
 	GlobalKnownHostsFile             string `yaml:"globalknownhostsfile,omitempty,flow" json:"GlobalKnownHostsFile,omitempty"`
 	GSSAPIAuthentication             string `yaml:"gssapiauthentication,omitempty,flow" json:"GSSAPIAuthentication,omitempty"`
+	GSSAPIClientIdentity             string `yaml:"gssapiclientidentity,omitempty,flow" json:"GSSAPIClientIdentity,omitempty"`
 	GSSAPIDelegateCredentials        string `yaml:"gssapidelegatecredentials,omitempty,flow" json:"GSSAPIDelegateCredentials,omitempty"`
+	GSSAPIKeyExchange                string `yaml:"gssapikeyexchange,omitempty,flow" json:"GSSAPIKeyExchange,omitempty"`
+	GSSAPIRenewalForcesRekey         string `yaml:"gssapirenewalforcesrekey,omitempty,flow" json:"GSSAPIRenewalForcesRekey,omitempty"`
+	GSSAPIServerIdentity             string `yaml:"gssapiserveridentity,omitempty,flow" json:"GSSAPIServerIdentity,omitempty"`
+	GSSAPITrustDns                   string `yaml:"gssapitrustdns,omitempty,flow" json:"GSSAPITrustDns,omitempty"`
 	HashKnownHosts                   string `yaml:"hashknownhosts,omitempty,flow" json:"HashKnownHosts,omitempty"`
 	HostbasedAuthentication          string `yaml:"hostbasedauthentication,omitempty,flow" json:"HostbasedAuthentication,omitempty"`
 	HostbasedKeyTypes                string `yaml:"hostbasedkeytypes,omitempty,flow" json:"HostbasedKeyTypes,omitempty"`
 	HostKeyAlgorithms                string `yaml:"hostkeyalgorithms,omitempty,flow" json:"HostKeyAlgorithms,omitempty"`
 	HostKeyAlias                     string `yaml:"hostkeyalias,omitempty,flow" json:"HostKeyAlias,omitempty"`
-	HostName                         string `yaml:"hostname,omitempty,flow" json:"HostName,omitempty"`
 	IdentitiesOnly                   string `yaml:"identitiesonly,omitempty,flow" json:"IdentitiesOnly,omitempty"`
 	IdentityFile                     string `yaml:"identityfile,omitempty,flow" json:"IdentityFile,omitempty"`
 	IgnoreUnknown                    string `yaml:"ignoreunknown,omitempty,flow" json:"IgnoreUnknown,omitempty"`
@@ -55,6 +60,7 @@ type Host struct {
 	KbdInteractiveAuthentication     string `yaml:"kbdinteractiveauthentication,omitempty,flow" json:"KbdInteractiveAuthentication,omitempty"`
 	KbdInteractiveDevices            string `yaml:"kbdinteractivedevices,omitempty,flow" json:"KbdInteractiveDevices,omitempty"`
 	KexAlgorithms                    string `yaml:"kexalgorithms,omitempty,flow" json:"KexAlgorithms,omitempty"`
+	KeychainIntegration              string `yaml:"keychainintegration,omitempty,flow" json:"KeychainIntegration,omitempty"`
 	LocalCommand                     string `yaml:"localcommand,omitempty,flow" json:"LocalCommand,omitempty"`
 	LocalForward                     string `yaml:"localforward,omitempty,flow" json:"LocalForward,omitempty"`
 	LogLevel                         string `yaml:"loglevel,omitempty,flow" json:"LogLevel,omitempty"`
@@ -94,6 +100,7 @@ type Host struct {
 	XAuthLocation                    string `yaml:"xauthlocation,omitempty,flow" json:"XAuthLocation,omitempty"`
 
 	// ssh-config fields with a different behavior
+	HostName     string `yaml:"hostname,omitempty,flow" json:"HostName,omitempty"`
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
@@ -136,6 +143,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.AddressFamily = defaults.AddressFamily
 	}
 	h.AddressFamily = expandField(h.AddressFamily)
+
+	if h.AskPassGUI == "" {
+		h.AskPassGUI = defaults.AskPassGUI
+	}
+	h.AskPassGUI = expandField(h.AskPassGUI)
 
 	if h.BatchMode == "" {
 		h.BatchMode = defaults.BatchMode
@@ -292,10 +304,35 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.GSSAPIAuthentication = expandField(h.GSSAPIAuthentication)
 
+	if h.GSSAPIClientIdentity == "" {
+		h.GSSAPIClientIdentity = defaults.GSSAPIClientIdentity
+	}
+	h.GSSAPIClientIdentity = expandField(h.GSSAPIClientIdentity)
+
 	if h.GSSAPIDelegateCredentials == "" {
 		h.GSSAPIDelegateCredentials = defaults.GSSAPIDelegateCredentials
 	}
 	h.GSSAPIDelegateCredentials = expandField(h.GSSAPIDelegateCredentials)
+
+	if h.GSSAPIKeyExchange == "" {
+		h.GSSAPIKeyExchange = defaults.GSSAPIKeyExchange
+	}
+	h.GSSAPIKeyExchange = expandField(h.GSSAPIKeyExchange)
+
+	if h.GSSAPIRenewalForcesRekey == "" {
+		h.GSSAPIRenewalForcesRekey = defaults.GSSAPIRenewalForcesRekey
+	}
+	h.GSSAPIRenewalForcesRekey = expandField(h.GSSAPIRenewalForcesRekey)
+
+	if h.GSSAPIServerIdentity == "" {
+		h.GSSAPIServerIdentity = defaults.GSSAPIServerIdentity
+	}
+	h.GSSAPIServerIdentity = expandField(h.GSSAPIServerIdentity)
+
+	if h.GSSAPITrustDns == "" {
+		h.GSSAPITrustDns = defaults.GSSAPITrustDns
+	}
+	h.GSSAPITrustDns = expandField(h.GSSAPITrustDns)
 
 	if h.HashKnownHosts == "" {
 		h.HashKnownHosts = defaults.HashKnownHosts
@@ -361,6 +398,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.KexAlgorithms = defaults.KexAlgorithms
 	}
 	h.KexAlgorithms = expandField(h.KexAlgorithms)
+
+	if h.KeychainIntegration == "" {
+		h.KeychainIntegration = defaults.KeychainIntegration
+	}
+	h.KeychainIntegration = expandField(h.KeychainIntegration)
 
 	if h.LocalCommand == "" {
 		h.LocalCommand = defaults.LocalCommand
@@ -604,6 +646,9 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	if h.AddressFamily != "" {
 		fmt.Fprintf(w, "  AddressFamily %s\n", h.AddressFamily)
 	}
+	if h.AskPassGUI != "" {
+		fmt.Fprintf(w, "  AskPassGUI %s\n", h.AskPassGUI)
+	}
 	if h.BatchMode != "" {
 		fmt.Fprintf(w, "  BatchMode %s\n", h.BatchMode)
 	}
@@ -697,8 +742,23 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	if h.GSSAPIAuthentication != "" {
 		fmt.Fprintf(w, "  GSSAPIAuthentication %s\n", h.GSSAPIAuthentication)
 	}
+	if h.GSSAPIClientIdentity != "" {
+		fmt.Fprintf(w, "  GSSAPIClientIdentity %s\n", h.GSSAPIClientIdentity)
+	}
 	if h.GSSAPIDelegateCredentials != "" {
 		fmt.Fprintf(w, "  GSSAPIDelegateCredentials %s\n", h.GSSAPIDelegateCredentials)
+	}
+	if h.GSSAPIKeyExchange != "" {
+		fmt.Fprintf(w, "  GSSAPIKeyExchange %s\n", h.GSSAPIKeyExchange)
+	}
+	if h.GSSAPIRenewalForcesRekey != "" {
+		fmt.Fprintf(w, "  GSSAPIRenewalForcesRekey %s\n", h.GSSAPIRenewalForcesRekey)
+	}
+	if h.GSSAPIServerIdentity != "" {
+		fmt.Fprintf(w, "  GSSAPIServerIdentity %s\n", h.GSSAPIServerIdentity)
+	}
+	if h.GSSAPITrustDns != "" {
+		fmt.Fprintf(w, "  GSSAPITrustDns %s\n", h.GSSAPITrustDns)
 	}
 	if h.HashKnownHosts != "" {
 		fmt.Fprintf(w, "  HashKnownHosts %s\n", h.HashKnownHosts)
@@ -735,6 +795,9 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	}
 	if h.KexAlgorithms != "" {
 		fmt.Fprintf(w, "  KexAlgorithms %s\n", h.KexAlgorithms)
+	}
+	if h.KeychainIntegration != "" {
+		fmt.Fprintf(w, "  KeychainIntegration %s\n", h.KeychainIntegration)
 	}
 	if h.LocalCommand != "" {
 		fmt.Fprintf(w, "  LocalCommand %s\n", h.LocalCommand)
