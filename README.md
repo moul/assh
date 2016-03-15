@@ -51,6 +51,20 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includ
 
 Connect to `hosta` using `hostb` as gateway.
 
+```
+  ┌─────┐             
+  │ YOU │─ ─ ─ ─ ─    
+  └─────┘         │   
+     ┃            ▽   
+     ┃         ┌─────┐
+ firewall      │hostb│
+     ┃         └─────┘
+     ▼            │   
+  ┌─────┐             
+  │hosta│◁─ ─ ─ ─ ┘   
+  └─────┘             
+```
+
 ```console
 $ ssh hosta/hostb
 user@hosta $
@@ -61,6 +75,21 @@ Equivalent to `ssh -o ProxyCommand="ssh hostb nc %h %p" hosta`
 ---
 
 Connect to `hosta` using `hostb` as a gateway using `hostc` as a gateway.
+
+```
+  ┌─────┐              ┌─────┐
+  │ YOU │─ ─ ─ ─ ─ ─ ─▷│hostc│
+  └─────┘              └─────┘
+     ┃                    │   
+     ┃                        
+ firewall                 │   
+     ┃                        
+     ┃                    │   
+     ▼                    ▽   
+  ┌─────┐              ┌─────┐
+  │hosta│◁─ ─ ─ ─ ─ ─ ─│hostb│
+  └─────┘              └─────┘
+```
 
 ```console
 $ ssh hosta/hostb/hostc
@@ -336,6 +365,3 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 ## License
 
 © 2009-2016 Manfred Touron - MIT License
-
-
-[![ASSH logo - Advanced SSH Config logo](https://raw.githubusercontent.com/moul/advanced-ssh-config/develop/assets/assh.jpg)](https://github.com/moul/advanced-ssh-config)
