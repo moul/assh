@@ -151,6 +151,26 @@ hosts:
     - lisa-template
     - simpson-template
 
+  marvin:
+    # ssh marvin    -> ssh marvin    -p 23
+    # ssh sad-robot -> ssh sad-robot -p 23
+    # ssh bighead   -> ssh bighead   -p 23
+    # aliases inherit everything from marvin, except hostname
+    Port: 23
+    Aliases:
+    - sad-robot
+    - bighead
+
+  dolphin:
+    # ssh dolphin   -> ssh dolphin -p 24
+    # ssh ecco      -> ssh dolphin -p 24
+    # same as above, but with fixed hostname
+    Port: 24
+    Hostname: dolphin
+    Aliases:
+    - sad-robot
+    - bighead
+
   schooltemplate:
     User: student
     IdentityFile: ~/.ssh/school-rsa
