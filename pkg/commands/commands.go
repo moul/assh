@@ -1,10 +1,21 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/codegangsta/cli"
+	"github.com/moul/advanced-ssh-config/pkg/config"
 
 	// . "github.com/moul/advanced-ssh-config/pkg/logger"
 )
+
+func init() {
+	asshPath, err := filepath.Abs(os.Args[0])
+	if err == nil {
+		config.ASSHBinary = asshPath
+	}
+}
 
 // Commands is the list of cli commands
 var Commands = []cli.Command{
