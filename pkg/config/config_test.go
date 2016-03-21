@@ -1169,9 +1169,25 @@ Host ooo1
   Port 23
   # Aliases: [ooo11, ooo12]
 
+Host ooo11
+  Port 23
+  # AliasOf: ooo1
+
+Host ooo12
+  Port 23
+  # AliasOf: ooo1
+
 Host ooo2
   Port 24
   # Aliases: [ooo21, ooo22]
+
+Host ooo21
+  Port 24
+  # AliasOf: ooo2
+
+Host ooo22
+  Port 24
+  # AliasOf: ooo2
 
 Host tata
   PasswordAuthentication yes
