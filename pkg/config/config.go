@@ -114,14 +114,18 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 		return computeHost(&host, c, name, compute)
 	}
 
-	for pattern, host := range c.Hosts {
-		matched, err := path.Match(pattern, name)
-		if err != nil {
-			return nil, err
-		}
-		if matched {
-			Logger.Debugf("getHostByName pattern matching: %q => %q", pattern, name)
-			return computeHost(&host, c, name, compute)
+	for origPattern, host := range c.Hosts {
+		patterns := append([]string{origPattern}, host.Aliases...)
+		for _, pattern := range patterns {
+
+			matched, err := path.Match(pattern, name)
+			if err != nil {
+				return nil, err
+			}
+			if matched {
+				Logger.Debugf("getHostByName pattern matching: %q => %q", pattern, name)
+				return computeHost(&host, c, name, compute)
+			}
 		}
 	}
 
