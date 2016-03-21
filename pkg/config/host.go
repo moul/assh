@@ -109,6 +109,7 @@ type Host struct {
 	ResolveNameservers   []string `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
 	ResolveCommand       string   `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
 	NoControlMasterMkdir string   `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
+	Aliases              []string `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
 
 	// private assh fields
 	name       string          `yaml:"-" json:"-"`
@@ -621,6 +622,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	// h.Gateways = expandField(h.Gateways)
 
+	if len(h.Aliases) == 0 {
+		h.Aliases = defaults.Aliases
+	}
+
 	if len(h.Inherits) == 0 {
 		h.Inherits = defaults.Inherits
 	}
@@ -932,6 +937,9 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	}
 	if len(h.Gateways) > 0 {
 		fmt.Fprintf(w, "  # Gateways: [%s]\n", strings.Join(h.Gateways, ", "))
+	}
+	if len(h.Aliases) > 0 {
+		fmt.Fprintf(w, "  # Aliases: [%s]\n", strings.Join(h.Aliases, ", "))
 	}
 	if len(h.ResolveNameservers) > 0 {
 		fmt.Fprintf(w, "  # ResolveNameservers: [%s]\n", strings.Join(h.ResolveNameservers, ", "))
