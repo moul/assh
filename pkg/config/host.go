@@ -109,6 +109,7 @@ type Host struct {
 	ResolveNameservers   []string `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
 	ResolveCommand       string   `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
 	NoControlMasterMkdir string   `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
+	Aliases              []string `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
 
 	// private assh fields
 	name       string          `yaml:"-" json:"-"`
@@ -621,6 +622,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	// h.Gateways = expandField(h.Gateways)
 
+	if len(h.Aliases) == 0 {
+		h.Aliases = defaults.Aliases
+	}
+
 	if len(h.Inherits) == 0 {
 		h.Inherits = defaults.Inherits
 	}
@@ -640,306 +645,322 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 }
 
 func (h *Host) WriteSshConfigTo(w io.Writer) error {
-	fmt.Fprintf(w, "Host %s\n", h.Name())
-
-	// ssh-config fields
-	if h.AddressFamily != "" {
-		fmt.Fprintf(w, "  AddressFamily %s\n", h.AddressFamily)
-	}
-	if h.AskPassGUI != "" {
-		fmt.Fprintf(w, "  AskPassGUI %s\n", h.AskPassGUI)
-	}
-	if h.BatchMode != "" {
-		fmt.Fprintf(w, "  BatchMode %s\n", h.BatchMode)
-	}
-	if h.BindAddress != "" {
-		fmt.Fprintf(w, "  BindAddress %s\n", h.BindAddress)
-	}
-	if h.CanonicalDomains != "" {
-		fmt.Fprintf(w, "  CanonicalDomains %s\n", h.CanonicalDomains)
-	}
-	if h.CanonicalizeFallbackLocal != "" {
-		fmt.Fprintf(w, "  CanonicalizeFallbackLocal %s\n", h.CanonicalizeFallbackLocal)
-	}
-	if h.CanonicalizeHostname != "" {
-		fmt.Fprintf(w, "  CanonicalizeHostname %s\n", h.CanonicalizeHostname)
-	}
-	if h.CanonicalizeMaxDots != "" {
-		fmt.Fprintf(w, "  CanonicalizeMaxDots %s\n", h.CanonicalizeMaxDots)
-	}
-	if h.CanonicalizePermittedCNAMEs != "" {
-		fmt.Fprintf(w, "  CanonicalizePermittedCNAMEs %s\n", h.CanonicalizePermittedCNAMEs)
-	}
-	if h.ChallengeResponseAuthentication != "" {
-		fmt.Fprintf(w, "  ChallengeResponseAuthentication %s\n", h.ChallengeResponseAuthentication)
-	}
-	if h.CheckHostIP != "" {
-		fmt.Fprintf(w, "  CheckHostIP %s\n", h.CheckHostIP)
-	}
-	if h.Cipher != "" {
-		fmt.Fprintf(w, "  Cipher %s\n", h.Cipher)
-	}
-	if h.Ciphers != "" {
-		fmt.Fprintf(w, "  Ciphers %s\n", h.Ciphers)
-	}
-	if h.ClearAllForwardings != "" {
-		fmt.Fprintf(w, "  ClearAllForwardings %s\n", h.ClearAllForwardings)
-	}
-	if h.Compression != "" {
-		fmt.Fprintf(w, "  Compression %s\n", h.Compression)
-	}
-	if h.CompressionLevel != 0 {
-		fmt.Fprintf(w, "  CompressionLevel %d\n", h.CompressionLevel)
-	}
-	if h.ConnectionAttempts != "" {
-		fmt.Fprintf(w, "  ConnectionAttempts %s\n", h.ConnectionAttempts)
-	}
-	if h.ConnectTimeout != 0 {
-		fmt.Fprintf(w, "  ConnectTimeout %d\n", h.ConnectTimeout)
-	}
-	if h.ControlMaster != "" {
-		fmt.Fprintf(w, "  ControlMaster %s\n", h.ControlMaster)
-	}
-	if h.ControlPath != "" {
-		fmt.Fprintf(w, "  ControlPath %s\n", h.ControlPath)
-	}
-	if h.ControlPersist != "" {
-		fmt.Fprintf(w, "  ControlPersist %s\n", h.ControlPersist)
-	}
-	if h.DynamicForward != "" {
-		fmt.Fprintf(w, "  DynamicForward %s\n", h.DynamicForward)
-	}
-	if h.EnableSSHKeysign != "" {
-		fmt.Fprintf(w, "  EnableSSHKeysign %s\n", h.EnableSSHKeysign)
-	}
-	if h.EscapeChar != "" {
-		fmt.Fprintf(w, "  EscapeChar %s\n", h.EscapeChar)
-	}
-	if h.ExitOnForwardFailure != "" {
-		fmt.Fprintf(w, "  ExitOnForwardFailure %s\n", h.ExitOnForwardFailure)
-	}
-	if h.FingerprintHash != "" {
-		fmt.Fprintf(w, "  FingerprintHash %s\n", h.FingerprintHash)
-	}
-	if h.ForwardAgent != "" {
-		fmt.Fprintf(w, "  ForwardAgent %s\n", h.ForwardAgent)
-	}
-	if h.ForwardX11 != "" {
-		fmt.Fprintf(w, "  ForwardX11 %s\n", h.ForwardX11)
-	}
-	if h.ForwardX11Timeout != 0 {
-		fmt.Fprintf(w, "  ForwardX11Timeout %d\n", h.ForwardX11Timeout)
-	}
-	if h.ForwardX11Trusted != "" {
-		fmt.Fprintf(w, "  ForwardX11Trusted %s\n", h.ForwardX11Trusted)
-	}
-	if h.GatewayPorts != "" {
-		fmt.Fprintf(w, "  GatewayPorts %s\n", h.GatewayPorts)
-	}
-	if h.GlobalKnownHostsFile != "" {
-		fmt.Fprintf(w, "  GlobalKnownHostsFile %s\n", h.GlobalKnownHostsFile)
-	}
-	if h.GSSAPIAuthentication != "" {
-		fmt.Fprintf(w, "  GSSAPIAuthentication %s\n", h.GSSAPIAuthentication)
-	}
-	if h.GSSAPIClientIdentity != "" {
-		fmt.Fprintf(w, "  GSSAPIClientIdentity %s\n", h.GSSAPIClientIdentity)
-	}
-	if h.GSSAPIDelegateCredentials != "" {
-		fmt.Fprintf(w, "  GSSAPIDelegateCredentials %s\n", h.GSSAPIDelegateCredentials)
-	}
-	if h.GSSAPIKeyExchange != "" {
-		fmt.Fprintf(w, "  GSSAPIKeyExchange %s\n", h.GSSAPIKeyExchange)
-	}
-	if h.GSSAPIRenewalForcesRekey != "" {
-		fmt.Fprintf(w, "  GSSAPIRenewalForcesRekey %s\n", h.GSSAPIRenewalForcesRekey)
-	}
-	if h.GSSAPIServerIdentity != "" {
-		fmt.Fprintf(w, "  GSSAPIServerIdentity %s\n", h.GSSAPIServerIdentity)
-	}
-	if h.GSSAPITrustDns != "" {
-		fmt.Fprintf(w, "  GSSAPITrustDns %s\n", h.GSSAPITrustDns)
-	}
-	if h.HashKnownHosts != "" {
-		fmt.Fprintf(w, "  HashKnownHosts %s\n", h.HashKnownHosts)
-	}
-	if h.HostbasedAuthentication != "" {
-		fmt.Fprintf(w, "  HostbasedAuthentication %s\n", h.HostbasedAuthentication)
-	}
-	if h.HostbasedKeyTypes != "" {
-		fmt.Fprintf(w, "  HostbasedKeyTypes %s\n", h.HostbasedKeyTypes)
-	}
-	if h.HostKeyAlgorithms != "" {
-		fmt.Fprintf(w, "  HostKeyAlgorithms %s\n", h.HostKeyAlgorithms)
-	}
-	if h.HostKeyAlias != "" {
-		fmt.Fprintf(w, "  HostKeyAlias %s\n", h.HostKeyAlias)
-	}
-	if h.IdentitiesOnly != "" {
-		fmt.Fprintf(w, "  IdentitiesOnly %s\n", h.IdentitiesOnly)
-	}
-	if h.IdentityFile != "" {
-		fmt.Fprintf(w, "  IdentityFile %s\n", h.IdentityFile)
-	}
-	if h.IgnoreUnknown != "" {
-		fmt.Fprintf(w, "  IgnoreUnknown %s\n", h.IgnoreUnknown)
-	}
-	if h.IPQoS != "" {
-		fmt.Fprintf(w, "  IPQoS %s\n", h.IPQoS)
-	}
-	if h.KbdInteractiveAuthentication != "" {
-		fmt.Fprintf(w, "  KbdInteractiveAuthentication %s\n", h.KbdInteractiveAuthentication)
-	}
-	if h.KbdInteractiveDevices != "" {
-		fmt.Fprintf(w, "  KbdInteractiveDevices %s\n", h.KbdInteractiveDevices)
-	}
-	if h.KexAlgorithms != "" {
-		fmt.Fprintf(w, "  KexAlgorithms %s\n", h.KexAlgorithms)
-	}
-	if h.KeychainIntegration != "" {
-		fmt.Fprintf(w, "  KeychainIntegration %s\n", h.KeychainIntegration)
-	}
-	if h.LocalCommand != "" {
-		fmt.Fprintf(w, "  LocalCommand %s\n", h.LocalCommand)
-	}
-	if h.LocalForward != "" {
-		fmt.Fprintf(w, "  LocalForward %s\n", h.LocalForward)
-	}
-	if h.LogLevel != "" {
-		fmt.Fprintf(w, "  LogLevel %s\n", h.LogLevel)
-	}
-	if h.MACs != "" {
-		fmt.Fprintf(w, "  MACs %s\n", h.MACs)
-	}
-	if h.Match != "" {
-		fmt.Fprintf(w, "  Match %s\n", h.Match)
-	}
-	if h.NoHostAuthenticationForLocalhost != "" {
-		fmt.Fprintf(w, "  NoHostAuthenticationForLocalhost %s\n", h.NoHostAuthenticationForLocalhost)
-	}
-	if h.NumberOfPasswordPrompts != "" {
-		fmt.Fprintf(w, "  NumberOfPasswordPrompts %s\n", h.NumberOfPasswordPrompts)
-	}
-	if h.PasswordAuthentication != "" {
-		fmt.Fprintf(w, "  PasswordAuthentication %s\n", h.PasswordAuthentication)
-	}
-	if h.PermitLocalCommand != "" {
-		fmt.Fprintf(w, "  PermitLocalCommand %s\n", h.PermitLocalCommand)
-	}
-	if h.PKCS11Provider != "" {
-		fmt.Fprintf(w, "  PKCS11Provider %s\n", h.PKCS11Provider)
-	}
-	if h.Port != "" {
-		fmt.Fprintf(w, "  Port %s\n", h.Port)
-	}
-	if h.PreferredAuthentications != "" {
-		fmt.Fprintf(w, "  PreferredAuthentications %s\n", h.PreferredAuthentications)
-	}
-	if h.Protocol != "" {
-		fmt.Fprintf(w, "  Protocol %s\n", h.Protocol)
-	}
-	if h.ProxyUseFdpass != "" {
-		fmt.Fprintf(w, "  ProxyUseFdpass %s\n", h.ProxyUseFdpass)
-	}
-	if h.PubkeyAuthentication != "" {
-		fmt.Fprintf(w, "  PubkeyAuthentication %s\n", h.PubkeyAuthentication)
-	}
-	if h.RekeyLimit != "" {
-		fmt.Fprintf(w, "  RekeyLimit %s\n", h.RekeyLimit)
-	}
-	if h.RemoteForward != "" {
-		fmt.Fprintf(w, "  RemoteForward %s\n", h.RemoteForward)
-	}
-	if h.RequestTTY != "" {
-		fmt.Fprintf(w, "  RequestTTY %s\n", h.RequestTTY)
-	}
-	if h.RevokedHostKeys != "" {
-		fmt.Fprintf(w, "  RevokedHostKeys %s\n", h.RevokedHostKeys)
-	}
-	if h.RhostsRSAAuthentication != "" {
-		fmt.Fprintf(w, "  RhostsRSAAuthentication %s\n", h.RhostsRSAAuthentication)
-	}
-	if h.RSAAuthentication != "" {
-		fmt.Fprintf(w, "  RSAAuthentication %s\n", h.RSAAuthentication)
-	}
-	if h.SendEnv != "" {
-		fmt.Fprintf(w, "  SendEnv %s\n", h.SendEnv)
-	}
-	if h.ServerAliveCountMax != 0 {
-		fmt.Fprintf(w, "  ServerAliveCountMax %d\n", h.ServerAliveCountMax)
-	}
-	if h.ServerAliveInterval != 0 {
-		fmt.Fprintf(w, "  ServerAliveInterval %d\n", h.ServerAliveInterval)
-	}
-	if h.StreamLocalBindMask != "" {
-		fmt.Fprintf(w, "  StreamLocalBindMask %s\n", h.StreamLocalBindMask)
-	}
-	if h.StreamLocalBindUnlink != "" {
-		fmt.Fprintf(w, "  StreamLocalBindUnlink %s\n", h.StreamLocalBindUnlink)
-	}
-	if h.StrictHostKeyChecking != "" {
-		fmt.Fprintf(w, "  StrictHostKeyChecking %s\n", h.StrictHostKeyChecking)
-	}
-	if h.TCPKeepAlive != "" {
-		fmt.Fprintf(w, "  TCPKeepAlive %s\n", h.TCPKeepAlive)
-	}
-	if h.Tunnel != "" {
-		fmt.Fprintf(w, "  Tunnel %s\n", h.Tunnel)
-	}
-	if h.TunnelDevice != "" {
-		fmt.Fprintf(w, "  TunnelDevice %s\n", h.TunnelDevice)
-	}
-	if h.UpdateHostKeys != "" {
-		fmt.Fprintf(w, "  UpdateHostKeys %s\n", h.UpdateHostKeys)
-	}
-	if h.UsePrivilegedPort != "" {
-		fmt.Fprintf(w, "  UsePrivilegedPort %s\n", h.UsePrivilegedPort)
-	}
-	if h.User != "" {
-		fmt.Fprintf(w, "  User %s\n", h.User)
-	}
-	if h.UserKnownHostsFile != "" {
-		fmt.Fprintf(w, "  UserKnownHostsFile %s\n", h.UserKnownHostsFile)
-	}
-	if h.VerifyHostKeyDNS != "" {
-		fmt.Fprintf(w, "  VerifyHostKeyDNS %s\n", h.VerifyHostKeyDNS)
-	}
-	if h.VisualHostKey != "" {
-		fmt.Fprintf(w, "  VisualHostKey %s\n", h.VisualHostKey)
-	}
-	if h.XAuthLocation != "" {
-		fmt.Fprintf(w, "  XAuthLocation %s\n", h.XAuthLocation)
-	}
-
-	// ssh-config fields with a different behavior
-	if h.isDefault {
-		fmt.Fprintf(w, "  ProxyCommand %s proxy --port=%%p %%h\n", ASSHBinary)
-	} else {
-		if h.ProxyCommand != "" {
-			fmt.Fprintf(w, "  # ProxyCommand %s\n", h.ProxyCommand)
+	aliases := append([]string{h.Name()}, h.Aliases...)
+	aliasIdx := 0
+	for _, alias := range aliases {
+		if aliasIdx > 0 {
+			fmt.Fprint(w, "\n")
 		}
-	}
 
-	// assh fields
-	if h.HostName != "" {
-		fmt.Fprintf(w, "  # HostName: %s\n", h.HostName)
-	}
-	if BoolVal(h.NoControlMasterMkdir) {
-		fmt.Fprintf(w, "  # NoControlMasterMkdir: true\n")
-	}
-	if len(h.Inherits) > 0 {
-		fmt.Fprintf(w, "  # Inherits: [%s]\n", strings.Join(h.Inherits, ", "))
-	}
-	if len(h.Gateways) > 0 {
-		fmt.Fprintf(w, "  # Gateways: [%s]\n", strings.Join(h.Gateways, ", "))
-	}
-	if len(h.ResolveNameservers) > 0 {
-		fmt.Fprintf(w, "  # ResolveNameservers: [%s]\n", strings.Join(h.ResolveNameservers, ", "))
-	}
-	if h.ResolveCommand != "" {
-		fmt.Fprintf(w, "  # ResolveCommand: %s\n", h.ResolveCommand)
-	}
+		fmt.Fprintf(w, "Host %s\n", alias)
 
+		// ssh-config fields
+		if h.AddressFamily != "" {
+			fmt.Fprintf(w, "  AddressFamily %s\n", h.AddressFamily)
+		}
+		if h.AskPassGUI != "" {
+			fmt.Fprintf(w, "  AskPassGUI %s\n", h.AskPassGUI)
+		}
+		if h.BatchMode != "" {
+			fmt.Fprintf(w, "  BatchMode %s\n", h.BatchMode)
+		}
+		if h.BindAddress != "" {
+			fmt.Fprintf(w, "  BindAddress %s\n", h.BindAddress)
+		}
+		if h.CanonicalDomains != "" {
+			fmt.Fprintf(w, "  CanonicalDomains %s\n", h.CanonicalDomains)
+		}
+		if h.CanonicalizeFallbackLocal != "" {
+			fmt.Fprintf(w, "  CanonicalizeFallbackLocal %s\n", h.CanonicalizeFallbackLocal)
+		}
+		if h.CanonicalizeHostname != "" {
+			fmt.Fprintf(w, "  CanonicalizeHostname %s\n", h.CanonicalizeHostname)
+		}
+		if h.CanonicalizeMaxDots != "" {
+			fmt.Fprintf(w, "  CanonicalizeMaxDots %s\n", h.CanonicalizeMaxDots)
+		}
+		if h.CanonicalizePermittedCNAMEs != "" {
+			fmt.Fprintf(w, "  CanonicalizePermittedCNAMEs %s\n", h.CanonicalizePermittedCNAMEs)
+		}
+		if h.ChallengeResponseAuthentication != "" {
+			fmt.Fprintf(w, "  ChallengeResponseAuthentication %s\n", h.ChallengeResponseAuthentication)
+		}
+		if h.CheckHostIP != "" {
+			fmt.Fprintf(w, "  CheckHostIP %s\n", h.CheckHostIP)
+		}
+		if h.Cipher != "" {
+			fmt.Fprintf(w, "  Cipher %s\n", h.Cipher)
+		}
+		if h.Ciphers != "" {
+			fmt.Fprintf(w, "  Ciphers %s\n", h.Ciphers)
+		}
+		if h.ClearAllForwardings != "" {
+			fmt.Fprintf(w, "  ClearAllForwardings %s\n", h.ClearAllForwardings)
+		}
+		if h.Compression != "" {
+			fmt.Fprintf(w, "  Compression %s\n", h.Compression)
+		}
+		if h.CompressionLevel != 0 {
+			fmt.Fprintf(w, "  CompressionLevel %d\n", h.CompressionLevel)
+		}
+		if h.ConnectionAttempts != "" {
+			fmt.Fprintf(w, "  ConnectionAttempts %s\n", h.ConnectionAttempts)
+		}
+		if h.ConnectTimeout != 0 {
+			fmt.Fprintf(w, "  ConnectTimeout %d\n", h.ConnectTimeout)
+		}
+		if h.ControlMaster != "" {
+			fmt.Fprintf(w, "  ControlMaster %s\n", h.ControlMaster)
+		}
+		if h.ControlPath != "" {
+			fmt.Fprintf(w, "  ControlPath %s\n", h.ControlPath)
+		}
+		if h.ControlPersist != "" {
+			fmt.Fprintf(w, "  ControlPersist %s\n", h.ControlPersist)
+		}
+		if h.DynamicForward != "" {
+			fmt.Fprintf(w, "  DynamicForward %s\n", h.DynamicForward)
+		}
+		if h.EnableSSHKeysign != "" {
+			fmt.Fprintf(w, "  EnableSSHKeysign %s\n", h.EnableSSHKeysign)
+		}
+		if h.EscapeChar != "" {
+			fmt.Fprintf(w, "  EscapeChar %s\n", h.EscapeChar)
+		}
+		if h.ExitOnForwardFailure != "" {
+			fmt.Fprintf(w, "  ExitOnForwardFailure %s\n", h.ExitOnForwardFailure)
+		}
+		if h.FingerprintHash != "" {
+			fmt.Fprintf(w, "  FingerprintHash %s\n", h.FingerprintHash)
+		}
+		if h.ForwardAgent != "" {
+			fmt.Fprintf(w, "  ForwardAgent %s\n", h.ForwardAgent)
+		}
+		if h.ForwardX11 != "" {
+			fmt.Fprintf(w, "  ForwardX11 %s\n", h.ForwardX11)
+		}
+		if h.ForwardX11Timeout != 0 {
+			fmt.Fprintf(w, "  ForwardX11Timeout %d\n", h.ForwardX11Timeout)
+		}
+		if h.ForwardX11Trusted != "" {
+			fmt.Fprintf(w, "  ForwardX11Trusted %s\n", h.ForwardX11Trusted)
+		}
+		if h.GatewayPorts != "" {
+			fmt.Fprintf(w, "  GatewayPorts %s\n", h.GatewayPorts)
+		}
+		if h.GlobalKnownHostsFile != "" {
+			fmt.Fprintf(w, "  GlobalKnownHostsFile %s\n", h.GlobalKnownHostsFile)
+		}
+		if h.GSSAPIAuthentication != "" {
+			fmt.Fprintf(w, "  GSSAPIAuthentication %s\n", h.GSSAPIAuthentication)
+		}
+		if h.GSSAPIClientIdentity != "" {
+			fmt.Fprintf(w, "  GSSAPIClientIdentity %s\n", h.GSSAPIClientIdentity)
+		}
+		if h.GSSAPIDelegateCredentials != "" {
+			fmt.Fprintf(w, "  GSSAPIDelegateCredentials %s\n", h.GSSAPIDelegateCredentials)
+		}
+		if h.GSSAPIKeyExchange != "" {
+			fmt.Fprintf(w, "  GSSAPIKeyExchange %s\n", h.GSSAPIKeyExchange)
+		}
+		if h.GSSAPIRenewalForcesRekey != "" {
+			fmt.Fprintf(w, "  GSSAPIRenewalForcesRekey %s\n", h.GSSAPIRenewalForcesRekey)
+		}
+		if h.GSSAPIServerIdentity != "" {
+			fmt.Fprintf(w, "  GSSAPIServerIdentity %s\n", h.GSSAPIServerIdentity)
+		}
+		if h.GSSAPITrustDns != "" {
+			fmt.Fprintf(w, "  GSSAPITrustDns %s\n", h.GSSAPITrustDns)
+		}
+		if h.HashKnownHosts != "" {
+			fmt.Fprintf(w, "  HashKnownHosts %s\n", h.HashKnownHosts)
+		}
+		if h.HostbasedAuthentication != "" {
+			fmt.Fprintf(w, "  HostbasedAuthentication %s\n", h.HostbasedAuthentication)
+		}
+		if h.HostbasedKeyTypes != "" {
+			fmt.Fprintf(w, "  HostbasedKeyTypes %s\n", h.HostbasedKeyTypes)
+		}
+		if h.HostKeyAlgorithms != "" {
+			fmt.Fprintf(w, "  HostKeyAlgorithms %s\n", h.HostKeyAlgorithms)
+		}
+		if h.HostKeyAlias != "" {
+			fmt.Fprintf(w, "  HostKeyAlias %s\n", h.HostKeyAlias)
+		}
+		if h.IdentitiesOnly != "" {
+			fmt.Fprintf(w, "  IdentitiesOnly %s\n", h.IdentitiesOnly)
+		}
+		if h.IdentityFile != "" {
+			fmt.Fprintf(w, "  IdentityFile %s\n", h.IdentityFile)
+		}
+		if h.IgnoreUnknown != "" {
+			fmt.Fprintf(w, "  IgnoreUnknown %s\n", h.IgnoreUnknown)
+		}
+		if h.IPQoS != "" {
+			fmt.Fprintf(w, "  IPQoS %s\n", h.IPQoS)
+		}
+		if h.KbdInteractiveAuthentication != "" {
+			fmt.Fprintf(w, "  KbdInteractiveAuthentication %s\n", h.KbdInteractiveAuthentication)
+		}
+		if h.KbdInteractiveDevices != "" {
+			fmt.Fprintf(w, "  KbdInteractiveDevices %s\n", h.KbdInteractiveDevices)
+		}
+		if h.KexAlgorithms != "" {
+			fmt.Fprintf(w, "  KexAlgorithms %s\n", h.KexAlgorithms)
+		}
+		if h.KeychainIntegration != "" {
+			fmt.Fprintf(w, "  KeychainIntegration %s\n", h.KeychainIntegration)
+		}
+		if h.LocalCommand != "" {
+			fmt.Fprintf(w, "  LocalCommand %s\n", h.LocalCommand)
+		}
+		if h.LocalForward != "" {
+			fmt.Fprintf(w, "  LocalForward %s\n", h.LocalForward)
+		}
+		if h.LogLevel != "" {
+			fmt.Fprintf(w, "  LogLevel %s\n", h.LogLevel)
+		}
+		if h.MACs != "" {
+			fmt.Fprintf(w, "  MACs %s\n", h.MACs)
+		}
+		if h.Match != "" {
+			fmt.Fprintf(w, "  Match %s\n", h.Match)
+		}
+		if h.NoHostAuthenticationForLocalhost != "" {
+			fmt.Fprintf(w, "  NoHostAuthenticationForLocalhost %s\n", h.NoHostAuthenticationForLocalhost)
+		}
+		if h.NumberOfPasswordPrompts != "" {
+			fmt.Fprintf(w, "  NumberOfPasswordPrompts %s\n", h.NumberOfPasswordPrompts)
+		}
+		if h.PasswordAuthentication != "" {
+			fmt.Fprintf(w, "  PasswordAuthentication %s\n", h.PasswordAuthentication)
+		}
+		if h.PermitLocalCommand != "" {
+			fmt.Fprintf(w, "  PermitLocalCommand %s\n", h.PermitLocalCommand)
+		}
+		if h.PKCS11Provider != "" {
+			fmt.Fprintf(w, "  PKCS11Provider %s\n", h.PKCS11Provider)
+		}
+		if h.Port != "" {
+			fmt.Fprintf(w, "  Port %s\n", h.Port)
+		}
+		if h.PreferredAuthentications != "" {
+			fmt.Fprintf(w, "  PreferredAuthentications %s\n", h.PreferredAuthentications)
+		}
+		if h.Protocol != "" {
+			fmt.Fprintf(w, "  Protocol %s\n", h.Protocol)
+		}
+		if h.ProxyUseFdpass != "" {
+			fmt.Fprintf(w, "  ProxyUseFdpass %s\n", h.ProxyUseFdpass)
+		}
+		if h.PubkeyAuthentication != "" {
+			fmt.Fprintf(w, "  PubkeyAuthentication %s\n", h.PubkeyAuthentication)
+		}
+		if h.RekeyLimit != "" {
+			fmt.Fprintf(w, "  RekeyLimit %s\n", h.RekeyLimit)
+		}
+		if h.RemoteForward != "" {
+			fmt.Fprintf(w, "  RemoteForward %s\n", h.RemoteForward)
+		}
+		if h.RequestTTY != "" {
+			fmt.Fprintf(w, "  RequestTTY %s\n", h.RequestTTY)
+		}
+		if h.RevokedHostKeys != "" {
+			fmt.Fprintf(w, "  RevokedHostKeys %s\n", h.RevokedHostKeys)
+		}
+		if h.RhostsRSAAuthentication != "" {
+			fmt.Fprintf(w, "  RhostsRSAAuthentication %s\n", h.RhostsRSAAuthentication)
+		}
+		if h.RSAAuthentication != "" {
+			fmt.Fprintf(w, "  RSAAuthentication %s\n", h.RSAAuthentication)
+		}
+		if h.SendEnv != "" {
+			fmt.Fprintf(w, "  SendEnv %s\n", h.SendEnv)
+		}
+		if h.ServerAliveCountMax != 0 {
+			fmt.Fprintf(w, "  ServerAliveCountMax %d\n", h.ServerAliveCountMax)
+		}
+		if h.ServerAliveInterval != 0 {
+			fmt.Fprintf(w, "  ServerAliveInterval %d\n", h.ServerAliveInterval)
+		}
+		if h.StreamLocalBindMask != "" {
+			fmt.Fprintf(w, "  StreamLocalBindMask %s\n", h.StreamLocalBindMask)
+		}
+		if h.StreamLocalBindUnlink != "" {
+			fmt.Fprintf(w, "  StreamLocalBindUnlink %s\n", h.StreamLocalBindUnlink)
+		}
+		if h.StrictHostKeyChecking != "" {
+			fmt.Fprintf(w, "  StrictHostKeyChecking %s\n", h.StrictHostKeyChecking)
+		}
+		if h.TCPKeepAlive != "" {
+			fmt.Fprintf(w, "  TCPKeepAlive %s\n", h.TCPKeepAlive)
+		}
+		if h.Tunnel != "" {
+			fmt.Fprintf(w, "  Tunnel %s\n", h.Tunnel)
+		}
+		if h.TunnelDevice != "" {
+			fmt.Fprintf(w, "  TunnelDevice %s\n", h.TunnelDevice)
+		}
+		if h.UpdateHostKeys != "" {
+			fmt.Fprintf(w, "  UpdateHostKeys %s\n", h.UpdateHostKeys)
+		}
+		if h.UsePrivilegedPort != "" {
+			fmt.Fprintf(w, "  UsePrivilegedPort %s\n", h.UsePrivilegedPort)
+		}
+		if h.User != "" {
+			fmt.Fprintf(w, "  User %s\n", h.User)
+		}
+		if h.UserKnownHostsFile != "" {
+			fmt.Fprintf(w, "  UserKnownHostsFile %s\n", h.UserKnownHostsFile)
+		}
+		if h.VerifyHostKeyDNS != "" {
+			fmt.Fprintf(w, "  VerifyHostKeyDNS %s\n", h.VerifyHostKeyDNS)
+		}
+		if h.VisualHostKey != "" {
+			fmt.Fprintf(w, "  VisualHostKey %s\n", h.VisualHostKey)
+		}
+		if h.XAuthLocation != "" {
+			fmt.Fprintf(w, "  XAuthLocation %s\n", h.XAuthLocation)
+		}
+
+		// ssh-config fields with a different behavior
+		if h.isDefault {
+			fmt.Fprintf(w, "  ProxyCommand %s proxy --port=%%p %%h\n", ASSHBinary)
+		} else {
+			if h.ProxyCommand != "" {
+				fmt.Fprintf(w, "  # ProxyCommand %s\n", h.ProxyCommand)
+			}
+		}
+
+		// assh fields
+		if h.HostName != "" {
+			fmt.Fprintf(w, "  # HostName: %s\n", h.HostName)
+		}
+		if BoolVal(h.NoControlMasterMkdir) {
+			fmt.Fprintf(w, "  # NoControlMasterMkdir: true\n")
+		}
+		if len(h.Inherits) > 0 {
+			fmt.Fprintf(w, "  # Inherits: [%s]\n", strings.Join(h.Inherits, ", "))
+		}
+		if len(h.Gateways) > 0 {
+			fmt.Fprintf(w, "  # Gateways: [%s]\n", strings.Join(h.Gateways, ", "))
+		}
+		if len(h.Aliases) > 0 {
+			if aliasIdx == 0 {
+				fmt.Fprintf(w, "  # Aliases: [%s]\n", strings.Join(h.Aliases, ", "))
+			} else {
+				fmt.Fprintf(w, "  # AliasOf: %s\n", h.Name())
+			}
+		}
+		if len(h.ResolveNameservers) > 0 {
+			fmt.Fprintf(w, "  # ResolveNameservers: [%s]\n", strings.Join(h.ResolveNameservers, ", "))
+		}
+		if h.ResolveCommand != "" {
+			fmt.Fprintf(w, "  # ResolveCommand: %s\n", h.ResolveCommand)
+		}
+
+		aliasIdx++
+	}
 	return nil
 }
 

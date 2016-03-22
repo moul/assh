@@ -52,17 +52,17 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includ
 Connect to `hosta` using `hostb` as gateway.
 
 ```
-  ┌─────┐             
-  │ YOU │─ ─ ─ ─ ─    
-  └─────┘         │   
-     ┃            ▽   
+  ┌─────┐
+  │ YOU │─ ─ ─ ─ ─
+  └─────┘         │
+     ┃            ▽
      ┃         ┌─────┐
  firewall      │hostb│
      ┃         └─────┘
-     ▼            │   
-  ┌─────┐             
-  │hosta│◁─ ─ ─ ─ ┘   
-  └─────┘             
+     ▼            │
+  ┌─────┐
+  │hosta│◁─ ─ ─ ─ ┘
+  └─────┘
 ```
 
 ```console
@@ -80,12 +80,12 @@ Connect to `hosta` using `hostb` as a gateway using `hostc` as a gateway.
   ┌─────┐              ┌─────┐
   │ YOU │─ ─ ─ ─ ─ ─ ─▷│hostc│
   └─────┘              └─────┘
-     ┃                    │   
-     ┃                        
- firewall                 │   
-     ┃                        
-     ┃                    │   
-     ▼                    ▽   
+     ┃                    │
+     ┃
+ firewall                 │
+     ┃
+     ┃                    │
+     ▼                    ▽
   ┌─────┐              ┌─────┐
   │hosta│◁─ ─ ─ ─ ─ ─ ─│hostb│
   └─────┘              └─────┘
@@ -150,6 +150,26 @@ hosts:
     Inherits:
     - lisa-template
     - simpson-template
+
+  marvin:
+    # ssh marvin    -> ssh marvin    -p 23
+    # ssh sad-robot -> ssh sad-robot -p 23
+    # ssh bighead   -> ssh bighead   -p 23
+    # aliases inherit everything from marvin, except hostname
+    Port: 23
+    Aliases:
+    - sad-robot
+    - bighead
+
+  dolphin:
+    # ssh dolphin   -> ssh dolphin -p 24
+    # ssh ecco      -> ssh dolphin -p 24
+    # same as above, but with fixed hostname
+    Port: 24
+    Hostname: dolphin
+    Aliases:
+    - sad-robot
+    - bighead
 
   schooltemplate:
     User: student
@@ -287,6 +307,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Initial `Aliases` support ([#133](https://github.com/moul/advanced-ssh-config/issues/133))
 * Use args[0] as ProxyCommand ([#134](https://github.com/moul/advanced-ssh-config/issues/134))
 * Add `NoControlMasterMkdir` option to disable automatic creation of directories for gateways ([#124](https://github.com/moul/advanced-ssh-config/issues/124))
 * Fix: Allow `$(...)` syntax in the `ResolveCommand` function ([#117](https://github.com/moul/advanced-ssh-config/issues/117))
