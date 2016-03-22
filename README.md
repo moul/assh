@@ -307,6 +307,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 
 ### master (unreleased)
 
+* Add build information in .ssh/config header ([#49](https://github.com/moul/advanced-ssh-config/issues/49))
 * Initial `Aliases` support ([#133](https://github.com/moul/advanced-ssh-config/issues/133))
 * Use args[0] as ProxyCommand ([#134](https://github.com/moul/advanced-ssh-config/issues/134))
 * Add `NoControlMasterMkdir` option to disable automatic creation of directories for gateways ([#124](https://github.com/moul/advanced-ssh-config/issues/124))
