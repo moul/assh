@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path"
 
@@ -19,6 +20,8 @@ func main() {
 	app.Email = "https://github.com/moul/advanced-ssh-config"
 	app.Version = version.VERSION + " (" + version.GITCOMMIT + ")"
 	app.Usage = "advanced ssh config"
+	app.EnableBashCompletion = true
+	app.BashComplete = BashComplete
 
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
@@ -37,6 +40,17 @@ func main() {
 	app.Commands = commands.Commands
 
 	app.Run(os.Args)
+}
+
+func BashComplete(c *cli.Context) {
+	if len(c.Args()) == 0 {
+		for _, option := range []string{"--debug", "--verbose", "--help", "--version"} {
+			fmt.Println(option)
+		}
+		for _, command := range []string{"proxy", "build", "info", "help"} {
+			fmt.Println(command)
+		}
+	}
 }
 
 func hookBefore(c *cli.Context) error {
