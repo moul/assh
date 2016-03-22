@@ -2,7 +2,6 @@ package commands
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/codegangsta/cli"
 	"github.com/moul/advanced-ssh-config/pkg/config"
@@ -11,10 +10,7 @@ import (
 )
 
 func init() {
-	asshPath, err := filepath.Abs(os.Args[0])
-	if err == nil {
-		config.ASSHBinary = asshPath
-	}
+	config.ASSHBinary = os.Args[0]
 }
 
 // Commands is the list of cli commands
