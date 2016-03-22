@@ -72,6 +72,18 @@ hosts:
     - mmm
     User: nnnn
 
+  ooo1:
+    Port: 23
+    Aliases:
+    - ooo11
+    - ooo12
+
+  ooo2:
+    Port: 24
+    Aliases:
+    - ooo21
+    - ooo22
+
 templates:
 
   kkk:
@@ -149,6 +161,14 @@ func dummyConfig() *Config {
 	config.Hosts["nnn"] = Host{
 		Port:     "26",
 		Inherits: []string{"mmm"},
+	}
+	config.Hosts["ooo1"] = Host{
+		Port:    "23",
+		Aliases: []string{"ooo11", "ooo12"},
+	}
+	config.Hosts["ooo2"] = Host{
+		Port:    "24",
+		Aliases: []string{"ooo21", "ooo22"},
 	}
 	config.Hosts["zzz"] = Host{
 		// ssh-config fields
@@ -250,6 +270,7 @@ func dummyConfig() *Config {
 		isDefault:          false,
 		Inherits:           []string{},
 		Gateways:           []string{},
+		Aliases:            []string{},
 		ResolveNameservers: []string{},
 		ResolveCommand:     "",
 	}
@@ -261,7 +282,7 @@ func TestConfig(t *testing.T) {
 	Convey("Testing dummyConfig", t, func() {
 		config := dummyConfig()
 
-		So(len(config.Hosts), ShouldEqual, 10)
+		So(len(config.Hosts), ShouldEqual, 12)
 
 		So(config.Hosts["toto"].HostName, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["toto"].Port, ShouldEqual, "")
@@ -307,7 +328,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 			config := New()
 			err := config.LoadConfig(strings.NewReader(yamlConfig))
 			So(err, ShouldBeNil)
-			So(len(config.Hosts), ShouldEqual, 13)
+			So(len(config.Hosts), ShouldEqual, 15)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -344,6 +365,20 @@ func TestConfig_JsonString(t *testing.T) {
       "Port": "26",
       "Inherits": [
         "mmm"
+      ]
+    },
+    "ooo1": {
+      "Port": "23",
+      "Aliases": [
+        "ooo11",
+        "ooo12"
+      ]
+    },
+    "ooo2": {
+      "Port": "24",
+      "Aliases": [
+        "ooo21",
+        "ooo22"
       ]
     },
     "tata": {
@@ -566,6 +601,20 @@ func TestConfig_JsonString(t *testing.T) {
       "Inherits": [
         "mmm"
       ]
+    },
+    "ooo1": {
+      "Port": "23",
+      "Aliases": [
+        "ooo11",
+        "ooo12"
+      ]
+    },
+    "ooo2": {
+      "Port": "24",
+      "Aliases": [
+        "ooo21",
+        "ooo22"
+      ]
     }
   },
   "templates": {
@@ -777,7 +826,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 13)
+			So(len(config.Hosts), ShouldEqual, 15)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -805,7 +854,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 13)
+			So(len(config.Hosts), ShouldEqual, 15)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -1008,6 +1057,45 @@ func TestConfig_GetHost(t *testing.T) {
 			So(host.Port, ShouldEqual, "26")
 			So(host.Gateways, ShouldResemble, []string{"titi", "direct", "1.2.3.4"})
 		})
+
+		Convey("Aliases", FailureContinues, func() {
+			host, err = config.GetHost("ooo1")
+			So(err, ShouldBeNil)
+			So(host.name, ShouldEqual, "ooo1")
+			So(host.Aliases, ShouldResemble, []string{
+				"ooo11",
+				"ooo12",
+			})
+			So(host.Port, ShouldEqual, "23")
+
+			host, err = config.GetHost("ooo2")
+			So(err, ShouldBeNil)
+			So(host.name, ShouldEqual, "ooo2")
+			So(host.Aliases, ShouldResemble, []string{
+				"ooo21",
+				"ooo22",
+			})
+			So(host.Port, ShouldEqual, "24")
+
+			host, err = config.GetHost("ooo11")
+			So(err, ShouldBeNil)
+			So(host.name, ShouldEqual, "ooo11")
+			So(host.Aliases, ShouldResemble, []string{
+				"ooo11",
+				"ooo12",
+			})
+			So(host.Port, ShouldEqual, "23")
+
+			host, err = config.GetHost("ooo22")
+			So(err, ShouldBeNil)
+			So(host.name, ShouldEqual, "ooo22")
+			So(host.Aliases, ShouldResemble, []string{
+				"ooo21",
+				"ooo22",
+			})
+			So(host.Port, ShouldEqual, "24")
+
+		})
 	})
 }
 
@@ -1076,6 +1164,30 @@ Host nnn
   # NoControlMasterMkdir: true
   # Inherits: [mmm]
   # Gateways: [titi, direct, 1.2.3.4]
+
+Host ooo1
+  Port 23
+  # Aliases: [ooo11, ooo12]
+
+Host ooo11
+  Port 23
+  # AliasOf: ooo1
+
+Host ooo12
+  Port 23
+  # AliasOf: ooo1
+
+Host ooo2
+  Port 24
+  # Aliases: [ooo21, ooo22]
+
+Host ooo21
+  Port 24
+  # AliasOf: ooo2
+
+Host ooo22
+  Port 24
+  # AliasOf: ooo2
 
 Host tata
   PasswordAuthentication yes
