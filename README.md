@@ -19,7 +19,8 @@
 6. [Getting started](#getting-started)
 7. [Changelog](#changelog)
 8. [Alternative version](#alternative-version)
-9. [License](#license)
+9. [Troobleshooting](#troubleshooting)
+10. [License](#license)
 
 ## Overview
 
@@ -385,6 +386,16 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 ## Alternative version
 
 * [v1](https://github.com/moul/advanced-ssh-config/tree/v1) (2009-2015) - The original implementation. It worked quite well, but was a lot slower, less portable, harder to install for the user and harder to work on to develop new features and fix bugs
+
+## Troubleshooting
+
+#### How to configure resolver to parse `/etc/hosts` and/or handle **mDNS** requests ?
+
+**assh** resolves hostnames using the system built-in resolver, depending on the OS, you can enable new features and/or change modules order.
+
+* [Linux - nsswitch documentation](http://man7.org/linux/man-pages/man5/nsswitch.conf.5.html)
+* [Linux - mDNS support (nss-mdns)](http://0pointer.de/lennart/projects/nss-mdns/)
+* [Mac OS X - `/etc/resolv.conf` documentation](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/resolver.5.html)
 
 ## License
 
