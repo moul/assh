@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -10,26 +9,8 @@ import (
 	// . "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
-var SSHFlags = []cli.Flag{}
-
 func init() {
 	config.ASSHBinary = os.Args[0]
-
-	// Populate SSHFlags
-	boolFlags := []string{"1", "2", "4", "6", "A", "a", "C", "f", "G", "g", "K", "k", "M", "N", "n", "q", "s", "T", "t", "V", "v", "X", "x", "Y", "y"}
-	stringFlags := []string{"b", "c", "D", "E", "e", "F", "I", "i", "L", "l", "m", "O", "o", "p", "Q", "R", "S", "W", "w"}
-	for _, flag := range boolFlags {
-		SSHFlags = append(SSHFlags, cli.BoolFlag{
-			Name: flag,
-		})
-	}
-	for _, flag := range stringFlags {
-		SSHFlags = append(SSHFlags, cli.StringFlag{
-			Name:  flag,
-			Value: "",
-		})
-	}
-	fmt.Println(SSHFlags)
 }
 
 // Commands is the list of cli commands
@@ -89,6 +70,6 @@ var Commands = []cli.Command{
 		Name:   "wrapper",
 		Usage:  "Initialize assh, then run SSH",
 		Action: cmdWrapper,
-		Flags:  SSHFlags,
+		Flags:  config.SSHFlags,
 	},
 }
