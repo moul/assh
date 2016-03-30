@@ -190,6 +190,50 @@ func (c *Config) GetHostSafe(name string) *Host {
 	return host
 }
 
+// NeedsARebuildForTarget returns true if the .ssh/config file needs to be rebuild for a specific target
+func (c *Config) NeedsARebuildForTarget(target string) bool {
+	parts := strings.Split(target, "/")
+
+	// compute lists
+	aliases := map[string]bool{}
+	for _, host := range c.Hosts {
+		for _, alias := range host.Aliases {
+			aliases[alias] = true
+		}
+	}
+
+	patterns := []string{}
+	for origPattern, host := range c.Hosts {
+		patterns = append(patterns, origPattern)
+		patterns = append(patterns, host.Aliases...)
+	}
+
+	for _, part := range parts {
+		// check for direct hostname matching
+		if _, ok := c.Hosts[part]; ok {
+			continue
+		}
+
+		// check for direct alias matching
+		if _, ok := aliases[part]; ok {
+			continue
+		}
+
+		// check for pattern matching
+		for _, pattern := range patterns {
+			matched, err := path.Match(pattern, part)
+			if err != nil {
+				continue
+			}
+			if matched {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // LoadConfig loads the content of an io.Reader source
 func (c *Config) LoadConfig(source io.Reader) error {
 	buf, err := ioutil.ReadAll(source)
