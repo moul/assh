@@ -17,7 +17,17 @@ func cmdWrapper(c *cli.Context) {
 	target := c.Args()[0]
 	command := c.Args()[1:]
 	options := []string{}
-	// FIXME: populate options
+	for _, flag := range config.SSHBoolFlags {
+		if c.Bool(flag) {
+			options = append(options, fmt.Sprintf("-%s", flag))
+		}
+	}
+	for _, flag := range config.SSHStringFlags {
+		if val := c.String(flag); val != "" {
+			options = append(options, fmt.Sprintf("-%s", flag))
+			options = append(options, val)
+		}
+	}
 
 	Logger.Debugf("Wrapper called with target=%v command=%v ssh-options=%v", target, command, options)
 
