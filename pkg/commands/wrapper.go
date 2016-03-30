@@ -2,6 +2,8 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"syscall"
 
 	"github.com/codegangsta/cli"
 
@@ -14,6 +16,7 @@ func cmdWrapper(c *cli.Context) {
 		Logger.Fatalf("Missing <target> argument. See usage with 'assh wrapper -h'.")
 	}
 
+	// prepare variables
 	target := c.Args()[0]
 	command := c.Args()[1:]
 	options := []string{}
@@ -28,18 +31,25 @@ func cmdWrapper(c *cli.Context) {
 			options = append(options, val)
 		}
 	}
-
+	args := append(options, target)
+	args = append(args, command...)
+	bin := "/usr/bin/ssh"
 	Logger.Debugf("Wrapper called with target=%v command=%v ssh-options=%v", target, command, options)
 
+	// check if config is up-to-date
 	conf, err := config.Open()
 	if err != nil {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
-	fmt.Println(conf.NeedsARebuildForTarget(target))
-	//host := conf.GetHostSafe(target)
-	//fmt.Println(host)
-	//fmt.Println(host.name)
+	if conf.NeedsARebuildForTarget(target) {
+		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
+		//host := conf.GetHostSafe(target)
+		//fmt.Println(host)
+		//fmt.Println(host.name)
+		//conf.WriteSshConfigTo(os.Stdout)
+	}
 
-	//conf.WriteSshConfigTo(os.Stdout)
+	// Execute SSH
+	syscall.Exec(bin, args, os.Environ())
 }
