@@ -23,13 +23,18 @@ const defaultSshConfigPath string = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
-	Hosts     map[string]Host `yaml:"hosts,omitempty,flow" json:"hosts"`
-	Templates map[string]Host `yaml:"templates,omitempty,flow" json:"templates"`
-	Defaults  Host            `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
-	Includes  []string        `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
+	Hosts     map[string]*Host `yaml:"hosts,omitempty,flow" json:"hosts"`
+	Templates map[string]*Host `yaml:"templates,omitempty,flow" json:"templates"`
+	Defaults  Host             `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
+	Includes  []string         `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
 
 	includedFiles map[string]bool
 	sshConfigPath string
+}
+
+func (c *Config) AddKnownHost(target string) {
+	host := c.GetHostSafe(target)
+	c.Hosts[host.pattern].AddKnownHost(target)
 }
 
 // IncludedFiles returns the list of the included files
@@ -113,7 +118,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		Logger.Debugf("getHostByName direct matching: %q", name)
-		return computeHost(&host, c, name, compute)
+		return computeHost(host, c, name, compute)
 	}
 
 	for origPattern, host := range c.Hosts {
@@ -126,7 +131,7 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 			}
 			if matched {
 				Logger.Debugf("getHostByName pattern matching: %q => %q", pattern, name)
-				return computeHost(&host, c, name, compute)
+				return computeHost(host, c, name, compute)
 			}
 		}
 	}
@@ -138,7 +143,7 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 				return nil, err
 			}
 			if matched {
-				return computeHost(&template, c, name, compute)
+				return computeHost(template, c, name, compute)
 			}
 		}
 	}
@@ -249,16 +254,22 @@ func (c *Config) LoadConfig(source io.Reader) error {
 }
 
 func (c *Config) applyMissingNames() {
-	for key, _ := range c.Hosts {
-		host := c.Hosts[key]
-		host.name = key
-		c.Hosts[key] = host
+	for key, host := range c.Hosts {
+		if host == nil {
+			c.Hosts[key] = &Host{}
+			host = c.Hosts[key]
+		}
+		host.pattern = key
+		host.name = key // should be removed
 	}
-	for key, _ := range c.Templates {
-		template := c.Templates[key]
-		template.name = key
+	for key, template := range c.Templates {
+		if template == nil {
+			c.Templates[key] = &Host{}
+			template = c.Templates[key]
+		}
+		template.pattern = key
+		template.name = key // should be removed
 		template.isTemplate = true
-		c.Templates[key] = template
 	}
 	c.Defaults.isDefault = true
 }
@@ -378,7 +389,7 @@ func (c *Config) WriteSshConfigTo(w io.Writer) error {
 	fmt.Fprintln(w, "# host-based configuration")
 	for _, name := range c.sortedNames() {
 		host := c.Hosts[name]
-		computedHost, err := computeHost(&host, c, name, false)
+		computedHost, err := computeHost(host, c, name, false)
 		if err != nil {
 			return err
 		}
@@ -396,8 +407,8 @@ func (c *Config) WriteSshConfigTo(w io.Writer) error {
 // New returns an instantiated Config object
 func New() *Config {
 	var config Config
-	config.Hosts = make(map[string]Host)
-	config.Templates = make(map[string]Host)
+	config.Hosts = make(map[string]*Host)
+	config.Templates = make(map[string]*Host)
 	config.includedFiles = make(map[string]bool)
 	config.sshConfigPath = defaultSshConfigPath
 	return &config
