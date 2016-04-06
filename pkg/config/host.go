@@ -112,6 +112,8 @@ type Host struct {
 	Aliases              []string `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
 
 	// private assh fields
+	knownHosts []string        `yaml:"-" json:"-"`
+	pattern    string          `yaml:"-" json:"-"`
 	name       string          `yaml:"-" json:"-"`
 	inputName  string          `yaml:"-" json:"-"`
 	isDefault  bool            `yaml:"-" json:"-"`
@@ -644,10 +646,17 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 }
 
+func (h *Host) AddKnownHost(target string) {
+	h.knownHosts = append(h.knownHosts, target)
+}
+
 func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	aliases := append([]string{h.Name()}, h.Aliases...)
+	aliases = append(aliases, h.knownHosts...)
 	aliasIdx := 0
 	for _, alias := range aliases {
+		// FIXME: skip complex patterns
+
 		if aliasIdx > 0 {
 			fmt.Fprint(w, "\n")
 		}
