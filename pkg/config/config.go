@@ -55,7 +55,9 @@ func (c *Config) SaveNewKnownHost(target string) {
 
 func (c *Config) addKnownHost(target string) {
 	host := c.GetHostSafe(target)
-	c.Hosts[host.pattern].AddKnownHost(target)
+	if inst, ok := c.Hosts[host.pattern]; ok {
+		inst.AddKnownHost(target)
+	}
 }
 
 func (c *Config) LoadKnownHosts() error {
@@ -96,6 +98,7 @@ func (c *Config) JsonString() ([]byte, error) {
 // computeHost returns a copy of the host with applied defaults, resolved inheritances and configured internal fields
 func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Host, error) {
 	computedHost := NewHost(name)
+	computedHost.pattern = name
 	if host != nil {
 		*computedHost = *host
 	}
