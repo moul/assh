@@ -120,31 +120,31 @@ func TestNew(t *testing.T) {
 
 func dummyConfig() *Config {
 	config := New()
-	config.Hosts["toto"] = Host{
+	config.Hosts["toto"] = &Host{
 		HostName: "1.2.3.4",
 	}
-	config.Hosts["titi"] = Host{
+	config.Hosts["titi"] = &Host{
 		HostName:             "tata",
 		Port:                 "23",
 		User:                 "moul",
 		ProxyCommand:         "nc -v 4242",
 		NoControlMasterMkdir: "true",
 	}
-	config.Hosts["tonton"] = Host{
+	config.Hosts["tonton"] = &Host{
 		ResolveNameservers: []string{"a.com", "1.2.3.4"},
 	}
-	config.Hosts["toutou"] = Host{
+	config.Hosts["toutou"] = &Host{
 		ResolveCommand: "dig -t %h",
 	}
-	config.Hosts["tutu"] = Host{
+	config.Hosts["tutu"] = &Host{
 		Gateways: []string{"titi", "direct", "1.2.3.4"},
 		Inherits: []string{"toto", "tutu", "*.ddd"},
 	}
-	config.Hosts["empty"] = Host{}
-	config.Hosts["tata"] = Host{
+	config.Hosts["empty"] = &Host{}
+	config.Hosts["tata"] = &Host{
 		Inherits: []string{"tutu", "titi", "toto", "tutu"},
 	}
-	config.Hosts["*.ddd"] = Host{
+	config.Hosts["*.ddd"] = &Host{
 		HostName:               "1.3.5.7",
 		PasswordAuthentication: "yes",
 	}
@@ -152,25 +152,25 @@ func dummyConfig() *Config {
 		Port: "22",
 		User: "root",
 	}
-	config.Templates["mmm"] = Host{
+	config.Templates["mmm"] = &Host{
 		Port:     "25",
 		User:     "mmmm",
 		HostName: "5.5.5.5",
 		Inherits: []string{"tata"},
 	}
-	config.Hosts["nnn"] = Host{
+	config.Hosts["nnn"] = &Host{
 		Port:     "26",
 		Inherits: []string{"mmm"},
 	}
-	config.Hosts["ooo1"] = Host{
+	config.Hosts["ooo1"] = &Host{
 		Port:    "23",
 		Aliases: []string{"ooo11", "ooo12"},
 	}
-	config.Hosts["ooo2"] = Host{
+	config.Hosts["ooo2"] = &Host{
 		Port:    "24",
 		Aliases: []string{"ooo21", "ooo22"},
 	}
-	config.Hosts["zzz"] = Host{
+	config.Hosts["zzz"] = &Host{
 		// ssh-config fields
 		AddressFamily:                   "any",
 		AskPassGUI:                      "yes",
@@ -525,7 +525,8 @@ func TestConfig_JsonString(t *testing.T) {
   "defaults": {
     "Port": "22",
     "User": "root"
-  }
+  },
+  "asshknownhostfile": "~/.ssh/assh_known_hosts"
 }`
 			json, err := config.JsonString()
 			So(err, ShouldBeNil)
@@ -638,7 +639,8 @@ func TestConfig_JsonString(t *testing.T) {
   "includes": [
     "/path/to/dir/*.yml",
     "/path/to/file.yml"
-  ]
+  ],
+  "asshknownhostfile": "~/.ssh/assh_known_hosts"
 }`
 			json, err := config.JsonString()
 			So(err, ShouldBeNil)
@@ -658,30 +660,30 @@ func TestComputeHost(t *testing.T) {
 		})
 		Convey("Expand variables in HostName", func() {
 			host := config.Hosts["jjj"]
-			computed, err := computeHost(&host, config, "jjj", false)
+			computed, err := computeHost(host, config, "jjj", false)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "%h.jjjjj")
 
-			computed, err = computeHost(&host, config, "jjj", true)
+			computed, err = computeHost(host, config, "jjj", true)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "jjj.jjjjj")
 
 			host = config.Hosts["*.kkk"]
-			computed, err = computeHost(&host, config, "test.kkk", false)
+			computed, err = computeHost(host, config, "test.kkk", false)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "%h.kkkkk")
 
-			computed, err = computeHost(&host, config, "test.kkk", true)
+			computed, err = computeHost(host, config, "test.kkk", true)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "test.kkk.kkkkk")
 		})
 		Convey("Do not expand variables twice", func() {
 			host := config.Hosts["lll-*"]
-			computed, err := computeHost(&host, config, "lll-42", true)
+			computed, err := computeHost(host, config, "lll-42", true)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "lll-42.lll")
 
-			computed, err = computeHost(&host, config, "lll-43.lll", true)
+			computed, err = computeHost(host, config, "lll-43.lll", true)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "lll-43.lll")
 		})
@@ -699,7 +701,7 @@ func TestComputeHost(t *testing.T) {
 			//os.Setenv("ENV_VAR_LOCALCOMMAND", "bbb")
 			os.Setenv("ENV_VAR_USER", "ccc")
 
-			computed, err := computeHost(&host, config, "bbb", true)
+			computed, err := computeHost(host, config, "bbb", true)
 			So(err, ShouldBeNil)
 
 			So(computed.HostName, ShouldEqual, "aaa")
