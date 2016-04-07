@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,18 +24,55 @@ const defaultSshConfigPath string = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
-	Hosts     map[string]*Host `yaml:"hosts,omitempty,flow" json:"hosts"`
-	Templates map[string]*Host `yaml:"templates,omitempty,flow" json:"templates"`
-	Defaults  Host             `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
-	Includes  []string         `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
+	Hosts             map[string]*Host `yaml:"hosts,omitempty,flow" json:"hosts"`
+	Templates         map[string]*Host `yaml:"templates,omitempty,flow" json:"templates"`
+	Defaults          Host             `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
+	Includes          []string         `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
+	ASSHKnownHostFile string           `yaml:"asshknownhostfile,omitempty,flow" json:"asshknownhostfile,omitempty"`
 
 	includedFiles map[string]bool
 	sshConfigPath string
 }
 
-func (c *Config) AddKnownHost(target string) {
+func (c *Config) SaveNewKnownHost(target string) {
+	c.addKnownHost(target)
+
+	path, err := expandUser(c.ASSHKnownHostFile)
+	if err != nil {
+		Logger.Errorf("Cannot append host %q, unknown ASSH known_hosts file: %v", target, err)
+	}
+
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
+	if err != nil {
+		Logger.Errorf("Cannot append host %q to %q (performance degradation): %v", target, c.ASSHKnownHostFile, err)
+		return
+	}
+	defer file.Close()
+}
+
+func (c *Config) addKnownHost(target string) {
 	host := c.GetHostSafe(target)
 	c.Hosts[host.pattern].AddKnownHost(target)
+}
+
+func (c *Config) LoadKnownHosts() error {
+	path, err := expandUser(c.ASSHKnownHostFile)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		c.addKnownHost(scanner.Text())
+	}
+
+	return scanner.Err()
 }
 
 // IncludedFiles returns the list of the included files
@@ -411,6 +449,7 @@ func New() *Config {
 	config.Templates = make(map[string]*Host)
 	config.includedFiles = make(map[string]bool)
 	config.sshConfigPath = defaultSshConfigPath
+	config.ASSHKnownHostFile = "~/.ssh/assh_known_hosts"
 	return &config
 }
 
