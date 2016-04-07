@@ -336,6 +336,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Add wrapper and `known_hosts` support to handle *advanced patterns* ([#122](https://github.com/moul/advanced-ssh-config/issues/122))
 * Add build information in .ssh/config header ([#49](https://github.com/moul/advanced-ssh-config/issues/49))
 * Add Autocomplete support ([#48](https://github.com/moul/advanced-ssh-config/issues/48))
 * Initial `Aliases` support ([#133](https://github.com/moul/advanced-ssh-config/issues/133))
