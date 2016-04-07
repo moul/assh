@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/codegangsta/cli"
 
@@ -30,10 +31,12 @@ func cmdWrapper(c *cli.Context) {
 			options = append(options, val)
 		}
 	}
-	args := append(options, target)
+	args := []string{"ssh"}
+	args = append(args, options...)
+	args = append(args, target)
 	args = append(args, command...)
 	bin := "/usr/bin/ssh"
-	Logger.Debugf("Wrapper called with bin=%v target=%v command=%v ssh-options=%v", bin, target, command, options)
+	Logger.Debugf("Wrapper called with bin=%v target=%v command=%v ssh-options=%v, args=%v", bin, target, command, options, args)
 
 	// check if config is up-to-date
 	conf, err := config.Open()
@@ -48,9 +51,11 @@ func cmdWrapper(c *cli.Context) {
 	if conf.NeedsARebuildForTarget(target) {
 		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
 		conf.SaveNewKnownHost(target)
-		conf.WriteSshConfigTo(os.Stdout)
+		if err = conf.SaveSshConfig(); err != nil {
+			Logger.Error(err)
+		}
 	}
 
 	// Execute SSH
-	//syscall.Exec(bin, args, os.Environ())
+	syscall.Exec(bin, args, os.Environ())
 }
