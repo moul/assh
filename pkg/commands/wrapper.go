@@ -41,9 +41,13 @@ func cmdWrapper(c *cli.Context) {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
+	if err = conf.LoadKnownHosts(); err != nil {
+		Logger.Debugf("Failed to load assh known_hosts: %v", err)
+	}
+
 	if conf.NeedsARebuildForTarget(target) {
 		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
-		conf.AddKnownHost(target)
+		conf.SaveNewKnownHost(target)
 		conf.WriteSshConfigTo(os.Stdout)
 	}
 
