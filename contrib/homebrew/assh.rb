@@ -22,6 +22,14 @@ class Assh < Formula
     zsh_completion.install "contrib/completion/zsh_autocomplete"
   end
 
+  def caveats
+    <<-EOS.undent
+    To activate advanced pattern matching, add the following at the end of your .bashrc or .zshrc:
+
+      alias ssh="assh wrapper"
+    EOS
+  end
+
   test do
     output = shell_output(bin/"assh --version")
     assert output.include? "assh version 2"
