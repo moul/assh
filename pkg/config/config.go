@@ -47,6 +47,9 @@ func (c *Config) SaveNewKnownHost(target string) {
 		Logger.Errorf("Cannot append host %q to %q (performance degradation): %v", target, c.ASSHKnownHostFile, err)
 		return
 	}
+
+	fmt.Fprintln(file, target)
+
 	defer file.Close()
 }
 
@@ -242,6 +245,9 @@ func (c *Config) NeedsARebuildForTarget(target string) bool {
 	for _, host := range c.Hosts {
 		for _, alias := range host.Aliases {
 			aliases[alias] = true
+		}
+		for _, knownHost := range host.knownHosts {
+			aliases[knownHost] = true
 		}
 	}
 
