@@ -16,6 +16,7 @@
 3. [Configuration](#configuration)
 4. [Usage](#usage)
 5. [Install](#install)
+  * [Register the wrapper (optional)](#register-the-wrapper-optional)
 6. [Getting started](#getting-started)
 7. [Changelog](#changelog)
 8. [Alternative version](#alternative-version)
@@ -302,6 +303,27 @@ brew install assh --HEAD
 ---
 
 Get a released version on: https://github.com/moul/advanced-ssh-config/releases
+
+---
+
+#### Register the wrapper (optional)
+
+To improve experience when using advanced pattern matching, add the following at the end of your .bashrc or .zshrc:
+
+```bash
+alias ssh="assh wrapper"
+```
+
+This step is *optional*, but *recommended*.
+
+---
+
+**Note**: `ssh` does not understand advanced patterns;
+To bypass this limitation, `assh` maintains a list of *known hosts* and regenerate the `~/.ssh/config` with all those expanded *known hosts*.
+
+Without the wrapper, the `~/.ssh/config` risks to be outdated when connecting to a new host for the first time and you will need to launch the command again.
+
+With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` file.
 
 ## Getting started
 
