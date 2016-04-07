@@ -43,11 +43,24 @@ func cmdProxy(c *cli.Context) {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
+	if err = conf.LoadKnownHosts(); err != nil {
+		Logger.Debugf("Failed to load assh known_hosts: %v", err)
+	}
+
+	target := c.Args()[0]
+
+	if conf.NeedsARebuildForTarget(target) {
+		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
+		fmt.Println(target)
+		conf.SaveNewKnownHost(target)
+		Logger.Warnf("Assh just discovered %q.  '~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.", target)
+	}
+
 	// FIXME: handle complete host with json
 
-	host, err := computeHost(c.Args()[0], c.Int("port"), conf)
+	host, err := computeHost(target, c.Int("port"), conf)
 	if err != nil {
-		Logger.Fatalf("Cannot get host '%s': %v", c.Args()[0], err)
+		Logger.Fatalf("Cannot get host '%s': %v", target, err)
 	}
 	w := Logger.Writer()
 	defer w.Close()
