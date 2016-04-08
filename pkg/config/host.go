@@ -646,10 +646,12 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 }
 
+// AddKnownHost append target to the host' known hosts list
 func (h *Host) AddKnownHost(target string) {
 	h.knownHosts = append(h.knownHosts, target)
 }
 
+// WriteSshConfigTo writes an ~/.ssh/config file compatible host definition to a writable stream
 func (h *Host) WriteSshConfigTo(w io.Writer) error {
 	aliases := append([]string{h.Name()}, h.Aliases...)
 	aliases = append(aliases, h.knownHosts...)

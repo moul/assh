@@ -34,6 +34,7 @@ type Config struct {
 	sshConfigPath string
 }
 
+// SaveNewKnownHost registers the target as a new known host and save the full known hosts list on disk
 func (c *Config) SaveNewKnownHost(target string) {
 	c.addKnownHost(target)
 
@@ -60,6 +61,7 @@ func (c *Config) addKnownHost(target string) {
 	}
 }
 
+// LoadKnownHosts loads known hosts list from disk
 func (c *Config) LoadKnownHosts() error {
 	path, err := expandUser(c.ASSHKnownHostFile)
 	if err != nil {
