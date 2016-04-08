@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/smartystreets/goconvey/convey/reporting"
+	"github.com/smartystreets/assertions/internal/go-render/render"
 )
 
 type Serializer interface {
@@ -15,7 +15,11 @@ type Serializer interface {
 type failureSerializer struct{}
 
 func (self *failureSerializer) serializeDetailed(expected, actual interface{}, message string) string {
-	view := self.format(expected, actual, message, "%#v")
+	view := FailureView{
+		Message:  message,
+		Expected: render.Render(expected),
+		Actual:   render.Render(actual),
+	}
 	serialized, err := json.Marshal(view)
 	if err != nil {
 		return message
@@ -24,7 +28,11 @@ func (self *failureSerializer) serializeDetailed(expected, actual interface{}, m
 }
 
 func (self *failureSerializer) serialize(expected, actual interface{}, message string) string {
-	view := self.format(expected, actual, message, "%+v")
+	view := FailureView{
+		Message:  message,
+		Expected: fmt.Sprintf("%+v", expected),
+		Actual:   fmt.Sprintf("%+v", actual),
+	}
 	serialized, err := json.Marshal(view)
 	if err != nil {
 		return message
@@ -32,16 +40,18 @@ func (self *failureSerializer) serialize(expected, actual interface{}, message s
 	return string(serialized)
 }
 
-func (self *failureSerializer) format(expected, actual interface{}, message string, format string) reporting.FailureView {
-	return reporting.FailureView{
-		Message:  message,
-		Expected: fmt.Sprintf(format, expected),
-		Actual:   fmt.Sprintf(format, actual),
-	}
-}
-
 func newSerializer() *failureSerializer {
 	return &failureSerializer{}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// This struct is also declared in github.com/smartystreets/goconvey/convey/reporting.
+// The json struct tags should be equal in both declarations.
+type FailureView struct {
+	Message  string `json:"Message"`
+	Expected string `json:"Expected"`
+	Actual   string `json:"Actual"`
 }
 
 ///////////////////////////////////////////////////////
