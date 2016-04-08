@@ -961,6 +961,14 @@ func (h *Host) WriteSshConfigTo(w io.Writer) error {
 				fmt.Fprintf(w, "  # AliasOf: %s\n", h.Name())
 			}
 		}
+		if len(h.knownHosts) > 0 {
+			if aliasIdx == 0 {
+				fmt.Fprintf(w, "  # KnownHosts: [%s]\n", strings.Join(h.knownHosts, ", "))
+			} else {
+				fmt.Fprintf(w, "  # KnownHostOf: %s\n", h.Name())
+			}
+		}
+
 		if len(h.ResolveNameservers) > 0 {
 			fmt.Fprintf(w, "  # ResolveNameservers: [%s]\n", strings.Join(h.ResolveNameservers, ", "))
 		}
