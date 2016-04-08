@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/moul/advanced-ssh-config",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.6",
 	"Packages": [
 		"github.com/moul/advanced-ssh-config/pkg/commands",
 		"github.com/moul/advanced-ssh-config/pkg/config",
