@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"syscall"
 
 	"github.com/codegangsta/cli"
@@ -35,7 +36,11 @@ func cmdWrapper(c *cli.Context) {
 	args = append(args, options...)
 	args = append(args, target)
 	args = append(args, command...)
-	bin := "/usr/bin/" + c.Command.Name
+	bin, err := exec.LookPath(c.Command.Name)
+	if err != nil {
+		Logger.Fatalf("Cannot find %q in $PATH", c.Command.Name)
+	}
+
 	Logger.Debugf("Wrapper called with bin=%v target=%v command=%v options=%v, args=%v", bin, target, command, options, args)
 
 	// check if config is up-to-date
