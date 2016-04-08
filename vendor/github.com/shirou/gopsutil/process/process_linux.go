@@ -3,11 +3,13 @@
 package process
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -46,10 +48,10 @@ type MemoryMapsStat struct {
 	Rss          uint64 `json:"rss"`
 	Size         uint64 `json:"size"`
 	Pss          uint64 `json:"pss"`
-	SharedClean  uint64 `json:"shared_clean"`
-	SharedDirty  uint64 `json:"shared_dirty"`
-	PrivateClean uint64 `json:"private_clean"`
-	PrivateDirty uint64 `json:"private_dirty"`
+	SharedClean  uint64 `json:"sharedClean"`
+	SharedDirty  uint64 `json:"sharedDirty"`
+	PrivateClean uint64 `json:"privateClean"`
+	PrivateDirty uint64 `json:"privateDirty"`
 	Referenced   uint64 `json:"referenced"`
 	Anonymous    uint64 `json:"anonymous"`
 	Swap         uint64 `json:"swap"`
@@ -60,13 +62,16 @@ func (m MemoryMapsStat) String() string {
 	return string(s)
 }
 
-// Create new Process instance
-// This only stores Pid
+// NewProcess creates a new Process instance, it only stores the pid and
+// checks that the process exists. Other method on Process can be used
+// to get more information about the process. An error will be returned
+// if the process does not exist.
 func NewProcess(pid int32) (*Process, error) {
 	p := &Process{
 		Pid: int32(pid),
 	}
-	err := p.fillFromStatus()
+	file, err := os.Open(common.HostProc(strconv.Itoa(int(p.Pid))))
+	defer file.Close()
 	return p, err
 }
 
@@ -78,14 +83,29 @@ func (p *Process) Ppid() (int32, error) {
 	return ppid, nil
 }
 func (p *Process) Name() (string, error) {
+	if p.name == "" {
+		if err := p.fillFromStatus(); err != nil {
+			return "", err
+		}
+	}
 	return p.name, nil
 }
 func (p *Process) Exe() (string, error) {
 	return p.fillFromExe()
 }
+
+// Cmdline returns the command line arguments of the process as a string with
+// each argument separated by 0x20 ascii character.
 func (p *Process) Cmdline() (string, error) {
 	return p.fillFromCmdline()
 }
+
+// CmdlineSlice returns the command line arguments of the process as a slice with each
+// element being an argument.
+func (p *Process) CmdlineSlice() ([]string, error) {
+	return p.fillSliceFromCmdline()
+}
+
 func (p *Process) CreateTime() (int64, error) {
 	_, _, _, createTime, _, err := p.fillFromStat()
 	if err != nil {
@@ -147,10 +167,10 @@ func (p *Process) Nice() (int32, error) {
 	return nice, nil
 }
 func (p *Process) IOnice() (int32, error) {
-	return 0, common.NotImplementedError
+	return 0, common.ErrNotImplementedError
 }
 func (p *Process) Rlimit() ([]RlimitStat, error) {
-	return nil, common.NotImplementedError
+	return nil, common.ErrNotImplementedError
 }
 func (p *Process) IOCounters() (*IOCountersStat, error) {
 	return p.fillFromIO()
@@ -177,7 +197,7 @@ func (p *Process) Threads() (map[string]string, error) {
 	ret := make(map[string]string, 0)
 	return ret, nil
 }
-func (p *Process) CPUTimes() (*cpu.CPUTimesStat, error) {
+func (p *Process) Times() (*cpu.TimesStat, error) {
 	_, _, cpuTimes, _, _, err := p.fillFromStat()
 	if err != nil {
 		return nil, err
@@ -185,7 +205,7 @@ func (p *Process) CPUTimes() (*cpu.CPUTimesStat, error) {
 	return cpuTimes, nil
 }
 func (p *Process) CPUAffinity() ([]int32, error) {
-	return nil, common.NotImplementedError
+	return nil, common.ErrNotImplementedError
 }
 func (p *Process) MemoryInfo() (*MemoryInfoStat, error) {
 	meminfo, _, err := p.fillFromStatm()
@@ -200,9 +220,6 @@ func (p *Process) MemoryInfoEx() (*MemoryInfoExStat, error) {
 		return nil, err
 	}
 	return memInfoEx, nil
-}
-func (p *Process) MemoryPercent() (float32, error) {
-	return 0, common.NotImplementedError
 }
 
 func (p *Process) Children() ([]*Process, error) {
@@ -229,7 +246,7 @@ func (p *Process) OpenFiles() ([]OpenFilesStat, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]OpenFilesStat, 0, len(ofs))
+	ret := make([]OpenFilesStat, len(ofs))
 	for i, o := range ofs {
 		ret[i] = *o
 	}
@@ -237,17 +254,17 @@ func (p *Process) OpenFiles() ([]OpenFilesStat, error) {
 	return ret, nil
 }
 
-func (p *Process) Connections() ([]net.NetConnectionStat, error) {
-	return net.NetConnectionsPid("all", p.Pid)
+func (p *Process) Connections() ([]net.ConnectionStat, error) {
+	return net.ConnectionsPid("all", p.Pid)
 }
 
-func (p *Process) NetIOCounters(pernic bool) ([]net.NetIOCountersStat, error) {
+func (p *Process) NetIOCounters(pernic bool) ([]net.IOCountersStat, error) {
 	filename := common.HostProc(strconv.Itoa(int(p.Pid)), "net/dev")
-	return net.NetIOCountersByFile(pernic, filename)
+	return net.IOCountersByFile(pernic, filename)
 }
 
 func (p *Process) IsRunning() (bool, error) {
-	return true, common.NotImplementedError
+	return true, common.ErrNotImplementedError
 }
 
 // MemoryMaps get memory maps from /proc/(pid)/smaps
@@ -344,7 +361,7 @@ func (p *Process) fillFromfd() (int32, []*OpenFilesStat, error) {
 	fnames, err := d.Readdirnames(-1)
 	numFDs := int32(len(fnames))
 
-	openfiles := make([]*OpenFilesStat, numFDs)
+	var openfiles []*OpenFilesStat
 	for _, fd := range fnames {
 		fpath := filepath.Join(statPath, fd)
 		filepath, err := os.Readlink(fpath)
@@ -405,6 +422,28 @@ func (p *Process) fillFromCmdline() (string, error) {
 	return strings.Join(ret, " "), nil
 }
 
+func (p *Process) fillSliceFromCmdline() ([]string, error) {
+	pid := p.Pid
+	cmdPath := common.HostProc(strconv.Itoa(int(pid)), "cmdline")
+	cmdline, err := ioutil.ReadFile(cmdPath)
+	if err != nil {
+		return nil, err
+	}
+	if len(cmdline) == 0 {
+		return nil, nil
+	}
+	if cmdline[len(cmdline)-1] == 0 {
+		cmdline = cmdline[:len(cmdline)-1]
+	}
+	parts := bytes.Split(cmdline, []byte{0})
+	var strParts []string
+	for _, p := range parts {
+		strParts = append(strParts, string(p))
+	}
+
+	return strParts, nil
+}
+
 // Get IO status from /proc/(pid)/io
 func (p *Process) fillFromIO() (*IOCountersStat, error) {
 	pid := p.Pid
@@ -434,9 +473,9 @@ func (p *Process) fillFromIO() (*IOCountersStat, error) {
 			ret.ReadCount = t
 		case "syscw":
 			ret.WriteCount = t
-		case "read_bytes":
+		case "readBytes":
 			ret.ReadBytes = t
-		case "write_bytes":
+		case "writeBytes":
 			ret.WriteBytes = t
 		}
 	}
@@ -517,10 +556,7 @@ func (p *Process) fillFromStatus() error {
 		case "Name":
 			p.name = strings.Trim(value, " \t")
 		case "State":
-			// get between "(" and ")"
-			s := strings.Index(value, "(") + 1
-			e := strings.Index(value, ")")
-			p.status = value[s:e]
+			p.status = value[0:1]
 		case "Uid":
 			p.uids = make([]int32, 0, 4)
 			for _, i := range strings.Split(value, "\t") {
@@ -584,7 +620,7 @@ func (p *Process) fillFromStatus() error {
 	return nil
 }
 
-func (p *Process) fillFromStat() (string, int32, *cpu.CPUTimesStat, int64, int32, error) {
+func (p *Process) fillFromStat() (string, int32, *cpu.TimesStat, int64, int32, error) {
 	pid := p.Pid
 	statPath := common.HostProc(strconv.Itoa(int(pid)), "stat")
 	contents, err := ioutil.ReadFile(statPath)
@@ -622,7 +658,7 @@ func (p *Process) fillFromStat() (string, int32, *cpu.CPUTimesStat, int64, int32
 		return "", 0, nil, 0, 0, err
 	}
 
-	cpuTimes := &cpu.CPUTimesStat{
+	cpuTimes := &cpu.TimesStat{
 		CPU:    "cpu",
 		User:   float64(utime / ClockTicks),
 		System: float64(stime / ClockTicks),
@@ -676,7 +712,11 @@ func callLsof(arg string, pid int32) ([]string, error) {
 	} else {
 		cmd = []string{"-a", "-F" + arg, "-p", strconv.Itoa(int(pid))}
 	}
-	out, err := invoke.Command("/usr/bin/lsof", cmd...)
+	lsof, err := exec.LookPath("lsof")
+	if err != nil {
+		return []string{}, err
+	}
+	out, err := invoke.Command(lsof, cmd...)
 	if err != nil {
 		return []string{}, err
 	}
