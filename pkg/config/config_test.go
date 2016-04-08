@@ -1281,18 +1281,23 @@ Host toto
 
 Host toto[1-5]toto
   User toto1
+  # KnownHosts: [toto1toto, toto2toto]
 
 Host toto1toto
   User toto1
+  # KnownHostOf: toto[1-5]toto
 
 Host toto2toto
   User toto1
+  # KnownHostOf: toto[1-5]toto
 
 Host toto[7-9]toto
   User toto2
+  # KnownHosts: [toto7toto]
 
 Host toto7toto
   User toto2
+  # KnownHostOf: toto[7-9]toto
 
 Host toutou
   # ResolveCommand: dig -t %h
