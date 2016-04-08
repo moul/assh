@@ -67,6 +67,12 @@ hosts:
   "lll-*":
     HostName: "%h.lll"
 
+  "toto[1-5]toto":
+    User: toto1
+
+  "toto[7-9]toto":
+    User: toto2
+
   nnn:
     Inherits:
     - mmm
@@ -169,6 +175,12 @@ func dummyConfig() *Config {
 	config.Hosts["ooo2"] = &Host{
 		Port:    "24",
 		Aliases: []string{"ooo21", "ooo22"},
+	}
+	config.Hosts["toto[1-5]toto"] = &Host{
+		User: "toto1",
+	}
+	config.Hosts["toto[7-9]toto"] = &Host{
+		User: "toto2",
 	}
 	config.Hosts["zzz"] = &Host{
 		// ssh-config fields
@@ -282,7 +294,7 @@ func TestConfig(t *testing.T) {
 	Convey("Testing dummyConfig", t, func() {
 		config := dummyConfig()
 
-		So(len(config.Hosts), ShouldEqual, 12)
+		So(len(config.Hosts), ShouldEqual, 14)
 
 		So(config.Hosts["toto"].HostName, ShouldEqual, "1.2.3.4")
 		So(config.Hosts["toto"].Port, ShouldEqual, "")
@@ -328,7 +340,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 			config := New()
 			err := config.LoadConfig(strings.NewReader(yamlConfig))
 			So(err, ShouldBeNil)
-			So(len(config.Hosts), ShouldEqual, 15)
+			So(len(config.Hosts), ShouldEqual, 17)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -404,6 +416,12 @@ func TestConfig_JsonString(t *testing.T) {
     },
     "toto": {
       "HostName": "1.2.3.4"
+    },
+    "toto[1-5]toto": {
+      "User": "toto1"
+    },
+    "toto[7-9]toto": {
+      "User": "toto2"
     },
     "toutou": {
       "ResolveCommand": "dig -t %h"
@@ -616,6 +634,12 @@ func TestConfig_JsonString(t *testing.T) {
         "ooo21",
         "ooo22"
       ]
+    },
+    "toto[1-5]toto": {
+      "User": "toto1"
+    },
+    "toto[7-9]toto": {
+      "User": "toto2"
     }
   },
   "templates": {
@@ -814,6 +838,41 @@ func TestConfig_GetGatewaySafe(t *testing.T) {
 	})
 }
 
+func TestConfig_NeedsARebuildForTarget(t *testing.T) {
+	Convey("Testing Config.NeedsARebuildForTarget", t, func() {
+		config := dummyConfig()
+
+		So(config.NeedsARebuildForTarget("totototo"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto0toto"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto1toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto2toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto3toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto4toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto5toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto6toto"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto7toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto8toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto9toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto10toto"), ShouldBeFalse)
+
+		config.addKnownHost("toto1toto")
+		config.addKnownHost("toto2toto")
+
+		So(config.NeedsARebuildForTarget("totototo"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto0toto"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto1toto"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto2toto"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto3toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto4toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto5toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto6toto"), ShouldBeFalse)
+		So(config.NeedsARebuildForTarget("toto7toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto8toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto9toto"), ShouldBeTrue)
+		So(config.NeedsARebuildForTarget("toto10toto"), ShouldBeFalse)
+	})
+}
+
 func TestConfig_LoadFiles(t *testing.T) {
 	Convey("Testing Config.LoadFiles", t, func() {
 		config := New()
@@ -825,10 +884,12 @@ func TestConfig_LoadFiles(t *testing.T) {
 		Convey("Loading a simple file", func() {
 			err = config.LoadFiles(file.Name())
 
+			So(config.IncludedFiles(), ShouldResemble, []string{file.Name()})
+
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 15)
+			So(len(config.Hosts), ShouldEqual, 17)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -856,7 +917,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 15)
+			So(len(config.Hosts), ShouldEqual, 17)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -1143,6 +1204,10 @@ func TestConfig_WriteSshConfig(t *testing.T) {
 	Convey("Testing Config.WriteSshConfig", t, func() {
 		config := dummyConfig()
 
+		config.addKnownHost("toto1toto")
+		config.addKnownHost("toto2toto")
+		config.addKnownHost("toto7toto")
+
 		var buffer bytes.Buffer
 
 		err := config.WriteSshConfigTo(&buffer)
@@ -1213,6 +1278,21 @@ Host tonton
 
 Host toto
   # HostName: 1.2.3.4
+
+Host toto[1-5]toto
+  User toto1
+
+Host toto1toto
+  User toto1
+
+Host toto2toto
+  User toto1
+
+Host toto[7-9]toto
+  User toto2
+
+Host toto7toto
+  User toto2
 
 Host toutou
   # ResolveCommand: dig -t %h
