@@ -24,8 +24,6 @@ func NsecToTimespec(nsec int64) (ts Timespec) {
 	return
 }
 
-func TimevalToNsec(tv Timeval) int64 { return int64(tv.Sec)*1e9 + int64(tv.Usec)*1e3 }
-
 func NsecToTimeval(nsec int64) (tv Timeval) {
 	nsec += 999 // round up to microsecond
 	tv.Sec = int32(nsec / 1e9)
@@ -180,6 +178,8 @@ func Seek(fd int, offset int64, whence int) (newoffset int64, err error) {
 // Vsyscalls on amd64.
 //sysnb	Gettimeofday(tv *Timeval) (err error)
 //sysnb	Time(t *Time_t) (tt Time_t, err error)
+
+//sys	Utime(path string, buf *Utimbuf) (err error)
 
 // On x86 Linux, all the socket calls go through an extra indirection,
 // I think because the 5-register system call interface can't handle

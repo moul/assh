@@ -3,10 +3,10 @@ package assertions
 const ( // equality
 	shouldHaveBeenEqual             = "Expected: '%v'\nActual:   '%v'\n(Should be equal)"
 	shouldNotHaveBeenEqual          = "Expected     '%v'\nto NOT equal '%v'\n(but it did)!"
+	shouldHaveBeenEqualTypeMismatch = "Expected: '%v' (%T)\nActual:   '%v' (%T)\n(Should be equal, type mismatch)"
 	shouldHaveBeenAlmostEqual       = "Expected '%v' to almost equal '%v' (but it didn't)!"
 	shouldHaveNotBeenAlmostEqual    = "Expected '%v' to NOT almost equal '%v' (but it did)!"
-	shouldHaveResembled             = "Expected: '%#v'\nActual:   '%#v'\n(Should resemble)!"
-	shouldHaveResembledTypeMismatch = "Expected: '%#v'\nActual:   '%#v'\n(Type mismatch: '%T' vs '%T')!"
+	shouldHaveResembled             = "Expected: '%s'\nActual:   '%s'\n(Should resemble)!"
 	shouldNotHaveResembled          = "Expected        '%#v'\nto NOT resemble '%#v'\n(but it did)!"
 	shouldBePointers                = "Both arguments should be pointers "
 	shouldHaveBeenNonNilPointer     = shouldBePointers + "(the %s was %s)!"
@@ -42,6 +42,9 @@ const ( // collections
 	shouldHaveBeenAValidMap        = "You must provide a valid map type (was %v)!"
 	shouldHaveBeenEmpty            = "Expected %+v to be empty (but it wasn't)!"
 	shouldNotHaveBeenEmpty         = "Expected %+v to NOT be empty (but it was)!"
+	shouldHaveBeenAValidInteger    = "You must provide a valid integer (was %v)!"
+	shouldHaveBeenAValidLength     = "You must provide a valid positive integer (was %v)!"
+	shouldHaveHadLength            = "Expected %+v (length: %v) to have length equal to '%v', but it wasn't!"
 )
 
 const ( // strings
@@ -49,6 +52,7 @@ const ( // strings
 	shouldNotHaveStartedWith        = "Expected          '%v'\nNOT to start with '%v'\n(but it did)!"
 	shouldHaveEndedWith             = "Expected    '%v'\nto end with '%v'\n(but it didn't)!"
 	shouldNotHaveEndedWith          = "Expected        '%v'\nNOT to end with '%v'\n(but it did)!"
+	shouldAllBeStrings              = "All arguments to this assertion must be strings (you provided: %v)."
 	shouldBothBeStrings             = "Both arguments to this assertion must be strings (you provided %v and %v)."
 	shouldBeString                  = "The argument to this assertion must be a string (you provided %v)."
 	shouldHaveContainedSubstring    = "Expected '%s' to contain substring '%s' (but it didn't)!"
