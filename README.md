@@ -311,7 +311,7 @@ Get a released version on: https://github.com/moul/advanced-ssh-config/releases
 To improve experience when using advanced pattern matching, add the following at the end of your .bashrc or .zshrc:
 
 ```bash
-alias ssh="assh wrapper"
+alias ssh="assh wrapper ssh"
 ```
 
 This step is *optional*, but *recommended*.

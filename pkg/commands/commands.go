@@ -67,9 +67,15 @@ var Commands = []cli.Command{
 		Action: cmdInfo,
 	},
 	{
-		Name:   "wrapper",
-		Usage:  "Initialize assh, then run SSH",
-		Action: cmdWrapper,
-		Flags:  config.SSHFlags,
+		Name:  "wrapper",
+		Usage: "Initialize assh, then run ssh/scp/rsync...",
+		Subcommands: []cli.Command{
+			{
+				Name:   "ssh",
+				Action: cmdWrapper,
+				Usage:  "Wrap ssh",
+				Flags:  config.SSHFlags,
+			},
+		},
 	},
 }

@@ -13,7 +13,7 @@ import (
 
 func cmdWrapper(c *cli.Context) {
 	if len(c.Args()) < 1 {
-		Logger.Fatalf("Missing <target> argument. See usage with 'assh wrapper -h'.")
+		Logger.Fatalf("Missing <target> argument. See usage with 'assh wrapper %s -h'.", c.Command.Name)
 	}
 
 	// prepare variables
@@ -31,12 +31,12 @@ func cmdWrapper(c *cli.Context) {
 			options = append(options, val)
 		}
 	}
-	args := []string{"ssh"}
+	args := []string{c.Command.Name}
 	args = append(args, options...)
 	args = append(args, target)
 	args = append(args, command...)
-	bin := "/usr/bin/ssh"
-	Logger.Debugf("Wrapper called with bin=%v target=%v command=%v ssh-options=%v, args=%v", bin, target, command, options, args)
+	bin := "/usr/bin/" + c.Command.Name
+	Logger.Debugf("Wrapper called with bin=%v target=%v command=%v options=%v, args=%v", bin, target, command, options, args)
 
 	// check if config is up-to-date
 	conf, err := config.Open()
@@ -49,13 +49,13 @@ func cmdWrapper(c *cli.Context) {
 	}
 
 	if conf.NeedsARebuildForTarget(target) {
-		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
+		Logger.Debugf("The configuration file is outdated, rebuilding it before calling %s", c.Command.Name)
 		conf.SaveNewKnownHost(target)
 		if err = conf.SaveSshConfig(); err != nil {
 			Logger.Error(err)
 		}
 	}
 
-	// Execute SSH
+	// Execute Binary
 	syscall.Exec(bin, args, os.Environ())
 }
