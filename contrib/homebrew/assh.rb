@@ -26,7 +26,7 @@ class Assh < Formula
     <<-EOS.undent
     To activate advanced pattern matching, add the following at the end of your .bashrc or .zshrc:
 
-      alias ssh="assh wrapper"
+      alias ssh="assh wrapper ssh"
     EOS
   end
 
