@@ -1,11 +1,11 @@
+package common
+
 //
 // gopsutil is a port of psutil(http://pythonhosted.org/psutil/).
 // This covers these architectures.
 //  - linux (amd64, arm)
 //  - freebsd (amd64)
 //  - windows (amd64)
-package common
-
 import (
 	"bufio"
 	"errors"
@@ -59,12 +59,11 @@ func (i FakeInvoke) Command(name string, arg ...string) ([]byte, error) {
 	}
 	if PathExists(fpath) {
 		return ioutil.ReadFile(fpath)
-	} else {
-		return exec.Command(name, arg...).Output()
 	}
+	return exec.Command(name, arg...).Output()
 }
 
-var NotImplementedError = errors.New("not implemented yet")
+var ErrNotImplementedError = errors.New("not implemented yet")
 
 // ReadLines reads contents from a file and splits them by new lines.
 // A convenience wrapper to ReadLinesOffsetN(filename, 0, -1).
@@ -206,6 +205,16 @@ func StringsContains(target []string, src string) bool {
 	return false
 }
 
+// IntContains checks the src in any int of the target int slice.
+func IntContains(target []int, src int) bool {
+	for _, t := range target {
+		if src == t {
+			return true
+		}
+	}
+	return false
+}
+
 // get struct attributes.
 // This method is used only for debugging platform dependent code.
 func attributes(m interface{}) map[string]reflect.Type {
@@ -263,4 +272,8 @@ func HostProc(combineWith ...string) string {
 
 func HostSys(combineWith ...string) string {
 	return GetEnv("HOST_SYS", "/sys", combineWith...)
+}
+
+func HostEtc(combineWith ...string) string {
+	return GetEnv("HOST_ETC", "/etc", combineWith...)
 }
