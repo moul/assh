@@ -287,10 +287,16 @@ go get -u github.com/moul/advanced-ssh-config/cmd/assh
 
 ---
 
-Get the latest version using homebrew (Mac OS X):
+Get the latest released version using homebrew (Mac OS X):
 
 ```bash
 brew install assh
+```
+
+Build the latest version
+
+```bash
+brew install assh --HEAD
 ```
 
 ---
