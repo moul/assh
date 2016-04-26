@@ -152,8 +152,8 @@ func proxyDirect(host *config.Host, dryRun bool) error {
 
 func proxyCommand(host *config.Host, command string, dryRun bool) error {
 	command = host.ExpandString(command)
-	args, err := shlex.Split(command)
 	Logger.Debugf("ProxyCommand: %s", command)
+	args, err := shlex.Split(command)
 	if err != nil {
 		return err
 	}
