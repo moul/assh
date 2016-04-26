@@ -241,9 +241,9 @@ func (c *Config) GetHostSafe(name string) *Host {
 	return host
 }
 
-// IsSSHConfigOutdated returns true if assh.yml or an included file has a
+// isSSHConfigOutdated returns true if assh.yml or an included file has a
 // modification date more recent than .ssh/config
-func (c *Config) IsSSHConfigOutdated() (bool, error) {
+func (c *Config) isSSHConfigOutdated() (bool, error) {
 	filepath, err := expandUser(c.sshConfigPath)
 	if err != nil {
 		return false, err
@@ -266,8 +266,24 @@ func (c *Config) IsSSHConfigOutdated() (bool, error) {
 	return false, nil
 }
 
-// NeedsARebuildForTarget returns true if the .ssh/config file needs to be rebuild for a specific target
-func (c *Config) NeedsARebuildForTarget(target string) bool {
+// IsConfigOutdated returns true if .ssh/config needs to be rebuild.
+// The reason may be:
+// - assh.yml (or an included file) was updated recently
+// - <target> matches a regex and was never seen before (not present in known-hosts file)
+func (c *Config) IsConfigOutdated(target string) (bool, error) {
+	// check if the target is a regex and if the pattern
+	// was never matched before (not in known hosts)
+	if c.needsARebuildForTarget(target) {
+		c.SaveNewKnownHost(target)
+		return true, nil
+	}
+
+	// check if the ~/.ssh/config file is older than assh.yml or any included file
+	return c.isSSHConfigOutdated()
+}
+
+// needsARebuildForTarget returns true if the .ssh/config file needs to be rebuild for a specific target
+func (c *Config) needsARebuildForTarget(target string) bool {
 	parts := strings.Split(target, "/")
 
 	// compute lists

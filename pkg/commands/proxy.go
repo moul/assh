@@ -49,11 +49,18 @@ func cmdProxy(c *cli.Context) {
 
 	target := c.Args()[0]
 
-	if conf.NeedsARebuildForTarget(target) {
+	isOutdated, err := conf.IsConfigOutdated(target)
+	if err != nil {
+		Logger.Warnf("Cannot check if ~/.ssh/config is outdated.")
+	}
+	if isOutdated {
 		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
-		fmt.Println(target)
-		conf.SaveNewKnownHost(target)
-		Logger.Warnf("Assh just discovered %q.  '~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.", target)
+		Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.")
+		Logger.Debugf("Saving SSH config")
+		err = conf.SaveSshConfig()
+		if err != nil {
+			Logger.Fatalf("Cannot save SSH config file: %v", err)
+		}
 	}
 
 	// FIXME: handle complete host with json
@@ -65,12 +72,6 @@ func cmdProxy(c *cli.Context) {
 	w := Logger.Writer()
 	defer w.Close()
 	host.WriteSshConfigTo(w)
-
-	Logger.Debugf("Saving SSH config")
-	err = conf.SaveSshConfig()
-	if err != nil {
-		Logger.Fatalf("Cannot save SSH config file: %v", err)
-	}
 
 	Logger.Debugf("Proxying")
 	err = proxy(host, conf, dryRun)
