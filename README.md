@@ -314,7 +314,7 @@ To improve experience when using advanced pattern matching, add the following at
 alias ssh="assh wrapper ssh"
 ```
 
-This step is *optional*, but *recommended*.
+This step is not *mandatory* but highly *recommended*.
 
 ---
 
