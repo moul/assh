@@ -241,6 +241,31 @@ func (c *Config) GetHostSafe(name string) *Host {
 	return host
 }
 
+// IsSSHConfigOutdated returns true if assh.yml or an included file has a
+// modification date more recent than .ssh/config
+func (c *Config) IsSSHConfigOutdated() (bool, error) {
+	filepath, err := expandUser(c.sshConfigPath)
+	if err != nil {
+		return false, err
+	}
+	sshConfigStat, err := os.Stat(filepath)
+	if err != nil {
+		return false, err
+	}
+	sshConfigModTime := sshConfigStat.ModTime()
+
+	for filepath := range c.includedFiles {
+		asshConfigStat, err := os.Stat(filepath)
+		if err != nil {
+			return false, err
+		}
+		if asshConfigStat.ModTime().After(sshConfigModTime) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // NeedsARebuildForTarget returns true if the .ssh/config file needs to be rebuild for a specific target
 func (c *Config) NeedsARebuildForTarget(target string) bool {
 	parts := strings.Split(target, "/")

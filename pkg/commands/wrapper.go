@@ -53,9 +53,27 @@ func cmdWrapper(c *cli.Context) {
 		Logger.Debugf("Failed to load assh known_hosts: %v", err)
 	}
 
+	configIsOutdated := false
+
+	// check if the target is a regex and if the pattern
+	// was never matched before (not in known hosts)
 	if conf.NeedsARebuildForTarget(target) {
-		Logger.Debugf("The configuration file is outdated, rebuilding it before calling %s", c.Command.Name)
+		configIsOutdated = true
 		conf.SaveNewKnownHost(target)
+	}
+
+	// check if the ~/.ssh/config file is older than assh.yml or any included file
+	if !configIsOutdated {
+		updated, err := conf.IsSSHConfigOutdated()
+		if err != nil {
+			Logger.Error(err)
+		}
+		configIsOutdated = updated
+	}
+
+	// rebuild ~/.ssh/config file
+	if configIsOutdated {
+		Logger.Debugf("The configuration file is outdated, rebuilding it before calling %s", c.Command.Name)
 		if err = conf.SaveSshConfig(); err != nil {
 			Logger.Error(err)
 		}
