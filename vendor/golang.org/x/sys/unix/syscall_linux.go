@@ -872,7 +872,6 @@ func Mount(source string, target string, fstype string, flags uintptr, data stri
 //sysnb	EpollCreate(size int) (fd int, err error)
 //sysnb	EpollCreate1(flag int) (fd int, err error)
 //sysnb	EpollCtl(epfd int, op int, fd int, event *EpollEvent) (err error)
-//sys	EpollWait(epfd int, events []EpollEvent, msec int) (n int, err error)
 //sys	Exit(code int) = SYS_EXIT_GROUP
 //sys	Faccessat(dirfd int, path string, mode uint32, flags int) (err error)
 //sys	Fallocate(fd int, mode uint32, off int64, len int64) (err error)
@@ -907,7 +906,6 @@ func Getpgrp() (pid int) {
 //sys	Mkdirat(dirfd int, path string, mode uint32) (err error)
 //sys	Mknodat(dirfd int, path string, mode uint32, dev int) (err error)
 //sys	Nanosleep(time *Timespec, leftover *Timespec) (err error)
-//sys	Pause() (err error)
 //sys	PivotRoot(newroot string, putold string) (err error) = SYS_PIVOT_ROOT
 //sysnb prlimit(pid int, resource int, old *Rlimit, newlimit *Rlimit) (err error) = SYS_PRLIMIT64
 //sys   Prctl(option int, arg2 uintptr, arg3 uintptr, arg4 uintptr, arg5 uintptr) (err error)
