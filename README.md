@@ -260,7 +260,7 @@ USAGE:
    assh [global options] command [command options] [arguments...]
 
 VERSION:
-   2.2.0 (HEAD)
+   2.3.0 (HEAD)
 
 AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
@@ -269,14 +269,16 @@ COMMANDS:
    proxy         Connect to host SSH socket, used by ProxyCommand
    build         Build .ssh/config
    info          Display system-wide information
+   wrapper       Initialize assh, then run ssh/scp/rsync...
    help, h       Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-  --debug, -D       Enable debug mode [$ASSH_DEBUG]
-  --verbose, -V     Enable verbose mode
-  --help, -h        show help
-  --version, -v     print the version
-  ```
+  --debug, -D                  Enable debug mode [$ASSH_DEBUG]
+  --verbose, -V                Enable verbose mode
+  --help, -h                   show help
+  --generate-bash-completion
+  --version, -v                print the version
+```
 
 ## Install
 
@@ -334,7 +336,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ## Changelog
 
-### master (unreleased)
+### v2.3.0 (2016-04-27)
 
 * Add wrapper and `known_hosts` support to handle *advanced patterns* ([#122](https://github.com/moul/advanced-ssh-config/issues/122))
 * Add build information in .ssh/config header ([#49](https://github.com/moul/advanced-ssh-config/issues/49))
@@ -349,7 +351,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Various documentation improvements ([@ashmatadeen](https://github.com/ashmatadeen), [@loliee](https://github.com/loliee), [@cerisier](https://github.com/cerisier))
 * Support of new SSH configuration fields (`AskPassGUI`, `GSSAPIClientIdentity`, `GSSAPIKeyExchange`, `GSSAPIRenewalForcesRekey`, `GSSAPIServerIdentity`, `GSSAPITrustDns`, `KeychainIntegration`)
 
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.2.0...master)
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.2.0...v2.3.0)
 
 ### v2.2.0 (2016-02-03)
 
