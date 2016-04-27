@@ -60,7 +60,7 @@ func cmdWrapper(c *cli.Context) {
 	}
 	if isOutdated {
 		Logger.Debugf("The configuration file is outdated, rebuilding it before calling %s", c.Command.Name)
-		if err = conf.SaveSshConfig(); err != nil {
+		if err = conf.SaveSSHConfig(); err != nil {
 			Logger.Error(err)
 		}
 	}
