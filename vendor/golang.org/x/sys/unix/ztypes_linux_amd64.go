@@ -153,6 +153,15 @@ type Flock_t struct {
 	Pad_cgo_1 [4]byte
 }
 
+const (
+	FADV_NORMAL     = 0x0
+	FADV_RANDOM     = 0x1
+	FADV_SEQUENTIAL = 0x2
+	FADV_WILLNEED   = 0x3
+	FADV_DONTNEED   = 0x4
+	FADV_NOREUSE    = 0x5
+)
+
 type RawSockaddrInet4 struct {
 	Family uint16
 	Port   uint16

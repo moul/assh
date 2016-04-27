@@ -67,10 +67,7 @@ b:
 
 type T struct {
         A string
-        B struct {
-                RenamedC int   `yaml:"c"`
-                D        []int `yaml:",flow"`
-        }
+        B struct{C int; D []int ",flow"}
 }
 
 func main() {
