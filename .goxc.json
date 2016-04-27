@@ -1,12 +1,27 @@
 {
-	"AppName": "assh",
-	"ArtifactsDest": "dist",
-	"OutPath": "{{.Dest}}{{.PS}}{{.Version}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.ExeName}}{{.Ext}}",
-	"TasksExclude": [
-		"go-test",
-		"go-vet"
-	],
-	"MainDirsExclude": "vendor,Godeps,testdata",
-	"PackageVersion": "2.3.0",
-	"ConfigVersion": "0.9"
+    "AppName": "assh",
+    "ArtifactsDest": "dist",
+    "OutPath": "{{.Dest}}{{.PS}}{{.Version}}{{.PS}}{{.Os}}_{{.Arch}}{{.PS}}{{.ExeName}}{{.Ext}}",
+    "Tasks": [
+        "default",
+        "deb-source"
+    ],
+    "TasksExclude": [
+        "go-test",
+        "bintray",
+        "go-vet",
+        "rmbin",
+        "downloads-page",
+        "publish-github"
+    ],
+    "TaskSettings": {
+        "xc": {
+            "GOARM": "5"
+        }
+    },
+    "BuildConstraints": "darwin,!386 linux windows freebsd,!arm",
+    "ResourcesExclude": "*.go .goxc-temp",
+    "MainDirsExclude": "vendor,Godeps,testdata",
+    "PackageVersion": "2.3.0",
+    "ConfigVersion": "0.9"
 }
