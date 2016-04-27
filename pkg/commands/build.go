@@ -15,5 +15,5 @@ func cmdBuild(c *cli.Context) {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
-	conf.WriteSshConfigTo(os.Stdout)
+	conf.WriteSSHConfigTo(os.Stdout)
 }
