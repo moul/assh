@@ -33,7 +33,7 @@ func cmdProxy(c *cli.Context) {
 	// dry-run option
 	// Setting the 'ASSH_DRYRUN=1' environment variable,
 	// so 'assh' can use gateways using sub-SSH commands.
-	if c.Bool("dry-run") == true {
+	if c.Bool("dry-run") {
 		os.Setenv("ASSH_DRYRUN", "1")
 	}
 	dryRun := os.Getenv("ASSH_DRYRUN") == "1"
@@ -57,7 +57,7 @@ func cmdProxy(c *cli.Context) {
 		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
 		Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.")
 		Logger.Debugf("Saving SSH config")
-		err = conf.SaveSshConfig()
+		err = conf.SaveSSHConfig()
 		if err != nil {
 			Logger.Fatalf("Cannot save SSH config file: %v", err)
 		}
@@ -70,8 +70,8 @@ func cmdProxy(c *cli.Context) {
 		Logger.Fatalf("Cannot get host '%s': %v", target, err)
 	}
 	w := Logger.Writer()
-	defer w.Close()
-	host.WriteSshConfigTo(w)
+	host.WriteSSHConfigTo(w)
+	w.Close()
 
 	Logger.Debugf("Proxying")
 	err = proxy(host, conf, dryRun)

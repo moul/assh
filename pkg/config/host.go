@@ -112,13 +112,13 @@ type Host struct {
 	Aliases              []string `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
 
 	// private assh fields
-	knownHosts []string        `yaml:"-" json:"-"`
-	pattern    string          `yaml:"-" json:"-"`
-	name       string          `yaml:"-" json:"-"`
-	inputName  string          `yaml:"-" json:"-"`
-	isDefault  bool            `yaml:"-" json:"-"`
-	isTemplate bool            `yaml:"-" json:"-"`
-	inherited  map[string]bool `yaml:"-" json:"-"`
+	knownHosts []string
+	pattern    string
+	name       string
+	inputName  string
+	isDefault  bool
+	isTemplate bool
+	inherited  map[string]bool
 }
 
 // NewHost returns a host with name
@@ -651,8 +651,8 @@ func (h *Host) AddKnownHost(target string) {
 	h.knownHosts = append(h.knownHosts, target)
 }
 
-// WriteSshConfigTo writes an ~/.ssh/config file compatible host definition to a writable stream
-func (h *Host) WriteSshConfigTo(w io.Writer) error {
+// WriteSSHConfigTo writes an ~/.ssh/config file compatible host definition to a writable stream
+func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 	aliases := append([]string{h.Name()}, h.Aliases...)
 	aliases = append(aliases, h.knownHosts...)
 	aliasIdx := 0
