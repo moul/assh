@@ -18,8 +18,8 @@ class Assh < Formula
 
     system "go", "build", "-o", "#{bin}/assh", "-v", "github.com/moul/advanced-ssh-config/cmd/assh/"
 
-    bash_completion.install "contrib/completion/bash_autocomplete"
-    zsh_completion.install "contrib/completion/zsh_autocomplete"
+    bash_completion.install "src/github.com/moul/advanced-ssh-config/contrib/completion/bash_autocomplete"
+    zsh_completion.install "src/github.com/moul/advanced-ssh-config/contrib/completion/zsh_autocomplete"
   end
 
   def caveats
