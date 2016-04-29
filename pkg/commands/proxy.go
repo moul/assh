@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -72,6 +73,12 @@ func cmdProxy(c *cli.Context) {
 	w := Logger.Writer()
 	host.WriteSSHConfigTo(w)
 	w.Close()
+
+	hostJson, err := json.Marshal(host)
+	if err != nil {
+		Logger.Warnf("Failed to marshal host: %v", err)
+	}
+	Logger.Debugf("Host: %s", hostJson)
 
 	Logger.Debugf("Proxying")
 	err = proxy(host, conf, dryRun)
