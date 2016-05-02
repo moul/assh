@@ -51,6 +51,8 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includ
 
 ### Using Gateway from command line
 
+*assh* can use the [ProxyCommand with netcat](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) feature of OpenSSH **transparently** and without the pain of using long configuration.
+
 Connect to `hosta` using `hostb` as gateway.
 
 ```
@@ -99,6 +101,41 @@ user@hosta $
 ```
 
 Equivalent to `ssh -o ProxyCommand="ssh -o ProxyCommand='ssh hostc nc %h %p' hostb nc %h %p" hosta`
+
+### Using Gateways from configuration file
+
+You can define an equivalent of the ["ProxyCommand with netcat"](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) feature of OpenSSH, with a simpler syntax, more advanced workflows and a unique fallback feature.
+
+Let's consider the following `assh.yml` file
+```yaml
+hosts:
+  hosta:
+    Hostname: 1.2.3.4
+  
+  hostb:
+    Hostname: 5.6.7.8
+    Gateways:
+    - hosta
+    
+  hostc:
+    Hostname: 9.10.11.12
+    Gateways:
+    - hostb
+    
+  hostd:
+    Hostname: 13.14.15.16
+    Gateways:
+    - direct
+    - hosta
+```
+
+* `ssh hosta` -> `ssh 1.2.3.4`
+* `ssh hostb` -> `ssh -o ProxyCommand="ssh hostb nc %h %p" hosta`
+* `ssh hostc` -> `ssh -o ProxyCommand="ssh -o ProxyCommand='ssh hostc nc %h %p' hostb nc %h %p" hosta`
+* `ssh hostd` ->
+  * assh will try to `ssh 13.14.15.16`
+  * then, fallback on `ssh -o ProxyCommand="ssh hostd nc %h %p" hosta`
+  * this method allows you to have the best performances when it is possible, but ensure your commands will work if you are outside of your company for instance
 
 ### Under the hood features
 
