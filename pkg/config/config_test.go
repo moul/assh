@@ -1200,8 +1200,8 @@ func TestConfig_GetHostSafe(t *testing.T) {
 	})
 }
 
-func TestConfig_WriteSshConfig(t *testing.T) {
-	Convey("Testing Config.WriteSshConfig", t, func() {
+func TestConfig_WriteSSHConfig(t *testing.T) {
+	Convey("Testing Config.WriteSSHConfig", t, func() {
 		config := dummyConfig()
 
 		config.addKnownHost("toto1toto")
@@ -1210,7 +1210,7 @@ func TestConfig_WriteSshConfig(t *testing.T) {
 
 		var buffer bytes.Buffer
 
-		err := config.WriteSshConfigTo(&buffer)
+		err := config.WriteSSHConfigTo(&buffer)
 		So(err, ShouldBeNil)
 
 		expected := `# more info: https://github.com/moul/advanced-ssh-config
