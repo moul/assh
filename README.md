@@ -12,6 +12,7 @@
 2. [Features](#features)
   * [Configuration features](#configuration-features)
   * [Using Gateway from command line](#using-gateway-from-command-line)
+  * [Using Gateway from configuration file](#using-gateways-from-configuration-file)
   * [Under the hood features](#under-the-hood-features)
 3. [Configuration](#configuration)
 4. [Usage](#usage)
