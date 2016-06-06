@@ -112,17 +112,17 @@ Let's consider the following `assh.yml` file
 hosts:
   hosta:
     Hostname: 1.2.3.4
-  
+
   hostb:
     Hostname: 5.6.7.8
     Gateways:
     - hosta
-    
+
   hostc:
     Hostname: 9.10.11.12
     Gateways:
     - hostb
-    
+
   hostd:
     Hostname: 13.14.15.16
     Gateways:
@@ -278,6 +278,8 @@ includes:
 - ~/.ssh/assh.d/*.yml
 - /etc/assh.yml
 - $ENV_VAR/blah-blah-*/*.yml
+
+ASSHBinaryPath: ~/bin/assh  # optionally set the path of assh
 ```
 
 ---
@@ -376,7 +378,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
-* No entry
+* Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...master)
 
