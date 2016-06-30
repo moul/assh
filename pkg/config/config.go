@@ -18,7 +18,7 @@ import (
 	"github.com/moul/advanced-ssh-config/pkg/version"
 )
 
-var ASSHBinary = "assh"
+var asshBinaryPath = "assh"
 
 const defaultSshConfigPath string = "~/.ssh/config"
 
@@ -29,9 +29,16 @@ type Config struct {
 	Defaults          Host             `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
 	Includes          []string         `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
 	ASSHKnownHostFile string           `yaml:"asshknownhostfile,omitempty,flow" json:"asshknownhostfile,omitempty"`
+	ASSHBinaryPath    string           `yaml:"asshbinarypath,omitempty,flow" json:"asshbinarypath,omitempty"`
 
 	includedFiles map[string]bool
 	sshConfigPath string
+}
+
+// SetASSHBinaryPath sets the default assh binary path
+// this value may be overwritten in the assh.yml file using the asshbinarypath variable
+func SetASSHBinaryPath(path string) {
+	asshBinaryPath = path
 }
 
 // SaveNewKnownHost registers the target as a new known host and save the full known hosts list on disk
@@ -448,6 +455,13 @@ func (c *Config) LoadFiles(pattern string) error {
 		}
 	}
 
+	if c.ASSHBinaryPath != "" {
+		path, err := expandUser(c.ASSHBinaryPath)
+		if err != nil {
+			return err
+		}
+		asshBinaryPath = path
+	}
 	return nil
 }
 
@@ -501,6 +515,7 @@ func New() *Config {
 	config.includedFiles = make(map[string]bool)
 	config.sshConfigPath = defaultSshConfigPath
 	config.ASSHKnownHostFile = "~/.ssh/assh_known_hosts"
+	config.ASSHBinaryPath = ""
 	return &config
 }
 
