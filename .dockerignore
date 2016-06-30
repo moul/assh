@@ -1,0 +1,9 @@
+*#
+*~
+.#*
+.git/
+Dockerfile
+./assh
+contrib/
+dist/
+#/vendor/
