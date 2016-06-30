@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	config.ASSHBinary = os.Args[0]
+	config.SetASSHBinaryPath(os.Args[0])
 }
 
 // Commands is the list of cli commands
