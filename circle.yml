@@ -1,0 +1,16 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  override:
+    - docker info
+    - docker build -t moul/assh .
+
+test:
+  override:
+    - exit 0
+
+database:
+  override:
+    - exit 0
