@@ -300,7 +300,7 @@ USAGE:
    assh [global options] command [command options] [arguments...]
 
 VERSION:
-   2.3.0 (HEAD)
+   2.3.0+dev (HEAD)
 
 AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
@@ -309,6 +309,8 @@ COMMANDS:
    proxy         Connect to host SSH socket, used by ProxyCommand
    build         Build .ssh/config
    info          Display system-wide information
+   list          List all hosts from assh config
+   search        Search entries by given search text
    wrapper       Initialize assh, then run ssh/scp/rsync...
    help, h       Shows a list of commands or help for one command
 
@@ -378,6 +380,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Add storm-like `assh list` and `assh search {keyword}` commands ([#151](https://github.com/moul/advanced-ssh-config/pull/151))
 * Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...master)
