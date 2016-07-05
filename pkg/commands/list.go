@@ -24,7 +24,7 @@ func cmdList(c *cli.Context) {
 		colorize = ansi.ColorFunc("green+b+h")
 	}
 
-	for _, host := range conf.Hosts {
+	for _, host := range conf.Hosts.SortedList() {
 		host.ApplyDefaults(&conf.Defaults)
 		fmt.Printf("    %s -> %s\n", colorize(host.Name()), host.Prototype())
 		fmt.Println()
