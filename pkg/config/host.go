@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os/user"
 	"strings"
 )
 
@@ -133,6 +134,29 @@ func NewHost(name string) *Host {
 func (h *Host) String() string {
 	s, _ := json.Marshal(h)
 	return string(s)
+}
+
+// Prototype returns a prototype representation of the host, used in listings
+func (h *Host) Prototype() string {
+	username := h.User
+	if username == "" {
+		currentUser, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+		username = currentUser.Username
+	}
+
+	hostname := h.HostName
+	if hostname == "" {
+		hostname = "[hostname_not_specified]"
+	}
+
+	port := h.Port
+	if port == "" {
+		port = "22"
+	}
+	return fmt.Sprintf("%s@%s:%s", username, hostname, port)
 }
 
 // Name returns the name of a host

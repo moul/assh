@@ -41,12 +41,6 @@ func SetASSHBinaryPath(path string) {
 	asshBinaryPath = path
 }
 
-// String returns the JSON output
-func (c *Config) String() string {
-	s, _ := json.Marshal(c)
-	return string(s)
-}
-
 // SaveNewKnownHost registers the target as a new known host and save the full known hosts list on disk
 func (c *Config) SaveNewKnownHost(target string) {
 	c.addKnownHost(target)
