@@ -21,6 +21,11 @@ all:	build
 build:	$(BINARIES)
 
 
+.PHONY: docker
+docker:
+	docker build -t moul/assh .
+
+
 $(BINARIES):	$(SOURCES)
 	$(GO) build -o $@ ./cmd/$@
 
