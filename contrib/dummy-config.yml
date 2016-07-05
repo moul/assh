@@ -1,0 +1,125 @@
+hosts:
+
+  homer:
+    # ssh homer ->  ssh 1.2.3.4 -p 2222 -u robert
+    Hostname: 1.2.3.4
+    User: robert
+    Port: 2222
+
+  bart:
+    # ssh bart ->   ssh 5.6.7.8 -u bart           <- direct access
+    #            or ssh 5.6.7.8/homer -u bart     <- using homer as a gateway
+    Hostname: 5.6.7.8
+    User: bart
+    Gateways:
+    - direct                   # tries a direct access first
+    - homer                    # fallback on homer gateway
+
+  maggie:
+    # ssh maggie ->   ssh 5.6.7.8 -u maggie       <- direct access
+    #              or ssh 5.6.7.8/homer -u maggie   <- using homer as a gateway
+    User: maggie
+    Inherits:
+    - bart                     # inherits rules from "bart"
+
+  bart-access:
+    # ssh bart-access ->  ssh home.simpson.springfield.us -u bart
+    Inherits:
+    - bart-template
+    - simpson-template
+
+  lisa-access:
+    # ssh lisa-access ->  ssh home.simpson.springfield.us -u lisa
+    Inherits:
+    - lisa-template
+    - simpson-template
+
+  marvin:
+    # ssh marvin    -> ssh marvin    -p 23
+    # ssh sad-robot -> ssh sad-robot -p 23
+    # ssh bighead   -> ssh bighead   -p 23
+    # aliases inherit everything from marvin, except hostname
+    Port: 23
+    Aliases:
+    - sad-robot
+    - bighead
+
+  dolphin:
+    # ssh dolphin   -> ssh dolphin -p 24
+    # ssh ecco      -> ssh dolphin -p 24
+    # same as above, but with fixed hostname
+    Port: 24
+    Hostname: dolphin
+    Aliases:
+    - sad-robot
+    - bighead
+
+  schooltemplate:
+    User: student
+    IdentityFile: ~/.ssh/school-rsa
+    ForwardX11: yes
+
+  schoolgw:
+    # ssh school ->   ssh gw.school.com -l student -o ForwardX11=no -i ~/.ssh/school-rsa
+    Hostname: gw.school.com
+    ForwardX11: no
+    Inherits:
+    - schooltemplate
+
+  "expanded-host[0-7]*":
+    # ssh somehost2042 ->       ssh somehost2042.some.zone
+    Hostname: "%h.some.zone"
+
+  vm-*.school.com:
+    # ssh vm-42.school.com ->   ssh vm-42.school.com/gw.school.com -l student -o ForwardX11=yes -i ~/.ssh/school-rsa
+    Gateways:
+    - schoolgw
+    Inherits:
+    - schooltemplate
+    # do not automatically create `ControlPath` -> may result in error
+    NoControlMasterMkdir: true
+
+  "*.shortcut1":
+    ResolveCommand: /bin/sh -c "echo %h | sed s/.shortcut1/.my-long-domain-name.com/"
+
+  "*.shortcut2":
+    ResolveCommand: /bin/sh -c "echo $(echo %h | sed s/.shortcut2//).my-other-long-domain-name.com"
+
+  "*.scw":
+    # ssh toto.scw -> 1. dynamically resolves the IP address
+    #                 2. ssh {resolved ip address} -u root -p 22 -o UserKnownHostsFile=null -o StrictHostKeyChecking=no
+    # requires github.com/scaleway/scaleway-cli
+    ResolveCommand: /bin/sh -c "scw inspect -f {{.PublicAddress.IP}} server:$(echo %h | sed s/.scw//)"
+    User: root
+    Port: 22
+    UserKnownHostsFile: /dev/null
+    StrictHostKeyChecking: no
+
+  my-env-host:
+    User: user-$USER
+    Hostname: ${HOSTNAME}${HOSTNAME_SUFFIX}
+
+templates:
+  # Templates are similar to Hosts, you can inherits from them
+  # but you cannot ssh to a template
+  bart-template:
+    User: bart
+  lisa-template:
+    User: lisa
+  simpson-template:
+    Host: home.simpson.springfield.us
+
+defaults:
+  # Defaults are applied to each hosts
+  ControlMaster: auto
+  ControlPath: ~/tmp/.ssh/cm/%h-%p-%r.sock
+  ControlPersist: yes
+  Port: 22
+  User: bob
+
+includes:
+#- ~/.ssh/assh.d/*.yml
+- /etc/assh.yml
+- $ENV_VAR/blah-blah-*/*.yml
+
+ASSHBinaryPath: ~/bin/assh  # optionally set the path of assh
