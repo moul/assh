@@ -10,7 +10,7 @@ import (
 )
 
 func cmdSearch(c *cli.Context) {
-	conf, err := config.Open(c.String("config"))
+	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		panic(err)
 	}
