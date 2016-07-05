@@ -10,7 +10,7 @@ import (
 )
 
 func cmdBuild(c *cli.Context) {
-	conf, err := config.Open()
+	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
