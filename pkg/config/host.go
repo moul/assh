@@ -170,6 +170,303 @@ func (h *Host) Clone() *Host {
 	return &newHost
 }
 
+// Options returns a map of set options
+func (h *Host) Options() OptionsList {
+	options := make(OptionsList, 0)
+
+	// ssh-config fields
+	if h.AddressFamily != "" {
+		options = append(options, Option{Name: "AddressFamily", Value: h.AddressFamily})
+	}
+	if h.AskPassGUI != "" {
+		options = append(options, Option{Name: "AskPassGUI", Value: h.AskPassGUI})
+	}
+	if h.BatchMode != "" {
+		options = append(options, Option{Name: "BatchMode", Value: h.BatchMode})
+	}
+	if h.BindAddress != "" {
+		options = append(options, Option{Name: "BindAddress", Value: h.BindAddress})
+	}
+	if h.CanonicalDomains != "" {
+		options = append(options, Option{Name: "CanonicalDomains", Value: h.CanonicalDomains})
+	}
+	if h.CanonicalizeFallbackLocal != "" {
+		options = append(options, Option{Name: "CanonicalizeFallbackLocal", Value: h.CanonicalizeFallbackLocal})
+	}
+	if h.CanonicalizeHostname != "" {
+		options = append(options, Option{Name: "CanonicalizeHostname", Value: h.CanonicalizeHostname})
+	}
+	if h.CanonicalizeMaxDots != "" {
+		options = append(options, Option{Name: "CanonicalizeMaxDots", Value: h.CanonicalizeMaxDots})
+	}
+	if h.CanonicalizePermittedCNAMEs != "" {
+		options = append(options, Option{Name: "CanonicalizePermittedCNAMEs", Value: h.CanonicalizePermittedCNAMEs})
+	}
+	if h.ChallengeResponseAuthentication != "" {
+		options = append(options, Option{Name: "ChallengeResponseAuthentication", Value: h.ChallengeResponseAuthentication})
+	}
+	if h.CheckHostIP != "" {
+		options = append(options, Option{Name: "CheckHostIP", Value: h.CheckHostIP})
+	}
+	if h.Cipher != "" {
+		options = append(options, Option{Name: "Cipher", Value: h.Cipher})
+	}
+	if h.Ciphers != "" {
+		options = append(options, Option{Name: "Ciphers", Value: h.Ciphers})
+	}
+	if h.ClearAllForwardings != "" {
+		options = append(options, Option{Name: "ClearAllForwardings", Value: h.ClearAllForwardings})
+	}
+	if h.Compression != "" {
+		options = append(options, Option{Name: "Compression", Value: h.Compression})
+	}
+	if h.CompressionLevel != 0 {
+		options = append(options, Option{Name: "CompressionLevel", Value: string(h.CompressionLevel)})
+	}
+	if h.ConnectionAttempts != "" {
+		options = append(options, Option{Name: "ConnectionAttempts", Value: h.ConnectionAttempts})
+	}
+	if h.ConnectTimeout != 0 {
+		options = append(options, Option{Name: "ConnectTimeout", Value: string(h.ConnectTimeout)})
+	}
+	if h.ControlMaster != "" {
+		options = append(options, Option{Name: "ControlMaster", Value: h.ControlMaster})
+	}
+	if h.ControlPath != "" {
+		options = append(options, Option{Name: "ControlPath", Value: h.ControlPath})
+	}
+	if h.ControlPersist != "" {
+		options = append(options, Option{Name: "ControlPersist", Value: h.ControlPersist})
+	}
+	if h.DynamicForward != "" {
+		options = append(options, Option{Name: "DynamicForward", Value: h.DynamicForward})
+	}
+	if h.EnableSSHKeysign != "" {
+		options = append(options, Option{Name: "EnableSSHKeysign", Value: h.EnableSSHKeysign})
+	}
+	if h.EscapeChar != "" {
+		options = append(options, Option{Name: "EscapeChar", Value: h.EscapeChar})
+	}
+	if h.ExitOnForwardFailure != "" {
+		options = append(options, Option{Name: "ExitOnForwardFailure", Value: h.ExitOnForwardFailure})
+	}
+	if h.FingerprintHash != "" {
+		options = append(options, Option{Name: "FingerprintHash", Value: h.FingerprintHash})
+	}
+	if h.ForwardAgent != "" {
+		options = append(options, Option{Name: "ForwardAgent", Value: h.ForwardAgent})
+	}
+	if h.ForwardX11 != "" {
+		options = append(options, Option{Name: "ForwardX11", Value: h.ForwardX11})
+	}
+	if h.ForwardX11Timeout != 0 {
+		options = append(options, Option{Name: "ForwardX11Timeout", Value: string(h.ForwardX11Timeout)})
+	}
+	if h.ForwardX11Trusted != "" {
+		options = append(options, Option{Name: "ForwardX11Trusted", Value: h.ForwardX11Trusted})
+	}
+	if h.GatewayPorts != "" {
+		options = append(options, Option{Name: "GatewayPorts", Value: h.GatewayPorts})
+	}
+	if h.GlobalKnownHostsFile != "" {
+		options = append(options, Option{Name: "GlobalKnownHostsFile", Value: h.GlobalKnownHostsFile})
+	}
+	if h.GSSAPIAuthentication != "" {
+		options = append(options, Option{Name: "GSSAPIAuthentication", Value: h.GSSAPIAuthentication})
+	}
+	if h.GSSAPIClientIdentity != "" {
+		options = append(options, Option{Name: "GSSAPIClientIdentity", Value: h.GSSAPIClientIdentity})
+	}
+	if h.GSSAPIDelegateCredentials != "" {
+		options = append(options, Option{Name: "GSSAPIDelegateCredentials", Value: h.GSSAPIDelegateCredentials})
+	}
+	if h.GSSAPIKeyExchange != "" {
+		options = append(options, Option{Name: "GSSAPIKeyExchange", Value: h.GSSAPIKeyExchange})
+	}
+	if h.GSSAPIRenewalForcesRekey != "" {
+		options = append(options, Option{Name: "GSSAPIRenewalForcesRekey", Value: h.GSSAPIRenewalForcesRekey})
+	}
+	if h.GSSAPIServerIdentity != "" {
+		options = append(options, Option{Name: "GSSAPIServerIdentity", Value: h.GSSAPIServerIdentity})
+	}
+	if h.GSSAPITrustDns != "" {
+		options = append(options, Option{Name: "GSSAPITrustDns", Value: h.GSSAPITrustDns})
+	}
+	if h.HashKnownHosts != "" {
+		options = append(options, Option{Name: "HashKnownHosts", Value: h.HashKnownHosts})
+	}
+	if h.HostbasedAuthentication != "" {
+		options = append(options, Option{Name: "HostbasedAuthentication", Value: h.HostbasedAuthentication})
+	}
+	if h.HostbasedKeyTypes != "" {
+		options = append(options, Option{Name: "HostbasedKeyTypes", Value: h.HostbasedKeyTypes})
+	}
+	if h.HostKeyAlgorithms != "" {
+		options = append(options, Option{Name: "HostKeyAlgorithms", Value: h.HostKeyAlgorithms})
+	}
+	if h.HostKeyAlias != "" {
+		options = append(options, Option{Name: "HostKeyAlias", Value: h.HostKeyAlias})
+	}
+	if h.IdentitiesOnly != "" {
+		options = append(options, Option{Name: "IdentitiesOnly", Value: h.IdentitiesOnly})
+	}
+	if h.IdentityFile != "" {
+		options = append(options, Option{Name: "IdentityFile", Value: h.IdentityFile})
+	}
+	if h.IgnoreUnknown != "" {
+		options = append(options, Option{Name: "IgnoreUnknown", Value: h.IgnoreUnknown})
+	}
+	if h.IPQoS != "" {
+		options = append(options, Option{Name: "IPQoS", Value: h.IPQoS})
+	}
+	if h.KbdInteractiveAuthentication != "" {
+		options = append(options, Option{Name: "KbdInteractiveAuthentication", Value: h.KbdInteractiveAuthentication})
+	}
+	if h.KbdInteractiveDevices != "" {
+		options = append(options, Option{Name: "KbdInteractiveDevices", Value: h.KbdInteractiveDevices})
+	}
+	if h.KexAlgorithms != "" {
+		options = append(options, Option{Name: "KexAlgorithms", Value: h.KexAlgorithms})
+	}
+	if h.KeychainIntegration != "" {
+		options = append(options, Option{Name: "KeychainIntegration", Value: h.KeychainIntegration})
+	}
+	if h.LocalCommand != "" {
+		options = append(options, Option{Name: "LocalCommand", Value: h.LocalCommand})
+	}
+	if h.LocalForward != "" {
+		options = append(options, Option{Name: "LocalForward", Value: h.LocalForward})
+	}
+	if h.LogLevel != "" {
+		options = append(options, Option{Name: "LogLevel", Value: h.LogLevel})
+	}
+	if h.MACs != "" {
+		options = append(options, Option{Name: "MACs", Value: h.MACs})
+	}
+	if h.Match != "" {
+		options = append(options, Option{Name: "Match", Value: h.Match})
+	}
+	if h.NoHostAuthenticationForLocalhost != "" {
+		options = append(options, Option{Name: "NoHostAuthenticationForLocalhost", Value: h.NoHostAuthenticationForLocalhost})
+	}
+	if h.NumberOfPasswordPrompts != "" {
+		options = append(options, Option{Name: "NumberOfPasswordPrompts", Value: h.NumberOfPasswordPrompts})
+	}
+	if h.PasswordAuthentication != "" {
+		options = append(options, Option{Name: "PasswordAuthentication", Value: h.PasswordAuthentication})
+	}
+	if h.PermitLocalCommand != "" {
+		options = append(options, Option{Name: "PermitLocalCommand", Value: h.PermitLocalCommand})
+	}
+	if h.PKCS11Provider != "" {
+		options = append(options, Option{Name: "PKCS11Provider", Value: h.PKCS11Provider})
+	}
+	if h.Port != "" {
+		options = append(options, Option{Name: "Port", Value: h.Port})
+	}
+	if h.PreferredAuthentications != "" {
+		options = append(options, Option{Name: "PreferredAuthentications", Value: h.PreferredAuthentications})
+	}
+	if h.Protocol != "" {
+		options = append(options, Option{Name: "Protocol", Value: h.Protocol})
+	}
+	if h.ProxyUseFdpass != "" {
+		options = append(options, Option{Name: "ProxyUseFdpass", Value: h.ProxyUseFdpass})
+	}
+	if h.PubkeyAuthentication != "" {
+		options = append(options, Option{Name: "PubkeyAuthentication", Value: h.PubkeyAuthentication})
+	}
+	if h.RekeyLimit != "" {
+		options = append(options, Option{Name: "RekeyLimit", Value: h.RekeyLimit})
+	}
+	if h.RemoteForward != "" {
+		options = append(options, Option{Name: "RemoteForward", Value: h.RemoteForward})
+	}
+	if h.RequestTTY != "" {
+		options = append(options, Option{Name: "RequestTTY", Value: h.RequestTTY})
+	}
+	if h.RevokedHostKeys != "" {
+		options = append(options, Option{Name: "RevokedHostKeys", Value: h.RevokedHostKeys})
+	}
+	if h.RhostsRSAAuthentication != "" {
+		options = append(options, Option{Name: "RhostsRSAAuthentication", Value: h.RhostsRSAAuthentication})
+	}
+	if h.RSAAuthentication != "" {
+		options = append(options, Option{Name: "RSAAuthentication", Value: h.RSAAuthentication})
+	}
+	if h.SendEnv != "" {
+		options = append(options, Option{Name: "SendEnv", Value: h.SendEnv})
+	}
+	if h.ServerAliveCountMax != 0 {
+		options = append(options, Option{Name: "ServerAliveCountMax", Value: string(h.ServerAliveCountMax)})
+	}
+	if h.ServerAliveInterval != 0 {
+		options = append(options, Option{Name: "ServerAliveInterval", Value: string(h.ServerAliveInterval)})
+	}
+	if h.StreamLocalBindMask != "" {
+		options = append(options, Option{Name: "StreamLocalBindMask", Value: h.StreamLocalBindMask})
+	}
+	if h.StreamLocalBindUnlink != "" {
+		options = append(options, Option{Name: "StreamLocalBindUnlink", Value: h.StreamLocalBindUnlink})
+	}
+	if h.StrictHostKeyChecking != "" {
+		options = append(options, Option{Name: "StrictHostKeyChecking", Value: h.StrictHostKeyChecking})
+	}
+	if h.TCPKeepAlive != "" {
+		options = append(options, Option{Name: "TCPKeepAlive", Value: h.TCPKeepAlive})
+	}
+	if h.Tunnel != "" {
+		options = append(options, Option{Name: "Tunnel", Value: h.Tunnel})
+	}
+	if h.TunnelDevice != "" {
+		options = append(options, Option{Name: "TunnelDevice", Value: h.TunnelDevice})
+	}
+	if h.UpdateHostKeys != "" {
+		options = append(options, Option{Name: "UpdateHostKeys", Value: h.UpdateHostKeys})
+	}
+	if h.UsePrivilegedPort != "" {
+		options = append(options, Option{Name: "UsePrivilegedPort", Value: h.UsePrivilegedPort})
+	}
+	if h.User != "" {
+		options = append(options, Option{Name: "User", Value: h.User})
+	}
+	if h.UserKnownHostsFile != "" {
+		options = append(options, Option{Name: "UserKnownHostsFile", Value: h.UserKnownHostsFile})
+	}
+	if h.VerifyHostKeyDNS != "" {
+		options = append(options, Option{Name: "VerifyHostKeyDNS", Value: h.VerifyHostKeyDNS})
+	}
+	if h.VisualHostKey != "" {
+		options = append(options, Option{Name: "VisualHostKey", Value: h.VisualHostKey})
+	}
+	if h.XAuthLocation != "" {
+		options = append(options, Option{Name: "XAuthLocation", Value: h.XAuthLocation})
+	}
+
+	// ssh-config fields with a different behavior
+	//HostName
+	//ProxyCommand
+
+	// exposed assh fields
+	//Inherits
+	//Gateways
+	//ResolveNameservers
+	//ResolveCommand
+	//NoControlMasterMkdir
+	//Aliases
+
+	// private assh fields
+	//knownHosts
+	//pattern
+	//name
+	//inputName
+	//isDefault
+	//isTemplate
+	//inherited
+
+	return options
+}
+
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults
 func (h *Host) ApplyDefaults(defaults *Host) {
 	// ssh-config fields
