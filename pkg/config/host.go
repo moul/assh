@@ -172,8 +172,16 @@ func (h *Host) Clone() *Host {
 
 // Matches returns true if the host matches a given string
 func (h *Host) Matches(needle string) bool {
-	// FIXME: lookup all fields
-	return strings.Contains(h.Name(), needle)
+	if matches := strings.Contains(h.Name(), needle); matches {
+		return true
+	}
+
+	for _, opt := range h.Options() {
+		if matches := strings.Contains(opt.Value, needle); matches {
+			return true
+		}
+	}
+	return false
 }
 
 // Options returns a map of set options
