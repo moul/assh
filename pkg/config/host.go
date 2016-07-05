@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -126,6 +127,12 @@ func NewHost(name string) *Host {
 	return &Host{
 		name: name,
 	}
+}
+
+// String returns the JSON output
+func (h *Host) String() string {
+	s, _ := json.Marshal(h)
+	return string(s)
 }
 
 // Name returns the name of a host
