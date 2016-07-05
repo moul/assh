@@ -312,14 +312,14 @@ COMMANDS:
    list          List all hosts from assh config
    search        Search entries by given search text
    wrapper       Initialize assh, then run ssh/scp/rsync...
-   help, h       Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-  --debug, -D                  Enable debug mode [$ASSH_DEBUG]
-  --verbose, -V                Enable verbose mode
-  --help, -h                   show help
+  --config, -c "~/.ssh/assh.yml"         Location of config file [$ASSH_CONFIG]
+  --debug, -D                            Enable debug mode [$ASSH_DEBUG]
+  --verbose, -V                          Enable verbose mode
+  --help, -h                             show help
   --generate-bash-completion
-  --version, -v                print the version
+  --version, -v                          print the version
 ```
 
 ## Install
@@ -380,6 +380,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Add a `assh --config=/path/to/assh.yml` option
 * Add storm-like `assh list` and `assh search {keyword}` commands ([#151](https://github.com/moul/advanced-ssh-config/pull/151))
 * Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
 

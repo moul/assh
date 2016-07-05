@@ -525,10 +525,10 @@ func New() *Config {
 	return &config
 }
 
-// Open returns a Config object loaded with standard configuration file paths
-func Open() (*Config, error) {
+// OpenPath parses a configuration file and returns a *Config object
+func Open(path string) (*Config, error) {
 	config := New()
-	err := config.LoadFile("~/.ssh/assh.yml")
+	err := config.LoadFile(path)
 	if err != nil {
 		return nil, err
 	}

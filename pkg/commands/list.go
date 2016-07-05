@@ -14,7 +14,7 @@ import (
 )
 
 func cmdList(c *cli.Context) {
-	conf, err := config.Open()
+	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		panic(err)
 	}
