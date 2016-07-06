@@ -8,7 +8,7 @@ type Option struct {
 	Value string
 }
 
-// OptionList is a list of options
+// OptionsList is a list of options
 type OptionsList []Option
 
 func (o *Option) String() string {
