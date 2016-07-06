@@ -525,7 +525,7 @@ func New() *Config {
 	return &config
 }
 
-// OpenPath parses a configuration file and returns a *Config object
+// Open parses a configuration file and returns a *Config object
 func Open(path string) (*Config, error) {
 	config := New()
 	err := config.LoadFile(path)
