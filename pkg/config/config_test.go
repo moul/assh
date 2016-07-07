@@ -1217,6 +1217,9 @@ func TestConfig_WriteSSHConfig(t *testing.T) {
 
 		var buffer bytes.Buffer
 
+		config.ASSHBinaryPath = "assh"
+		asshBinaryPath = "assh"
+
 		err := config.WriteSSHConfigTo(&buffer)
 		So(err, ShouldBeNil)
 
