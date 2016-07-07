@@ -77,6 +77,7 @@ func TestMemPS(t *testing.T) {
 				{Space: "DAV:", Local: "resourcetype"},
 				{Space: "DAV:", Local: "displayname"},
 				{Space: "DAV:", Local: "supportedlock"},
+				{Space: "DAV:", Local: "getlastmodified"},
 			},
 		}, {
 			op:   "propname",
@@ -105,6 +106,9 @@ func TestMemPS(t *testing.T) {
 				}, {
 					XMLName:  xml.Name{Space: "DAV:", Local: "displayname"},
 					InnerXML: []byte("dir"),
+				}, {
+					XMLName:  xml.Name{Space: "DAV:", Local: "getlastmodified"},
+					InnerXML: nil, // Calculated during test.
 				}, {
 					XMLName:  xml.Name{Space: "DAV:", Local: "supportedlock"},
 					InnerXML: []byte(lockEntry),

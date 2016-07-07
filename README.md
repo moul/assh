@@ -16,6 +16,7 @@
   * [Under the hood features](#under-the-hood-features)
 3. [Configuration](#configuration)
 4. [Usage](#usage)
+  * [Usage Examples](#usage-examples)
 5. [Install](#install)
   * [Register the wrapper (optional)](#register-the-wrapper-optional)
 6. [Getting started](#getting-started)
@@ -300,7 +301,7 @@ USAGE:
    assh [global options] command [command options] [arguments...]
 
 VERSION:
-   2.3.0 (HEAD)
+   2.3.0+dev (HEAD)
 
 AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
@@ -309,15 +310,71 @@ COMMANDS:
    proxy         Connect to host SSH socket, used by ProxyCommand
    build         Build .ssh/config
    info          Display system-wide information
+   list          List all hosts from assh config
+   search        Search entries by given search text
    wrapper       Initialize assh, then run ssh/scp/rsync...
-   help, h       Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-  --debug, -D                  Enable debug mode [$ASSH_DEBUG]
-  --verbose, -V                Enable verbose mode
-  --help, -h                   show help
+  --config, -c "~/.ssh/assh.yml"         Location of config file [$ASSH_CONFIG]
+  --debug, -D                            Enable debug mode [$ASSH_DEBUG]
+  --verbose, -V                          Enable verbose mode
+  --help, -h                             show help
   --generate-bash-completion
-  --version, -v                print the version
+  --version, -v                          print the version
+```
+
+### Usage examples
+
+```console
+$ assh list
+Listing entries
+
+    *.scw -> root@[hostname_not_specified]:22
+        [custom options] StrictHostKeyChecking=no UserKnownHostsFile=/dev/null
+
+    *.shortcut1 -> bob@[hostname_not_specified]:22
+
+    *.shortcut2 -> bob@[hostname_not_specified]:22
+
+    bart -> bart@5.6.7.8:22
+
+    bart-access -> bob@[hostname_not_specified]:22
+
+    dolphin -> bob@dolphin:24
+
+    expanded-host[0-7]* -> bob@%h.some.zone:22
+
+    homer -> robert@1.2.3.4:2222
+
+    lisa-access -> bob@[hostname_not_specified]:22
+
+    maggie -> maggie@[hostname_not_specified]:22
+
+    marvin -> bob@[hostname_not_specified]:23
+
+    my-env-host -> user-moul@[hostname_not_specified]:22
+
+    schoolgw -> bob@gw.school.com:22
+        [custom options] ForwardX11=no
+
+    schooltemplate -> student@[hostname_not_specified]:22
+        [custom options] ForwardX11=yes IdentityFile=~/.ssh/school-rsa
+
+    vm-*.school.com -> bob@[hostname_not_specified]:22
+
+    (*) General options:
+        ControlMaster: auto
+        ControlPath: ~/tmp/.ssh/cm/%h-%p-%r.sock
+        ControlPersist: yes
+        Port: 22
+        User: bob
+```
+
+```console
+$ assh search bart
+Listing results for bart:
+    bart -> bart@5.6.7.8:22
+    bart-access -> moul@[hostname_not_specified]:22
 ```
 
 ## Install
@@ -378,6 +435,8 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Add a `assh --config=/path/to/assh.yml` option
+* Add storm-like `assh list` and `assh search {keyword}` commands ([#151](https://github.com/moul/advanced-ssh-config/pull/151))
 * Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...master)

@@ -24,12 +24,12 @@ const defaultSshConfigPath string = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
-	Hosts             map[string]*Host `yaml:"hosts,omitempty,flow" json:"hosts"`
-	Templates         map[string]*Host `yaml:"templates,omitempty,flow" json:"templates"`
-	Defaults          Host             `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
-	Includes          []string         `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
-	ASSHKnownHostFile string           `yaml:"asshknownhostfile,omitempty,flow" json:"asshknownhostfile,omitempty"`
-	ASSHBinaryPath    string           `yaml:"asshbinarypath,omitempty,flow" json:"asshbinarypath,omitempty"`
+	Hosts             HostsMap `yaml:"hosts,omitempty,flow" json:"hosts"`
+	Templates         HostsMap `yaml:"templates,omitempty,flow" json:"templates"`
+	Defaults          Host     `yaml:"defaults,omitempty,flow" json:"defaults,omitempty"`
+	Includes          []string `yaml:"includes,omitempty,flow" json:"includes,omitempty"`
+	ASSHKnownHostFile string   `yaml:"asshknownhostfile,omitempty,flow" json:"asshknownhostfile,omitempty"`
+	ASSHBinaryPath    string   `yaml:"asshbinarypath,omitempty,flow" json:"asshbinarypath,omitempty"`
 
 	includedFiles map[string]bool
 	sshConfigPath string
@@ -39,6 +39,12 @@ type Config struct {
 // this value may be overwritten in the assh.yml file using the asshbinarypath variable
 func SetASSHBinaryPath(path string) {
 	asshBinaryPath = path
+}
+
+// String returns the JSON output
+func (c *Config) String() string {
+	s, _ := json.Marshal(c)
+	return string(s)
 }
 
 // SaveNewKnownHost registers the target as a new known host and save the full known hosts list on disk
@@ -519,10 +525,10 @@ func New() *Config {
 	return &config
 }
 
-// Open returns a Config object loaded with standard configuration file paths
-func Open() (*Config, error) {
+// Open parses a configuration file and returns a *Config object
+func Open(path string) (*Config, error) {
 	config := New()
-	err := config.LoadFile("~/.ssh/assh.yml")
+	err := config.LoadFile(path)
 	if err != nil {
 		return nil, err
 	}

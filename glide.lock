@@ -1,24 +1,26 @@
-hash: 985ffa23c4e58e70c4f4b5e8cb12c2d1e6d1dc26d1848974358df8e908a38b76
-updated: 2016-06-30T17:34:49.328671685+02:00
+hash: 97d05761c7f4101773abe4db4735d35bbd9799a682384901d14e9e8199a93479
+updated: 2016-07-05T11:55:23.321910466+02:00
 imports:
 - name: github.com/bugsnag/osext
-  version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
+  version: ""
 - name: github.com/codegangsta/cli
-  version: 4733699ce30faa633c4db36ebfbe427963593d7d
+  version: ""
 - name: github.com/flynn/go-shlex
-  version: 3f9db97f856818214da2e1057f8ad84803971cff
+  version: ""
 - name: github.com/go-ole/go-ole
-  version: 572eabb84c424e76a0d39d31510dd7dfd62f70b2
+  version: ""
   subpackages:
   - oleutil
 - name: github.com/gopherjs/gopherjs
-  version: 19e100e9652485a76176bc5fd2669f57d3a2743c
+  version: ""
   subpackages:
   - js
 - name: github.com/jtolds/gls
-  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
+  version: ""
+- name: github.com/mgutz/ansi
+  version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
 - name: github.com/shirou/gopsutil
-  version: f8c7af556592720f3dfc7098ca55953261c0f02a
+  version: ""
   subpackages:
   - cpu
   - host
@@ -27,30 +29,34 @@ imports:
   - net
   - process
 - name: github.com/shirou/w32
-  version: 3c9377fc6748f222729a8270fe2775d149a249ad
+  version: ""
 - name: github.com/Sirupsen/logrus
-  version: cd7d1bbe41066b6c1f19780f895901052150a575
+  version: ""
 - name: github.com/smartystreets/assertions
-  version: 40711f7748186bbf9c99977cd89f21ce1a229447
+  version: ""
   subpackages:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: cc5d85f4f15bd2163abf0fe6e6753356dde72aa2
+  version: ""
   subpackages:
   - convey
   - convey/gotest
   - convey/reporting
 - name: github.com/StackExchange/wmi
-  version: f3e2bae1e0cb5aef83e319133eabfee30013a4a5
+  version: ""
+- name: golang.org/x/crypto
+  version: 0c565bf13221fb55497d7ae2bb95694db1fd1bff
+  subpackages:
+  - ssh/terminal
 - name: golang.org/x/net
-  version: cb0ed7acc4f717d79a358093419e5a7da09b8b45
+  version: ""
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: f64b50fbea64174967a8882830d621a18ee1548e
+  version: ""
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2
-  version: 7ad95dd0798a40da1ccdff6dff35fd177b5edf40
+  version: ""
 devImports: []

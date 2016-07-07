@@ -67,6 +67,17 @@ var Commands = []cli.Command{
 		Action: cmdInfo,
 	},
 	{
+		Name:   "list",
+		Usage:  "List all hosts from assh config",
+		Action: cmdList,
+	},
+	{
+		Name:   "search",
+		Usage:  "Search entries by given search text",
+		Action: cmdSearch,
+	},
+	// FIXME: tree
+	{
 		Name:  "wrapper",
 		Usage: "Initialize assh, then run ssh/scp/rsync...",
 		Subcommands: []cli.Command{

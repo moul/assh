@@ -39,7 +39,7 @@ func cmdProxy(c *cli.Context) {
 	}
 	dryRun := os.Getenv("ASSH_DRYRUN") == "1"
 
-	conf, err := config.Open()
+	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}

@@ -209,7 +209,9 @@ func (st *serverTester) Close() {
 		// unwindowing), force close the connection, so the
 		// httptest.Server doesn't wait forever for the conn
 		// to close.
-		st.cc.Close()
+		if st.cc != nil {
+			st.cc.Close()
+		}
 	}
 	st.ts.Close()
 	if st.cc != nil {
@@ -2660,13 +2662,11 @@ func testServerWritesTrailers(t *testing.T, withFlush bool) {
 	testServerResponse(t, func(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Set("Trailer", "Server-Trailer-A, Server-Trailer-B")
 		w.Header().Add("Trailer", "Server-Trailer-C")
-
-		// TODO: decide if the server should filter these while
-		// writing the Trailer header in the response. Currently it
-		// appears net/http doesn't do this for http/1.1
 		w.Header().Add("Trailer", "Transfer-Encoding, Content-Length, Trailer") // filtered
+
+		// Regular headers:
 		w.Header().Set("Foo", "Bar")
-		w.Header().Set("Content-Length", "5")
+		w.Header().Set("Content-Length", "5") // len("Hello")
 
 		io.WriteString(w, "Hello")
 		if withFlush {
@@ -2681,6 +2681,8 @@ func testServerWritesTrailers(t *testing.T, withFlush bool) {
 		// otherwise-invalid "Trailer:" prefix:
 		w.Header().Set("Trailer:Post-Header-Trailer", "hi1")
 		w.Header().Set("Trailer:post-header-trailer2", "hi2")
+		w.Header().Set("Trailer:Range", "invalid")
+		w.Header().Set("Trailer:Foo\x01Bogus", "invalid")
 		w.Header().Set("Transfer-Encoding", "should not be included; Forbidden by RFC 2616 14.40")
 		w.Header().Set("Content-Length", "should not be included; Forbidden by RFC 2616 14.40")
 		w.Header().Set("Trailer", "should not be included; Forbidden by RFC 2616 14.40")
@@ -2877,8 +2879,12 @@ func (c *issue53Conn) Close() error {
 	return nil
 }
 
-func (c *issue53Conn) LocalAddr() net.Addr                { return &net.TCPAddr{net.IP{127, 0, 0, 1}, 49706, ""} }
-func (c *issue53Conn) RemoteAddr() net.Addr               { return &net.TCPAddr{net.IP{127, 0, 0, 1}, 49706, ""} }
+func (c *issue53Conn) LocalAddr() net.Addr {
+	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 49706}
+}
+func (c *issue53Conn) RemoteAddr() net.Addr {
+	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 49706}
+}
 func (c *issue53Conn) SetDeadline(t time.Time) error      { return nil }
 func (c *issue53Conn) SetReadDeadline(t time.Time) error  { return nil }
 func (c *issue53Conn) SetWriteDeadline(t time.Time) error { return nil }
@@ -3024,7 +3030,7 @@ func BenchmarkServer_GetRequest(b *testing.B) {
 	st := newServerTester(b, func(w http.ResponseWriter, r *http.Request) {
 		n, err := io.Copy(ioutil.Discard, r.Body)
 		if err != nil || n > 0 {
-			b.Error("Read %d bytes, error %v; want 0 bytes.", n, err)
+			b.Errorf("Read %d bytes, error %v; want 0 bytes.", n, err)
 		}
 		io.WriteString(w, msg)
 	})
@@ -3056,7 +3062,7 @@ func BenchmarkServer_PostRequest(b *testing.B) {
 	st := newServerTester(b, func(w http.ResponseWriter, r *http.Request) {
 		n, err := io.Copy(ioutil.Discard, r.Body)
 		if err != nil || n > 0 {
-			b.Error("Read %d bytes, error %v; want 0 bytes.", n, err)
+			b.Errorf("Read %d bytes, error %v; want 0 bytes.", n, err)
 		}
 		io.WriteString(w, msg)
 	})
@@ -3240,5 +3246,56 @@ func TestCheckValidHTTP2Request(t *testing.T) {
 		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("%d. checkValidHTTP2Request = %v; want %v", i, got, tt.want)
 		}
+	}
+}
+
+// golang.org/issue/14030
+func TestExpect100ContinueAfterHandlerWrites(t *testing.T) {
+	const msg = "Hello"
+	const msg2 = "World"
+
+	doRead := make(chan bool, 1)
+	defer close(doRead) // fallback cleanup
+
+	st := newServerTester(t, func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, msg)
+		w.(http.Flusher).Flush()
+
+		// Do a read, which might force a 100-continue status to be sent.
+		<-doRead
+		r.Body.Read(make([]byte, 10))
+
+		io.WriteString(w, msg2)
+
+	}, optOnlyServer)
+	defer st.Close()
+
+	tr := &Transport{TLSClientConfig: tlsConfigInsecure}
+	defer tr.CloseIdleConnections()
+
+	req, _ := http.NewRequest("POST", st.ts.URL, io.LimitReader(neverEnding('A'), 2<<20))
+	req.Header.Set("Expect", "100-continue")
+
+	res, err := tr.RoundTrip(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	buf := make([]byte, len(msg))
+	if _, err := io.ReadFull(res.Body, buf); err != nil {
+		t.Fatal(err)
+	}
+	if string(buf) != msg {
+		t.Fatalf("msg = %q; want %q", buf, msg)
+	}
+
+	doRead <- true
+
+	if _, err := io.ReadFull(res.Body, buf); err != nil {
+		t.Fatal(err)
+	}
+	if string(buf) != msg2 {
+		t.Fatalf("second msg = %q; want %q", buf, msg2)
 	}
 }
