@@ -16,9 +16,6 @@ func TestHostsListToList(t *testing.T) {
 
 		list := m.ToList()
 		So(len(list), ShouldEqual, 3)
-		So(list[0].name, ShouldEqual, "aaa")
-		So(list[1].name, ShouldEqual, "bbb")
-		So(list[2].name, ShouldEqual, "ccc")
 	})
 }
 
