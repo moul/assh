@@ -52,3 +52,7 @@ import:
   - unix
 - package: gopkg.in/yaml.v2
   version: 7ad95dd0798a40da1ccdff6dff35fd177b5edf40
+- package: github.com/mgutz/ansi
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh/terminal

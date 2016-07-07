@@ -44,7 +44,7 @@ func cmdWrapper(c *cli.Context) {
 	Logger.Debugf("Wrapper called with bin=%v target=%v command=%v options=%v, args=%v", bin, target, command, options, args)
 
 	// check if config is up-to-date
-	conf, err := config.Open()
+	conf, err := config.Open(c.String("config"))
 	if err != nil {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}

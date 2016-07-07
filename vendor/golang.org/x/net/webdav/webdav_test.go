@@ -24,10 +24,25 @@ import (
 func TestPrefix(t *testing.T) {
 	const dst, blah = "Destination", "blah blah blah"
 
-	do := func(method, urlStr string, body io.Reader, wantStatusCode int, headers ...string) error {
-		req, err := http.NewRequest(method, urlStr, body)
+	// createLockBody comes from the example in Section 9.10.7.
+	const createLockBody = `<?xml version="1.0" encoding="utf-8" ?>
+		<D:lockinfo xmlns:D='DAV:'>
+			<D:lockscope><D:exclusive/></D:lockscope>
+			<D:locktype><D:write/></D:locktype>
+			<D:owner>
+				<D:href>http://example.org/~ejw/contact.html</D:href>
+			</D:owner>
+		</D:lockinfo>
+	`
+
+	do := func(method, urlStr string, body string, wantStatusCode int, headers ...string) (http.Header, error) {
+		var bodyReader io.Reader
+		if body != "" {
+			bodyReader = strings.NewReader(body)
+		}
+		req, err := http.NewRequest(method, urlStr, bodyReader)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		for len(headers) >= 2 {
 			req.Header.Add(headers[0], headers[1])
@@ -35,13 +50,13 @@ func TestPrefix(t *testing.T) {
 		}
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer res.Body.Close()
 		if res.StatusCode != wantStatusCode {
-			return fmt.Errorf("got status code %d, want %d", res.StatusCode, wantStatusCode)
+			return nil, fmt.Errorf("got status code %d, want %d", res.StatusCode, wantStatusCode)
 		}
-		return nil
+		return res.Header, nil
 	}
 
 	prefixes := []string{
@@ -71,8 +86,10 @@ func TestPrefix(t *testing.T) {
 		//	COPY  /a/b/c /a/b/d
 		//	MKCOL /a/b/e
 		//	MOVE  /a/b/d /a/b/e/f
-		// which should yield the (possibly stripped) filenames /a/b/c and
-		// /a/b/e/f, plus their parent directories.
+		//	LOCK  /a/b/e/g
+		//	PUT   /a/b/e/g
+		// which should yield the (possibly stripped) filenames /a/b/c,
+		// /a/b/e/f and /a/b/e/g, plus their parent directories.
 
 		wantA := map[string]int{
 			"/":       http.StatusCreated,
@@ -80,7 +97,7 @@ func TestPrefix(t *testing.T) {
 			"/a/b/":   http.StatusNotFound,
 			"/a/b/c/": http.StatusNotFound,
 		}[prefix]
-		if err := do("MKCOL", srv.URL+"/a", nil, wantA); err != nil {
+		if _, err := do("MKCOL", srv.URL+"/a", "", wantA); err != nil {
 			t.Errorf("prefix=%-9q MKCOL /a: %v", prefix, err)
 			continue
 		}
@@ -91,7 +108,7 @@ func TestPrefix(t *testing.T) {
 			"/a/b/":   http.StatusMovedPermanently,
 			"/a/b/c/": http.StatusNotFound,
 		}[prefix]
-		if err := do("MKCOL", srv.URL+"/a/b", nil, wantB); err != nil {
+		if _, err := do("MKCOL", srv.URL+"/a/b", "", wantB); err != nil {
 			t.Errorf("prefix=%-9q MKCOL /a/b: %v", prefix, err)
 			continue
 		}
@@ -102,7 +119,7 @@ func TestPrefix(t *testing.T) {
 			"/a/b/":   http.StatusCreated,
 			"/a/b/c/": http.StatusMovedPermanently,
 		}[prefix]
-		if err := do("PUT", srv.URL+"/a/b/c", strings.NewReader(blah), wantC); err != nil {
+		if _, err := do("PUT", srv.URL+"/a/b/c", blah, wantC); err != nil {
 			t.Errorf("prefix=%-9q PUT /a/b/c: %v", prefix, err)
 			continue
 		}
@@ -113,7 +130,7 @@ func TestPrefix(t *testing.T) {
 			"/a/b/":   http.StatusCreated,
 			"/a/b/c/": http.StatusMovedPermanently,
 		}[prefix]
-		if err := do("COPY", srv.URL+"/a/b/c", nil, wantD, dst, srv.URL+"/a/b/d"); err != nil {
+		if _, err := do("COPY", srv.URL+"/a/b/c", "", wantD, dst, srv.URL+"/a/b/d"); err != nil {
 			t.Errorf("prefix=%-9q COPY /a/b/c /a/b/d: %v", prefix, err)
 			continue
 		}
@@ -124,7 +141,7 @@ func TestPrefix(t *testing.T) {
 			"/a/b/":   http.StatusCreated,
 			"/a/b/c/": http.StatusNotFound,
 		}[prefix]
-		if err := do("MKCOL", srv.URL+"/a/b/e", nil, wantE); err != nil {
+		if _, err := do("MKCOL", srv.URL+"/a/b/e", "", wantE); err != nil {
 			t.Errorf("prefix=%-9q MKCOL /a/b/e: %v", prefix, err)
 			continue
 		}
@@ -135,8 +152,34 @@ func TestPrefix(t *testing.T) {
 			"/a/b/":   http.StatusCreated,
 			"/a/b/c/": http.StatusNotFound,
 		}[prefix]
-		if err := do("MOVE", srv.URL+"/a/b/d", nil, wantF, dst, srv.URL+"/a/b/e/f"); err != nil {
+		if _, err := do("MOVE", srv.URL+"/a/b/d", "", wantF, dst, srv.URL+"/a/b/e/f"); err != nil {
 			t.Errorf("prefix=%-9q MOVE /a/b/d /a/b/e/f: %v", prefix, err)
+			continue
+		}
+
+		var lockToken string
+		wantG := map[string]int{
+			"/":       http.StatusCreated,
+			"/a/":     http.StatusCreated,
+			"/a/b/":   http.StatusCreated,
+			"/a/b/c/": http.StatusNotFound,
+		}[prefix]
+		if h, err := do("LOCK", srv.URL+"/a/b/e/g", createLockBody, wantG); err != nil {
+			t.Errorf("prefix=%-9q LOCK /a/b/e/g: %v", prefix, err)
+			continue
+		} else {
+			lockToken = h.Get("Lock-Token")
+		}
+
+		ifHeader := fmt.Sprintf("<%s/a/b/e/g> (%s)", srv.URL, lockToken)
+		wantH := map[string]int{
+			"/":       http.StatusCreated,
+			"/a/":     http.StatusCreated,
+			"/a/b/":   http.StatusCreated,
+			"/a/b/c/": http.StatusNotFound,
+		}[prefix]
+		if _, err := do("PUT", srv.URL+"/a/b/e/g", blah, wantH, "If", ifHeader); err != nil {
+			t.Errorf("prefix=%-9q PUT /a/b/e/g: %v", prefix, err)
 			continue
 		}
 
@@ -147,9 +190,9 @@ func TestPrefix(t *testing.T) {
 		}
 		sort.Strings(got)
 		want := map[string][]string{
-			"/":       {"/", "/a", "/a/b", "/a/b/c", "/a/b/e", "/a/b/e/f"},
-			"/a/":     {"/", "/b", "/b/c", "/b/e", "/b/e/f"},
-			"/a/b/":   {"/", "/c", "/e", "/e/f"},
+			"/":       {"/", "/a", "/a/b", "/a/b/c", "/a/b/e", "/a/b/e/f", "/a/b/e/g"},
+			"/a/":     {"/", "/b", "/b/c", "/b/e", "/b/e/f", "/b/e/g"},
+			"/a/b/":   {"/", "/c", "/e", "/e/f", "/e/g"},
 			"/a/b/c/": {"/"},
 		}[prefix]
 		if !reflect.DeepEqual(got, want) {

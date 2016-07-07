@@ -24,6 +24,12 @@ func main() {
 	app.BashComplete = BashComplete
 
 	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "config, c",
+			EnvVar: "ASSH_CONFIG",
+			Value:  "~/.ssh/assh.yml",
+			Usage:  "Location of config file",
+		},
 		cli.BoolFlag{
 			Name:   "debug, D",
 			EnvVar: "ASSH_DEBUG",
