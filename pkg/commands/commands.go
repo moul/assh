@@ -85,6 +85,11 @@ var Commands = []cli.Command{
 				Action: cmdCsList,
 				Usage:  "List active control sockets",
 			},
+			{
+				Name:   "flush",
+				Action: cmdCsFlush,
+				Usage:  "Close control sockets",
+			},
 		},
 	},
 	// FIXME: tree
