@@ -439,6 +439,14 @@ $ assh sockets flush
 Closed 4 control sockets.
 ```
 
+##### `assh sockets master`
+
+Create a master control sockets.
+
+```console
+$ assh sockets master
+```
+
 ## Install
 
 Get the latest version using GO (recommended way):
@@ -497,7 +505,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
-* Add a control socket manager `assh sockets {list,flush}` ([#152](https://github.com/moul/advanced-ssh-config/pull/152))
+* Add a control socket manager `assh sockets {list,flush,master}` ([#152](https://github.com/moul/advanced-ssh-config/pull/152))
 * Add a `assh --config=/path/to/assh.yml` option
 * Add storm-like `assh config list` and `assh config search {keyword}` commands ([#151](https://github.com/moul/advanced-ssh-config/pull/151))
 * Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
