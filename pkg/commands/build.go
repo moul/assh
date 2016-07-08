@@ -9,11 +9,13 @@ import (
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
-func cmdBuild(c *cli.Context) {
+func cmdBuild(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
 	conf.WriteSSHConfigTo(os.Stdout)
+
+	return nil
 }

@@ -24,11 +24,11 @@ import (
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
-func cmdProxy(c *cli.Context) {
+func cmdProxy(c *cli.Context) error {
 	Logger.Debugf("assh args: %s", c.Args())
 
 	if len(c.Args()) < 1 {
-		Logger.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
+		Logger.Fatalf("assh: \"connect\" requires 1 argument. See 'assh connect --help'.")
 	}
 
 	// dry-run option
@@ -85,6 +85,8 @@ func cmdProxy(c *cli.Context) {
 	if err != nil {
 		Logger.Fatalf("Proxy error: %v", err)
 	}
+
+	return nil
 }
 
 func computeHost(dest string, portOverride int, conf *config.Config) (*config.Host, error) {

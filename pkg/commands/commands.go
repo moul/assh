@@ -16,10 +16,11 @@ func init() {
 // Commands is the list of cli commands
 var Commands = []cli.Command{
 	{
-		Name:        "proxy",
+		Name:        "connect",
 		Usage:       "Connect to host SSH socket, used by ProxyCommand",
 		Description: "Argument is a host.",
 		Action:      cmdProxy,
+		Hidden:      true,
 		Flags: []cli.Flag{
 			cli.IntFlag{
 				Name:  "port, p",
@@ -48,11 +49,6 @@ var Commands = []cli.Command{
 			Action:      cmdInit,
 		},
 	*/
-	{
-		Name:   "build",
-		Usage:  "Build .ssh/config",
-		Action: cmdBuild,
-	},
 	/*
 		{
 			Name:        "etc-hosts",
@@ -67,19 +63,52 @@ var Commands = []cli.Command{
 		Action: cmdInfo,
 	},
 	{
-		Name:   "list",
-		Usage:  "List all hosts from assh config",
-		Action: cmdList,
+		Name:  "config",
+		Usage: "Manage ssh and assh configuration",
+		Subcommands: []cli.Command{
+			{
+				Name:   "build",
+				Usage:  "Build .ssh/config",
+				Action: cmdBuild,
+			},
+			{
+				Name:   "list",
+				Usage:  "List all hosts from assh config",
+				Action: cmdList,
+			},
+			{
+				Name:   "search",
+				Usage:  "Search entries by given search text",
+				Action: cmdSearch,
+			},
+		},
 	},
 	{
-		Name:   "search",
-		Usage:  "Search entries by given search text",
-		Action: cmdSearch,
+		Name:  "sockets",
+		Usage: "Manage control sockets",
+		Subcommands: []cli.Command{
+			{
+				Name:   "list",
+				Action: cmdCsList,
+				Usage:  "List active control sockets",
+			},
+			{
+				Name:   "flush",
+				Action: cmdCsFlush,
+				Usage:  "Close control sockets",
+			},
+			{
+				Name:   "master",
+				Action: cmdCsMaster,
+				Usage:  "Open a master control socket",
+			},
+		},
 	},
 	// FIXME: tree
 	{
-		Name:  "wrapper",
-		Usage: "Initialize assh, then run ssh/scp/rsync...",
+		Name:   "wrapper",
+		Usage:  "Initialize assh, then run ssh/scp/rsync...",
+		Hidden: true,
 		Subcommands: []cli.Command{
 			{
 				Name:   "ssh",

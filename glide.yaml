@@ -56,3 +56,5 @@ import:
 - package: golang.org/x/crypto
   subpackages:
   - ssh/terminal
+- package: github.com/mattn/go-zglob
+- package: github.com/docker/go-units

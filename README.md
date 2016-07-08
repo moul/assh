@@ -307,26 +307,38 @@ AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
 
 COMMANDS:
-   proxy         Connect to host SSH socket, used by ProxyCommand
-   build         Build .ssh/config
    info          Display system-wide information
-   list          List all hosts from assh config
-   search        Search entries by given search text
-   wrapper       Initialize assh, then run ssh/scp/rsync...
+   config        Manage ssh and assh configuration
+   sockets       Manage control sockets
+   help, h       Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-  --config, -c "~/.ssh/assh.yml"         Location of config file [$ASSH_CONFIG]
-  --debug, -D                            Enable debug mode [$ASSH_DEBUG]
-  --verbose, -V                          Enable verbose mode
-  --help, -h                             show help
-  --generate-bash-completion
-  --version, -v                          print the version
+  --config value, -c value       Location of config file (default: "~/.ssh/assh.yml") [$ASSH_CONFIG]
+  --debug, -D                    Enable debug mode [$ASSH_DEBUG]
+  --verbose, -V                  Enable verbose mode
+  --help, -h                     show help
+  --version, -v                  print the version
 ```
 
 ### Usage examples
 
+##### `assh config build`
+
+Rewrites and replaces the existing ~/.ssh/config file.
+
+This action is automatically done by assh when detecting configuration changes.
+Running this command manually is useful to setup assh.
+
 ```console
-$ assh list
+$ assh config build > ~/.ssh/config
+```
+
+##### `assh config list`
+
+List hosts and options.
+
+```console
+$ assh config list
 Listing entries
 
     *.scw -> root@[hostname_not_specified]:22
@@ -370,11 +382,69 @@ Listing entries
         User: bob
 ```
 
+##### `assh config search <keyword>`
+
+Search for `<keyword>` in hosts and host options.
+
 ```console
-$ assh search bart
+$ assh config search bart
 Listing results for bart:
     bart -> bart@5.6.7.8:22
     bart-access -> moul@[hostname_not_specified]:22
+```
+
+##### `assh info`
+
+Display system-wide information.
+
+```console
+$ assh info
+Debug mode (client): false
+CLI Path: /path/to/assh
+Go version: go1.6.2
+OS/Arch: darwin/amd64
+
+RC files:
+- ~/.ssh/assh.yml
+- ~/.ssh/assh.d/hosts.yml
+- ~/.ssh/assh.d/moul.yml
+- ~/.ssh/assh.d/test.yml
+
+Statistics:
+- 299 hosts
+- 2 templates
+- 4 included files
+```
+
+##### `assh sockets list`
+
+List active control sockets.
+
+```console
+$ assh sockets list
+4 active control sockets in "~/.ssh/cm/":
+
+- bart/homer/lisa-22-root.sock (14 minutes)
+- bart/homer-22-root.sock (14 minutes)
+- bart-22-root.sock (14 minutes)
+- marge-22-bart.sock (1 hour)
+```
+
+##### `assh sockets flush`
+
+Close active control sockets.
+
+```console
+$ assh sockets flush
+Closed 4 control sockets.
+```
+
+##### `assh sockets master`
+
+Create a master control sockets.
+
+```console
+$ assh sockets master
 ```
 
 ## Install
@@ -428,16 +498,19 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 1. Backup your old `~/.ssh/config`: `cp ~/.ssh/config ~/.ssh/config.backup`
 2. Create a new `~/.ssh/assh.yml` file
-3. Run `assh build > ~/.ssh/config` to validate the syntax of your `~/.ssh/assh.yml` file and automatically build your `~/.ssh/config` file
+3. Run `assh config build > ~/.ssh/config` to validate the syntax of your `~/.ssh/assh.yml` file and automatically build your `~/.ssh/config` file
 4. You are ready!
 
 ## Changelog
 
 ### master (unreleased)
 
+* Add a control socket manager `assh sockets {list,flush,master}` ([#152](https://github.com/moul/advanced-ssh-config/pull/152))
 * Add a `assh --config=/path/to/assh.yml` option
-* Add storm-like `assh list` and `assh search {keyword}` commands ([#151](https://github.com/moul/advanced-ssh-config/pull/151))
+* Add storm-like `assh config list` and `assh config search {keyword}` commands ([#151](https://github.com/moul/advanced-ssh-config/pull/151))
 * Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
+* Rename `assh proxy -> assh connect`
+* Hide `assh connect` and `assh wrapper` from the help
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...master)
 

@@ -1,4 +1,4 @@
-package config
+package utils
 
 import (
 	"errors"
@@ -37,7 +37,8 @@ func ExpandEnvSafe(s string) string {
 	return string(buf) + s[i:]
 }
 
-func expandUser(path string) (string, error) {
+// ExpandUser expands tild and env vars in unix paths
+func ExpandUser(path string) (string, error) {
 	// Expand variables
 	path = ExpandEnvSafe(path)
 
@@ -53,7 +54,7 @@ func expandUser(path string) (string, error) {
 }
 
 // expandField expands environment variables in field
-func expandField(input string) string {
+func ExpandField(input string) string {
 	if input == "" {
 		return ""
 	}
