@@ -30,7 +30,7 @@ func cmdCsList(c *cli.Context) error {
 
 	fmt.Printf("%d active control sockets in %q:\n\n", len(activeSockets), controlPath)
 	for _, socket := range activeSockets {
-		fmt.Printf("- %s\n", socket)
+		fmt.Printf("- %s\n", socket.RelativePath())
 	}
 
 	return nil
