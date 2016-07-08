@@ -1,7 +1,7 @@
 // This file contains imported functions
 // The license and copyright is reported for each functions in the comments.
 
-package config
+package utils
 
 // Imported and unmodified from https://golang.org/src/os/env.go
 // Function under the BSD-License - Copyrighted by the Go Authors

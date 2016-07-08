@@ -6,6 +6,8 @@ import (
 	"io"
 	"os/user"
 	"strings"
+
+	"github.com/moul/advanced-ssh-config/pkg/utils"
 )
 
 // Host defines the configuration flags of a host
@@ -487,484 +489,484 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	if h.AddressFamily == "" {
 		h.AddressFamily = defaults.AddressFamily
 	}
-	h.AddressFamily = expandField(h.AddressFamily)
+	h.AddressFamily = utils.ExpandField(h.AddressFamily)
 
 	if h.AskPassGUI == "" {
 		h.AskPassGUI = defaults.AskPassGUI
 	}
-	h.AskPassGUI = expandField(h.AskPassGUI)
+	h.AskPassGUI = utils.ExpandField(h.AskPassGUI)
 
 	if h.BatchMode == "" {
 		h.BatchMode = defaults.BatchMode
 	}
-	h.BatchMode = expandField(h.BatchMode)
+	h.BatchMode = utils.ExpandField(h.BatchMode)
 
 	if h.BindAddress == "" {
 		h.BindAddress = defaults.BindAddress
 	}
-	h.BindAddress = expandField(h.BindAddress)
+	h.BindAddress = utils.ExpandField(h.BindAddress)
 
 	if h.CanonicalDomains == "" {
 		h.CanonicalDomains = defaults.CanonicalDomains
 	}
-	h.CanonicalDomains = expandField(h.CanonicalDomains)
+	h.CanonicalDomains = utils.ExpandField(h.CanonicalDomains)
 
 	if h.CanonicalizeFallbackLocal == "" {
 		h.CanonicalizeFallbackLocal = defaults.CanonicalizeFallbackLocal
 	}
-	h.CanonicalizeFallbackLocal = expandField(h.CanonicalizeFallbackLocal)
+	h.CanonicalizeFallbackLocal = utils.ExpandField(h.CanonicalizeFallbackLocal)
 
 	if h.CanonicalizeHostname == "" {
 		h.CanonicalizeHostname = defaults.CanonicalizeHostname
 	}
-	h.CanonicalizeHostname = expandField(h.CanonicalizeHostname)
+	h.CanonicalizeHostname = utils.ExpandField(h.CanonicalizeHostname)
 
 	if h.CanonicalizeMaxDots == "" {
 		h.CanonicalizeMaxDots = defaults.CanonicalizeMaxDots
 	}
-	h.CanonicalizeMaxDots = expandField(h.CanonicalizeMaxDots)
+	h.CanonicalizeMaxDots = utils.ExpandField(h.CanonicalizeMaxDots)
 
 	if h.CanonicalizePermittedCNAMEs == "" {
 		h.CanonicalizePermittedCNAMEs = defaults.CanonicalizePermittedCNAMEs
 	}
-	h.CanonicalizePermittedCNAMEs = expandField(h.CanonicalizePermittedCNAMEs)
+	h.CanonicalizePermittedCNAMEs = utils.ExpandField(h.CanonicalizePermittedCNAMEs)
 
 	if h.ChallengeResponseAuthentication == "" {
 		h.ChallengeResponseAuthentication = defaults.ChallengeResponseAuthentication
 	}
-	h.ChallengeResponseAuthentication = expandField(h.ChallengeResponseAuthentication)
+	h.ChallengeResponseAuthentication = utils.ExpandField(h.ChallengeResponseAuthentication)
 
 	if h.CheckHostIP == "" {
 		h.CheckHostIP = defaults.CheckHostIP
 	}
-	h.CheckHostIP = expandField(h.CheckHostIP)
+	h.CheckHostIP = utils.ExpandField(h.CheckHostIP)
 
 	if h.Cipher == "" {
 		h.Cipher = defaults.Cipher
 	}
-	h.Cipher = expandField(h.Cipher)
+	h.Cipher = utils.ExpandField(h.Cipher)
 
 	if h.Ciphers == "" {
 		h.Ciphers = defaults.Ciphers
 	}
-	h.Ciphers = expandField(h.Ciphers)
+	h.Ciphers = utils.ExpandField(h.Ciphers)
 
 	if h.ClearAllForwardings == "" {
 		h.ClearAllForwardings = defaults.ClearAllForwardings
 	}
-	h.ClearAllForwardings = expandField(h.ClearAllForwardings)
+	h.ClearAllForwardings = utils.ExpandField(h.ClearAllForwardings)
 
 	if h.Compression == "" {
 		h.Compression = defaults.Compression
 	}
-	h.Compression = expandField(h.Compression)
+	h.Compression = utils.ExpandField(h.Compression)
 
 	if h.CompressionLevel == 0 {
 		h.CompressionLevel = defaults.CompressionLevel
 	}
-	// h.CompressionLevel = expandField(h.CompressionLevel)
+	// h.CompressionLevel = utils.ExpandField(h.CompressionLevel)
 
 	if h.ConnectionAttempts == "" {
 		h.ConnectionAttempts = defaults.ConnectionAttempts
 	}
-	h.ConnectionAttempts = expandField(h.ConnectionAttempts)
+	h.ConnectionAttempts = utils.ExpandField(h.ConnectionAttempts)
 
 	if h.ConnectTimeout == 0 {
 		h.ConnectTimeout = defaults.ConnectTimeout
 	}
-	// h.ConnectTimeout = expandField(h.ConnectTimeout)
+	// h.ConnectTimeout = utils.ExpandField(h.ConnectTimeout)
 
 	if h.ControlMaster == "" {
 		h.ControlMaster = defaults.ControlMaster
 	}
-	h.ControlMaster = expandField(h.ControlMaster)
+	h.ControlMaster = utils.ExpandField(h.ControlMaster)
 
 	if h.ControlPath == "" {
 		h.ControlPath = defaults.ControlPath
 	}
-	h.ControlPath = expandField(h.ControlPath)
+	h.ControlPath = utils.ExpandField(h.ControlPath)
 
 	if h.ControlPersist == "" {
 		h.ControlPersist = defaults.ControlPersist
 	}
-	h.ControlPersist = expandField(h.ControlPersist)
+	h.ControlPersist = utils.ExpandField(h.ControlPersist)
 
 	if h.DynamicForward == "" {
 		h.DynamicForward = defaults.DynamicForward
 	}
-	h.DynamicForward = expandField(h.DynamicForward)
+	h.DynamicForward = utils.ExpandField(h.DynamicForward)
 
 	if h.EnableSSHKeysign == "" {
 		h.EnableSSHKeysign = defaults.EnableSSHKeysign
 	}
-	h.EnableSSHKeysign = expandField(h.EnableSSHKeysign)
+	h.EnableSSHKeysign = utils.ExpandField(h.EnableSSHKeysign)
 
 	if h.EscapeChar == "" {
 		h.EscapeChar = defaults.EscapeChar
 	}
-	h.EscapeChar = expandField(h.EscapeChar)
+	h.EscapeChar = utils.ExpandField(h.EscapeChar)
 
 	if h.ExitOnForwardFailure == "" {
 		h.ExitOnForwardFailure = defaults.ExitOnForwardFailure
 	}
-	h.ExitOnForwardFailure = expandField(h.ExitOnForwardFailure)
+	h.ExitOnForwardFailure = utils.ExpandField(h.ExitOnForwardFailure)
 
 	if h.FingerprintHash == "" {
 		h.FingerprintHash = defaults.FingerprintHash
 	}
-	h.FingerprintHash = expandField(h.FingerprintHash)
+	h.FingerprintHash = utils.ExpandField(h.FingerprintHash)
 
 	if h.ForwardAgent == "" {
 		h.ForwardAgent = defaults.ForwardAgent
 	}
-	h.ForwardAgent = expandField(h.ForwardAgent)
+	h.ForwardAgent = utils.ExpandField(h.ForwardAgent)
 
 	if h.ForwardX11 == "" {
 		h.ForwardX11 = defaults.ForwardX11
 	}
-	h.ForwardX11 = expandField(h.ForwardX11)
+	h.ForwardX11 = utils.ExpandField(h.ForwardX11)
 
 	if h.ForwardX11Timeout == 0 {
 		h.ForwardX11Timeout = defaults.ForwardX11Timeout
 	}
-	// h.ForwardX11Timeout = expandField(h.ForwardX11Timeout)
+	// h.ForwardX11Timeout = utils.ExpandField(h.ForwardX11Timeout)
 
 	if h.ForwardX11Trusted == "" {
 		h.ForwardX11Trusted = defaults.ForwardX11Trusted
 	}
-	h.ForwardX11Trusted = expandField(h.ForwardX11Trusted)
+	h.ForwardX11Trusted = utils.ExpandField(h.ForwardX11Trusted)
 
 	if h.GatewayPorts == "" {
 		h.GatewayPorts = defaults.GatewayPorts
 	}
-	h.GatewayPorts = expandField(h.GatewayPorts)
+	h.GatewayPorts = utils.ExpandField(h.GatewayPorts)
 
 	if h.GlobalKnownHostsFile == "" {
 		h.GlobalKnownHostsFile = defaults.GlobalKnownHostsFile
 	}
-	h.GlobalKnownHostsFile = expandField(h.GlobalKnownHostsFile)
+	h.GlobalKnownHostsFile = utils.ExpandField(h.GlobalKnownHostsFile)
 
 	if h.GSSAPIAuthentication == "" {
 		h.GSSAPIAuthentication = defaults.GSSAPIAuthentication
 	}
-	h.GSSAPIAuthentication = expandField(h.GSSAPIAuthentication)
+	h.GSSAPIAuthentication = utils.ExpandField(h.GSSAPIAuthentication)
 
 	if h.GSSAPIClientIdentity == "" {
 		h.GSSAPIClientIdentity = defaults.GSSAPIClientIdentity
 	}
-	h.GSSAPIClientIdentity = expandField(h.GSSAPIClientIdentity)
+	h.GSSAPIClientIdentity = utils.ExpandField(h.GSSAPIClientIdentity)
 
 	if h.GSSAPIDelegateCredentials == "" {
 		h.GSSAPIDelegateCredentials = defaults.GSSAPIDelegateCredentials
 	}
-	h.GSSAPIDelegateCredentials = expandField(h.GSSAPIDelegateCredentials)
+	h.GSSAPIDelegateCredentials = utils.ExpandField(h.GSSAPIDelegateCredentials)
 
 	if h.GSSAPIKeyExchange == "" {
 		h.GSSAPIKeyExchange = defaults.GSSAPIKeyExchange
 	}
-	h.GSSAPIKeyExchange = expandField(h.GSSAPIKeyExchange)
+	h.GSSAPIKeyExchange = utils.ExpandField(h.GSSAPIKeyExchange)
 
 	if h.GSSAPIRenewalForcesRekey == "" {
 		h.GSSAPIRenewalForcesRekey = defaults.GSSAPIRenewalForcesRekey
 	}
-	h.GSSAPIRenewalForcesRekey = expandField(h.GSSAPIRenewalForcesRekey)
+	h.GSSAPIRenewalForcesRekey = utils.ExpandField(h.GSSAPIRenewalForcesRekey)
 
 	if h.GSSAPIServerIdentity == "" {
 		h.GSSAPIServerIdentity = defaults.GSSAPIServerIdentity
 	}
-	h.GSSAPIServerIdentity = expandField(h.GSSAPIServerIdentity)
+	h.GSSAPIServerIdentity = utils.ExpandField(h.GSSAPIServerIdentity)
 
 	if h.GSSAPITrustDns == "" {
 		h.GSSAPITrustDns = defaults.GSSAPITrustDns
 	}
-	h.GSSAPITrustDns = expandField(h.GSSAPITrustDns)
+	h.GSSAPITrustDns = utils.ExpandField(h.GSSAPITrustDns)
 
 	if h.HashKnownHosts == "" {
 		h.HashKnownHosts = defaults.HashKnownHosts
 	}
-	h.HashKnownHosts = expandField(h.HashKnownHosts)
+	h.HashKnownHosts = utils.ExpandField(h.HashKnownHosts)
 
 	if h.HostbasedAuthentication == "" {
 		h.HostbasedAuthentication = defaults.HostbasedAuthentication
 	}
-	h.HostbasedAuthentication = expandField(h.HostbasedAuthentication)
+	h.HostbasedAuthentication = utils.ExpandField(h.HostbasedAuthentication)
 
 	if h.HostbasedKeyTypes == "" {
 		h.HostbasedKeyTypes = defaults.HostbasedKeyTypes
 	}
-	h.HostbasedKeyTypes = expandField(h.HostbasedKeyTypes)
+	h.HostbasedKeyTypes = utils.ExpandField(h.HostbasedKeyTypes)
 
 	if h.HostKeyAlgorithms == "" {
 		h.HostKeyAlgorithms = defaults.HostKeyAlgorithms
 	}
-	h.HostKeyAlgorithms = expandField(h.HostKeyAlgorithms)
+	h.HostKeyAlgorithms = utils.ExpandField(h.HostKeyAlgorithms)
 
 	if h.HostKeyAlias == "" {
 		h.HostKeyAlias = defaults.HostKeyAlias
 	}
-	h.HostKeyAlias = expandField(h.HostKeyAlias)
+	h.HostKeyAlias = utils.ExpandField(h.HostKeyAlias)
 
 	if h.HostName == "" {
 		h.HostName = defaults.HostName
 	}
-	h.HostName = expandField(h.HostName)
+	h.HostName = utils.ExpandField(h.HostName)
 
 	if h.IdentitiesOnly == "" {
 		h.IdentitiesOnly = defaults.IdentitiesOnly
 	}
-	h.IdentitiesOnly = expandField(h.IdentitiesOnly)
+	h.IdentitiesOnly = utils.ExpandField(h.IdentitiesOnly)
 
 	if h.IdentityFile == "" {
 		h.IdentityFile = defaults.IdentityFile
 	}
-	h.IdentityFile = expandField(h.IdentityFile)
+	h.IdentityFile = utils.ExpandField(h.IdentityFile)
 
 	if h.IgnoreUnknown == "" {
 		h.IgnoreUnknown = defaults.IgnoreUnknown
 	}
-	h.IgnoreUnknown = expandField(h.IgnoreUnknown)
+	h.IgnoreUnknown = utils.ExpandField(h.IgnoreUnknown)
 
 	if h.IPQoS == "" {
 		h.IPQoS = defaults.IPQoS
 	}
-	h.IPQoS = expandField(h.IPQoS)
+	h.IPQoS = utils.ExpandField(h.IPQoS)
 
 	if h.KbdInteractiveAuthentication == "" {
 		h.KbdInteractiveAuthentication = defaults.KbdInteractiveAuthentication
 	}
-	h.KbdInteractiveAuthentication = expandField(h.KbdInteractiveAuthentication)
+	h.KbdInteractiveAuthentication = utils.ExpandField(h.KbdInteractiveAuthentication)
 
 	if h.KbdInteractiveDevices == "" {
 		h.KbdInteractiveDevices = defaults.KbdInteractiveDevices
 	}
-	h.KbdInteractiveDevices = expandField(h.KbdInteractiveDevices)
+	h.KbdInteractiveDevices = utils.ExpandField(h.KbdInteractiveDevices)
 
 	if h.KexAlgorithms == "" {
 		h.KexAlgorithms = defaults.KexAlgorithms
 	}
-	h.KexAlgorithms = expandField(h.KexAlgorithms)
+	h.KexAlgorithms = utils.ExpandField(h.KexAlgorithms)
 
 	if h.KeychainIntegration == "" {
 		h.KeychainIntegration = defaults.KeychainIntegration
 	}
-	h.KeychainIntegration = expandField(h.KeychainIntegration)
+	h.KeychainIntegration = utils.ExpandField(h.KeychainIntegration)
 
 	if h.LocalCommand == "" {
 		h.LocalCommand = defaults.LocalCommand
 	}
-	h.LocalCommand = expandField(h.LocalCommand)
+	h.LocalCommand = utils.ExpandField(h.LocalCommand)
 
 	if h.LocalForward == "" {
 		h.LocalForward = defaults.LocalForward
 	}
-	h.LocalForward = expandField(h.LocalForward)
+	h.LocalForward = utils.ExpandField(h.LocalForward)
 
 	if h.LogLevel == "" {
 		h.LogLevel = defaults.LogLevel
 	}
-	h.LogLevel = expandField(h.LogLevel)
+	h.LogLevel = utils.ExpandField(h.LogLevel)
 
 	if h.MACs == "" {
 		h.MACs = defaults.MACs
 	}
-	h.MACs = expandField(h.MACs)
+	h.MACs = utils.ExpandField(h.MACs)
 
 	if h.Match == "" {
 		h.Match = defaults.Match
 	}
-	h.Match = expandField(h.Match)
+	h.Match = utils.ExpandField(h.Match)
 
 	if h.NoHostAuthenticationForLocalhost == "" {
 		h.NoHostAuthenticationForLocalhost = defaults.NoHostAuthenticationForLocalhost
 	}
-	h.NoHostAuthenticationForLocalhost = expandField(h.NoHostAuthenticationForLocalhost)
+	h.NoHostAuthenticationForLocalhost = utils.ExpandField(h.NoHostAuthenticationForLocalhost)
 
 	if h.NumberOfPasswordPrompts == "" {
 		h.NumberOfPasswordPrompts = defaults.NumberOfPasswordPrompts
 	}
-	h.NumberOfPasswordPrompts = expandField(h.NumberOfPasswordPrompts)
+	h.NumberOfPasswordPrompts = utils.ExpandField(h.NumberOfPasswordPrompts)
 
 	if h.PasswordAuthentication == "" {
 		h.PasswordAuthentication = defaults.PasswordAuthentication
 	}
-	h.PasswordAuthentication = expandField(h.PasswordAuthentication)
+	h.PasswordAuthentication = utils.ExpandField(h.PasswordAuthentication)
 
 	if h.PermitLocalCommand == "" {
 		h.PermitLocalCommand = defaults.PermitLocalCommand
 	}
-	h.PermitLocalCommand = expandField(h.PermitLocalCommand)
+	h.PermitLocalCommand = utils.ExpandField(h.PermitLocalCommand)
 
 	if h.PKCS11Provider == "" {
 		h.PKCS11Provider = defaults.PKCS11Provider
 	}
-	h.PKCS11Provider = expandField(h.PKCS11Provider)
+	h.PKCS11Provider = utils.ExpandField(h.PKCS11Provider)
 
 	if h.Port == "" {
 		h.Port = defaults.Port
 	}
-	h.Port = expandField(h.Port)
+	h.Port = utils.ExpandField(h.Port)
 
 	if h.PreferredAuthentications == "" {
 		h.PreferredAuthentications = defaults.PreferredAuthentications
 	}
-	h.PreferredAuthentications = expandField(h.PreferredAuthentications)
+	h.PreferredAuthentications = utils.ExpandField(h.PreferredAuthentications)
 
 	if h.Protocol == "" {
 		h.Protocol = defaults.Protocol
 	}
-	h.Protocol = expandField(h.Protocol)
+	h.Protocol = utils.ExpandField(h.Protocol)
 
 	if h.ProxyCommand == "" {
 		h.ProxyCommand = defaults.ProxyCommand
 	}
-	h.ProxyCommand = expandField(h.ProxyCommand)
+	h.ProxyCommand = utils.ExpandField(h.ProxyCommand)
 
 	if h.ProxyUseFdpass == "" {
 		h.ProxyUseFdpass = defaults.ProxyUseFdpass
 	}
-	h.ProxyUseFdpass = expandField(h.ProxyUseFdpass)
+	h.ProxyUseFdpass = utils.ExpandField(h.ProxyUseFdpass)
 
 	if h.PubkeyAuthentication == "" {
 		h.PubkeyAuthentication = defaults.PubkeyAuthentication
 	}
-	h.PubkeyAuthentication = expandField(h.PubkeyAuthentication)
+	h.PubkeyAuthentication = utils.ExpandField(h.PubkeyAuthentication)
 
 	if h.RekeyLimit == "" {
 		h.RekeyLimit = defaults.RekeyLimit
 	}
-	h.RekeyLimit = expandField(h.RekeyLimit)
+	h.RekeyLimit = utils.ExpandField(h.RekeyLimit)
 
 	if h.RemoteForward == "" {
 		h.RemoteForward = defaults.RemoteForward
 	}
-	h.RemoteForward = expandField(h.RemoteForward)
+	h.RemoteForward = utils.ExpandField(h.RemoteForward)
 
 	if h.RequestTTY == "" {
 		h.RequestTTY = defaults.RequestTTY
 	}
-	h.RequestTTY = expandField(h.RequestTTY)
+	h.RequestTTY = utils.ExpandField(h.RequestTTY)
 
 	if h.RevokedHostKeys == "" {
 		h.RevokedHostKeys = defaults.RevokedHostKeys
 	}
-	h.RevokedHostKeys = expandField(h.RevokedHostKeys)
+	h.RevokedHostKeys = utils.ExpandField(h.RevokedHostKeys)
 
 	if h.RhostsRSAAuthentication == "" {
 		h.RhostsRSAAuthentication = defaults.RhostsRSAAuthentication
 	}
-	h.RhostsRSAAuthentication = expandField(h.RhostsRSAAuthentication)
+	h.RhostsRSAAuthentication = utils.ExpandField(h.RhostsRSAAuthentication)
 
 	if h.RSAAuthentication == "" {
 		h.RSAAuthentication = defaults.RSAAuthentication
 	}
-	h.RSAAuthentication = expandField(h.RSAAuthentication)
+	h.RSAAuthentication = utils.ExpandField(h.RSAAuthentication)
 
 	if h.SendEnv == "" {
 		h.SendEnv = defaults.SendEnv
 	}
-	h.SendEnv = expandField(h.SendEnv)
+	h.SendEnv = utils.ExpandField(h.SendEnv)
 
 	if h.ServerAliveCountMax == 0 {
 		h.ServerAliveCountMax = defaults.ServerAliveCountMax
 	}
-	// h.ServerAliveCountMax = expandField(h.ServerAliveCountMax)
+	// h.ServerAliveCountMax = utils.ExpandField(h.ServerAliveCountMax)
 
 	if h.ServerAliveInterval == 0 {
 		h.ServerAliveInterval = defaults.ServerAliveInterval
 	}
-	// h.ServerAliveInterval = expandField(h.ServerAliveInterval)
+	// h.ServerAliveInterval = utils.ExpandField(h.ServerAliveInterval)
 
 	if h.StreamLocalBindMask == "" {
 		h.StreamLocalBindMask = defaults.StreamLocalBindMask
 	}
-	h.StreamLocalBindMask = expandField(h.StreamLocalBindMask)
+	h.StreamLocalBindMask = utils.ExpandField(h.StreamLocalBindMask)
 
 	if h.StreamLocalBindUnlink == "" {
 		h.StreamLocalBindUnlink = defaults.StreamLocalBindUnlink
 	}
-	h.StreamLocalBindUnlink = expandField(h.StreamLocalBindUnlink)
+	h.StreamLocalBindUnlink = utils.ExpandField(h.StreamLocalBindUnlink)
 
 	if h.StrictHostKeyChecking == "" {
 		h.StrictHostKeyChecking = defaults.StrictHostKeyChecking
 	}
-	h.StrictHostKeyChecking = expandField(h.StrictHostKeyChecking)
+	h.StrictHostKeyChecking = utils.ExpandField(h.StrictHostKeyChecking)
 
 	if h.TCPKeepAlive == "" {
 		h.TCPKeepAlive = defaults.TCPKeepAlive
 	}
-	h.TCPKeepAlive = expandField(h.TCPKeepAlive)
+	h.TCPKeepAlive = utils.ExpandField(h.TCPKeepAlive)
 
 	if h.Tunnel == "" {
 		h.Tunnel = defaults.Tunnel
 	}
-	h.Tunnel = expandField(h.Tunnel)
+	h.Tunnel = utils.ExpandField(h.Tunnel)
 
 	if h.TunnelDevice == "" {
 		h.TunnelDevice = defaults.TunnelDevice
 	}
-	h.TunnelDevice = expandField(h.TunnelDevice)
+	h.TunnelDevice = utils.ExpandField(h.TunnelDevice)
 
 	if h.UpdateHostKeys == "" {
 		h.UpdateHostKeys = defaults.UpdateHostKeys
 	}
-	h.UpdateHostKeys = expandField(h.UpdateHostKeys)
+	h.UpdateHostKeys = utils.ExpandField(h.UpdateHostKeys)
 
 	if h.UsePrivilegedPort == "" {
 		h.UsePrivilegedPort = defaults.UsePrivilegedPort
 	}
-	h.UsePrivilegedPort = expandField(h.UsePrivilegedPort)
+	h.UsePrivilegedPort = utils.ExpandField(h.UsePrivilegedPort)
 
 	if h.User == "" {
 		h.User = defaults.User
 	}
-	h.User = expandField(h.User)
+	h.User = utils.ExpandField(h.User)
 
 	if h.UserKnownHostsFile == "" {
 		h.UserKnownHostsFile = defaults.UserKnownHostsFile
 	}
-	h.UserKnownHostsFile = expandField(h.UserKnownHostsFile)
+	h.UserKnownHostsFile = utils.ExpandField(h.UserKnownHostsFile)
 
 	if h.VerifyHostKeyDNS == "" {
 		h.VerifyHostKeyDNS = defaults.VerifyHostKeyDNS
 	}
-	h.VerifyHostKeyDNS = expandField(h.VerifyHostKeyDNS)
+	h.VerifyHostKeyDNS = utils.ExpandField(h.VerifyHostKeyDNS)
 
 	if h.VisualHostKey == "" {
 		h.VisualHostKey = defaults.VisualHostKey
 	}
-	h.VisualHostKey = expandField(h.VisualHostKey)
+	h.VisualHostKey = utils.ExpandField(h.VisualHostKey)
 
 	if h.XAuthLocation == "" {
 		h.XAuthLocation = defaults.XAuthLocation
 	}
-	h.XAuthLocation = expandField(h.XAuthLocation)
+	h.XAuthLocation = utils.ExpandField(h.XAuthLocation)
 
 	// ssh-config fields with a different behavior
 	if h.ProxyCommand == "" {
 		h.ProxyCommand = defaults.ProxyCommand
 	}
-	h.ProxyCommand = expandField(h.ProxyCommand)
+	h.ProxyCommand = utils.ExpandField(h.ProxyCommand)
 
 	// exposed assh fields
 	if len(h.ResolveNameservers) == 0 {
 		h.ResolveNameservers = defaults.ResolveNameservers
 	}
-	// h.ResolveNameservers = expandField(h.ResolveNameservers)
+	// h.ResolveNameservers = utils.ExpandField(h.ResolveNameservers)
 
 	if h.ResolveCommand == "" {
 		h.ResolveCommand = defaults.ResolveCommand
 	}
-	h.ResolveCommand = expandField(h.ResolveCommand)
+	h.ResolveCommand = utils.ExpandField(h.ResolveCommand)
 
 	if h.NoControlMasterMkdir == "" {
 		h.NoControlMasterMkdir = defaults.NoControlMasterMkdir
 	}
-	h.NoControlMasterMkdir = expandField(h.NoControlMasterMkdir)
+	h.NoControlMasterMkdir = utils.ExpandField(h.NoControlMasterMkdir)
 
 	if len(h.Gateways) == 0 {
 		h.Gateways = defaults.Gateways
 	}
-	// h.Gateways = expandField(h.Gateways)
+	// h.Gateways = utils.ExpandField(h.Gateways)
 
 	if len(h.Aliases) == 0 {
 		h.Aliases = defaults.Aliases
@@ -973,14 +975,14 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	if len(h.Inherits) == 0 {
 		h.Inherits = defaults.Inherits
 	}
-	// h.Inherits = expandField(h.Inherits)
+	// h.Inherits = utils.ExpandField(h.Inherits)
 
 	// private assh fields
 	// h.inherited = make(map[string]bool, 0)
 	if h.inputName == "" {
 		h.inputName = h.name
 	}
-	h.inputName = expandField(h.inputName)
+	h.inputName = utils.ExpandField(h.inputName)
 
 	// Extra defaults
 	if h.Port == "" {
