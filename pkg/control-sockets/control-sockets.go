@@ -10,11 +10,13 @@ import (
 	"github.com/moul/advanced-ssh-config/pkg/utils"
 )
 
+// ControlSocket defines a unix-domain socket controlled by a master SSH process
 type ControlSocket struct {
 	path        string
 	controlPath string
 }
 
+// ControlSockets is a list of ControlSocket
 type ControlSockets []ControlSocket
 
 func translateControlPath(input string) string {
@@ -31,6 +33,7 @@ func translateControlPath(input string) string {
 	return controlPath
 }
 
+// LookupControlPathDir returns the ControlSockets in the ControlPath directory
 func LookupControlPathDir(controlPath string) (ControlSockets, error) {
 	controlPath = translateControlPath(controlPath)
 
@@ -49,15 +52,18 @@ func LookupControlPathDir(controlPath string) (ControlSockets, error) {
 	return list, nil
 }
 
+// Path returns the absolute path of the socket
 func (s *ControlSocket) Path() string {
 	return s.path
 }
 
+// RelativePath returns a path relative to the configured ControlPath
 func (s *ControlSocket) RelativePath() string {
 	idx := strings.Index(s.controlPath, "*")
 	return s.path[idx:]
 }
 
+// CreatedAt returns the modification time of the sock file
 func (s *ControlSocket) CreatedAt() (time.Time, error) {
 	stat, err := os.Stat(s.path)
 	if err != nil {
@@ -67,6 +73,7 @@ func (s *ControlSocket) CreatedAt() (time.Time, error) {
 	return stat.ModTime(), nil
 }
 
+// ActiveConnections returns the amount of active connections using a control socket
 func (s *ControlSocket) ActiveConnections() (int, error) {
 	return -1, fmt.Errorf("not implemented")
 }
