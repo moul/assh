@@ -76,6 +76,17 @@ var Commands = []cli.Command{
 		Usage:  "Search entries by given search text",
 		Action: cmdSearch,
 	},
+	{
+		Name:  "cs",
+		Usage: "Manage control sockets",
+		Subcommands: []cli.Command{
+			{
+				Name:   "list",
+				Action: cmdCsList,
+				Usage:  "List active control sockets",
+			},
+		},
+	},
 	// FIXME: tree
 	{
 		Name:  "wrapper",
