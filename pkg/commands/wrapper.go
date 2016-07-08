@@ -12,7 +12,7 @@ import (
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
-func cmdWrapper(c *cli.Context) {
+func cmdWrapper(c *cli.Context) error {
 	if len(c.Args()) < 1 {
 		Logger.Fatalf("Missing <target> argument. See usage with 'assh wrapper %s -h'.", c.Command.Name)
 	}
@@ -67,4 +67,6 @@ func cmdWrapper(c *cli.Context) {
 
 	// Execute Binary
 	syscall.Exec(bin, args, os.Environ())
+
+	return nil
 }
