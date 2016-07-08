@@ -9,7 +9,7 @@ import (
 	// . "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
-func cmdSearch(c *cli.Context) {
+func cmdSearch(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		panic(err)
@@ -26,11 +26,13 @@ func cmdSearch(c *cli.Context) {
 
 	if len(found) == 0 {
 		fmt.Println("no results found.")
-		return
+		return nil
 	}
 
 	fmt.Printf("Listing results for %s:\n", needle)
 	for _, host := range found {
 		fmt.Printf("    %s -> %s\n", host.Name(), host.Prototype())
 	}
+
+	return nil
 }

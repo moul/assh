@@ -13,7 +13,7 @@ import (
 	// . "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
-func cmdList(c *cli.Context) {
+func cmdList(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		panic(err)
@@ -51,4 +51,6 @@ func cmdList(c *cli.Context) {
 		}
 		fmt.Println()
 	}
+
+	return nil
 }
