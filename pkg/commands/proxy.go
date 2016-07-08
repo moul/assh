@@ -28,7 +28,7 @@ func cmdProxy(c *cli.Context) error {
 	Logger.Debugf("assh args: %s", c.Args())
 
 	if len(c.Args()) < 1 {
-		Logger.Fatalf("assh: \"proxy\" requires 1 argument. See 'assh proxy --help'.")
+		Logger.Fatalf("assh: \"connect\" requires 1 argument. See 'assh connect --help'.")
 	}
 
 	// dry-run option

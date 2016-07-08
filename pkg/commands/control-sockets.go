@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/codegangsta/cli"
@@ -40,6 +41,23 @@ func cmdCsList(c *cli.Context) error {
 		}
 
 		fmt.Printf("- %s (%v)\n", socket.RelativePath(), units.HumanDuration(now.Sub(createdAt)))
+	}
+
+	return nil
+}
+
+func cmdCsMaster(c *cli.Context) error {
+	if len(c.Args()) < 1 {
+		Logger.Fatalf("assh: \"sockets master\" requires 1 argument. See 'assh sockets master --help'.")
+	}
+
+	for _, target := range c.Args() {
+		Logger.Debugf("Opening master control socket for %q", target)
+
+		cmd := exec.Command("ssh", target, "-M", "-N", "-f")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
 	}
 
 	return nil

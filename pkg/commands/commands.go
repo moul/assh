@@ -97,6 +97,11 @@ var Commands = []cli.Command{
 				Action: cmdCsFlush,
 				Usage:  "Close control sockets",
 			},
+			{
+				Name:   "master",
+				Action: cmdCsMaster,
+				Usage:  "Open a master control socket",
+			},
 		},
 	},
 	// FIXME: tree
