@@ -37,6 +37,7 @@ func ExpandEnvSafe(s string) string {
 	return string(buf) + s[i:]
 }
 
+// ExpandUser expands tild and env vars in unix paths
 func ExpandUser(path string) (string, error) {
 	// Expand variables
 	path = ExpandEnvSafe(path)
