@@ -2,6 +2,7 @@ package controlsockets
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -58,7 +59,12 @@ func (s *ControlSocket) RelativePath() string {
 }
 
 func (s *ControlSocket) CreatedAt() (time.Time, error) {
-	return time.Now(), fmt.Errorf("not implemented")
+	stat, err := os.Stat(s.path)
+	if err != nil {
+		return time.Now(), err
+	}
+
+	return stat.ModTime(), nil
 }
 
 func (s *ControlSocket) ActiveConnections() (int, error) {

@@ -1,5 +1,5 @@
-hash: 97d05761c7f4101773abe4db4735d35bbd9799a682384901d14e9e8199a93479
-updated: 2016-07-05T11:55:23.321910466+02:00
+hash: 836137f7cc6aa9473ec181dab79626d776114b3a34d068441bc21e6c7654f438
+updated: 2016-07-08T11:10:40.12777865+02:00
 imports:
 - name: github.com/bugsnag/osext
   version: ""
@@ -17,8 +17,10 @@ imports:
   - js
 - name: github.com/jtolds/gls
   version: ""
+- name: github.com/mattn/go-zglob
+  version: 2dbd7f37a45e993d5180a251b4bdd314d6333b70
 - name: github.com/mgutz/ansi
-  version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
+  version: ea0eecf09f6e0ba3a83c39bddece22ff650ad3f8
 - name: github.com/shirou/gopsutil
   version: ""
   subpackages:
@@ -46,7 +48,7 @@ imports:
 - name: github.com/StackExchange/wmi
   version: ""
 - name: golang.org/x/crypto
-  version: 0c565bf13221fb55497d7ae2bb95694db1fd1bff
+  version: ea0eecf09f6e0ba3a83c39bddece22ff650ad3f8
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
