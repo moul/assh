@@ -53,7 +53,7 @@ func BashComplete(c *cli.Context) {
 		for _, option := range []string{"--debug", "--verbose", "--help", "--version"} {
 			fmt.Println(option)
 		}
-		for _, command := range []string{"connect", "build", "info", "help"} {
+		for _, command := range []string{"connect", "config", "info", "sockets", "help"} {
 			fmt.Println(command)
 		}
 	}
