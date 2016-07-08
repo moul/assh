@@ -5,15 +5,13 @@ PKG_BASE_DIR ?=	./pkg
 CONVEY_PORT ?=	9042
 SOURCES :=	$(shell find . -type f -name "*.go")
 GOLIST :=	$(shell go list ./...)
-GOLIST_NOVENDOR :=	$(shell echo "$(GOLIST)" | grep -v /vendor/)
-COMMANDS :=	$(shell echo "$(GOLIST_NOVENDOR)" | grep /cmd/)
-PACKAGES :=	$(shell echo "$(GOLIST_NOVENDOR)" | grep -v /cmd/)
+COMMANDS :=	$(shell go list ./... | grep -v /vendor/ | grep /cmd/)
+PACKAGES :=	$(shell go list ./... | grep -v /vendor/ | grep -v /cmd/)
 REL_COMMANDS := $(subst $(GODIR),./,$(COMMANDS))
 REL_PACKAGES := $(subst $(GODIR),./,$(PACKAGES))
 GOENV ?=	GO15VENDOREXPERIMENT=1
 GO ?=		$(GOENV) go
 USER ?=		$(shell whoami)
-
 
 
 all:	build
