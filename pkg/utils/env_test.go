@@ -42,67 +42,67 @@ func TestGetHomeDir(t *testing.T) {
 }
 
 func TestExpandUser(t *testing.T) {
-	Convey("Testing expandUser", t, func() {
+	Convey("Testing ExpandUser", t, func() {
 		oldHome := os.Getenv("HOME")
 		oldUserProfile := os.Getenv("USERPROFILE")
 
 		os.Setenv("HOME", "/a/b/c")
 		os.Setenv("USERPROFILE", "")
-		dir, err := expandUser("~/test")
+		dir, err := ExpandUser("~/test")
 		So(dir, ShouldEqual, "/a/b/c/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "/a/b/d")
 		os.Setenv("USERPROFILE", "")
-		dir, err = expandUser("~/test")
+		dir, err = ExpandUser("~/test")
 		So(dir, ShouldEqual, "/a/b/d/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "/a/b/d")
 		os.Setenv("USERPROFILE", "/a/b/e")
-		dir, err = expandUser("~/test")
+		dir, err = ExpandUser("~/test")
 		So(dir, ShouldEqual, "/a/b/d/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "")
 		os.Setenv("USERPROFILE", "/a/b/f")
-		dir, err = expandUser("~/test")
+		dir, err = ExpandUser("~/test")
 		So(dir, ShouldEqual, "/a/b/f/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "")
 		os.Setenv("USERPROFILE", "/a/b/g")
-		dir, err = expandUser("~/test")
+		dir, err = ExpandUser("~/test")
 		So(dir, ShouldEqual, "/a/b/g/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "")
 		os.Setenv("USERPROFILE", "")
-		dir, err = expandUser("~/test")
+		dir, err = ExpandUser("~/test")
 		So(dir, ShouldEqual, "")
 		So(err, ShouldNotBeNil)
 
 		os.Setenv("HOME", "")
 		os.Setenv("USERPROFILE", "")
-		dir, err = expandUser("/a/b/c/test")
+		dir, err = ExpandUser("/a/b/c/test")
 		So(dir, ShouldEqual, "/a/b/c/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "/e/f")
 		os.Setenv("USERPROFILE", "")
-		dir, err = expandUser("/a/b/c/test")
+		dir, err = ExpandUser("/a/b/c/test")
 		So(dir, ShouldEqual, "/a/b/c/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "")
 		os.Setenv("USERPROFILE", "/e/g")
-		dir, err = expandUser("/a/b/c/test")
+		dir, err = ExpandUser("/a/b/c/test")
 		So(dir, ShouldEqual, "/a/b/c/test")
 		So(err, ShouldBeNil)
 
 		os.Setenv("HOME", "/e/h")
 		os.Setenv("USERPROFILE", "/e/i")
-		dir, err = expandUser("/a/b/c/test")
+		dir, err = ExpandUser("/a/b/c/test")
 		So(dir, ShouldEqual, "/a/b/c/test")
 		So(err, ShouldBeNil)
 

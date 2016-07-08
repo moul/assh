@@ -1280,7 +1280,7 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 
 		// ssh-config fields with a different behavior
 		if h.isDefault {
-			fmt.Fprintf(w, "  ProxyCommand %s proxy --port=%%p %%h\n", asshBinaryPath)
+			fmt.Fprintf(w, "  ProxyCommand %s connect --port=%%p %%h\n", asshBinaryPath)
 		} else {
 			if h.ProxyCommand != "" {
 				fmt.Fprintf(w, "  # ProxyCommand %s\n", h.ProxyCommand)
