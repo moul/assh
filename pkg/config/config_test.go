@@ -1414,7 +1414,7 @@ Host zzz
 Host *
   Port 22
   User root
-  ProxyCommand assh proxy --port=%p %h
+  ProxyCommand assh connect --port=%p %h
 `
 		output := strings.Join(strings.Split(buffer.String(), "\n")[3:], "\n")
 		So(output, ShouldEqual, expected)
