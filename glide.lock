@@ -1,10 +1,12 @@
-hash: 836137f7cc6aa9473ec181dab79626d776114b3a34d068441bc21e6c7654f438
-updated: 2016-07-08T11:10:40.12777865+02:00
+hash: e083263a0680a7a9db128c11dc1af54d22be38b8ce0d7157c7e7dc94285d50ed
+updated: 2016-07-08T14:21:28.443842754+02:00
 imports:
 - name: github.com/bugsnag/osext
   version: ""
 - name: github.com/codegangsta/cli
   version: ""
+- name: github.com/docker/go-units
+  version: f2d77a61e3c169b43402a0a1e84f06daf29b8190
 - name: github.com/flynn/go-shlex
   version: ""
 - name: github.com/go-ole/go-ole
@@ -18,9 +20,9 @@ imports:
 - name: github.com/jtolds/gls
   version: ""
 - name: github.com/mattn/go-zglob
-  version: 2dbd7f37a45e993d5180a251b4bdd314d6333b70
+  version: a7e9d5e707dae5c7f396664ca2dadb49e5413661
 - name: github.com/mgutz/ansi
-  version: ea0eecf09f6e0ba3a83c39bddece22ff650ad3f8
+  version: a7e9d5e707dae5c7f396664ca2dadb49e5413661
 - name: github.com/shirou/gopsutil
   version: ""
   subpackages:
@@ -48,7 +50,7 @@ imports:
 - name: github.com/StackExchange/wmi
   version: ""
 - name: golang.org/x/crypto
-  version: ea0eecf09f6e0ba3a83c39bddece22ff650ad3f8
+  version: a7e9d5e707dae5c7f396664ca2dadb49e5413661
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
