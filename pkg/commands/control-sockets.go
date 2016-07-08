@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/codegangsta/cli"
@@ -39,6 +40,39 @@ func cmdCsList(c *cli.Context) error {
 		}
 
 		fmt.Printf("- %s (%v)\n", socket.RelativePath(), units.HumanDuration(now.Sub(createdAt)))
+	}
+
+	return nil
+}
+
+func cmdCsFlush(c *cli.Context) error {
+	conf, err := config.Open(c.GlobalString("config"))
+	if err != nil {
+		panic(err)
+	}
+
+	controlPath := conf.Defaults.ControlPath
+
+	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(activeSockets) == 0 {
+		fmt.Println("No active control sockets.")
+	}
+
+	success := 0
+	for _, socket := range activeSockets {
+		if err := os.Remove(socket.Path()); err != nil {
+			Logger.Warnf("Failed to close control socket %q: %v", socket.Path(), err)
+		} else {
+			success++
+		}
+	}
+
+	if success > 0 {
+		fmt.Printf("Closed %d control sockets.", success)
 	}
 
 	return nil
