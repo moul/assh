@@ -15,6 +15,7 @@ import (
 
 	"github.com/moul/advanced-ssh-config/pkg/flexyaml"
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/utils"
 	"github.com/moul/advanced-ssh-config/pkg/version"
 )
 
@@ -51,7 +52,7 @@ func (c *Config) String() string {
 func (c *Config) SaveNewKnownHost(target string) {
 	c.addKnownHost(target)
 
-	path, err := expandUser(c.ASSHKnownHostFile)
+	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
 	if err != nil {
 		Logger.Errorf("Cannot append host %q, unknown ASSH known_hosts file: %v", target, err)
 	}
@@ -76,7 +77,7 @@ func (c *Config) addKnownHost(target string) {
 
 // LoadKnownHosts loads known hosts list from disk
 func (c *Config) LoadKnownHosts() error {
-	path, err := expandUser(c.ASSHKnownHostFile)
+	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
 	if err != nil {
 		return err
 	}
@@ -256,7 +257,7 @@ func (c *Config) GetHostSafe(name string) *Host {
 // isSSHConfigOutdated returns true if assh.yml or an included file has a
 // modification date more recent than .ssh/config
 func (c *Config) isSSHConfigOutdated() (bool, error) {
-	filepath, err := expandUser(c.sshConfigPath)
+	filepath, err := utils.ExpandUser(c.sshConfigPath)
 	if err != nil {
 		return false, err
 	}
@@ -381,7 +382,7 @@ func (c *Config) SaveSSHConfig() error {
 	if c.sshConfigPath == "" {
 		return fmt.Errorf("no Config.sshConfigPath configured")
 	}
-	filepath, err := expandUser(c.sshConfigPath)
+	filepath, err := utils.ExpandUser(c.sshConfigPath)
 	if err != nil {
 		return err
 	}
@@ -399,7 +400,7 @@ func (c *Config) LoadFile(filename string) error {
 	beforeHostsCount := len(c.Hosts)
 
 	// Resolve '~' and '$HOME'
-	filepath, err := expandUser(filename)
+	filepath, err := utils.ExpandUser(filename)
 	if err != nil {
 		return err
 	}
@@ -443,7 +444,7 @@ func (c *Config) LoadFile(filename string) error {
 // LoadFiles will try to glob the pattern and load each maching entries
 func (c *Config) LoadFiles(pattern string) error {
 	// Resolve '~' and '$HOME'
-	expandedPattern, err := expandUser(pattern)
+	expandedPattern, err := utils.ExpandUser(pattern)
 	if err != nil {
 		return err
 	}
@@ -462,7 +463,7 @@ func (c *Config) LoadFiles(pattern string) error {
 	}
 
 	if c.ASSHBinaryPath != "" {
-		path, err := expandUser(c.ASSHBinaryPath)
+		path, err := utils.ExpandUser(c.ASSHBinaryPath)
 		if err != nil {
 			return err
 		}
