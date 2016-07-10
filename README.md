@@ -606,6 +606,17 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 * [Linux - mDNS support (nss-mdns)](http://0pointer.de/lennart/projects/nss-mdns/)
 * [Mac OS X - `/etc/resolv.conf` documentation](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/resolver.5.html)
 
+#### `unix_listener: "/Users/.../.ssh/cm/..." too long for Unix domain socket`
+
+Starting with `OpenSSH v6.7` the socket name can be shortened by configuring `%C` for the name expansion.
+
+```yaml
+defaults:
+  ControlPath: ~/tmp/.ssh/cm/%C.sock
+```
+
+`%C` is a unique identifier based on a hash of the tuple of (local host, remote user, hostname, port).
+
 ## License
 
 © 2009-2016 Manfred Touron - MIT License
