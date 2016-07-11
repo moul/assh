@@ -209,8 +209,7 @@ hosts:
     Port: 24
     Hostname: dolphin
     Aliases:
-    - sad-robot
-    - bighead
+    - ecco
 
   schooltemplate:
     User: student
