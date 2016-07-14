@@ -300,7 +300,7 @@ USAGE:
    assh [global options] command [command options] [arguments...]
 
 VERSION:
-   2.3.0+dev (HEAD)
+   2.4.0 (HEAD)
 
 AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
@@ -502,7 +502,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ## Changelog
 
-### master (unreleased)
+### v2.4.0 (2016-07-14)
 
 * Add a control socket manager `assh sockets {list,flush,master}` ([#152](https://github.com/moul/advanced-ssh-config/pull/152))
 * Add a `assh --config=/path/to/assh.yml` option
@@ -512,7 +512,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Hide `assh connect` and `assh wrapper` from the help
 * Support built-in ssh netcat mode, may fail with older SSH clients ([#146](https://github.com/moul/advanced-ssh-config/issues/146))
 
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...master)
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...v2.4.0)
 
 ### v2.3.0 (2016-04-27)
 
