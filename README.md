@@ -510,6 +510,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
 * Rename `assh proxy -> assh connect`
 * Hide `assh connect` and `assh wrapper` from the help
+* Support built-in ssh netcat mode, may fail with older SSH clients ([#146](https://github.com/moul/advanced-ssh-config/issues/146))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...master)
 
@@ -596,6 +597,37 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 * [v1](https://github.com/moul/advanced-ssh-config/tree/v1) (2009-2015) - The original implementation. It worked quite well, but was a lot slower, less portable, harder to install for the user and harder to work on to develop new features and fix bugs
 
 ## Troubleshooting
+
+#### I can't use gateways
+
+`assh` uses the [built-in netcat mode of OpenSSH (shipped with OpenSSH 5.4)](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Passing_through_a_gateway_using_netcat_mode) by default.
+If your ssh client doesn't support this feature, you can configure a custom `ProxyCommand` configuration, i.e:
+
+```yaml
+hosts:
+  myserver:
+    host: 1.2.3.4
+    gateways:
+    - mygateway
+    # configure a custom proxycommand
+    proxycommand: /bin/nc %h %p
+
+  mygateway:
+    host: 5.6.7.8
+```
+
+---
+
+You can configure this rule globally:
+
+```yaml
+defaults:
+  proxycommand: nc %h %p
+```
+
+---
+
+Also, be sure to have netcat installed on your system, or use an alternative proxy binary, i.e: `socat`.
 
 #### How to configure resolver to parse `/etc/hosts` and/or handle **mDNS** requests ?
 
