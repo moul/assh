@@ -126,16 +126,22 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 					return err
 				}
 
-				if hostCopy.ProxyCommand == "" {
-					hostCopy.ProxyCommand = "nc %h %p"
-				}
 				// FIXME: dynamically add "-v" flags
+
+				var command string
+
+				// FIXME: detect ssh client version and use netcat if too old
+				// for now, the workaround is to configure the ProxyCommand of the host to "nc %h %p"
 
 				if err = hostPrepare(hostCopy); err != nil {
 					return err
 				}
 
-				command := "ssh %name -- " + hostCopy.ExpandString(hostCopy.ProxyCommand)
+				if hostCopy.ProxyCommand != "" {
+					command = "ssh %name -- " + hostCopy.ExpandString(hostCopy.ProxyCommand)
+				} else {
+					command = hostCopy.ExpandString("ssh -W %h:%p ") + "%name"
+				}
 
 				Logger.Debugf("Using gateway '%s': %s", gateway, command)
 				err = proxyCommand(gatewayHost, command, dryRun)
