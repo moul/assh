@@ -502,6 +502,12 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.0...master)
+
 ### v2.4.0 (2016-07-14)
 
 * Add a control socket manager `assh sockets {list,flush,master}` ([#152](https://github.com/moul/advanced-ssh-config/pull/152))
