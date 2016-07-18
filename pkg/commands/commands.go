@@ -72,6 +72,11 @@ var Commands = []cli.Command{
 				Action: cmdBuild,
 			},
 			{
+				Name:   "json",
+				Usage:  "Returns the JSON output",
+				Action: cmdBuildJSON,
+			},
+			{
 				Name:   "list",
 				Usage:  "List all hosts from assh config",
 				Action: cmdList,
