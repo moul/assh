@@ -17,6 +17,15 @@ func cmdBuild(c *cli.Context) error {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
+	if c.Bool("expand") {
+		for name := range conf.Hosts {
+			conf.Hosts[name], err = conf.GetHost(name)
+			if err != nil {
+				Logger.Fatalf("Error while trying to expand hosts: %v", err)
+			}
+		}
+	}
+
 	conf.WriteSSHConfigTo(os.Stdout)
 
 	return nil
@@ -26,6 +35,15 @@ func cmdBuildJSON(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
 		Logger.Fatalf("Cannot open configuration file: %v", err)
+	}
+
+	if c.Bool("expand") {
+		for name := range conf.Hosts {
+			conf.Hosts[name], err = conf.GetHost(name)
+			if err != nil {
+				Logger.Fatalf("Error while trying to expand hosts: %v", err)
+			}
+		}
 	}
 
 	s, err := json.MarshalIndent(conf, "", "  ")

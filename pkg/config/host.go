@@ -974,7 +974,7 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.Aliases = defaults.Aliases
 	}
 
-	if h.Hooks.Length() == 0 {
+	if h.Hooks == nil {
 		h.Hooks = defaults.Hooks
 	}
 

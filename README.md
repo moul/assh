@@ -505,6 +505,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 ### master (unreleased)
 
 * Add `assh config json` command
+* Add `assh config {build,json} --expand` option
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.1...master)
 
