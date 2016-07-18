@@ -17,14 +17,20 @@ import (
 func cmdCsList(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		panic(err)
+		Logger.Errorf("%v", err)
+		os.Exit(-1)
 	}
 
 	controlPath := conf.Defaults.ControlPath
+	if controlPath == "" {
+		Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
+		return nil
+	}
 
 	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
 	if err != nil {
-		panic(err)
+		Logger.Errorf("%v", err)
+		os.Exit(-1)
 	}
 
 	if len(activeSockets) == 0 {
@@ -66,14 +72,20 @@ func cmdCsMaster(c *cli.Context) error {
 func cmdCsFlush(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		panic(err)
+		Logger.Errorf("%v", err)
+		os.Exit(-1)
 	}
 
 	controlPath := conf.Defaults.ControlPath
+	if controlPath == "" {
+		Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
+		return nil
+	}
 
 	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
 	if err != nil {
-		panic(err)
+		Logger.Errorf("%v", err)
+		os.Exit(-1)
 	}
 
 	if len(activeSockets) == 0 {
