@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"github.com/docker/go-units"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"

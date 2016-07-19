@@ -17,7 +17,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	shlex "github.com/flynn/go-shlex"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
