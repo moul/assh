@@ -504,6 +504,8 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Support of `OnConnect` and `OnDisconnect` hooks
+* Support of `write` hook driver
 * Add `assh config json` command
 * Add `assh config {build,json} --expand` option
 
