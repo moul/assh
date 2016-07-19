@@ -300,7 +300,7 @@ USAGE:
    assh [global options] command [command options] [arguments...]
 
 VERSION:
-   2.4.0 (HEAD)
+   2.4.1 (HEAD)
 
 AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
@@ -502,11 +502,11 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ## Changelog
 
-### master (unreleased)
+### v2.4.1 (2016-07-19)
 
 * Fix panic in `assh wrapper` ([#157](https://github.com/moul/advanced-ssh-config/issues/157))
 
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.0...master)
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.0...v2.4.1)
 
 ### v2.4.0 (2016-07-14)
 
