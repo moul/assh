@@ -16,7 +16,7 @@ func getVMStat(vms *VirtualMemoryStat) error {
 	if err != nil {
 		return err
 	}
-	out, err := invoke.Command(vm_stat)
+	out, err := exec.Command(vm_stat).Output()
 	if err != nil {
 		return err
 	}

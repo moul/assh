@@ -1,4 +1,3 @@
-// +build !go1.7
 // +build go1.6
 
 package compiler

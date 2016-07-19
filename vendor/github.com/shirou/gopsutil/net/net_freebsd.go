@@ -16,7 +16,7 @@ func IOCounters(pernic bool) ([]IOCountersStat, error) {
 	if err != nil {
 		return nil, err
 	}
-	out, err := invoke.Command(netstat, "-ibdnW")
+	out, err := exec.Command(netstat, "-ibdnW").Output()
 	if err != nil {
 		return nil, err
 	}

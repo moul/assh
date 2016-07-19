@@ -566,6 +566,8 @@ func (c *funcContext) translateExpr(expr ast.Expr) *expression {
 						return c.formatExpr("debugger")
 					case "InternalObject":
 						return c.translateExpr(e.Args[0])
+					case "MakeFunc":
+						return c.formatExpr("(function() { return $externalize(%e(this, new ($sliceType($jsObjectPtr))($global.Array.prototype.slice.call(arguments, []))), $emptyInterface); })", e.Args[0])
 					}
 				}
 				return c.translateCall(e, sig, c.translateExpr(f))
@@ -589,10 +591,10 @@ func (c *funcContext) translateExpr(expr ast.Expr) *expression {
 			switch sel.Kind() {
 			case types.MethodVal:
 				recv := c.makeReceiver(f)
-				declaredFuncRecv := sel.Obj().(*types.Func).Type().(*types.Signature).Recv().Type()
-				if typesutil.IsJsObject(declaredFuncRecv) {
+
+				if typesutil.IsJsPackage(sel.Obj().Pkg()) {
 					globalRef := func(id string) string {
-						if recv.String() == "$global" && id[0] == '$' && len(id) > 1 {
+						if recv.String() == "$global" && id[0] == '$' {
 							return id
 						}
 						return recv.String() + "." + id

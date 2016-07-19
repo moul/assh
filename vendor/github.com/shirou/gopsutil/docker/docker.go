@@ -1,19 +1,9 @@
 package docker
 
-import (
-	"errors"
-
-	"github.com/shirou/gopsutil/internal/common"
-)
+import "errors"
 
 var ErrDockerNotAvailable = errors.New("docker not available")
 var ErrCgroupNotAvailable = errors.New("cgroup not available")
-
-var invoke common.Invoker
-
-func init() {
-	invoke = common.Invoke{}
-}
 
 type CgroupMemStat struct {
 	ContainerID             string `json:"containerID"`
@@ -48,12 +38,4 @@ type CgroupMemStat struct {
 	MemMaxUsageInBytes      uint64 `json:"memMaxUsageInBytes"`
 	MemLimitInBytes         uint64 `json:"memoryLimitInBbytes"`
 	MemFailCnt              uint64 `json:"memoryFailcnt"`
-}
-
-type CgroupDockerStat struct {
-	ContainerID string `json:"containerID"`
-	Name        string `json:"name"`
-	Image       string `json:"image"`
-	Status      string `json:"status"`
-	Running     bool   `json:"running"`
 }

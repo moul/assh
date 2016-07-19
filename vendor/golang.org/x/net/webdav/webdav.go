@@ -148,10 +148,7 @@ func (h *Handler) confirmLocks(r *http.Request, src, dst string) (release func()
 			if u.Host != r.Host {
 				continue
 			}
-			lsrc, status, err = h.stripPrefix(u.Path)
-			if err != nil {
-				return nil, status, err
-			}
+			lsrc = u.Path
 		}
 		release, err = h.LockSystem.Confirm(time.Now(), lsrc, dst, l.conditions...)
 		if err == ErrConfirmationFailed {

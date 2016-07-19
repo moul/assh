@@ -5,9 +5,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
-
-	"github.com/shirou/gopsutil/internal/common"
 )
 
 type TimesStat struct {
@@ -40,22 +37,8 @@ type InfoStat struct {
 	Flags      []string `json:"flags"`
 }
 
-type lastPercent struct {
-	sync.Mutex
-	lastCPUTimes    []TimesStat
-	lastPerCPUTimes []TimesStat
-}
-
-var lastCPUPercent lastPercent
-var invoke common.Invoker
-
-func init() {
-	invoke = common.Invoke{}
-	lastCPUPercent.Lock()
-	lastCPUPercent.lastCPUTimes, _ = Times(false)
-	lastCPUPercent.lastPerCPUTimes, _ = Times(true)
-	lastCPUPercent.Unlock()
-}
+var lastCPUTimes []TimesStat
+var lastPerCPUTimes []TimesStat
 
 func Counts(logical bool) (int, error) {
 	return runtime.NumCPU(), nil

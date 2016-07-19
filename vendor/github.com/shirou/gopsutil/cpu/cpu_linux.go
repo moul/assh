@@ -19,7 +19,7 @@ func init() {
 	if err != nil {
 		return
 	}
-	out, err := invoke.Command(getconf, "CLK_TCK")
+	out, err := exec.Command(getconf, "CLK_TCK").Output()
 	// ignore errors
 	if err == nil {
 		i, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)

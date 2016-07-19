@@ -15,7 +15,6 @@ import (
 	"sync"
 
 	"golang.org/x/net/http2/hpack"
-	"golang.org/x/net/lex/httplex"
 )
 
 const frameHeaderLen = 9
@@ -454,7 +453,7 @@ func terminalReadFrameError(err error) bool {
 //
 // If the frame is larger than previously set with SetMaxReadFrameSize, the
 // returned error is ErrFrameTooLarge. Other errors may be of type
-// ConnectionError, StreamError, or anything else from the underlying
+// ConnectionError, StreamError, or anything else from from the underlying
 // reader.
 func (fr *Framer) ReadFrame() (Frame, error) {
 	fr.errDetail = nil
@@ -1396,7 +1395,7 @@ func (fr *Framer) readMetaFrame(hf *HeadersFrame) (*MetaHeadersFrame, error) {
 	hdec.SetEmitEnabled(true)
 	hdec.SetMaxStringLength(fr.maxHeaderStringLen())
 	hdec.SetEmitFunc(func(hf hpack.HeaderField) {
-		if !httplex.ValidHeaderFieldValue(hf.Value) {
+		if !validHeaderFieldValue(hf.Value) {
 			invalid = headerFieldValueError(hf.Value)
 		}
 		isPseudo := strings.HasPrefix(hf.Name, ":")
@@ -1406,7 +1405,7 @@ func (fr *Framer) readMetaFrame(hf *HeadersFrame) (*MetaHeadersFrame, error) {
 			}
 		} else {
 			sawRegular = true
-			if !validWireHeaderFieldName(hf.Name) {
+			if !validHeaderFieldName(hf.Name) {
 				invalid = headerFieldNameError(hf.Name)
 			}
 		}
