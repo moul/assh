@@ -23,5 +23,5 @@ func (d WriteDriver) Run(args RunArgs) error {
 		return err
 	}
 
-	return tmpl.Execute(os.Stdout, args)
+	return tmpl.Execute(os.Stderr, args)
 }
