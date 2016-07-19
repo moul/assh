@@ -5,7 +5,6 @@ package js_test
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -377,7 +376,7 @@ func TestError(t *testing.T) {
 			t.Fail()
 		}
 		jsErr, ok := err.(*js.Error)
-		if !ok || !strings.Contains(jsErr.Error(), "throwsError") {
+		if !ok || jsErr.Get("stack") == js.Undefined {
 			t.Fail()
 		}
 	}()
@@ -399,21 +398,15 @@ func TestExternalizeField(t *testing.T) {
 
 func TestMakeFunc(t *testing.T) {
 	o := js.Global.Get("Object").New()
-	for i := 3; i < 5; i++ {
-		x := i
-		if i == 4 {
-			break
+	o.Set("f", js.MakeFunc(func(this *js.Object, arguments []*js.Object) interface{} {
+		if this != o {
+			t.Fail()
 		}
-		o.Set("f", js.MakeFunc(func(this *js.Object, arguments []*js.Object) interface{} {
-			if this != o {
-				t.Fail()
-			}
-			if len(arguments) != 2 || arguments[0].Int() != 1 || arguments[1].Int() != 2 {
-				t.Fail()
-			}
-			return x
-		}))
-	}
+		if len(arguments) != 2 || arguments[0].Int() != 1 || arguments[1].Int() != 2 {
+			t.Fail()
+		}
+		return 3
+	}))
 	if o.Call("f", 1, 2).Int() != 3 {
 		t.Fail()
 	}

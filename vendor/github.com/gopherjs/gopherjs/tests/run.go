@@ -242,7 +242,7 @@ func main() {
 				errStr, test.goFileName(), dt)
 			continue
 		}
-		if !*verbose && status != "unok" {
+		if !*verbose {
 			continue
 		}
 		fmt.Printf("%s\t%s\t%s\n", status, test.goFileName(), dt)

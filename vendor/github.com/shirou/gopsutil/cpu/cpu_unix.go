@@ -7,46 +7,24 @@ import (
 	"time"
 )
 
-func getAllBusy(t TimesStat) (float64, float64) {
-	busy := t.User + t.System + t.Nice + t.Iowait + t.Irq +
-		t.Softirq + t.Steal + t.Guest + t.GuestNice + t.Stolen
-	return busy + t.Idle, busy
-}
-
-func calculateBusy(t1, t2 TimesStat) float64 {
-	t1All, t1Busy := getAllBusy(t1)
-	t2All, t2Busy := getAllBusy(t2)
-
-	if t2Busy <= t1Busy {
-		return 0
-	}
-	if t2All <= t1All {
-		return 1
-	}
-	return (t2Busy - t1Busy) / (t2All - t1All) * 100
-}
-
-func calculateAllBusy(t1, t2 []TimesStat) ([]float64, error) {
-	// Make sure the CPU measurements have the same length.
-	if len(t1) != len(t2) {
-		return nil, fmt.Errorf(
-			"received two CPU counts: %d != %d",
-			len(t1), len(t2),
-		)
-	}
-
-	ret := make([]float64, len(t1))
-	for i, t := range t2 {
-		ret[i] = calculateBusy(t1[i], t)
-	}
-	return ret, nil
-}
-
-//Percent calculates the percentage of cpu used either per CPU or combined.
-//If an interval of 0 is given it will compare the current cpu times against the last call.
 func Percent(interval time.Duration, percpu bool) ([]float64, error) {
-	if interval <= 0 {
-		return percentUsedFromLastCall(percpu)
+	getAllBusy := func(t TimesStat) (float64, float64) {
+		busy := t.User + t.System + t.Nice + t.Iowait + t.Irq +
+			t.Softirq + t.Steal + t.Guest + t.GuestNice + t.Stolen
+		return busy + t.Idle, busy
+	}
+
+	calculate := func(t1, t2 TimesStat) float64 {
+		t1All, t1Busy := getAllBusy(t1)
+		t2All, t2Busy := getAllBusy(t2)
+
+		if t2Busy <= t1Busy {
+			return 0
+		}
+		if t2All <= t1All {
+			return 1
+		}
+		return (t2Busy - t1Busy) / (t2All - t1All) * 100
 	}
 
 	// Get CPU usage at the start of the interval.
@@ -55,7 +33,9 @@ func Percent(interval time.Duration, percpu bool) ([]float64, error) {
 		return nil, err
 	}
 
-	time.Sleep(interval)
+	if interval > 0 {
+		time.Sleep(interval)
+	}
 
 	// And at the end of the interval.
 	cpuTimes2, err := Times(percpu)
@@ -63,28 +43,17 @@ func Percent(interval time.Duration, percpu bool) ([]float64, error) {
 		return nil, err
 	}
 
-	return calculateAllBusy(cpuTimes1, cpuTimes2)
-}
-
-func percentUsedFromLastCall(percpu bool) ([]float64, error) {
-	cpuTimes, err := Times(percpu)
-	if err != nil {
-		return nil, err
-	}
-	lastCPUPercent.Lock()
-	defer lastCPUPercent.Unlock()
-	var lastTimes []TimesStat
-	if percpu {
-		lastTimes = lastCPUPercent.lastPerCPUTimes
-		lastCPUPercent.lastPerCPUTimes = cpuTimes
-	} else {
-		lastTimes = lastCPUPercent.lastCPUTimes
-		lastCPUPercent.lastCPUTimes = cpuTimes
+	// Make sure the CPU measurements have the same length.
+	if len(cpuTimes1) != len(cpuTimes2) {
+		return nil, fmt.Errorf(
+			"received two CPU counts: %d != %d",
+			len(cpuTimes1), len(cpuTimes2),
+		)
 	}
 
-	if lastTimes == nil {
-		return nil, fmt.Errorf("Error getting times for cpu percent. LastTimes was nil")
+	ret := make([]float64, len(cpuTimes1))
+	for i, t := range cpuTimes2 {
+		ret[i] = calculate(cpuTimes1[i], t)
 	}
-	return calculateAllBusy(lastTimes, cpuTimes)
-
+	return ret, nil
 }

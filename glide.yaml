@@ -6,8 +6,8 @@ import:
   version: f3e2bae1e0cb5aef83e319133eabfee30013a4a5
 - package: github.com/bugsnag/osext
   version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
-- package: github.com/codegangsta/cli
-  version: 4733699ce30faa633c4db36ebfbe427963593d7d
+- package: github.com/urfave/cli
+  version: 11c134509d89c2018675f369955218a180dc7428
 - package: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
 - package: github.com/go-ole/go-ole
@@ -58,3 +58,4 @@ import:
   - ssh/terminal
 - package: github.com/mattn/go-zglob
 - package: github.com/docker/go-units
+- package: github.com/deckarep/gosx-notifier
