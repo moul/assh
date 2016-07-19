@@ -1,11 +1,15 @@
 package config
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/moul/advanced-ssh-config/pkg/hooks"
+)
 
 // HostHooks represents a static list of Hooks
 type HostHooks struct {
-	OnConnect    Hooks `yaml:"onconnect,omitempty,flow" json:"OnConnect,omitempty"`
-	OnDisconnect Hooks `yaml:"ondisconnect,omitempty,flow" json:"OnDisconnect,omitempty"`
+	OnConnect    hooks.Hooks `yaml:"onconnect,omitempty,flow" json:"OnConnect,omitempty"`
+	OnDisconnect hooks.Hooks `yaml:"ondisconnect,omitempty,flow" json:"OnDisconnect,omitempty"`
 }
 
 // Length returns the quantity of hooks of any type
@@ -21,9 +25,3 @@ func (hh *HostHooks) String() string {
 	s, _ := json.Marshal(hh)
 	return string(s)
 }
-
-// Hooks represents a slice of Hook
-type Hooks []Hook
-
-// Hook is a string
-type Hook string
