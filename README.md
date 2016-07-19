@@ -504,7 +504,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
-* No entry
+* Fix panic in `assh wrapper` ([#157](https://github.com/moul/advanced-ssh-config/issues/157))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.0...master)
 
