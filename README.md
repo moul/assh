@@ -14,6 +14,7 @@
   * [Using Gateway from command line](#using-gateway-from-command-line)
   * [Using Gateway from configuration file](#using-gateways-from-configuration-file)
   * [Under the hood features](#under-the-hood-features)
+  * [Hooks](#hooks)
 3. [Configuration](#configuration)
 4. [Usage](#usage)
   * [Usage Examples](#usage-examples)
@@ -144,6 +145,77 @@ hosts:
 * Automatically regenerates `~/.ssh/config` file when needed
 * Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically be ran in debug mode)
 * Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be disabled with the `NoControlMasterMkdir: true` configuration in host or globally.
+
+### Hooks
+
+#### Events
+
+##### OnConnect
+
+`OnConnect` is called as soon as assh is connected to the remote SSH port.
+
+Note: `OnConnect` is not aware of the authentication process and will always be raised.
+
+---
+
+Example of Golang template variables:
+
+```golang
+// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+{{.Host.Name}}                                  //  localhost
+{{.Host.HostName}}                              //  127.0.0.1
+{{.Host.Port}}                                  //  22
+{{.Host.User}}                                  //  moul
+{{.Host.Prototype}}                             //  moul@127.0.0.1:22
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPerist":"yes",...}
+{{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
+```
+
+##### OnDisconnect
+
+`OnDisconnect` is called as the assh socket is closed.
+
+---
+
+Example of Golang template variables:
+
+```golang
+// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+{{.Host.Name}}                                  //  localhost
+{{.Host.HostName}}                              //  127.0.0.1
+{{.Host.Port}}                                  //  22
+{{.Host.User}}                                  //  moul
+{{.Host.Prototype}}                             //  moul@127.0.0.1:22
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPerist":"yes",...}
+{{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
+
+// WrittenBytes
+{{.WrittenBytes}}                               //  42
+```
+
+#### Hooks drivers
+
+##### Write driver
+
+Write driver uses [Golang's template system](https://golang.org/pkg/text/template/) to write out data to stdout
+
+Usage: `write <line:string...>`
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - write New SSH connection to {{.Host.Prototype}}.
+# writes: "New SSH connection to moul@127.0.0.1:22." on the terminal on connection
+```
+
+```yaml
+defaults:
+  Hooks:
+    OnDisconnect:
+    - write SSH connection to {{.Host.Name}} closed, {{ .WrittenBytes }} bytes written.
+# writes: SSH connection to localhost closed, 40 bytes written.
+```
 
 ## Configuration
 
