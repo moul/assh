@@ -249,6 +249,13 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	}
 	Logger.Debugf("Connected to %s:%s", host.HostName, host.Port)
 
+	// OnConnect hook
+	connectHookData := make(map[string]interface{})
+	connectHookData["Host"] = host
+	if err := host.Hooks.OnConnect.InvokeAll(connectHookData); err != nil {
+		Logger.Errorf("OnConnect hook failed: %v", err)
+	}
+
 	// Ignore SIGHUP
 	signal.Ignore(syscall.SIGHUP)
 
@@ -268,12 +275,25 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	if result.err != nil && result.err == io.EOF {
 		result.err = nil
 	}
+
+	var writtenBytes uint64
+
 	select {
 	case res := <-c2:
-		Logger.Debugf("Byte written %v", res.written)
+		writtenBytes = res.written
 	default:
-		Logger.Debugf("Byte written %v", result.written)
+		writtenBytes = result.written
 	}
+
+	// OnDisconnect hook
+	disconnectHookData := make(map[string]interface{})
+	disconnectHookData["Host"] = host
+	disconnectHookData["WrittenBytes"] = writtenBytes
+	if err := host.Hooks.OnDisconnect.InvokeAll(disconnectHookData); err != nil {
+		Logger.Errorf("OnDisconnect hook failed: %v", err)
+	}
+
+	Logger.Debugf("Byte written %v", writtenBytes)
 	conn.Close()
 	cancel()
 	waitGroup.Wait()
