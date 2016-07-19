@@ -217,6 +217,28 @@ defaults:
 # writes: SSH connection to localhost closed, 40 bytes written.
 ```
 
+##### Notify driver
+
+Notify driver uses [Golang's template system](https://golang.org/pkg/text/template/) to open Desktop notifications.
+
+Note: OS X only for now.
+
+Usage: `notify <line:string...>`
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - notify New SSH connection to {{.Host.Prototype}}.
+```
+
+```yaml
+defaults:
+  Hooks:
+    OnDisconnect:
+    - notify SSH connection to {{.Host.Name}} closed, {{ .WrittenBytes }} bytes written.
+```
+
 ## Configuration
 
 The `~/.ssh/config` file is now managed by `assh`, take care to keep a backup your `~/.ssh/config` file.
@@ -577,7 +599,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 ### master (unreleased)
 
 * Support of `OnConnect` and `OnDisconnect` hooks
-* Support of `write` hook driver
+* Support of `write`, `notify` hook drivers
 * Add `assh config json` command
 * Add `assh config {build,json} --expand` option
 
