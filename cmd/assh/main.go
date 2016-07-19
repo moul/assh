@@ -6,7 +6,7 @@ import (
 	"path"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/commands"
 	. "github.com/moul/advanced-ssh-config/pkg/logger"

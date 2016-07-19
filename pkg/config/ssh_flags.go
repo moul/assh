@@ -1,8 +1,8 @@
 package config
 
-import "github.com/codegangsta/cli"
+import "github.com/urfave/cli"
 
-// SSHFlags is built at init(), it contains codegangsta/cli string & bool flags for SSH
+// SSHFlags is built at init(), it contains urfave/cli string & bool flags for SSH
 var SSHFlags = []cli.Flag{}
 
 // SSHBoolFlags contains list of available SSH boolean options
