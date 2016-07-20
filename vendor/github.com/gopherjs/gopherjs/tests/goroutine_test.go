@@ -122,12 +122,3 @@ func TestSelect(t *testing.T) {
 	<-c
 	checkI(t, 3)
 }
-
-func TestCloseAfterReceiving(t *testing.T) {
-	ch := make(chan struct{})
-	go func() {
-		<-ch
-		close(ch)
-	}()
-	ch <- struct{}{}
-}

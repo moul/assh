@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/mgutz/ansi"

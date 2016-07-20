@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/bugsnag/osext"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	"github.com/moul/advanced-ssh-config/pkg/utils"

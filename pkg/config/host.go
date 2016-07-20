@@ -108,12 +108,13 @@ type Host struct {
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
-	Inherits             []string `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
-	Gateways             []string `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
-	ResolveNameservers   []string `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
-	ResolveCommand       string   `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
-	NoControlMasterMkdir string   `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
-	Aliases              []string `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
+	Inherits             []string   `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
+	Gateways             []string   `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
+	ResolveNameservers   []string   `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
+	ResolveCommand       string     `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
+	NoControlMasterMkdir string     `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
+	Aliases              []string   `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
+	Hooks                *HostHooks `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
 
 	// private assh fields
 	knownHosts []string
@@ -470,6 +471,7 @@ func (h *Host) Options() OptionsList {
 	//ResolveCommand
 	//NoControlMasterMkdir
 	//Aliases
+	//Hooks
 
 	// private assh fields
 	//knownHosts
@@ -972,6 +974,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.Aliases = defaults.Aliases
 	}
 
+	if h.Hooks == nil {
+		h.Hooks = defaults.Hooks
+	}
+
 	if len(h.Inherits) == 0 {
 		h.Inherits = defaults.Inherits
 	}
@@ -1306,6 +1312,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 			} else {
 				fmt.Fprintf(w, "  # AliasOf: %s\n", h.Name())
 			}
+		}
+		if h.Hooks.Length() > 0 {
+			fmt.Fprintf(w, "  # Hooks: [%s]\n", h.Hooks.String())
 		}
 		if len(h.knownHosts) > 0 {
 			if aliasIdx == 0 {

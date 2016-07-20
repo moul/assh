@@ -14,6 +14,7 @@
   * [Using Gateway from command line](#using-gateway-from-command-line)
   * [Using Gateway from configuration file](#using-gateways-from-configuration-file)
   * [Under the hood features](#under-the-hood-features)
+  * [Hooks](#hooks)
 3. [Configuration](#configuration)
 4. [Usage](#usage)
   * [Usage Examples](#usage-examples)
@@ -144,6 +145,149 @@ hosts:
 * Automatically regenerates `~/.ssh/config` file when needed
 * Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically be ran in debug mode)
 * Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be disabled with the `NoControlMasterMkdir: true` configuration in host or globally.
+
+### Hooks
+
+#### Events
+
+##### OnConnect
+
+`OnConnect` is called as soon as assh is connected to the remote SSH port.
+
+Note: `OnConnect` is not aware of the authentication process and will always be raised.
+
+---
+
+Example of Golang template variables:
+
+```golang
+// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+{{.Host.Name}}                                  //  localhost
+{{.Host.HostName}}                              //  127.0.0.1
+{{.Host.Port}}                                  //  22
+{{.Host.User}}                                  //  moul
+{{.Host.Prototype}}                             //  moul@127.0.0.1:22
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPerist":"yes",...}
+{{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
+
+// Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
+{{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
+```
+
+##### OnDisconnect
+
+`OnDisconnect` is called as the assh socket is closed.
+
+---
+
+Example of Golang template variables:
+
+```golang
+// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+{{.Host.Name}}                                  //  localhost
+{{.Host.HostName}}                              //  127.0.0.1
+{{.Host.Port}}                                  //  22
+{{.Host.User}}                                  //  moul
+{{.Host.Prototype}}                             //  moul@127.0.0.1:22
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
+{{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
+
+// Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
+{{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
+{{.Stats.WrittenBytes}}                          //  3613
+{{.Stats.DisconnectAt}}                          //  2016-07-20 11:19:29,520515792 +0200 CEST
+{{.Stats.ConnectionDuration}}                    //  6.052615198s
+{{.Stats.AverageSpeed}}                          //  596.933bps
+```
+
+#### Hooks drivers
+
+##### Exec driver
+
+Exec driver uses [Golang's template system](https://golang.org/pkg/text/template/) to execute a shell command
+
+Usage: `exec <binary> [args...]`
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - exec echo '{{.Host}}' | jq .
+# executes: `echo '{"HostName":"localhost","Port":"22","User":"moul","ControlPersist":"yes",...}' | jq .
+# which results in printing a pretty JSON of the host
+# {
+#   "HostName": "localhost",
+#   "Port": "22",
+#   "User": "moul",
+#   "ControlPersist": "yes",
+#   ...
+# }
+```
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - exec echo 'New SSH connection to {{.Host.Prototype}}.' | mail -s "SSH connection journal" m+assh@42.am
+# send an email with the connection prototype
+```
+
+---
+
+The `exec` commands are blocking, a new driver for background tasks is planned. For now, you can run a job in background like this:
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - exec sleep 60 &
+# execute the `sleep 60` command in background (non-blocking)
+# if you quit your ssh connection, the process will continue in background.
+```
+
+##### Write driver
+
+Write driver uses [Golang's template system](https://golang.org/pkg/text/template/) to write out data to stdout
+
+Usage: `write <line:string...>`
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - write New SSH connection to {{.Host.Prototype}}.
+# writes: "New SSH connection to moul@127.0.0.1:22." on the terminal on connection
+```
+
+```yaml
+defaults:
+  Hooks:
+    OnDisconnect:
+    - "write SSH connection to {{.Host.Name}} closed, {{ .Stats.WrittenBytes }} bytes written in {{ .Stats.ConnectionDuration }} ({{ .Stats.AverageSpeed }})"
+# writes: SSH connection to localhost closed, 40 bytes written.
+```
+
+##### Notify driver
+
+Notify driver uses [Golang's template system](https://golang.org/pkg/text/template/) to open Desktop notifications.
+
+Note: OS X only for now.
+
+Usage: `notify <line:string...>`
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - notify New SSH connection to {{.Host.Prototype}}.
+```
+
+```yaml
+defaults:
+  Hooks:
+    OnDisconnect:
+    - "notify SSH connection to {{.Host.Name}} closed, {{ .Stats.WrittenBytes }} bytes written in {{ .Stats.ConnectionDuration }} ({{ .Stats.AverageSpeed }})"
+```
 
 ## Configuration
 
@@ -504,7 +648,10 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
-* no entry
+* Support of `OnConnect` and `OnDisconnect` hooks
+* Support of `write`, `notify` and `exec` hook drivers
+* Add `assh config json` command
+* Add `assh config {build,json} --expand` option
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.1...master)
 

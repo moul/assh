@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	common "github.com/shirou/gopsutil/internal/common"
+	"github.com/shirou/gopsutil/internal/common"
 )
 
 type LSB struct {
@@ -136,26 +136,6 @@ func Users() ([]UserStat, error) {
 
 }
 
-func getOSRelease() (platform string, version string, err error) {
-	contents, err := common.ReadLines(common.HostEtc("os-release"))
-	if err != nil {
-		return "", "", nil // return empty
-	}
-	for _, line := range contents {
-		field := strings.Split(line, "=")
-		if len(field) < 2 {
-			continue
-		}
-		switch field[0] {
-		case "ID": // use ID for lowercase
-			platform = field[1]
-		case "VERSION":
-			version = field[1]
-		}
-	}
-	return platform, version, nil
-}
-
 func getLSB() (*LSB, error) {
 	ret := &LSB{}
 	if common.PathExists(common.HostEtc("lsb-release")) {
@@ -184,7 +164,7 @@ func getLSB() (*LSB, error) {
 		if err != nil {
 			return ret, err
 		}
-		out, err := invoke.Command(lsb_release)
+		out, err := exec.Command(lsb_release).Output()
 		if err != nil {
 			return ret, err
 		}
@@ -276,18 +256,6 @@ func PlatformInformation() (platform string, family string, version string, err 
 	} else if common.PathExists(common.HostEtc("arch-release")) {
 		platform = "arch"
 		version = lsb.Release
-	} else if common.PathExists(common.HostEtc("alpine-release")) {
-		platform = "alpine"
-		contents, err := common.ReadLines(common.HostEtc("alpine-release"))
-		if err == nil && len(contents) > 0 {
-			version = contents[0]
-		}
-	} else if common.PathExists(common.HostEtc("os-release")) {
-		p, v, err := getOSRelease()
-		if err == nil {
-			platform = p
-			version = v
-		}
 	} else if lsb.ID == "RedHat" {
 		platform = "redhat"
 		version = lsb.Release
@@ -322,10 +290,6 @@ func PlatformInformation() (platform string, family string, version string, err 
 		family = "arch"
 	case "exherbo":
 		family = "exherbo"
-	case "alpine":
-		family = "alpine"
-	case "coreos":
-		family = "coreos"
 	}
 
 	return platform, family, version, nil
@@ -387,7 +351,7 @@ func Virtualization() (string, string, error) {
 		if common.PathExists(filename + "/capabilities") {
 			contents, err := common.ReadLines(filename + "/capabilities")
 			if err == nil {
-				if common.StringsContains(contents, "control_d") {
+				if common.StringsHas(contents, "control_d") {
 					role = "host"
 				}
 			}
@@ -415,9 +379,9 @@ func Virtualization() (string, string, error) {
 	if common.PathExists(filename) {
 		contents, err := common.ReadLines(filename)
 		if err == nil {
-			if common.StringsContains(contents, "QEMU Virtual CPU") ||
-				common.StringsContains(contents, "Common KVM processor") ||
-				common.StringsContains(contents, "Common 32-bit KVM processor") {
+			if common.StringsHas(contents, "QEMU Virtual CPU") ||
+				common.StringsHas(contents, "Common KVM processor") ||
+				common.StringsHas(contents, "Common 32-bit KVM processor") {
 				system = "kvm"
 				role = "guest"
 			}
@@ -438,8 +402,8 @@ func Virtualization() (string, string, error) {
 		contents, err := common.ReadLines(filename + "/self/status")
 		if err == nil {
 
-			if common.StringsContains(contents, "s_context:") ||
-				common.StringsContains(contents, "VxID:") {
+			if common.StringsHas(contents, "s_context:") ||
+				common.StringsHas(contents, "VxID:") {
 				system = "linux-vserver"
 			}
 			// TODO: guest or host
@@ -449,28 +413,16 @@ func Virtualization() (string, string, error) {
 	if common.PathExists(filename + "/self/cgroup") {
 		contents, err := common.ReadLines(filename + "/self/cgroup")
 		if err == nil {
-			if common.StringsContains(contents, "lxc") {
+			if common.StringsHas(contents, "lxc") ||
+				common.StringsHas(contents, "docker") {
 				system = "lxc"
 				role = "guest"
-			} else if common.StringsContains(contents, "docker") {
-				system = "docker"
-				role = "guest"
-			} else if common.StringsContains(contents, "machine-rkt") {
-				system = "rkt"
-				role = "guest"
-			} else if common.PathExists("/usr/bin/lxc-version") {
+			} else if common.PathExists("/usr/bin/lxc-version") { // TODO: which
 				system = "lxc"
 				role = "host"
 			}
 		}
 	}
 
-	if common.PathExists(common.HostEtc("os-release")) {
-		p, _, err := getOSRelease()
-		if err == nil && p == "coreos" {
-			system = "rkt" // Is it true?
-			role = "host"
-		}
-	}
 	return system, role, nil
 }

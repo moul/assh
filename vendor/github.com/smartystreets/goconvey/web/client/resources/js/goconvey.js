@@ -158,7 +158,10 @@ function wireup()
 	{
 		var newSetting = $(this).data('show-debug-output');
 		save('show-debug-output', newSetting);
-		setDebugOutputUI(newSetting);
+		if (newSetting === "show")
+			$('.story-line-desc .message').show();
+		else
+			$('.story-line-desc .message').hide();
 	});
 	$('.enum#ui-effects').on('click', 'li:not(.sel)', function()
 	{
@@ -167,40 +170,6 @@ function wireup()
 		save('ui-effects', newSetting);
 	});
 	// End settings wireup
-
-	//wireup the notification-settings switches
-	$('.enum#notification').on('click', 'li:not(.sel)', function()
-	{
-		var enabled = $(this).data('notification');
-		log("Turning notifications " + enabled ? 'on' : 'off');
-		save('notifications', enabled);
-
-		if (notif() && 'Notification' in window)
-		{
-			if (Notification.permission !== 'denied')
-			{
-				Notification.requestPermission(function(per)
-				{
-					if (!('permission' in Notification))
-					{
-						Notification.permission = per;
-					}
-				});
-			}
-			else
-				log("Permission denied to show desktop notification");
-		}
-
-		setNotifUI()
-	});
-
-	$('.enum#notification-level').on('click', 'li:not(.sel)', function()
-	{
-		var level = $(this).data('notification-level');
-		convey.notificationLevel = level;
-		save('notification-level', level);
-	});
-	// End notification-settings
 
 	convey.layout.header = $('header').first();
 	convey.layout.frame = $('.frame').first();
@@ -253,7 +222,23 @@ function wireup()
 
 	$('#toggle-notif').click(function()
 	{
-		toggle($('.settings-notification'), $(this));
+		log("Turning notifications " + (notif() ? "off" : "on"));
+		$(this).toggleClass("fa-bell-o fa-bell " + convey.layout.selClass);
+		save('notifications', !notif());
+
+		if (notif() && 'Notification' in window)
+		{
+			if (Notification.permission !== 'denied')
+			{
+				Notification.requestPermission(function(per)
+				{
+					if (!('permission' in Notification))
+						Notification.permission = per;
+				});
+			}
+			else
+				log("Permission denied to show desktop notification");
+		}
 	});
 
 	$('#show-history').click(function()
@@ -263,7 +248,7 @@ function wireup()
 
 	$('#show-settings').click(function()
 	{
-		toggle($('.settings-general'), $(this));
+		toggle($('.settings'), $(this));
 	});
 
 	$('#show-gen').click(function() {
@@ -409,13 +394,12 @@ function wireup()
 	$(window).resize(reframe);
 }
 
-function setTooltips()
-{
+function setTooltips(){
 	var tips = {
 		'#path': { delayIn: 500 },
 		'#logo': { gravity: 'w' },
 		'.controls li, .pkg-cover-name': { live: false },
-		'footer .replay': { live: false, gravity: 'e' },
+		'footer .replay':{ live: false, gravity: 'e' },
 		'.ignore': { live: false, gravity: $.fn.tipsy.autoNS },
 		'.disabled': { live: false, gravity: $.fn.tipsy.autoNS }
 	};
@@ -428,28 +412,6 @@ function setTooltips()
 				$(this).tipsy(tips[key]);
 		});
 	}
-}
-
-function setDebugOutputUI(newSetting){
-	var $storyLine = $('.story-line');
-	switch(newSetting) {
-		case 'hide':
-			$('.message', $storyLine).hide();
-			break;
-		case 'fail':
-			$('.message', $storyLine.not('.fail, .panic')).hide();
-			$('.message', $storyLine.filter('.fail, .panic')).show();
-			break;
-		default:
-			$('.message', $storyLine).show();
-			break;
-	}
-}
-
-function setNotifUI()
-{
-	var $toggleNotif = $('#toggle-notif').addClass(notif() ? "fa-bell" : "fa-bell-o");
-	$toggleNotif.removeClass(!notif() ? "fa-bell" : "fa-bell-o");
 }
 
 function expandAll()
@@ -529,16 +491,8 @@ function loadSettingsFromStorage()
 	convey.uiEffects = uiEffects === "true";
 	enumSel("ui-effects", uiEffects);
 
-	enumSel("notification", ""+notif());
-	var notifLevel = get("notification-level");
-	if (notifLevel === null) 
-	{
-		notifLevel = '.*';
-	}
-	convey.notificationLevel = notifLevel;
-	enumSel("notification-level", notifLevel);
-
-	setNotifUI();
+	if (notif())
+		$('#toggle-notif').toggleClass("fa-bell-o fa-bell " + convey.layout.selClass);
 }
 
 
@@ -829,8 +783,7 @@ function process(data, status, jqxhr)
 	convey.intervalFuncs.momentjs();
 
 	// Show notification, if enabled
-	var levelRegex = new RegExp("("+convey.notificationLevel+")", "i");
-	if (notif() && current().overall.status.class.match(levelRegex))
+	if (notif())
 	{
 		log("Showing notification");
 		if (convey.notif)
@@ -839,7 +792,7 @@ function process(data, status, jqxhr)
 			convey.notif.close();
 		}
 
-		var notifText = notifSummary(current());
+		var notifText = notifSummary(current())
 
 		convey.notif = new Notification(notifText.title, {
 			body: notifText.body,
@@ -926,8 +879,8 @@ function renderFrame(frame)
 
 	$('.history .item').removeClass('selected');
 
-
-	setDebugOutputUI(get('show-debug-output'));
+	if (get('show-debug-output') === "hide")
+		$('.story-line-desc .message').hide();
 
 	log("Rendering finished");
 }
@@ -1340,7 +1293,7 @@ function customMarkupPipes()
 		if (num < 0)
 			return "0";
 		else if (num <= 5)
-			return "5";	// Still shows low coverage
+			return "5px";	// Still shows low coverage
 		else if (num > 100)
 			str = "100";
 		return str;
