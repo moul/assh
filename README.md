@@ -186,7 +186,7 @@ Example of Golang template variables:
 {{.Host.Port}}                                  //  22
 {{.Host.User}}                                  //  moul
 {{.Host.Prototype}}                             //  moul@127.0.0.1:22
-{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPerist":"yes",...}
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
 {{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
 
 // WrittenBytes
@@ -194,6 +194,36 @@ Example of Golang template variables:
 ```
 
 #### Hooks drivers
+
+##### Exec driver
+
+Exec driver uses [Golang's template system](https://golang.org/pkg/text/template/) to execute a shell command
+
+Usage: `exec <binary> [args...]`
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - exec echo '{{.Host}}' | jq .
+# executes: `echo '{"HostName":"localhost","Port":"22","User":"moul","ControlPersist":"yes",...}' | jq .
+# which results in printing a pretty JSON of the host
+# {
+#   "HostName": "localhost",
+#   "Port": "22",
+#   "User": "moul",
+#   "ControlPersist": "yes",
+#   ...
+# }
+```
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - exec echo 'New SSH connection to {{.Host.Prototype}}.' | mail -s "SSH connection journal" m+assh@42.am
+# send an email with the connection prototype
+```
 
 ##### Write driver
 
@@ -599,7 +629,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 ### master (unreleased)
 
 * Support of `OnConnect` and `OnDisconnect` hooks
-* Support of `write`, `notify` hook drivers
+* Support of `write`, `notify` and `exec` hook drivers
 * Add `assh config json` command
 * Add `assh config {build,json} --expand` option
 

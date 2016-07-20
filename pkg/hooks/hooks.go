@@ -50,6 +50,9 @@ func New(expr Hook) (HookDriver, error) {
 	case "notify":
 		driver, err := NewNotificationDriver(param)
 		return driver, err
+	case "exec":
+		driver, err := NewExecDriver(param)
+		return driver, err
 	default:
 		return nil, fmt.Errorf("No such driver %q", driverName)
 	}
