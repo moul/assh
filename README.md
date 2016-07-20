@@ -232,6 +232,19 @@ defaults:
 # send an email with the connection prototype
 ```
 
+---
+
+The `exec` commands are blocking, a new driver for background tasks is planned. For now, you can run a job in background like this:
+
+```yaml
+defaults:
+  Hooks:
+    OnConnect:
+    - exec sleep 60 &
+# execute the `sleep 60` command in background (non-blocking)
+# if you quit your ssh connection, the process will continue in background.
+```
+
 ##### Write driver
 
 Write driver uses [Golang's template system](https://golang.org/pkg/text/template/) to write out data to stdout
