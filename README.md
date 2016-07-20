@@ -169,6 +169,9 @@ Example of Golang template variables:
 {{.Host.Prototype}}                             //  moul@127.0.0.1:22
 {{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPerist":"yes",...}
 {{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
+
+// Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
+{{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
 ```
 
 ##### OnDisconnect
@@ -189,8 +192,12 @@ Example of Golang template variables:
 {{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
 {{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
 
-// WrittenBytes
-{{.WrittenBytes}}                               //  42
+// Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
+{{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
+{{.Stats.WrittenBytes}}                          //  3613
+{{.Stats.DisconnectAt}}                          //  2016-07-20 11:19:29,520515792 +0200 CEST
+{{.Stats.ConnectionDuration}}                    //  6.052615198s
+{{.Stats.AverageSpeed}}                          //  596.933bps
 ```
 
 #### Hooks drivers
@@ -243,7 +250,7 @@ defaults:
 defaults:
   Hooks:
     OnDisconnect:
-    - write SSH connection to {{.Host.Name}} closed, {{ .WrittenBytes }} bytes written.
+    - "write SSH connection to {{.Host.Name}} closed, {{ .Stats.WrittenBytes }} bytes written in {{ .Stats.ConnectionDuration }} ({{ .Stats.AverageSpeed }})"
 # writes: SSH connection to localhost closed, 40 bytes written.
 ```
 
@@ -266,7 +273,7 @@ defaults:
 defaults:
   Hooks:
     OnDisconnect:
-    - notify SSH connection to {{.Host.Name}} closed, {{ .WrittenBytes }} bytes written.
+    - "notify SSH connection to {{.Host.Name}} closed, {{ .Stats.WrittenBytes }} bytes written in {{ .Stats.ConnectionDuration }} ({{ .Stats.AverageSpeed }})"
 ```
 
 ## Configuration

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"os"
 	"os/exec"
@@ -14,11 +15,12 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"golang.org/x/net/context"
 
-	"github.com/urfave/cli"
 	shlex "github.com/flynn/go-shlex"
+	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
@@ -232,7 +234,31 @@ type exportReadWrite struct {
 	err     error
 }
 
+// ConnectionStats contains network and timing informations about a connection
+type ConnectionStats struct {
+	WrittenBytes       uint64
+	CreatedAt          time.Time
+	ConnectedAt        time.Time
+	DisconnectedAt     time.Time
+	ConnectionDuration time.Duration
+	AverageSpeed       float64
+}
+
+// ConnectHookArgs is the struture sent to the hooks and used in Go templates by the hook drivers
+type ConnectHookArgs struct {
+	Host  *config.Host
+	Stats *ConnectionStats
+}
+
 func proxyGo(host *config.Host, dryRun bool) error {
+	stats := ConnectionStats{
+		CreatedAt: time.Now(),
+	}
+	connectHookArgs := ConnectHookArgs{
+		Host:  host,
+		Stats: &stats,
+	}
+
 	Logger.Debugf("Preparing host object")
 	if err := hostPrepare(host); err != nil {
 		return err
@@ -248,11 +274,11 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		return err
 	}
 	Logger.Debugf("Connected to %s:%s", host.HostName, host.Port)
+	stats.ConnectedAt = time.Now()
 
 	// OnConnect hook
-	connectHookData := make(map[string]interface{})
-	connectHookData["Host"] = host
-	if err := host.Hooks.OnConnect.InvokeAll(connectHookData); err != nil {
+	Logger.Debugf("Calling OnConnect hooks")
+	if err := host.Hooks.OnConnect.InvokeAll(connectHookArgs); err != nil {
 		Logger.Errorf("OnConnect hook failed: %v", err)
 	}
 
@@ -276,24 +302,24 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		result.err = nil
 	}
 
-	var writtenBytes uint64
-
 	select {
 	case res := <-c2:
-		writtenBytes = res.written
+		stats.WrittenBytes = res.written
 	default:
-		writtenBytes = result.written
+		stats.WrittenBytes = result.written
 	}
+	stats.DisconnectedAt = time.Now()
+	stats.ConnectionDuration = stats.DisconnectedAt.Sub(stats.ConnectedAt)
+	averageSpeed := float64(stats.WrittenBytes) / stats.ConnectionDuration.Seconds()
+	stats.AverageSpeed = math.Ceil(averageSpeed*1000) / 1000
 
 	// OnDisconnect hook
-	disconnectHookData := make(map[string]interface{})
-	disconnectHookData["Host"] = host
-	disconnectHookData["WrittenBytes"] = writtenBytes
-	if err := host.Hooks.OnDisconnect.InvokeAll(disconnectHookData); err != nil {
+	Logger.Debugf("Calling OnDisconnect hooks")
+	if err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs); err != nil {
 		Logger.Errorf("OnDisconnect hook failed: %v", err)
 	}
 
-	Logger.Debugf("Byte written %v", writtenBytes)
+	Logger.Debugf("Byte written %v", stats.WrittenBytes)
 	conn.Close()
 	cancel()
 	waitGroup.Wait()

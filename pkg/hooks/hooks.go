@@ -17,7 +17,7 @@ type HookDriver interface {
 }
 
 // RunArgs is a map of interface{}
-type RunArgs map[string]interface{}
+type RunArgs interface{}
 
 // InvokeAll calls all hooks
 func (h *Hooks) InvokeAll(args RunArgs) error {
