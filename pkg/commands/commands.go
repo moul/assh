@@ -3,7 +3,7 @@ package commands
 import (
 	"os"
 
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 	"github.com/moul/advanced-ssh-config/pkg/config"
 
 	// . "github.com/moul/advanced-ssh-config/pkg/logger"
@@ -67,9 +67,26 @@ var Commands = []cli.Command{
 		Usage: "Manage ssh and assh configuration",
 		Subcommands: []cli.Command{
 			{
-				Name:   "build",
-				Usage:  "Build .ssh/config",
+				Name:  "build",
+				Usage: "Build .ssh/config",
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "expand, e",
+						Usage: "Expand all fields",
+					},
+				},
 				Action: cmdBuild,
+			},
+			{
+				Name:   "json",
+				Usage:  "Returns the JSON output",
+				Action: cmdBuildJSON,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "expand, e",
+						Usage: "Expand all fields",
+					},
+				},
 			},
 			{
 				Name:   "list",

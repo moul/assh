@@ -63,10 +63,6 @@ func IOCountersByFile(pernic bool, filename string) ([]IOCountersStat, error) {
 		if err != nil {
 			return ret, err
 		}
-		fifoIn, err := strconv.ParseUint(fields[4], 10, 64)
-		if err != nil {
-			return ret, err
-		}
 		bytesSent, err := strconv.ParseUint(fields[8], 10, 64)
 		if err != nil {
 			return ret, err
@@ -83,10 +79,6 @@ func IOCountersByFile(pernic bool, filename string) ([]IOCountersStat, error) {
 		if err != nil {
 			return ret, err
 		}
-		fifoOut, err := strconv.ParseUint(fields[14], 10, 64)
-		if err != nil {
-			return ret, err
-		}
 
 		nic := IOCountersStat{
 			Name:        interfaceName,
@@ -94,12 +86,10 @@ func IOCountersByFile(pernic bool, filename string) ([]IOCountersStat, error) {
 			PacketsRecv: packetsRecv,
 			Errin:       errIn,
 			Dropin:      dropIn,
-			Fifoin:      fifoIn,
 			BytesSent:   bytesSent,
 			PacketsSent: packetsSent,
 			Errout:      errOut,
 			Dropout:     dropOut,
-			Fifoout:     fifoOut,
 		}
 		ret = append(ret, nic)
 	}

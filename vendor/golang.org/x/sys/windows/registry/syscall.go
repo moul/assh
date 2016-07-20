@@ -8,7 +8,7 @@ package registry
 
 import "syscall"
 
-//go:generate go run $GOROOT/src/syscall/mksyscall_windows.go -output zsyscall_windows.go syscall.go
+//go:generate go run $GOROOT/src/syscall/mksyscall_windows.go -xsys -output zsyscall_windows.go syscall.go
 
 const (
 	_REG_OPTION_NON_VOLATILE = 0

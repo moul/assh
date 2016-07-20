@@ -2,15 +2,7 @@ package disk
 
 import (
 	"encoding/json"
-
-	"github.com/shirou/gopsutil/internal/common"
 )
-
-var invoke common.Invoker
-
-func init() {
-	invoke = common.Invoke{}
-}
 
 type UsageStat struct {
 	Path              string  `json:"path"`
