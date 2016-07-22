@@ -59,3 +59,5 @@ import:
 - package: github.com/mattn/go-zglob
 - package: github.com/docker/go-units
 - package: github.com/deckarep/gosx-notifier
+- package: github.com/haklop/gnotifier
+- package: github.com/guelfey/go.dbus

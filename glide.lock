@@ -1,5 +1,5 @@
-hash: 14051fd5d09fc58f68a24ef1f439a2093c63b0685fb16357220db92c051ddb03
-updated: 2016-07-19T12:17:57.099880718+02:00
+hash: bb6ff2ad814939b4abe6e38f53351da15f60663b1660d7fc247742a40b8fda23
+updated: 2016-07-22T13:28:00.489257401+02:00
 imports:
 - name: github.com/bugsnag/osext
   version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
@@ -17,6 +17,10 @@ imports:
   version: 19e100e9652485a76176bc5fd2669f57d3a2743c
   subpackages:
   - js
+- name: github.com/guelfey/go.dbus
+  version: f6a3a2366cc39b8479cadc499d3c735fb10fbdda
+- name: github.com/haklop/gnotifier
+  version: 0de36badf60155d5953373ed432982b20c62fb91
 - name: github.com/jtolds/gls
   version: 8ddce2a84170772b95dd5d576c48d517b22cac63
 - name: github.com/mattn/go-zglob
