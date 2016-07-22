@@ -3,7 +3,7 @@ package hooks
 import (
 	"bytes"
 
-	"github.com/deckarep/gosx-notifier"
+	"github.com/haklop/gnotifier"
 )
 import "text/template"
 
@@ -21,8 +21,6 @@ func NewNotificationDriver(line string) (NotificationDriver, error) {
 
 // Run notifications a line to the terminal
 func (d NotificationDriver) Run(args RunArgs) error {
-	// FIXME: handle non OS X hosts
-
 	var buff bytes.Buffer
 	tmpl, err := template.New("notification").Parse(d.line + "\n")
 	if err != nil {
@@ -33,8 +31,9 @@ func (d NotificationDriver) Run(args RunArgs) error {
 		return err
 	}
 
-	note := gosxnotifier.NewNotification(buff.String())
-	note.Title = "SSH"
-	note.Sound = gosxnotifier.Basso
-	return note.Push()
+	notification := gnotifier.Notification("ASSH", buff.String())
+	notification.GetConfig().Expiration = 3000
+	notification.GetConfig().ApplicationName = "assh"
+
+	return notification.Push()
 }
