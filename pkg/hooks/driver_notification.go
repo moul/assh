@@ -4,8 +4,8 @@ import (
 	"bytes"
 
 	"github.com/haklop/gnotifier"
+	"github.com/moul/advanced-ssh-config/pkg/templates"
 )
-import "text/template"
 
 // NotificationDriver is a driver that notifications some texts to the terminal
 type NotificationDriver struct {
@@ -22,7 +22,7 @@ func NewNotificationDriver(line string) (NotificationDriver, error) {
 // Run notifications a line to the terminal
 func (d NotificationDriver) Run(args RunArgs) error {
 	var buff bytes.Buffer
-	tmpl, err := template.New("notification").Parse(d.line + "\n")
+	tmpl, err := templates.New(d.line + "\n")
 	if err != nil {
 		return err
 	}
