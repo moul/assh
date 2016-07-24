@@ -652,6 +652,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Add template functions: `json`, `prettyjson`, `split`, `join`, `title`, `lower`, `upper`
 * Support of `OnConnect` and `OnDisconnect` hooks
 * Support of `write`, `notify` and `exec` hook drivers
 * Add `assh config json` command

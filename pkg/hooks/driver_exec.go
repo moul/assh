@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+
+	"github.com/moul/advanced-ssh-config/pkg/templates"
 )
-import "text/template"
 
 // ExecDriver is a driver that execs some texts to the terminal
 type ExecDriver struct {
@@ -22,7 +23,7 @@ func NewExecDriver(line string) (ExecDriver, error) {
 // Run execs a line to the terminal
 func (d ExecDriver) Run(args RunArgs) error {
 	var buff bytes.Buffer
-	tmpl, err := template.New("exec").Parse(d.line + "\n")
+	tmpl, err := templates.New(d.line + "\n")
 	if err != nil {
 		return err
 	}

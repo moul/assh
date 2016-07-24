@@ -1,8 +1,10 @@
 package hooks
 
-import "os"
+import (
+	"os"
 
-import "text/template"
+	"github.com/moul/advanced-ssh-config/pkg/templates"
+)
 
 // WriteDriver is a driver that writes some texts to the terminal
 type WriteDriver struct {
@@ -18,7 +20,7 @@ func NewWriteDriver(line string) (WriteDriver, error) {
 
 // Run writes a line to the terminal
 func (d WriteDriver) Run(args RunArgs) error {
-	tmpl, err := template.New("write").Parse(d.line + "\n")
+	tmpl, err := templates.New(d.line + "\n")
 	if err != nil {
 		return err
 	}
