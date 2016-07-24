@@ -23,20 +23,20 @@
 6. [Getting started](#getting-started)
 7. [Changelog](#changelog)
 8. [Alternative version](#alternative-version)
-9. [Troobleshooting](#troubleshooting)
+9. [Troubleshooting](#troubleshooting)
 10. [License](#license)
 
 ## Overview
 
 A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includes**, **dynamic hostnames** to **SSH**.
 
-**Advanced SSH config** is wrapped in [lib-ssh](https://www.libssh.org) as a [ProxyCommand](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat), it means that it works seamlessly with:
+[lib-ssh](https://www.libssh.org) wraps `assh` as a [ProxyCommand](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat); it means that it works seamlessly with:
 
 * [ssh](http://www.openbsd.org/cgi-bin/man.cgi?query=ssh&sektion=1)
 * [scp](http://www.openbsd.org/cgi-bin/man.cgi?query=scp&sektion=1)
 * [rsync](http://linuxcommand.org/man_pages/rsync1.html)
 * [git](https://www.kernel.org/pub/software/scm/git/docs/)
-* Desktop applications depending on `lib-ssh` or `ssh` (i.e: [Tower](http://www.git-tower.com), [Atom.io](https://atom.io), [SSH Tunnel Manager](http://projects.tynsoe.org/fr/stm/))
+* Desktop applications depending on `lib-ssh` or `ssh` (i.e., [Tower](http://www.git-tower.com), [Atom.io](https://atom.io), [SSH Tunnel Manager](http://projects.tynsoe.org/fr/stm/))
 
 ## Features
 
@@ -49,14 +49,14 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includ
 * **local command execution**: finally the reverse of **RemoteCommand**
 * **templates**: equivalent to host but you can't connect directly to a template, perfect for inheritance
 * **inheritance**: make hosts inherits from host hosts or templates
-* **variable expansion**: resolve variables from environment
+* **variable expansion**: resolve variables from the environment
 * **smart proxycommand**: RAW tcp connection when possible with `netcat` and `socat` as default fallbacks
 
 ### Using Gateway from command line
 
-*assh* can use the [ProxyCommand with netcat](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) feature of OpenSSH **transparently** and without the pain of using long configuration.
+*assh* can use the [ProxyCommand with netcat](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) feature of OpenSSH **transparently** and without the pain of using extended configuration.
 
-Connect to `hosta` using `hostb` as gateway.
+Connect to `hosta` using `hostb` as a gateway.
 
 ```
   ┌─────┐
@@ -107,7 +107,7 @@ Equivalent to `ssh -o ProxyCommand="ssh -o ProxyCommand='ssh hostc nc %h %p' hos
 
 ### Using Gateways from configuration file
 
-You can define an equivalent of the ["ProxyCommand with netcat"](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) feature of OpenSSH, with a simpler syntax, more advanced workflows and a unique fallback feature.
+You can define an equivalent of the ["ProxyCommand with netcat"](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat) feature of OpenSSH, with a simpler syntax, more advanced workflows, and a unique fallback feature.
 
 Let's consider the following `assh.yml` file
 ```yaml
@@ -143,7 +143,7 @@ hosts:
 ### Under the hood features
 
 * Automatically regenerates `~/.ssh/config` file when needed
-* Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically be ran in debug mode)
+* Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically run in debug mode)
 * Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be disabled with the `NoControlMasterMkdir: true` configuration in host or globally.
 
 ### Hooks
@@ -295,11 +295,11 @@ defaults:
 
 ## Configuration
 
-The `~/.ssh/config` file is now managed by `assh`, take care to keep a backup your `~/.ssh/config` file.
+`assh` now manages the `~/.ssh/config` file, take care to keep a backup your `~/.ssh/config` file.
 
 `~/.ssh/assh.yml` is a [YAML](http://www.yaml.org/spec/1.2/spec.html) file containing:
 
-* an `hosts` dictionary containing multiple *HOST* definitions
+* a `hosts` dictionary containing multiple *HOST* definitions
 * a `defaults` section containing global flags
 * and an `includes` section containing path to other configuration files
 
@@ -405,7 +405,7 @@ hosts:
     Hostname: ${HOSTNAME}${HOSTNAME_SUFFIX}
 
 templates:
-  # Templates are similar to Hosts, you can inherits from them
+  # Templates are similar to Hosts; you can inherit from them
   # but you cannot ssh to a template
   bart-template:
     User: bart
@@ -474,7 +474,7 @@ GLOBAL OPTIONS:
 Rewrites and replaces the existing ~/.ssh/config file.
 
 This action is automatically done by assh when detecting configuration changes.
-Running this command manually is useful to setup assh.
+Running this command is useful to set up assh or repair the configuration file.
 
 ```console
 $ assh config build > ~/.ssh/config
@@ -764,7 +764,7 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 #### I can't use gateways
 
 `assh` uses the [built-in netcat mode of OpenSSH (shipped with OpenSSH 5.4)](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Passing_through_a_gateway_using_netcat_mode) by default.
-If your ssh client doesn't support this feature, you can configure a custom `ProxyCommand` configuration, i.e:
+If your ssh client doesn't support this feature, you can configure a custom `ProxyCommand` configuration, i.e.,
 
 ```yaml
 hosts:
@@ -790,9 +790,9 @@ defaults:
 
 ---
 
-Also, be sure to have netcat installed on your system, or use an alternative proxy binary, i.e: `socat`.
+Also, be sure to have netcat installed on your system, or use an alternative proxy binary, i.e., `socat`.
 
-#### How to configure resolver to parse `/etc/hosts` and/or handle **mDNS** requests ?
+#### How to Configure resolver to parse `/etc/hosts` and/or handle **mDNS** requests?
 
 **assh** resolves hostnames using the system built-in resolver, depending on the OS, you can enable new features and/or change modules order.
 
