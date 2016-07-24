@@ -282,12 +282,16 @@ defaults:
     - notify New SSH connection to {{.Host.Prototype}}.
 ```
 
+![](https://github.com/moul/advanced-ssh-config/raw/master/resources/new_connection_notification.png)
+
 ```yaml
 defaults:
   Hooks:
     OnDisconnect:
     - "notify SSH connection to {{.Host.Name}} closed, {{ .Stats.WrittenBytes }} bytes written in {{ .Stats.ConnectionDuration }} ({{ .Stats.AverageSpeed }})"
 ```
+
+![](https://github.com/moul/advanced-ssh-config/raw/master/resources/closed_connection_notification.png)
 
 ## Configuration
 
