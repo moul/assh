@@ -298,18 +298,13 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	c2 := readAndWrite(ctx, os.Stdin, conn)
 	select {
 	case result = <-c1:
+		stats.WrittenBytes = result.written
 	case result = <-c2:
 	}
 	if result.err != nil && result.err == io.EOF {
 		result.err = nil
 	}
 
-	select {
-	case res := <-c2:
-		stats.WrittenBytes = res.written
-	default:
-		stats.WrittenBytes = result.written
-	}
 	stats.DisconnectedAt = time.Now()
 	stats.ConnectionDuration = stats.DisconnectedAt.Sub(stats.ConnectedAt)
 	averageSpeed := float64(stats.WrittenBytes) / stats.ConnectionDuration.Seconds()
@@ -323,10 +318,15 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		}
 	}
 
-	Logger.Debugf("Byte written %v", stats.WrittenBytes)
 	conn.Close()
 	cancel()
 	waitGroup.Wait()
+	select {
+	case res := <-c1:
+		stats.WrittenBytes = res.written
+	default:
+	}
+	Logger.Debugf("Byte written %v", stats.WrittenBytes)
 	return result.err
 }
 
