@@ -278,8 +278,10 @@ func proxyGo(host *config.Host, dryRun bool) error {
 
 	// OnConnect hook
 	Logger.Debugf("Calling OnConnect hooks")
-	if err := host.Hooks.OnConnect.InvokeAll(connectHookArgs); err != nil {
-		Logger.Errorf("OnConnect hook failed: %v", err)
+	if host.Hooks != nil {
+		if err := host.Hooks.OnConnect.InvokeAll(connectHookArgs); err != nil {
+			Logger.Errorf("OnConnect hook failed: %v", err)
+		}
 	}
 
 	// Ignore SIGHUP
@@ -315,8 +317,10 @@ func proxyGo(host *config.Host, dryRun bool) error {
 
 	// OnDisconnect hook
 	Logger.Debugf("Calling OnDisconnect hooks")
-	if err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs); err != nil {
-		Logger.Errorf("OnDisconnect hook failed: %v", err)
+	if host.Hooks != nil {
+		if err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs); err != nil {
+			Logger.Errorf("OnDisconnect hook failed: %v", err)
+		}
 	}
 
 	Logger.Debugf("Byte written %v", stats.WrittenBytes)
