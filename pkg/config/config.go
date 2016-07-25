@@ -21,7 +21,7 @@ import (
 
 var asshBinaryPath = "assh"
 
-const defaultSshConfigPath string = "~/.ssh/config"
+const defaultSshConfigPath = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
