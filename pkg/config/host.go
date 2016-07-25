@@ -129,7 +129,8 @@ type Host struct {
 // NewHost returns a host with name
 func NewHost(name string) *Host {
 	return &Host{
-		name: name,
+		name:  name,
+		Hooks: &HostHooks{},
 	}
 }
 
