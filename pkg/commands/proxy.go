@@ -307,13 +307,6 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	stats.ConnectionDuration = stats.DisconnectedAt.Sub(stats.ConnectedAt)
 	averageSpeed := float64(stats.WrittenBytes) / stats.ConnectionDuration.Seconds()
 	stats.AverageSpeed = math.Ceil(averageSpeed*1000) / 1000
-
-	// OnDisconnect hook
-	Logger.Debugf("Calling OnDisconnect hooks")
-	if err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs); err != nil {
-		Logger.Errorf("OnDisconnect hook failed: %v", err)
-	}
-
 	conn.Close()
 	cancel()
 	waitGroup.Wait()
@@ -321,6 +314,11 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	case res := <-c1:
 		stats.WrittenBytes = res.written
 	default:
+	}
+	// OnDisconnect hook
+	Logger.Debugf("Calling OnDisconnect hooks")
+	if err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs); err != nil {
+		Logger.Errorf("OnDisconnect hook failed: %v", err)
 	}
 	Logger.Debugf("Byte written %v", stats.WrittenBytes)
 	return result.err

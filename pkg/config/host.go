@@ -129,8 +129,7 @@ type Host struct {
 // NewHost returns a host with name
 func NewHost(name string) *Host {
 	return &Host{
-		name:  name,
-		Hooks: &HostHooks{},
+		name: name,
 	}
 }
 
@@ -977,6 +976,9 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 
 	if h.Hooks == nil {
 		h.Hooks = defaults.Hooks
+		if h.Hooks == nil {
+			h.Hooks = &HostHooks{}
+		}
 	}
 
 	if len(h.Inherits) == 0 {
