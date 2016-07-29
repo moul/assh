@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/dustin/go-humanize"
 	shlex "github.com/flynn/go-shlex"
 	"github.com/urfave/cli"
 
@@ -236,12 +237,15 @@ type exportReadWrite struct {
 
 // ConnectionStats contains network and timing informations about a connection
 type ConnectionStats struct {
-	WrittenBytes       uint64
-	CreatedAt          time.Time
-	ConnectedAt        time.Time
-	DisconnectedAt     time.Time
-	ConnectionDuration time.Duration
-	AverageSpeed       float64
+	WrittenBytes            uint64
+	WrittenBytesHuman       string
+	CreatedAt               time.Time
+	ConnectedAt             time.Time
+	DisconnectedAt          time.Time
+	ConnectionDuration      time.Duration
+	ConnectionDurationHuman string
+	AverageSpeed            float64
+	AverageSpeedHuman       string
 }
 
 // ConnectHookArgs is the struture sent to the hooks and used in Go templates by the hook drivers
@@ -316,6 +320,11 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	stats.ConnectionDuration = stats.DisconnectedAt.Sub(stats.ConnectedAt)
 	averageSpeed := float64(stats.WrittenBytes) / stats.ConnectionDuration.Seconds()
 	stats.AverageSpeed = math.Ceil(averageSpeed*1000) / 1000
+	// human
+	stats.WrittenBytesHuman = humanize.Bytes(stats.WrittenBytes)
+	connectionDurationHuman := humanize.RelTime(stats.DisconnectedAt, stats.ConnectedAt, "", "")
+	stats.ConnectionDurationHuman = strings.Replace(connectionDurationHuman, "now", "0 sec", -1)
+	stats.AverageSpeedHuman = humanize.Bytes(uint64(stats.AverageSpeed)) + "/s"
 
 	// OnDisconnect hook
 	Logger.Debugf("Calling OnDisconnect hooks")
