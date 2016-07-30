@@ -167,11 +167,18 @@ Example of Golang template variables:
 {{.Host.Port}}                                  //  22
 {{.Host.User}}                                  //  moul
 {{.Host.Prototype}}                             //  moul@127.0.0.1:22
-{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPerist":"yes",...}
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
 {{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
 
 // Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
 {{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
+{{.Stats.WrittenBytes}}                          //  3613
+{{.Stats.WrittenBytesHuman}}                     //  3.6kb
+{{.Stats.DisconnectAt}}                          //  2016-07-20 11:19:29,520515792 +0200 CEST
+{{.Stats.ConnectionDuration}}                    //  6.052615198s
+{{.Stats.ConnectionDurationHuman}}               //  6s
+{{.Stats.AverageSpeed}}                          //  596.933bps
+{{.Stats.AverageSpeedHuman}}                     //  3.4kb/s
 ```
 
 ##### OnDisconnect
@@ -195,9 +202,12 @@ Example of Golang template variables:
 // Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
 {{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
 {{.Stats.WrittenBytes}}                          //  3613
+{{.Stats.WrittenBytesHuman}}                     //  3.6kb
 {{.Stats.DisconnectAt}}                          //  2016-07-20 11:19:29,520515792 +0200 CEST
 {{.Stats.ConnectionDuration}}                    //  6.052615198s
+{{.Stats.ConnectionDurationHuman}}               //  6s
 {{.Stats.AverageSpeed}}                          //  596.933bps
+{{.Stats.AverageSpeedHuman}}                     //  3.4kb/s
 ```
 
 #### Hooks drivers

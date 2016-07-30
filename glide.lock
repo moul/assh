@@ -1,5 +1,5 @@
-hash: bb6ff2ad814939b4abe6e38f53351da15f60663b1660d7fc247742a40b8fda23
-updated: 2016-07-22T13:28:00.489257401+02:00
+hash: bbd6140b8ec60ebcfbecd808c4b79cf375fec3adc372efcb7b5a7c852749ff2a
+updated: 2016-07-30T16:06:51.982754778+02:00
 imports:
 - name: github.com/bugsnag/osext
   version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
@@ -7,6 +7,8 @@ imports:
   version: 9daaf8a4715ebe4daf300036644762fe27d3aded
 - name: github.com/docker/go-units
   version: f2d77a61e3c169b43402a0a1e84f06daf29b8190
+- name: github.com/dustin/go-humanize
+  version: 2fcb5204cdc65b4bec9fd0a87606bb0d0e3c54e8
 - name: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
 - name: github.com/go-ole/go-ole
@@ -56,7 +58,7 @@ imports:
 - name: github.com/urfave/cli
   version: 11c134509d89c2018675f369955218a180dc7428
 - name: golang.org/x/crypto
-  version: 911fafb28f4ee7c7bd483539a6c96190bbbccc3f
+  version: bc89c496413265e715159bdc8478ee9a92fdc265
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
