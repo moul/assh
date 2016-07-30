@@ -61,3 +61,4 @@ import:
 - package: github.com/deckarep/gosx-notifier
 - package: github.com/haklop/gnotifier
 - package: github.com/guelfey/go.dbus
+- package: github.com/dustin/go-humanize
