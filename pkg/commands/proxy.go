@@ -272,6 +272,12 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		return fmt.Errorf("dry-run: Golang native TCP connection to '%s:%s'", host.HostName, host.Port)
 	}
 
+	// BeforeConnect hook
+	Logger.Debugf("Calling BeforeConnect hooks")
+	if err := host.Hooks.BeforeConnect.InvokeAll(connectHookArgs); err != nil {
+		Logger.Errorf("BeforeConnect hook failed: %v", err)
+	}
+
 	Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port))
 	if err != nil {
