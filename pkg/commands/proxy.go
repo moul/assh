@@ -77,11 +77,11 @@ func cmdProxy(c *cli.Context) error {
 	host.WriteSSHConfigTo(w)
 	w.Close()
 
-	hostJson, err := json.Marshal(host)
+	hostJSON, err := json.Marshal(host)
 	if err != nil {
 		Logger.Warnf("Failed to marshal host: %v", err)
 	}
-	Logger.Debugf("Host: %s", hostJson)
+	Logger.Debugf("Host: %s", hostJSON)
 
 	Logger.Debugf("Proxying")
 	err = proxy(host, conf, dryRun)
@@ -252,6 +252,7 @@ type ConnectionStats struct {
 type ConnectHookArgs struct {
 	Host  *config.Host
 	Stats *ConnectionStats
+	Error error
 }
 
 func proxyGo(host *config.Host, dryRun bool) error {
@@ -281,6 +282,13 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port))
 	if err != nil {
+		// OnConnectError hook
+		connectHookArgs.Error = err
+		Logger.Debugf("Calling OnConnectError hooks")
+		if err := host.Hooks.OnConnectError.InvokeAll(connectHookArgs); err != nil {
+			Logger.Errorf("OnConnectError hook failed: %v", err)
+		}
+
 		return err
 	}
 	Logger.Debugf("Connected to %s:%s", host.HostName, host.Port)
