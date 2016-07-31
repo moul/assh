@@ -150,6 +150,27 @@ hosts:
 
 #### Events
 
+##### BeforeConnect
+
+`BeforeConnect` is called just before `assh` tries to connect to the remote SSH port.
+
+Note: `BeforeConnect` will be called for each SSH connection; if you use multiple gateways, it will be called for each gateways until one succeed to connect.
+
+---
+
+Example of Golang template variables:
+
+```golang
+// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+{{.Host.Name}}                                  //  localhost
+{{.Host.HostName}}                              //  127.0.0.1
+{{.Host.Port}}                                  //  22
+{{.Host.User}}                                  //  moul
+{{.Host.Prototype}}                             //  moul@127.0.0.1:22
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
+{{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
+```
+
 ##### OnConnect
 
 `OnConnect` is called as soon as assh is connected to the remote SSH port.
@@ -172,13 +193,6 @@ Example of Golang template variables:
 
 // Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
 {{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
-{{.Stats.WrittenBytes}}                          //  3613
-{{.Stats.WrittenBytesHuman}}                     //  3.6kb
-{{.Stats.DisconnectAt}}                          //  2016-07-20 11:19:29,520515792 +0200 CEST
-{{.Stats.ConnectionDuration}}                    //  6.052615198s
-{{.Stats.ConnectionDurationHuman}}               //  6s
-{{.Stats.AverageSpeed}}                          //  596.933bps
-{{.Stats.AverageSpeedHuman}}                     //  3.4kb/s
 ```
 
 ##### OnDisconnect
@@ -664,7 +678,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 * Fix `written bytes` calculation ([@quentinperez](https://github.com/quentinperez))
 * Add template functions: `json`, `prettyjson`, `split`, `join`, `title`, `lower`, `upper`
-* Support of `OnConnect` and `OnDisconnect` hooks
+* Support of `BeforeConnect`, `OnConnect` and `OnDisconnect` hooks
 * Support of `write`, `notify` and `exec` hook drivers
 * Add `assh config json` command
 * Add `assh config {build,json} --expand` option
