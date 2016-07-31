@@ -195,6 +195,28 @@ Example of Golang template variables:
 {{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
 ```
 
+##### OnConnectError
+
+`OnConnectError` is called when `assh` fails to open a new TCP connection.
+
+---
+
+Example of Golang template variables:
+
+```golang
+// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+{{.Host.Name}}                                  //  localhost
+{{.Host.HostName}}                              //  127.0.0.1
+{{.Host.Port}}                                  //  22
+{{.Host.User}}                                  //  moul
+{{.Host.Prototype}}                             //  moul@127.0.0.1:22
+{{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
+{{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
+
+// Error
+{{.Error}}                                      //  dial tcp: lookup localhost: no such host
+```
+
 ##### OnDisconnect
 
 `OnDisconnect` is called as the assh socket is closed.
@@ -678,7 +700,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 * Fix `written bytes` calculation ([@quentinperez](https://github.com/quentinperez))
 * Add template functions: `json`, `prettyjson`, `split`, `join`, `title`, `lower`, `upper`
-* Support of `BeforeConnect`, `OnConnect` and `OnDisconnect` hooks
+* Support of `BeforeConnect`, `OnConnect`, `OnConnectError` and `OnDisconnect` hooks
 * Support of `write`, `notify` and `exec` hook drivers
 * Add `assh config json` command
 * Add `assh config {build,json} --expand` option
