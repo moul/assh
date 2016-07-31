@@ -5,23 +5,24 @@ import (
 	"os"
 	"os/exec"
 
+	. "github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/templates"
 )
 
-// ExecDriver is a driver that execs some texts to the terminal
-type ExecDriver struct {
+// DaemonDriver is a driver that daemons some texts to the terminal
+type DaemonDriver struct {
 	line string
 }
 
-// NewExecDriver returns a ExecDriver instance
-func NewExecDriver(line string) (ExecDriver, error) {
-	return ExecDriver{
+// NewDaemonDriver returns a DaemonDriver instance
+func NewDaemonDriver(line string) (DaemonDriver, error) {
+	return DaemonDriver{
 		line: line,
 	}, nil
 }
 
-// Run execs a line to the terminal
-func (d ExecDriver) Run(args RunArgs) error {
+// Run daemons a line to the terminal
+func (d DaemonDriver) Run(args RunArgs) error {
 	var buff bytes.Buffer
 	tmpl, err := templates.New(d.line + "\n")
 	if err != nil {
@@ -39,5 +40,11 @@ func (d ExecDriver) Run(args RunArgs) error {
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	return cmd.Wait()
+
+	go func() {
+		cmd.Wait()
+		Logger.Infof("daemon %q exited", d.line)
+	}()
+
+	return nil
 }
