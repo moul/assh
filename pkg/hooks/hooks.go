@@ -53,6 +53,9 @@ func New(expr Hook) (HookDriver, error) {
 	case "exec":
 		driver, err := NewExecDriver(param)
 		return driver, err
+	case "daemon":
+		driver, err := NewDaemonDriver(param)
+		return driver, err
 	default:
 		return nil, fmt.Errorf("No such driver %q", driverName)
 	}
