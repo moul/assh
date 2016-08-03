@@ -441,7 +441,7 @@ func (c *Config) LoadFile(filename string) error {
 	return nil
 }
 
-// LoadFiles will try to glob the pattern and load each maching entries
+// LoadFiles will try to glob the pattern and load each matching entries
 func (c *Config) LoadFiles(pattern string) error {
 	// Resolve '~' and '$HOME'
 	expandedPattern, err := utils.ExpandUser(pattern)
