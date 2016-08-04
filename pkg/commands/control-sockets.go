@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/urfave/cli"
 	"github.com/docker/go-units"
+	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	"github.com/moul/advanced-ssh-config/pkg/control-sockets"

@@ -3,9 +3,8 @@ package commands
 import (
 	"os"
 
-	"github.com/urfave/cli"
 	"github.com/moul/advanced-ssh-config/pkg/config"
-
+	"github.com/urfave/cli"
 	// . "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
