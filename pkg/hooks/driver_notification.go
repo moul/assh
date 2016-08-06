@@ -37,3 +37,6 @@ func (d NotificationDriver) Run(args RunArgs) error {
 
 	return notification.Push()
 }
+
+// Close is mandatory for the interface, here it does nothing
+func (d NotificationDriver) Close() error { return nil }
