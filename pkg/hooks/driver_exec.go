@@ -41,3 +41,6 @@ func (d ExecDriver) Run(args RunArgs) error {
 	}
 	return cmd.Wait()
 }
+
+// Close is mandatory for the interface, here it does nothing
+func (d ExecDriver) Close() error { return nil }
