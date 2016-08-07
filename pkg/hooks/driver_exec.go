@@ -33,7 +33,7 @@ func (d ExecDriver) Run(args RunArgs) error {
 	}
 
 	cmd := exec.Command("/bin/sh", "-c", buff.String())
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	if err := cmd.Start(); err != nil {
@@ -41,3 +41,6 @@ func (d ExecDriver) Run(args RunArgs) error {
 	}
 	return cmd.Wait()
 }
+
+// Close is mandatory for the interface, here it does nothing
+func (d ExecDriver) Close() error { return nil }

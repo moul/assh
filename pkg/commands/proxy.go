@@ -275,9 +275,11 @@ func proxyGo(host *config.Host, dryRun bool) error {
 
 	// BeforeConnect hook
 	Logger.Debugf("Calling BeforeConnect hooks")
-	if err := host.Hooks.BeforeConnect.InvokeAll(connectHookArgs); err != nil {
+	beforeConnectDrivers, err := host.Hooks.BeforeConnect.InvokeAll(connectHookArgs)
+	if err != nil {
 		Logger.Errorf("BeforeConnect hook failed: %v", err)
 	}
+	defer beforeConnectDrivers.Close()
 
 	Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port))
@@ -285,9 +287,11 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		// OnConnectError hook
 		connectHookArgs.Error = err
 		Logger.Debugf("Calling OnConnectError hooks")
-		if err := host.Hooks.OnConnectError.InvokeAll(connectHookArgs); err != nil {
+		onConnectErrorDrivers, err := host.Hooks.OnConnectError.InvokeAll(connectHookArgs)
+		if err != nil {
 			Logger.Errorf("OnConnectError hook failed: %v", err)
 		}
+		defer onConnectErrorDrivers.Close()
 
 		return err
 	}
@@ -296,9 +300,11 @@ func proxyGo(host *config.Host, dryRun bool) error {
 
 	// OnConnect hook
 	Logger.Debugf("Calling OnConnect hooks")
-	if err := host.Hooks.OnConnect.InvokeAll(connectHookArgs); err != nil {
+	onConnectDrivers, err := host.Hooks.OnConnect.InvokeAll(connectHookArgs)
+	if err != nil {
 		Logger.Errorf("OnConnect hook failed: %v", err)
 	}
+	defer onConnectDrivers.Close()
 
 	// Ignore SIGHUP
 	signal.Ignore(syscall.SIGHUP)
@@ -342,9 +348,12 @@ func proxyGo(host *config.Host, dryRun bool) error {
 
 	// OnDisconnect hook
 	Logger.Debugf("Calling OnDisconnect hooks")
-	if err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs); err != nil {
+	onDisconnectDrivers, err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs)
+	if err != nil {
 		Logger.Errorf("OnDisconnect hook failed: %v", err)
 	}
+	defer onDisconnectDrivers.Close()
+
 	Logger.Debugf("Byte written %v", stats.WrittenBytes)
 	return result.err
 }
