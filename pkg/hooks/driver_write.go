@@ -27,3 +27,6 @@ func (d WriteDriver) Run(args RunArgs) error {
 
 	return tmpl.Execute(os.Stderr, args)
 }
+
+// Close is mandatory for the interface, here it does nothing
+func (d WriteDriver) Close() error { return nil }
