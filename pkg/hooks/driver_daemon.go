@@ -16,14 +16,14 @@ type DaemonDriver struct {
 }
 
 // NewDaemonDriver returns a DaemonDriver instance
-func NewDaemonDriver(line string) (DaemonDriver, error) {
-	return DaemonDriver{
+func NewDaemonDriver(line string) (*DaemonDriver, error) {
+	return &DaemonDriver{
 		line: line,
 	}, nil
 }
 
 // Run daemons a line to the terminal
-func (d DaemonDriver) Run(args RunArgs) error {
+func (d *DaemonDriver) Run(args RunArgs) error {
 	var buff bytes.Buffer
 	tmpl, err := templates.New(d.line + "\n")
 	if err != nil {
@@ -51,7 +51,7 @@ func (d DaemonDriver) Run(args RunArgs) error {
 }
 
 // Close closes a running command
-func (d DaemonDriver) Close() error {
+func (d *DaemonDriver) Close() error {
 	if d.cmd == nil || d.cmd.Process == nil {
 		return nil
 	}
