@@ -19,7 +19,7 @@ func (hh *HostHooks) Length() int {
 	if hh == nil {
 		return 0
 	}
-	return len(hh.OnConnect) + len(hh.OnDisconnect)
+	return len(hh.OnConnect) + len(hh.OnDisconnect) + len(hh.BeforeConnect) + len(hh.OnConnectError)
 }
 
 // String returns the JSON output
