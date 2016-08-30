@@ -10,13 +10,14 @@ import (
 
 	"github.com/mgutz/ansi"
 	"github.com/moul/advanced-ssh-config/pkg/config"
-	// . "github.com/moul/advanced-ssh-config/pkg/logger"
+	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdList(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		panic(err)
+		Logger.Fatalf("Cannot load configuration: %v", err)
+		return nil
 	}
 
 	// ansi coloring

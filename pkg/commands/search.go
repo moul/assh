@@ -6,13 +6,14 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
-	// . "github.com/moul/advanced-ssh-config/pkg/logger"
+	. "github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdSearch(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		panic(err)
+		Logger.Fatalf("Cannot load configuration: %v", err)
+		return nil
 	}
 
 	needle := c.Args()[0]

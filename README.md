@@ -699,6 +699,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Gracefully report an error when calling assh without configuration file ([#171](https://github.com/moul/advanced-ssh-config/issues/171))
 * Fix `written bytes` calculation ([@quentinperez](https://github.com/quentinperez))
 * Add template functions: `json`, `prettyjson`, `split`, `join`, `title`, `lower`, `upper`
 * Support of `BeforeConnect`, `OnConnect`, `OnConnectError` and `OnDisconnect` hooks
