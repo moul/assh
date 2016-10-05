@@ -79,6 +79,7 @@ type Host struct {
 	PreferredAuthentications         string `yaml:"preferredauthentications,omitempty,flow" json:"PreferredAuthentications,omitempty"`
 	Protocol                         string `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
 	ProxyUseFdpass                   string `yaml:"proxyusefdpass,omitempty,flow" json:"ProxyUseFdpass,omitempty"`
+	PubkeyAcceptedKeyTypes           string `yaml:"pubkeyacceptedkeytypes,omitempty,flow" json:"PubkeyAcceptedKeyTypes,omitempty"`
 	PubkeyAuthentication             string `yaml:"pubkeyauthentication,omitempty,flow" json:"PubkeyAuthentication,omitempty"`
 	RekeyLimit                       string `yaml:"rekeylimit,omitempty,flow" json:"RekeyLimit,omitempty"`
 	RemoteForward                    string `yaml:"remoteforward,omitempty,flow" json:"RemoteForward,omitempty"`
@@ -389,6 +390,9 @@ func (h *Host) Options() OptionsList {
 	}
 	if h.ProxyUseFdpass != "" {
 		options = append(options, Option{Name: "ProxyUseFdpass", Value: h.ProxyUseFdpass})
+	}
+	if h.PubkeyAcceptedKeyTypes != "" {
+		options = append(options, Option{Name: "PubkeyAcceptedKeyTypes", Value: h.PubkeyAcceptedKeyTypes})
 	}
 	if h.PubkeyAuthentication != "" {
 		options = append(options, Option{Name: "PubkeyAuthentication", Value: h.PubkeyAuthentication})
@@ -828,6 +832,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.ProxyUseFdpass = utils.ExpandField(h.ProxyUseFdpass)
 
+	if h.PubkeyAcceptedKeyTypes == "" {
+		h.PubkeyAcceptedKeyTypes = defaults.PubkeyAcceptedKeyTypes
+	}
+	h.PubkeyAcceptedKeyTypes = utils.ExpandField(h.PubkeyAcceptedKeyTypes)
+
 	if h.PubkeyAuthentication == "" {
 		h.PubkeyAuthentication = defaults.PubkeyAuthentication
 	}
@@ -1216,6 +1225,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		}
 		if h.ProxyUseFdpass != "" {
 			fmt.Fprintf(w, "  ProxyUseFdpass %s\n", h.ProxyUseFdpass)
+		}
+		if h.PubkeyAcceptedKeyTypes != "" {
+			fmt.Fprintf(w, "  PubkeyAcceptedKeyTypes %s\n", h.PubkeyAcceptedKeyTypes)
 		}
 		if h.PubkeyAuthentication != "" {
 			fmt.Fprintf(w, "  PubkeyAuthentication %s\n", h.PubkeyAuthentication)
