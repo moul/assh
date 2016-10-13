@@ -7,102 +7,103 @@ import (
 	"os/user"
 	"strings"
 
+	composeyaml "github.com/docker/libcompose/yaml"
 	"github.com/moul/advanced-ssh-config/pkg/utils"
 )
 
 // Host defines the configuration flags of a host
 type Host struct {
 	// ssh-config fields
-	AddressFamily                    string `yaml:"addressfamily,omitempty,flow" json:"AddressFamily,omitempty"`
-	AskPassGUI                       string `yaml:"askpassgui,omitempty,flow" json:"AskPassGUI,omitempty"`
-	BatchMode                        string `yaml:"batchmode,omitempty,flow" json:"BatchMode,omitempty"`
-	BindAddress                      string `yaml:"bindaddress,omitempty,flow" json:"BindAddress,omitempty"`
-	CanonicalDomains                 string `yaml:"canonicaldomains,omitempty,flow" json:"CanonicalDomains,omitempty"`
-	CanonicalizeFallbackLocal        string `yaml:"canonicalizefallbacklocal,omitempty,flow" json:"CanonicalizeFallbackLocal,omitempty"`
-	CanonicalizeHostname             string `yaml:"canonicalizehostname,omitempty,flow" json:"CanonicalizeHostname,omitempty"`
-	CanonicalizeMaxDots              string `yaml:"canonicalizemaxDots,omitempty,flow" json:"CanonicalizeMaxDots,omitempty"`
-	CanonicalizePermittedCNAMEs      string `yaml:"canonicalizepermittedcnames,omitempty,flow" json:"CanonicalizePermittedCNAMEs,omitempty"`
-	ChallengeResponseAuthentication  string `yaml:"challengeresponseauthentication,omitempty,flow" json:"ChallengeResponseAuthentication,omitempty"`
-	CheckHostIP                      string `yaml:"checkhostip,omitempty,flow" json:"CheckHostIP,omitempty"`
-	Cipher                           string `yaml:"cipher,omitempty,flow" json:"Cipher,omitempty"`
-	Ciphers                          string `yaml:"ciphers,omitempty,flow" json:"Ciphers,omitempty"`
-	ClearAllForwardings              string `yaml:"clearallforwardings,omitempty,flow" json:"ClearAllForwardings,omitempty"`
-	Compression                      string `yaml:"compression,omitempty,flow" json:"Compression,omitempty"`
-	CompressionLevel                 int    `yaml:"compressionlevel,omitempty,flow" json:"CompressionLevel,omitempty"`
-	ConnectionAttempts               string `yaml:"connectionattempts,omitempty,flow" json:"ConnectionAttempts,omitempty"`
-	ConnectTimeout                   int    `yaml:"connecttimeout,omitempty,flow" json:"ConnectTimeout,omitempty"`
-	ControlMaster                    string `yaml:"controlmaster,omitempty,flow" json:"ControlMaster,omitempty"`
-	ControlPath                      string `yaml:"controlpath,omitempty,flow" json:"ControlPath,omitempty"`
-	ControlPersist                   string `yaml:"controlpersist,omitempty,flow" json:"ControlPersist,omitempty"`
-	DynamicForward                   string `yaml:"dynamicforward,omitempty,flow" json:"DynamicForward,omitempty"`
-	EnableSSHKeysign                 string `yaml:"enablesshkeysign,omitempty,flow" json:"EnableSSHKeysign,omitempty"`
-	EscapeChar                       string `yaml:"escapechar,omitempty,flow" json:"EscapeChar,omitempty"`
-	ExitOnForwardFailure             string `yaml:"exitonforwardfailure,omitempty,flow" json:"ExitOnForwardFailure,omitempty"`
-	FingerprintHash                  string `yaml:"fingerprinthash,omitempty,flow" json:"FingerprintHash,omitempty"`
-	ForwardAgent                     string `yaml:"forwardagent,omitempty,flow" json:"ForwardAgent,omitempty"`
-	ForwardX11                       string `yaml:"forwardx11,omitempty,flow" json:"ForwardX11,omitempty"`
-	ForwardX11Timeout                int    `yaml:"forwardx11timeout,omitempty,flow" json:"ForwardX11Timeout,omitempty"`
-	ForwardX11Trusted                string `yaml:"forwardx11trusted,omitempty,flow" json:"ForwardX11Trusted,omitempty"`
-	GatewayPorts                     string `yaml:"gatewayports,omitempty,flow" json:"GatewayPorts,omitempty"`
-	GlobalKnownHostsFile             string `yaml:"globalknownhostsfile,omitempty,flow" json:"GlobalKnownHostsFile,omitempty"`
-	GSSAPIAuthentication             string `yaml:"gssapiauthentication,omitempty,flow" json:"GSSAPIAuthentication,omitempty"`
-	GSSAPIClientIdentity             string `yaml:"gssapiclientidentity,omitempty,flow" json:"GSSAPIClientIdentity,omitempty"`
-	GSSAPIDelegateCredentials        string `yaml:"gssapidelegatecredentials,omitempty,flow" json:"GSSAPIDelegateCredentials,omitempty"`
-	GSSAPIKeyExchange                string `yaml:"gssapikeyexchange,omitempty,flow" json:"GSSAPIKeyExchange,omitempty"`
-	GSSAPIRenewalForcesRekey         string `yaml:"gssapirenewalforcesrekey,omitempty,flow" json:"GSSAPIRenewalForcesRekey,omitempty"`
-	GSSAPIServerIdentity             string `yaml:"gssapiserveridentity,omitempty,flow" json:"GSSAPIServerIdentity,omitempty"`
-	GSSAPITrustDns                   string `yaml:"gssapitrustdns,omitempty,flow" json:"GSSAPITrustDns,omitempty"`
-	HashKnownHosts                   string `yaml:"hashknownhosts,omitempty,flow" json:"HashKnownHosts,omitempty"`
-	HostbasedAuthentication          string `yaml:"hostbasedauthentication,omitempty,flow" json:"HostbasedAuthentication,omitempty"`
-	HostbasedKeyTypes                string `yaml:"hostbasedkeytypes,omitempty,flow" json:"HostbasedKeyTypes,omitempty"`
-	HostKeyAlgorithms                string `yaml:"hostkeyalgorithms,omitempty,flow" json:"HostKeyAlgorithms,omitempty"`
-	HostKeyAlias                     string `yaml:"hostkeyalias,omitempty,flow" json:"HostKeyAlias,omitempty"`
-	IdentitiesOnly                   string `yaml:"identitiesonly,omitempty,flow" json:"IdentitiesOnly,omitempty"`
-	IdentityFile                     string `yaml:"identityfile,omitempty,flow" json:"IdentityFile,omitempty"`
-	IgnoreUnknown                    string `yaml:"ignoreunknown,omitempty,flow" json:"IgnoreUnknown,omitempty"`
-	IPQoS                            string `yaml:"ipqos,omitempty,flow" json:"IPQoS,omitempty"`
-	KbdInteractiveAuthentication     string `yaml:"kbdinteractiveauthentication,omitempty,flow" json:"KbdInteractiveAuthentication,omitempty"`
-	KbdInteractiveDevices            string `yaml:"kbdinteractivedevices,omitempty,flow" json:"KbdInteractiveDevices,omitempty"`
-	KexAlgorithms                    string `yaml:"kexalgorithms,omitempty,flow" json:"KexAlgorithms,omitempty"`
-	KeychainIntegration              string `yaml:"keychainintegration,omitempty,flow" json:"KeychainIntegration,omitempty"`
-	LocalCommand                     string `yaml:"localcommand,omitempty,flow" json:"LocalCommand,omitempty"`
-	LocalForward                     string `yaml:"localforward,omitempty,flow" json:"LocalForward,omitempty"`
-	LogLevel                         string `yaml:"loglevel,omitempty,flow" json:"LogLevel,omitempty"`
-	MACs                             string `yaml:"macs,omitempty,flow" json:"MACs,omitempty"`
-	Match                            string `yaml:"match,omitempty,flow" json:"Match,omitempty"`
-	NoHostAuthenticationForLocalhost string `yaml:"nohostauthenticationforlocalhost,omitempty,flow" json:"NoHostAuthenticationForLocalhost,omitempty"`
-	NumberOfPasswordPrompts          string `yaml:"numberofpasswordprompts,omitempty,flow" json:"NumberOfPasswordPrompts,omitempty"`
-	PasswordAuthentication           string `yaml:"passwordauthentication,omitempty,flow" json:"PasswordAuthentication,omitempty"`
-	PermitLocalCommand               string `yaml:"permitlocalcommand,omitempty,flow" json:"PermitLocalCommand,omitempty"`
-	PKCS11Provider                   string `yaml:"pkcs11provider,omitempty,flow" json:"PKCS11Provider,omitempty"`
-	Port                             string `yaml:"port,omitempty,flow" json:"Port,omitempty"`
-	PreferredAuthentications         string `yaml:"preferredauthentications,omitempty,flow" json:"PreferredAuthentications,omitempty"`
-	Protocol                         string `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
-	ProxyUseFdpass                   string `yaml:"proxyusefdpass,omitempty,flow" json:"ProxyUseFdpass,omitempty"`
-	PubkeyAcceptedKeyTypes           string `yaml:"pubkeyacceptedkeytypes,omitempty,flow" json:"PubkeyAcceptedKeyTypes,omitempty"`
-	PubkeyAuthentication             string `yaml:"pubkeyauthentication,omitempty,flow" json:"PubkeyAuthentication,omitempty"`
-	RekeyLimit                       string `yaml:"rekeylimit,omitempty,flow" json:"RekeyLimit,omitempty"`
-	RemoteForward                    string `yaml:"remoteforward,omitempty,flow" json:"RemoteForward,omitempty"`
-	RequestTTY                       string `yaml:"requesttty,omitempty,flow" json:"RequestTTY,omitempty"`
-	RevokedHostKeys                  string `yaml:"revokedhostkeys,omitempty,flow" json:"RevokedHostKeys,omitempty"`
-	RhostsRSAAuthentication          string `yaml:"rhostsrsaauthentication,omitempty,flow" json:"RhostsRSAAuthentication,omitempty"`
-	RSAAuthentication                string `yaml:"rsaauthentication,omitempty,flow" json:"RSAAuthentication,omitempty"`
-	SendEnv                          string `yaml:"sendenv,omitempty,flow" json:"SendEnv,omitempty"`
-	ServerAliveCountMax              int    `yaml:"serveralivecountmax,omitempty,flow" json:"ServerAliveCountMax,omitempty"`
-	ServerAliveInterval              int    `yaml:"serveraliveinterval,omitempty,flow" json:"ServerAliveInterval,omitempty"`
-	StreamLocalBindMask              string `yaml:"streamlocalbindmask,omitempty,flow" json:"StreamLocalBindMask,omitempty"`
-	StreamLocalBindUnlink            string `yaml:"streamlocalbindunlink,omitempty,flow" json:"StreamLocalBindUnlink,omitempty"`
-	StrictHostKeyChecking            string `yaml:"stricthostkeychecking,omitempty,flow" json:"StrictHostKeyChecking,omitempty"`
-	TCPKeepAlive                     string `yaml:"tcpkeepalive,omitempty,flow" json:"TCPKeepAlive,omitempty"`
-	Tunnel                           string `yaml:"tunnel,omitempty,flow" json:"Tunnel,omitempty"`
-	TunnelDevice                     string `yaml:"tunneldevice,omitempty,flow" json:"TunnelDevice,omitempty"`
-	UpdateHostKeys                   string `yaml:"updatehostkeys,omitempty,flow" json:"UpdateHostKeys,omitempty"`
-	UsePrivilegedPort                string `yaml:"useprivilegedport,omitempty,flow" json:"UsePrivilegedPort,omitempty"`
-	User                             string `yaml:"user,omitempty,flow" json:"User,omitempty"`
-	UserKnownHostsFile               string `yaml:"userknownhostsfile,omitempty,flow" json:"UserKnownHostsFile,omitempty"`
-	VerifyHostKeyDNS                 string `yaml:"verifyhostkeydns,omitempty,flow" json:"VerifyHostKeyDNS,omitempty"`
-	VisualHostKey                    string `yaml:"visualhostkey,omitempty,flow" json:"VisualHostKey,omitempty"`
-	XAuthLocation                    string `yaml:"xauthlocation,omitempty,flow" json:"XAuthLocation,omitempty"`
+	AddressFamily                    string                    `yaml:"addressfamily,omitempty,flow" json:"AddressFamily,omitempty"`
+	AskPassGUI                       string                    `yaml:"askpassgui,omitempty,flow" json:"AskPassGUI,omitempty"`
+	BatchMode                        string                    `yaml:"batchmode,omitempty,flow" json:"BatchMode,omitempty"`
+	BindAddress                      string                    `yaml:"bindaddress,omitempty,flow" json:"BindAddress,omitempty"`
+	CanonicalDomains                 string                    `yaml:"canonicaldomains,omitempty,flow" json:"CanonicalDomains,omitempty"`
+	CanonicalizeFallbackLocal        string                    `yaml:"canonicalizefallbacklocal,omitempty,flow" json:"CanonicalizeFallbackLocal,omitempty"`
+	CanonicalizeHostname             string                    `yaml:"canonicalizehostname,omitempty,flow" json:"CanonicalizeHostname,omitempty"`
+	CanonicalizeMaxDots              string                    `yaml:"canonicalizemaxDots,omitempty,flow" json:"CanonicalizeMaxDots,omitempty"`
+	CanonicalizePermittedCNAMEs      string                    `yaml:"canonicalizepermittedcnames,omitempty,flow" json:"CanonicalizePermittedCNAMEs,omitempty"`
+	ChallengeResponseAuthentication  string                    `yaml:"challengeresponseauthentication,omitempty,flow" json:"ChallengeResponseAuthentication,omitempty"`
+	CheckHostIP                      string                    `yaml:"checkhostip,omitempty,flow" json:"CheckHostIP,omitempty"`
+	Cipher                           string                    `yaml:"cipher,omitempty,flow" json:"Cipher,omitempty"`
+	Ciphers                          composeyaml.Stringorslice `yaml:"ciphers,omitempty,flow" json:"Ciphers,omitempty"`
+	ClearAllForwardings              string                    `yaml:"clearallforwardings,omitempty,flow" json:"ClearAllForwardings,omitempty"`
+	Compression                      string                    `yaml:"compression,omitempty,flow" json:"Compression,omitempty"`
+	CompressionLevel                 int                       `yaml:"compressionlevel,omitempty,flow" json:"CompressionLevel,omitempty"`
+	ConnectionAttempts               string                    `yaml:"connectionattempts,omitempty,flow" json:"ConnectionAttempts,omitempty"`
+	ConnectTimeout                   int                       `yaml:"connecttimeout,omitempty,flow" json:"ConnectTimeout,omitempty"`
+	ControlMaster                    string                    `yaml:"controlmaster,omitempty,flow" json:"ControlMaster,omitempty"`
+	ControlPath                      string                    `yaml:"controlpath,omitempty,flow" json:"ControlPath,omitempty"`
+	ControlPersist                   string                    `yaml:"controlpersist,omitempty,flow" json:"ControlPersist,omitempty"`
+	DynamicForward                   composeyaml.Stringorslice `yaml:"dynamicforward,omitempty,flow" json:"DynamicForward,omitempty"`
+	EnableSSHKeysign                 string                    `yaml:"enablesshkeysign,omitempty,flow" json:"EnableSSHKeysign,omitempty"`
+	EscapeChar                       string                    `yaml:"escapechar,omitempty,flow" json:"EscapeChar,omitempty"`
+	ExitOnForwardFailure             string                    `yaml:"exitonforwardfailure,omitempty,flow" json:"ExitOnForwardFailure,omitempty"`
+	FingerprintHash                  string                    `yaml:"fingerprinthash,omitempty,flow" json:"FingerprintHash,omitempty"`
+	ForwardAgent                     string                    `yaml:"forwardagent,omitempty,flow" json:"ForwardAgent,omitempty"`
+	ForwardX11                       string                    `yaml:"forwardx11,omitempty,flow" json:"ForwardX11,omitempty"`
+	ForwardX11Timeout                int                       `yaml:"forwardx11timeout,omitempty,flow" json:"ForwardX11Timeout,omitempty"`
+	ForwardX11Trusted                string                    `yaml:"forwardx11trusted,omitempty,flow" json:"ForwardX11Trusted,omitempty"`
+	GatewayPorts                     string                    `yaml:"gatewayports,omitempty,flow" json:"GatewayPorts,omitempty"`
+	GlobalKnownHostsFile             composeyaml.Stringorslice `yaml:"globalknownhostsfile,omitempty,flow" json:"GlobalKnownHostsFile,omitempty"`
+	GSSAPIAuthentication             string                    `yaml:"gssapiauthentication,omitempty,flow" json:"GSSAPIAuthentication,omitempty"`
+	GSSAPIClientIdentity             string                    `yaml:"gssapiclientidentity,omitempty,flow" json:"GSSAPIClientIdentity,omitempty"`
+	GSSAPIDelegateCredentials        string                    `yaml:"gssapidelegatecredentials,omitempty,flow" json:"GSSAPIDelegateCredentials,omitempty"`
+	GSSAPIKeyExchange                string                    `yaml:"gssapikeyexchange,omitempty,flow" json:"GSSAPIKeyExchange,omitempty"`
+	GSSAPIRenewalForcesRekey         string                    `yaml:"gssapirenewalforcesrekey,omitempty,flow" json:"GSSAPIRenewalForcesRekey,omitempty"`
+	GSSAPIServerIdentity             string                    `yaml:"gssapiserveridentity,omitempty,flow" json:"GSSAPIServerIdentity,omitempty"`
+	GSSAPITrustDns                   string                    `yaml:"gssapitrustdns,omitempty,flow" json:"GSSAPITrustDns,omitempty"`
+	HashKnownHosts                   string                    `yaml:"hashknownhosts,omitempty,flow" json:"HashKnownHosts,omitempty"`
+	HostbasedAuthentication          string                    `yaml:"hostbasedauthentication,omitempty,flow" json:"HostbasedAuthentication,omitempty"`
+	HostbasedKeyTypes                string                    `yaml:"hostbasedkeytypes,omitempty,flow" json:"HostbasedKeyTypes,omitempty"`
+	HostKeyAlgorithms                string                    `yaml:"hostkeyalgorithms,omitempty,flow" json:"HostKeyAlgorithms,omitempty"`
+	HostKeyAlias                     string                    `yaml:"hostkeyalias,omitempty,flow" json:"HostKeyAlias,omitempty"`
+	IdentitiesOnly                   string                    `yaml:"identitiesonly,omitempty,flow" json:"IdentitiesOnly,omitempty"`
+	IdentityFile                     composeyaml.Stringorslice `yaml:"identityfile,omitempty,flow" json:"IdentityFile,omitempty"`
+	IgnoreUnknown                    string                    `yaml:"ignoreunknown,omitempty,flow" json:"IgnoreUnknown,omitempty"`
+	IPQoS                            composeyaml.Stringorslice `yaml:"ipqos,omitempty,flow" json:"IPQoS,omitempty"`
+	KbdInteractiveAuthentication     string                    `yaml:"kbdinteractiveauthentication,omitempty,flow" json:"KbdInteractiveAuthentication,omitempty"`
+	KbdInteractiveDevices            composeyaml.Stringorslice `yaml:"kbdinteractivedevices,omitempty,flow" json:"KbdInteractiveDevices,omitempty"`
+	KexAlgorithms                    composeyaml.Stringorslice `yaml:"kexalgorithms,omitempty,flow" json:"KexAlgorithms,omitempty"`
+	KeychainIntegration              string                    `yaml:"keychainintegration,omitempty,flow" json:"KeychainIntegration,omitempty"`
+	LocalCommand                     string                    `yaml:"localcommand,omitempty,flow" json:"LocalCommand,omitempty"`
+	LocalForward                     composeyaml.Stringorslice `yaml:"localforward,omitempty,flow" json:"LocalForward,omitempty"`
+	LogLevel                         string                    `yaml:"loglevel,omitempty,flow" json:"LogLevel,omitempty"`
+	MACs                             composeyaml.Stringorslice `yaml:"macs,omitempty,flow" json:"MACs,omitempty"`
+	Match                            string                    `yaml:"match,omitempty,flow" json:"Match,omitempty"`
+	NoHostAuthenticationForLocalhost string                    `yaml:"nohostauthenticationforlocalhost,omitempty,flow" json:"NoHostAuthenticationForLocalhost,omitempty"`
+	NumberOfPasswordPrompts          string                    `yaml:"numberofpasswordprompts,omitempty,flow" json:"NumberOfPasswordPrompts,omitempty"`
+	PasswordAuthentication           string                    `yaml:"passwordauthentication,omitempty,flow" json:"PasswordAuthentication,omitempty"`
+	PermitLocalCommand               string                    `yaml:"permitlocalcommand,omitempty,flow" json:"PermitLocalCommand,omitempty"`
+	PKCS11Provider                   string                    `yaml:"pkcs11provider,omitempty,flow" json:"PKCS11Provider,omitempty"`
+	Port                             string                    `yaml:"port,omitempty,flow" json:"Port,omitempty"`
+	PreferredAuthentications         string                    `yaml:"preferredauthentications,omitempty,flow" json:"PreferredAuthentications,omitempty"`
+	Protocol                         composeyaml.Stringorslice `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
+	ProxyUseFdpass                   string                    `yaml:"proxyusefdpass,omitempty,flow" json:"ProxyUseFdpass,omitempty"`
+	PubkeyAcceptedKeyTypes           string                    `yaml:"pubkeyacceptedkeytypes,omitempty,flow" json:"PubkeyAcceptedKeyTypes,omitempty"`
+	PubkeyAuthentication             string                    `yaml:"pubkeyauthentication,omitempty,flow" json:"PubkeyAuthentication,omitempty"`
+	RekeyLimit                       string                    `yaml:"rekeylimit,omitempty,flow" json:"RekeyLimit,omitempty"`
+	RemoteForward                    composeyaml.Stringorslice `yaml:"remoteforward,omitempty,flow" json:"RemoteForward,omitempty"`
+	RequestTTY                       string                    `yaml:"requesttty,omitempty,flow" json:"RequestTTY,omitempty"`
+	RevokedHostKeys                  string                    `yaml:"revokedhostkeys,omitempty,flow" json:"RevokedHostKeys,omitempty"`
+	RhostsRSAAuthentication          string                    `yaml:"rhostsrsaauthentication,omitempty,flow" json:"RhostsRSAAuthentication,omitempty"`
+	RSAAuthentication                string                    `yaml:"rsaauthentication,omitempty,flow" json:"RSAAuthentication,omitempty"`
+	SendEnv                          composeyaml.Stringorslice `yaml:"sendenv,omitempty,flow" json:"SendEnv,omitempty"`
+	ServerAliveCountMax              int                       `yaml:"serveralivecountmax,omitempty,flow" json:"ServerAliveCountMax,omitempty"`
+	ServerAliveInterval              int                       `yaml:"serveraliveinterval,omitempty,flow" json:"ServerAliveInterval,omitempty"`
+	StreamLocalBindMask              string                    `yaml:"streamlocalbindmask,omitempty,flow" json:"StreamLocalBindMask,omitempty"`
+	StreamLocalBindUnlink            string                    `yaml:"streamlocalbindunlink,omitempty,flow" json:"StreamLocalBindUnlink,omitempty"`
+	StrictHostKeyChecking            string                    `yaml:"stricthostkeychecking,omitempty,flow" json:"StrictHostKeyChecking,omitempty"`
+	TCPKeepAlive                     string                    `yaml:"tcpkeepalive,omitempty,flow" json:"TCPKeepAlive,omitempty"`
+	Tunnel                           string                    `yaml:"tunnel,omitempty,flow" json:"Tunnel,omitempty"`
+	TunnelDevice                     string                    `yaml:"tunneldevice,omitempty,flow" json:"TunnelDevice,omitempty"`
+	UpdateHostKeys                   string                    `yaml:"updatehostkeys,omitempty,flow" json:"UpdateHostKeys,omitempty"`
+	UsePrivilegedPort                string                    `yaml:"useprivilegedport,omitempty,flow" json:"UsePrivilegedPort,omitempty"`
+	User                             string                    `yaml:"user,omitempty,flow" json:"User,omitempty"`
+	UserKnownHostsFile               composeyaml.Stringorslice `yaml:"userknownhostsfile,omitempty,flow" json:"UserKnownHostsFile,omitempty"`
+	VerifyHostKeyDNS                 string                    `yaml:"verifyhostkeydns,omitempty,flow" json:"VerifyHostKeyDNS,omitempty"`
+	VisualHostKey                    string                    `yaml:"visualhostkey,omitempty,flow" json:"VisualHostKey,omitempty"`
+	XAuthLocation                    string                    `yaml:"xauthlocation,omitempty,flow" json:"XAuthLocation,omitempty"`
 
 	// ssh-config fields with a different behavior
 	HostName     string `yaml:"hostname,omitempty,flow" json:"HostName,omitempty"`
@@ -229,8 +230,8 @@ func (h *Host) Options() OptionsList {
 	if h.Cipher != "" {
 		options = append(options, Option{Name: "Cipher", Value: h.Cipher})
 	}
-	if h.Ciphers != "" {
-		options = append(options, Option{Name: "Ciphers", Value: h.Ciphers})
+	if len(h.Ciphers) > 0 {
+		options = append(options, Option{Name: "Ciphers", Value: strings.Join(h.Ciphers, ",")})
 	}
 	if h.ClearAllForwardings != "" {
 		options = append(options, Option{Name: "ClearAllForwardings", Value: h.ClearAllForwardings})
@@ -256,8 +257,8 @@ func (h *Host) Options() OptionsList {
 	if h.ControlPersist != "" {
 		options = append(options, Option{Name: "ControlPersist", Value: h.ControlPersist})
 	}
-	if h.DynamicForward != "" {
-		options = append(options, Option{Name: "DynamicForward", Value: h.DynamicForward})
+	for _, entry := range h.DynamicForward {
+		options = append(options, Option{Name: "DynamicForward", Value: entry})
 	}
 	if h.EnableSSHKeysign != "" {
 		options = append(options, Option{Name: "EnableSSHKeysign", Value: h.EnableSSHKeysign})
@@ -286,8 +287,8 @@ func (h *Host) Options() OptionsList {
 	if h.GatewayPorts != "" {
 		options = append(options, Option{Name: "GatewayPorts", Value: h.GatewayPorts})
 	}
-	if h.GlobalKnownHostsFile != "" {
-		options = append(options, Option{Name: "GlobalKnownHostsFile", Value: h.GlobalKnownHostsFile})
+	if len(h.GlobalKnownHostsFile) > 0 {
+		options = append(options, Option{Name: "GlobalKnownHostsFile", Value: strings.Join(h.GlobalKnownHostsFile, " ")})
 	}
 	if h.GSSAPIAuthentication != "" {
 		options = append(options, Option{Name: "GSSAPIAuthentication", Value: h.GSSAPIAuthentication})
@@ -328,23 +329,23 @@ func (h *Host) Options() OptionsList {
 	if h.IdentitiesOnly != "" {
 		options = append(options, Option{Name: "IdentitiesOnly", Value: h.IdentitiesOnly})
 	}
-	if h.IdentityFile != "" {
-		options = append(options, Option{Name: "IdentityFile", Value: h.IdentityFile})
+	for _, entry := range h.IdentityFile {
+		options = append(options, Option{Name: "IdentityFile", Value: entry})
 	}
 	if h.IgnoreUnknown != "" {
 		options = append(options, Option{Name: "IgnoreUnknown", Value: h.IgnoreUnknown})
 	}
-	if h.IPQoS != "" {
-		options = append(options, Option{Name: "IPQoS", Value: h.IPQoS})
+	if len(h.IPQoS) > 0 {
+		options = append(options, Option{Name: "IPQoS", Value: strings.Join(h.IPQoS, " ")})
 	}
 	if h.KbdInteractiveAuthentication != "" {
 		options = append(options, Option{Name: "KbdInteractiveAuthentication", Value: h.KbdInteractiveAuthentication})
 	}
-	if h.KbdInteractiveDevices != "" {
-		options = append(options, Option{Name: "KbdInteractiveDevices", Value: h.KbdInteractiveDevices})
+	if len(h.KbdInteractiveDevices) > 0 {
+		options = append(options, Option{Name: "KbdInteractiveDevices", Value: strings.Join(h.KbdInteractiveDevices, ",")})
 	}
-	if h.KexAlgorithms != "" {
-		options = append(options, Option{Name: "KexAlgorithms", Value: h.KexAlgorithms})
+	if len(h.KexAlgorithms) > 0 {
+		options = append(options, Option{Name: "KexAlgorithms", Value: strings.Join(h.KexAlgorithms, ",")})
 	}
 	if h.KeychainIntegration != "" {
 		options = append(options, Option{Name: "KeychainIntegration", Value: h.KeychainIntegration})
@@ -352,14 +353,14 @@ func (h *Host) Options() OptionsList {
 	if h.LocalCommand != "" {
 		options = append(options, Option{Name: "LocalCommand", Value: h.LocalCommand})
 	}
-	if h.LocalForward != "" {
-		options = append(options, Option{Name: "LocalForward", Value: h.LocalForward})
+	for _, entry := range h.LocalForward {
+		options = append(options, Option{Name: "LocalForward", Value: entry})
 	}
 	if h.LogLevel != "" {
 		options = append(options, Option{Name: "LogLevel", Value: h.LogLevel})
 	}
-	if h.MACs != "" {
-		options = append(options, Option{Name: "MACs", Value: h.MACs})
+	if len(h.MACs) > 0 {
+		options = append(options, Option{Name: "MACs", Value: strings.Join(h.MACs, ",")})
 	}
 	if h.Match != "" {
 		options = append(options, Option{Name: "Match", Value: h.Match})
@@ -385,8 +386,8 @@ func (h *Host) Options() OptionsList {
 	if h.PreferredAuthentications != "" {
 		options = append(options, Option{Name: "PreferredAuthentications", Value: h.PreferredAuthentications})
 	}
-	if h.Protocol != "" {
-		options = append(options, Option{Name: "Protocol", Value: h.Protocol})
+	if len(h.Protocol) > 0 {
+		options = append(options, Option{Name: "Protocol", Value: strings.Join(h.Protocol, ",")})
 	}
 	if h.ProxyUseFdpass != "" {
 		options = append(options, Option{Name: "ProxyUseFdpass", Value: h.ProxyUseFdpass})
@@ -400,8 +401,8 @@ func (h *Host) Options() OptionsList {
 	if h.RekeyLimit != "" {
 		options = append(options, Option{Name: "RekeyLimit", Value: h.RekeyLimit})
 	}
-	if h.RemoteForward != "" {
-		options = append(options, Option{Name: "RemoteForward", Value: h.RemoteForward})
+	for _, entry := range h.RemoteForward {
+		options = append(options, Option{Name: "RemoteForward", Value: entry})
 	}
 	if h.RequestTTY != "" {
 		options = append(options, Option{Name: "RequestTTY", Value: h.RequestTTY})
@@ -415,8 +416,8 @@ func (h *Host) Options() OptionsList {
 	if h.RSAAuthentication != "" {
 		options = append(options, Option{Name: "RSAAuthentication", Value: h.RSAAuthentication})
 	}
-	if h.SendEnv != "" {
-		options = append(options, Option{Name: "SendEnv", Value: h.SendEnv})
+	for _, entry := range h.SendEnv {
+		options = append(options, Option{Name: "SendEnv", Value: entry})
 	}
 	if h.ServerAliveCountMax != 0 {
 		options = append(options, Option{Name: "ServerAliveCountMax", Value: string(h.ServerAliveCountMax)})
@@ -451,8 +452,8 @@ func (h *Host) Options() OptionsList {
 	if h.User != "" {
 		options = append(options, Option{Name: "User", Value: h.User})
 	}
-	if h.UserKnownHostsFile != "" {
-		options = append(options, Option{Name: "UserKnownHostsFile", Value: h.UserKnownHostsFile})
+	if len(h.UserKnownHostsFile) > 0 {
+		options = append(options, Option{Name: "UserKnownHostsFile", Value: strings.Join(h.UserKnownHostsFile, " ")})
 	}
 	if h.VerifyHostKeyDNS != "" {
 		options = append(options, Option{Name: "VerifyHostKeyDNS", Value: h.VerifyHostKeyDNS})
@@ -552,10 +553,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.Cipher = utils.ExpandField(h.Cipher)
 
-	if h.Ciphers == "" {
+	if len(h.Ciphers) == 0 {
 		h.Ciphers = defaults.Ciphers
 	}
-	h.Ciphers = utils.ExpandField(h.Ciphers)
+	h.Ciphers = utils.ExpandSliceField(h.Ciphers)
 
 	if h.ClearAllForwardings == "" {
 		h.ClearAllForwardings = defaults.ClearAllForwardings
@@ -597,10 +598,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.ControlPersist = utils.ExpandField(h.ControlPersist)
 
-	if h.DynamicForward == "" {
+	if len(h.DynamicForward) == 0 {
 		h.DynamicForward = defaults.DynamicForward
 	}
-	h.DynamicForward = utils.ExpandField(h.DynamicForward)
+	h.DynamicForward = utils.ExpandSliceField(h.DynamicForward)
 
 	if h.EnableSSHKeysign == "" {
 		h.EnableSSHKeysign = defaults.EnableSSHKeysign
@@ -647,10 +648,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.GatewayPorts = utils.ExpandField(h.GatewayPorts)
 
-	if h.GlobalKnownHostsFile == "" {
+	if len(h.GlobalKnownHostsFile) == 0 {
 		h.GlobalKnownHostsFile = defaults.GlobalKnownHostsFile
 	}
-	h.GlobalKnownHostsFile = utils.ExpandField(h.GlobalKnownHostsFile)
+	h.GlobalKnownHostsFile = utils.ExpandSliceField(h.GlobalKnownHostsFile)
 
 	if h.GSSAPIAuthentication == "" {
 		h.GSSAPIAuthentication = defaults.GSSAPIAuthentication
@@ -722,35 +723,35 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.IdentitiesOnly = utils.ExpandField(h.IdentitiesOnly)
 
-	if h.IdentityFile == "" {
+	if len(h.IdentityFile) == 0 {
 		h.IdentityFile = defaults.IdentityFile
 	}
-	h.IdentityFile = utils.ExpandField(h.IdentityFile)
+	h.IdentityFile = utils.ExpandSliceField(h.IdentityFile)
 
 	if h.IgnoreUnknown == "" {
 		h.IgnoreUnknown = defaults.IgnoreUnknown
 	}
 	h.IgnoreUnknown = utils.ExpandField(h.IgnoreUnknown)
 
-	if h.IPQoS == "" {
+	if len(h.IPQoS) == 0 {
 		h.IPQoS = defaults.IPQoS
 	}
-	h.IPQoS = utils.ExpandField(h.IPQoS)
+	h.IPQoS = utils.ExpandSliceField(h.IPQoS)
 
 	if h.KbdInteractiveAuthentication == "" {
 		h.KbdInteractiveAuthentication = defaults.KbdInteractiveAuthentication
 	}
 	h.KbdInteractiveAuthentication = utils.ExpandField(h.KbdInteractiveAuthentication)
 
-	if h.KbdInteractiveDevices == "" {
+	if len(h.KbdInteractiveDevices) == 0 {
 		h.KbdInteractiveDevices = defaults.KbdInteractiveDevices
 	}
-	h.KbdInteractiveDevices = utils.ExpandField(h.KbdInteractiveDevices)
+	h.KbdInteractiveDevices = utils.ExpandSliceField(h.KbdInteractiveDevices)
 
-	if h.KexAlgorithms == "" {
+	if len(h.KexAlgorithms) == 0 {
 		h.KexAlgorithms = defaults.KexAlgorithms
 	}
-	h.KexAlgorithms = utils.ExpandField(h.KexAlgorithms)
+	h.KexAlgorithms = utils.ExpandSliceField(h.KexAlgorithms)
 
 	if h.KeychainIntegration == "" {
 		h.KeychainIntegration = defaults.KeychainIntegration
@@ -762,20 +763,20 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.LocalCommand = utils.ExpandField(h.LocalCommand)
 
-	if h.LocalForward == "" {
+	if len(h.LocalForward) == 0 {
 		h.LocalForward = defaults.LocalForward
 	}
-	h.LocalForward = utils.ExpandField(h.LocalForward)
+	h.LocalForward = utils.ExpandSliceField(h.LocalForward)
 
 	if h.LogLevel == "" {
 		h.LogLevel = defaults.LogLevel
 	}
 	h.LogLevel = utils.ExpandField(h.LogLevel)
 
-	if h.MACs == "" {
+	if len(h.MACs) == 0 {
 		h.MACs = defaults.MACs
 	}
-	h.MACs = utils.ExpandField(h.MACs)
+	h.MACs = utils.ExpandSliceField(h.MACs)
 
 	if h.Match == "" {
 		h.Match = defaults.Match
@@ -817,10 +818,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.PreferredAuthentications = utils.ExpandField(h.PreferredAuthentications)
 
-	if h.Protocol == "" {
+	if len(h.Protocol) == 0 {
 		h.Protocol = defaults.Protocol
 	}
-	h.Protocol = utils.ExpandField(h.Protocol)
+	h.Protocol = utils.ExpandSliceField(h.Protocol)
 
 	if h.ProxyCommand == "" {
 		h.ProxyCommand = defaults.ProxyCommand
@@ -847,10 +848,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.RekeyLimit = utils.ExpandField(h.RekeyLimit)
 
-	if h.RemoteForward == "" {
+	if len(h.RemoteForward) == 0 {
 		h.RemoteForward = defaults.RemoteForward
 	}
-	h.RemoteForward = utils.ExpandField(h.RemoteForward)
+	h.RemoteForward = utils.ExpandSliceField(h.RemoteForward)
 
 	if h.RequestTTY == "" {
 		h.RequestTTY = defaults.RequestTTY
@@ -872,10 +873,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.RSAAuthentication = utils.ExpandField(h.RSAAuthentication)
 
-	if h.SendEnv == "" {
+	if len(h.SendEnv) == 0 {
 		h.SendEnv = defaults.SendEnv
 	}
-	h.SendEnv = utils.ExpandField(h.SendEnv)
+	h.SendEnv = utils.ExpandSliceField(h.SendEnv)
 
 	if h.ServerAliveCountMax == 0 {
 		h.ServerAliveCountMax = defaults.ServerAliveCountMax
@@ -932,10 +933,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.User = utils.ExpandField(h.User)
 
-	if h.UserKnownHostsFile == "" {
+	if len(h.UserKnownHostsFile) == 0 {
 		h.UserKnownHostsFile = defaults.UserKnownHostsFile
 	}
-	h.UserKnownHostsFile = utils.ExpandField(h.UserKnownHostsFile)
+	h.UserKnownHostsFile = utils.ExpandSliceField(h.UserKnownHostsFile)
 
 	if h.VerifyHostKeyDNS == "" {
 		h.VerifyHostKeyDNS = defaults.VerifyHostKeyDNS
@@ -1064,8 +1065,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.Cipher != "" {
 			fmt.Fprintf(w, "  Cipher %s\n", h.Cipher)
 		}
-		if h.Ciphers != "" {
-			fmt.Fprintf(w, "  Ciphers %s\n", h.Ciphers)
+		if len(h.Ciphers) > 0 {
+			fmt.Fprintf(w, "  Ciphers %s\n", strings.Join(h.Ciphers, ","))
 		}
 		if h.ClearAllForwardings != "" {
 			fmt.Fprintf(w, "  ClearAllForwardings %s\n", h.ClearAllForwardings)
@@ -1091,8 +1092,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.ControlPersist != "" {
 			fmt.Fprintf(w, "  ControlPersist %s\n", h.ControlPersist)
 		}
-		if h.DynamicForward != "" {
-			fmt.Fprintf(w, "  DynamicForward %s\n", h.DynamicForward)
+		for _, entry := range h.DynamicForward {
+			fmt.Fprintf(w, "  DynamicForward %s\n", entry)
 		}
 		if h.EnableSSHKeysign != "" {
 			fmt.Fprintf(w, "  EnableSSHKeysign %s\n", h.EnableSSHKeysign)
@@ -1121,8 +1122,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.GatewayPorts != "" {
 			fmt.Fprintf(w, "  GatewayPorts %s\n", h.GatewayPorts)
 		}
-		if h.GlobalKnownHostsFile != "" {
-			fmt.Fprintf(w, "  GlobalKnownHostsFile %s\n", h.GlobalKnownHostsFile)
+		if len(h.GlobalKnownHostsFile) > 0 {
+			fmt.Fprintf(w, "  GlobalKnownHostsFile %s\n", strings.Join(h.GlobalKnownHostsFile, " "))
 		}
 		if h.GSSAPIAuthentication != "" {
 			fmt.Fprintf(w, "  GSSAPIAuthentication %s\n", h.GSSAPIAuthentication)
@@ -1163,23 +1164,23 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.IdentitiesOnly != "" {
 			fmt.Fprintf(w, "  IdentitiesOnly %s\n", h.IdentitiesOnly)
 		}
-		if h.IdentityFile != "" {
-			fmt.Fprintf(w, "  IdentityFile %s\n", h.IdentityFile)
+		for _, entry := range h.IdentityFile {
+			fmt.Fprintf(w, "  IdentityFile %s\n", entry)
 		}
 		if h.IgnoreUnknown != "" {
 			fmt.Fprintf(w, "  IgnoreUnknown %s\n", h.IgnoreUnknown)
 		}
-		if h.IPQoS != "" {
-			fmt.Fprintf(w, "  IPQoS %s\n", h.IPQoS)
+		if len(h.IPQoS) > 0 {
+			fmt.Fprintf(w, "  IPQoS %s\n", strings.Join(h.IPQoS, " "))
 		}
 		if h.KbdInteractiveAuthentication != "" {
 			fmt.Fprintf(w, "  KbdInteractiveAuthentication %s\n", h.KbdInteractiveAuthentication)
 		}
-		if h.KbdInteractiveDevices != "" {
-			fmt.Fprintf(w, "  KbdInteractiveDevices %s\n", h.KbdInteractiveDevices)
+		if len(h.KbdInteractiveDevices) > 0 {
+			fmt.Fprintf(w, "  KbdInteractiveDevices %s\n", strings.Join(h.KbdInteractiveDevices, ","))
 		}
-		if h.KexAlgorithms != "" {
-			fmt.Fprintf(w, "  KexAlgorithms %s\n", h.KexAlgorithms)
+		if len(h.KexAlgorithms) > 0 {
+			fmt.Fprintf(w, "  KexAlgorithms %s\n", strings.Join(h.KexAlgorithms, ","))
 		}
 		if h.KeychainIntegration != "" {
 			fmt.Fprintf(w, "  KeychainIntegration %s\n", h.KeychainIntegration)
@@ -1187,14 +1188,14 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.LocalCommand != "" {
 			fmt.Fprintf(w, "  LocalCommand %s\n", h.LocalCommand)
 		}
-		if h.LocalForward != "" {
-			fmt.Fprintf(w, "  LocalForward %s\n", h.LocalForward)
+		for _, entry := range h.LocalForward {
+			fmt.Fprintf(w, "  LocalForward %s\n", entry)
 		}
 		if h.LogLevel != "" {
 			fmt.Fprintf(w, "  LogLevel %s\n", h.LogLevel)
 		}
-		if h.MACs != "" {
-			fmt.Fprintf(w, "  MACs %s\n", h.MACs)
+		if len(h.MACs) > 0 {
+			fmt.Fprintf(w, "  MACs %s\n", strings.Join(h.MACs, ","))
 		}
 		if h.Match != "" {
 			fmt.Fprintf(w, "  Match %s\n", h.Match)
@@ -1220,8 +1221,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.PreferredAuthentications != "" {
 			fmt.Fprintf(w, "  PreferredAuthentications %s\n", h.PreferredAuthentications)
 		}
-		if h.Protocol != "" {
-			fmt.Fprintf(w, "  Protocol %s\n", h.Protocol)
+		if len(h.Protocol) > 0 {
+			fmt.Fprintf(w, "  Protocol %s\n", strings.Join(h.Protocol, ","))
 		}
 		if h.ProxyUseFdpass != "" {
 			fmt.Fprintf(w, "  ProxyUseFdpass %s\n", h.ProxyUseFdpass)
@@ -1235,8 +1236,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.RekeyLimit != "" {
 			fmt.Fprintf(w, "  RekeyLimit %s\n", h.RekeyLimit)
 		}
-		if h.RemoteForward != "" {
-			fmt.Fprintf(w, "  RemoteForward %s\n", h.RemoteForward)
+		for _, entry := range h.RemoteForward {
+			fmt.Fprintf(w, "  RemoteForward %s\n", entry)
 		}
 		if h.RequestTTY != "" {
 			fmt.Fprintf(w, "  RequestTTY %s\n", h.RequestTTY)
@@ -1250,8 +1251,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.RSAAuthentication != "" {
 			fmt.Fprintf(w, "  RSAAuthentication %s\n", h.RSAAuthentication)
 		}
-		if h.SendEnv != "" {
-			fmt.Fprintf(w, "  SendEnv %s\n", h.SendEnv)
+		for _, entry := range h.SendEnv {
+			fmt.Fprintf(w, "  SendEnv %s\n", entry)
 		}
 		if h.ServerAliveCountMax != 0 {
 			fmt.Fprintf(w, "  ServerAliveCountMax %d\n", h.ServerAliveCountMax)
@@ -1286,8 +1287,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.User != "" {
 			fmt.Fprintf(w, "  User %s\n", h.User)
 		}
-		if h.UserKnownHostsFile != "" {
-			fmt.Fprintf(w, "  UserKnownHostsFile %s\n", h.UserKnownHostsFile)
+		if len(h.UserKnownHostsFile) > 0 {
+			fmt.Fprintf(w, "  UserKnownHostsFile %s\n", strings.Join(h.UserKnownHostsFile, " "))
 		}
 		if h.VerifyHostKeyDNS != "" {
 			fmt.Fprintf(w, "  VerifyHostKeyDNS %s\n", h.VerifyHostKeyDNS)

@@ -196,7 +196,7 @@ func dummyConfig() *Config {
 		ChallengeResponseAuthentication: "yes",
 		CheckHostIP:                     "yes",
 		Cipher:                          "blowfish",
-		Ciphers:                         "aes128-ctr,aes192-ctr,aes256-ctr",
+		Ciphers:                         []string{"aes128-ctr,aes192-ctr", "aes256-ctr"},
 		ClearAllForwardings:             "yes",
 		Compression:                     "yes",
 		CompressionLevel:                6,
@@ -205,7 +205,7 @@ func dummyConfig() *Config {
 		ControlMaster:                   "yes",
 		ControlPath:                     "/tmp/%L-%l-%n-%p-%u-%r-%C-%h",
 		ControlPersist:                  "yes",
-		DynamicForward:                  "0.0.0.0:4242",
+		DynamicForward:                  []string{"0.0.0.0:4242", "0.0.0.0:4343"},
 		EnableSSHKeysign:                "yes",
 		EscapeChar:                      "~",
 		ExitOnForwardFailure:            "yes",
@@ -215,7 +215,7 @@ func dummyConfig() *Config {
 		ForwardX11Timeout:               42,
 		ForwardX11Trusted:               "yes",
 		GatewayPorts:                    "yes",
-		GlobalKnownHostsFile:            "/etc/ssh/ssh_known_hosts",
+		GlobalKnownHostsFile:            []string{"/etc/ssh/ssh_known_hosts", "/tmp/ssh_known_hosts"},
 		GSSAPIAuthentication:            "no",
 		GSSAPIKeyExchange:               "no",
 		GSSAPIClientIdentity:            "moul",
@@ -229,17 +229,17 @@ func dummyConfig() *Config {
 		HostKeyAlgorithms:               "ecdsa-sha2-nistp256-cert-v01@openssh.com",
 		HostKeyAlias:                    "z",
 		IdentitiesOnly:                  "yes",
-		IdentityFile:                    "~/.ssh/identity",
+		IdentityFile:                    []string{"~/.ssh/identity", "~/.ssh/identity2"},
 		IgnoreUnknown:                   "testtest", // FIXME: looks very interesting to generate .ssh/config without comments !
-		IPQoS:                           "lowdelay",
+		IPQoS:                           []string{"lowdelay", "highdelay"},
 		KbdInteractiveAuthentication: "yes",
-		KbdInteractiveDevices:        "bsdauth",
+		KbdInteractiveDevices:        []string{"bsdauth", "test"},
 		KeychainIntegration:          "yes",
-		KexAlgorithms:                "curve25519-sha256@libssh.org", // for all algorithms/ciphers, we could have an "assh diagnose" that warns about unsafe connections
+		KexAlgorithms:                []string{"curve25519-sha256@libssh.org", "test"}, // for all algorithms/ciphers, we could have an "assh diagnose" that warns about unsafe connections
 		LocalCommand:                 "echo %h > /tmp/logs",
-		LocalForward:                 "0.0.0.0:1234", // FIXME: may be a list
+		LocalForward:                 []string{"0.0.0.0:1234", "0.0.0.0:1235"},
 		LogLevel:                     "DEBUG3",
-		MACs:                         "umac-64-etm@openssh.com,umac-128-etm@openssh.com",
+		MACs:                         []string{"umac-64-etm@openssh.com,umac-128-etm@openssh.com", "test"},
 		Match:                        "all",
 		NoHostAuthenticationForLocalhost: "yes",
 		NumberOfPasswordPrompts:          "3",
@@ -248,16 +248,16 @@ func dummyConfig() *Config {
 		PKCS11Provider:                   "/a/b/c/pkcs11.so",
 		Port:                             "22",
 		PreferredAuthentications: "gssapi-with-mic,hostbased,publickey",
-		Protocol:                 "2",
+		Protocol:                 []string{"2", "3"},
 		ProxyUseFdpass:           "no",
 		PubkeyAuthentication:     "yes",
 		RekeyLimit:               "default none",
-		RemoteForward:            "0.0.0.0:1234",
+		RemoteForward:            []string{"0.0.0.0:1234", "0.0.0.0:1255"},
 		RequestTTY:               "yes",
 		RevokedHostKeys:          "/a/revoked-keys",
 		RhostsRSAAuthentication:  "no",
 		RSAAuthentication:        "yes",
-		SendEnv:                  "CUSTOM_*,TEST",
+		SendEnv:                  []string{"CUSTOM_*,TEST", "TEST2"},
 		ServerAliveCountMax:      3,
 		ServerAliveInterval:      0,
 		StreamLocalBindMask:      "0177",
@@ -269,7 +269,7 @@ func dummyConfig() *Config {
 		UpdateHostKeys:           "ask",
 		UsePrivilegedPort:        "no",
 		User:                     "moul",
-		UserKnownHostsFile:       "~/.ssh/known_hosts ~/.ssh/known_hosts2",
+		UserKnownHostsFile:       []string{"~/.ssh/known_hosts ~/.ssh/known_hosts2", "/tmp/known_hosts"},
 		VerifyHostKeyDNS:         "no",
 		VisualHostKey:            "yes",
 		XAuthLocation:            "xauth",
@@ -347,7 +347,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 			So(config.Hosts["bbb"].HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
 			So(config.Hosts["bbb"].Port, ShouldEqual, "${ENV_VAR_PORT}")
 			So(config.Hosts["bbb"].User, ShouldEqual, "user-$ENV_VAR_USER-user")
-			So(config.Hosts["bbb"].IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(config.Hosts["bbb"].IdentityFile[0], ShouldEqual, "${NON_EXISTING_ENV_VAR}")
 			So(config.Hosts["bbb"].LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
 			So(config.Hosts["ccc"].Port, ShouldEqual, "24")
@@ -450,7 +450,10 @@ func TestConfig_JsonString(t *testing.T) {
       "ChallengeResponseAuthentication": "yes",
       "CheckHostIP": "yes",
       "Cipher": "blowfish",
-      "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
+      "Ciphers": [
+        "aes128-ctr,aes192-ctr",
+        "aes256-ctr"
+      ],
       "ClearAllForwardings": "yes",
       "Compression": "yes",
       "CompressionLevel": 6,
@@ -459,7 +462,10 @@ func TestConfig_JsonString(t *testing.T) {
       "ControlMaster": "yes",
       "ControlPath": "/tmp/%L-%l-%n-%p-%u-%r-%C-%h",
       "ControlPersist": "yes",
-      "DynamicForward": "0.0.0.0:4242",
+      "DynamicForward": [
+        "0.0.0.0:4242",
+        "0.0.0.0:4343"
+      ],
       "EnableSSHKeysign": "yes",
       "EscapeChar": "~",
       "ExitOnForwardFailure": "yes",
@@ -469,7 +475,10 @@ func TestConfig_JsonString(t *testing.T) {
       "ForwardX11Timeout": 42,
       "ForwardX11Trusted": "yes",
       "GatewayPorts": "yes",
-      "GlobalKnownHostsFile": "/etc/ssh/ssh_known_hosts",
+      "GlobalKnownHostsFile": [
+        "/etc/ssh/ssh_known_hosts",
+        "/tmp/ssh_known_hosts"
+      ],
       "GSSAPIAuthentication": "no",
       "GSSAPIClientIdentity": "moul",
       "GSSAPIDelegateCredentials": "no",
@@ -483,17 +492,35 @@ func TestConfig_JsonString(t *testing.T) {
       "HostKeyAlgorithms": "ecdsa-sha2-nistp256-cert-v01@openssh.com",
       "HostKeyAlias": "z",
       "IdentitiesOnly": "yes",
-      "IdentityFile": "~/.ssh/identity",
+      "IdentityFile": [
+        "~/.ssh/identity",
+        "~/.ssh/identity2"
+      ],
       "IgnoreUnknown": "testtest",
-      "IPQoS": "lowdelay",
+      "IPQoS": [
+        "lowdelay",
+        "highdelay"
+      ],
       "KbdInteractiveAuthentication": "yes",
-      "KbdInteractiveDevices": "bsdauth",
-      "KexAlgorithms": "curve25519-sha256@libssh.org",
+      "KbdInteractiveDevices": [
+        "bsdauth",
+        "test"
+      ],
+      "KexAlgorithms": [
+        "curve25519-sha256@libssh.org",
+        "test"
+      ],
       "KeychainIntegration": "yes",
       "LocalCommand": "echo %h \u003e /tmp/logs",
-      "LocalForward": "0.0.0.0:1234",
+      "LocalForward": [
+        "0.0.0.0:1234",
+        "0.0.0.0:1235"
+      ],
       "LogLevel": "DEBUG3",
-      "MACs": "umac-64-etm@openssh.com,umac-128-etm@openssh.com",
+      "MACs": [
+        "umac-64-etm@openssh.com,umac-128-etm@openssh.com",
+        "test"
+      ],
       "Match": "all",
       "NoHostAuthenticationForLocalhost": "yes",
       "NumberOfPasswordPrompts": "3",
@@ -502,16 +529,25 @@ func TestConfig_JsonString(t *testing.T) {
       "PKCS11Provider": "/a/b/c/pkcs11.so",
       "Port": "22",
       "PreferredAuthentications": "gssapi-with-mic,hostbased,publickey",
-      "Protocol": "2",
+      "Protocol": [
+        "2",
+        "3"
+      ],
       "ProxyUseFdpass": "no",
       "PubkeyAuthentication": "yes",
       "RekeyLimit": "default none",
-      "RemoteForward": "0.0.0.0:1234",
+      "RemoteForward": [
+        "0.0.0.0:1234",
+        "0.0.0.0:1255"
+      ],
       "RequestTTY": "yes",
       "RevokedHostKeys": "/a/revoked-keys",
       "RhostsRSAAuthentication": "no",
       "RSAAuthentication": "yes",
-      "SendEnv": "CUSTOM_*,TEST",
+      "SendEnv": [
+        "CUSTOM_*,TEST",
+        "TEST2"
+      ],
       "ServerAliveCountMax": 3,
       "StreamLocalBindMask": "0177",
       "StreamLocalBindUnlink": "no",
@@ -522,7 +558,10 @@ func TestConfig_JsonString(t *testing.T) {
       "UpdateHostKeys": "ask",
       "UsePrivilegedPort": "no",
       "User": "moul",
-      "UserKnownHostsFile": "~/.ssh/known_hosts ~/.ssh/known_hosts2",
+      "UserKnownHostsFile": [
+        "~/.ssh/known_hosts ~/.ssh/known_hosts2",
+        "/tmp/known_hosts"
+      ],
       "VerifyHostKeyDNS": "no",
       "VisualHostKey": "yes",
       "XAuthLocation": "xauth",
@@ -566,7 +605,9 @@ func TestConfig_JsonString(t *testing.T) {
       "HostName": "1.2.3.4"
     },
     "bbb": {
-      "IdentityFile": "${NON_EXISTING_ENV_VAR}",
+      "IdentityFile": [
+        "${NON_EXISTING_ENV_VAR}"
+      ],
       "LocalCommand": "${ENV_VAR_LOCALCOMMAND:-hello}",
       "Port": "${ENV_VAR_PORT}",
       "User": "user-$ENV_VAR_USER-user",
@@ -715,7 +756,7 @@ func TestComputeHost(t *testing.T) {
 			host := config.Hosts["bbb"]
 			So(host.HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
 			So(host.Port, ShouldEqual, "${ENV_VAR_PORT}")
-			So(host.IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(host.IdentityFile[0], ShouldEqual, "${NON_EXISTING_ENV_VAR}")
 			So(host.LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(host.User, ShouldEqual, "user-$ENV_VAR_USER-user")
 
@@ -730,7 +771,8 @@ func TestComputeHost(t *testing.T) {
 
 			So(computed.HostName, ShouldEqual, "aaa")
 			So(computed.Port, ShouldEqual, "42")
-			So(computed.IdentityFile, ShouldEqual, "")
+			So(len(computed.IdentityFile), ShouldEqual, 1)
+			So(computed.IdentityFile[0], ShouldEqual, "")
 			So(computed.LocalCommand, ShouldEqual, "") // FIXME: it should be "hello"
 			So(computed.User, ShouldEqual, "user-ccc-user")
 		})
@@ -896,7 +938,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Hosts["bbb"].HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
 			So(config.Hosts["bbb"].Port, ShouldEqual, "${ENV_VAR_PORT}")
 			So(config.Hosts["bbb"].User, ShouldEqual, "user-$ENV_VAR_USER-user")
-			So(config.Hosts["bbb"].IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(config.Hosts["bbb"].IdentityFile[0], ShouldEqual, "${NON_EXISTING_ENV_VAR}")
 			So(config.Hosts["bbb"].LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
 			So(config.Hosts["ccc"].Port, ShouldEqual, "24")
@@ -924,7 +966,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Hosts["bbb"].HostName, ShouldEqual, "$ENV_VAR_HOSTNAME")
 			So(config.Hosts["bbb"].Port, ShouldEqual, "${ENV_VAR_PORT}")
 			So(config.Hosts["bbb"].User, ShouldEqual, "user-$ENV_VAR_USER-user")
-			So(config.Hosts["bbb"].IdentityFile, ShouldEqual, "${NON_EXISTING_ENV_VAR}")
+			So(config.Hosts["bbb"].IdentityFile[0], ShouldEqual, "${NON_EXISTING_ENV_VAR}")
 			So(config.Hosts["bbb"].LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(config.Hosts["ccc"].HostName, ShouldEqual, "5.6.7.8")
 			So(config.Hosts["ccc"].Port, ShouldEqual, "24")
@@ -1203,7 +1245,7 @@ func TestConfig_GetHostSafe(t *testing.T) {
 func TestConfig_String(t *testing.T) {
 	Convey("Testing Config.String", t, func() {
 		config := dummyConfig()
-		So(config.String(), ShouldEqual, `{"hosts":{"*.ddd":{"PasswordAuthentication":"yes","HostName":"1.3.5.7"},"empty":{},"nnn":{"Port":"26","Inherits":["mmm"]},"ooo1":{"Port":"23","Aliases":["ooo11","ooo12"]},"ooo2":{"Port":"24","Aliases":["ooo21","ooo22"]},"tata":{"Inherits":["tutu","titi","toto","tutu"]},"titi":{"Port":"23","User":"moul","HostName":"tata","ProxyCommand":"nc -v 4242","NoControlMasterMkdir":"true"},"tonton":{"ResolveNameservers":["a.com","1.2.3.4"]},"toto":{"HostName":"1.2.3.4"},"toto[1-5]toto":{"User":"toto1"},"toto[7-9]toto":{"User":"toto2"},"toutou":{"ResolveCommand":"dig -t %h"},"tutu":{"Inherits":["toto","tutu","*.ddd"],"Gateways":["titi","direct","1.2.3.4"]},"zzz":{"AddressFamily":"any","AskPassGUI":"yes","BatchMode":"no","CanonicalDomains":"42.am","CanonicalizeFallbackLocal":"no","CanonicalizeHostname":"yes","CanonicalizeMaxDots":"1","CanonicalizePermittedCNAMEs":"*.a.example.com:*.b.example.com:*.c.example.com","ChallengeResponseAuthentication":"yes","CheckHostIP":"yes","Cipher":"blowfish","Ciphers":"aes128-ctr,aes192-ctr,aes256-ctr","ClearAllForwardings":"yes","Compression":"yes","CompressionLevel":6,"ConnectionAttempts":"1","ConnectTimeout":10,"ControlMaster":"yes","ControlPath":"/tmp/%L-%l-%n-%p-%u-%r-%C-%h","ControlPersist":"yes","DynamicForward":"0.0.0.0:4242","EnableSSHKeysign":"yes","EscapeChar":"~","ExitOnForwardFailure":"yes","FingerprintHash":"sha256","ForwardAgent":"yes","ForwardX11":"yes","ForwardX11Timeout":42,"ForwardX11Trusted":"yes","GatewayPorts":"yes","GlobalKnownHostsFile":"/etc/ssh/ssh_known_hosts","GSSAPIAuthentication":"no","GSSAPIClientIdentity":"moul","GSSAPIDelegateCredentials":"no","GSSAPIKeyExchange":"no","GSSAPIRenewalForcesRekey":"no","GSSAPIServerIdentity":"gssapi.example.com","GSSAPITrustDns":"no","HashKnownHosts":"no","HostbasedAuthentication":"no","HostbasedKeyTypes":"*","HostKeyAlgorithms":"ecdsa-sha2-nistp256-cert-v01@openssh.com","HostKeyAlias":"z","IdentitiesOnly":"yes","IdentityFile":"~/.ssh/identity","IgnoreUnknown":"testtest","IPQoS":"lowdelay","KbdInteractiveAuthentication":"yes","KbdInteractiveDevices":"bsdauth","KexAlgorithms":"curve25519-sha256@libssh.org","KeychainIntegration":"yes","LocalCommand":"echo %h \u003e /tmp/logs","LocalForward":"0.0.0.0:1234","LogLevel":"DEBUG3","MACs":"umac-64-etm@openssh.com,umac-128-etm@openssh.com","Match":"all","NoHostAuthenticationForLocalhost":"yes","NumberOfPasswordPrompts":"3","PasswordAuthentication":"yes","PermitLocalCommand":"yes","PKCS11Provider":"/a/b/c/pkcs11.so","Port":"22","PreferredAuthentications":"gssapi-with-mic,hostbased,publickey","Protocol":"2","ProxyUseFdpass":"no","PubkeyAuthentication":"yes","RekeyLimit":"default none","RemoteForward":"0.0.0.0:1234","RequestTTY":"yes","RevokedHostKeys":"/a/revoked-keys","RhostsRSAAuthentication":"no","RSAAuthentication":"yes","SendEnv":"CUSTOM_*,TEST","ServerAliveCountMax":3,"StreamLocalBindMask":"0177","StreamLocalBindUnlink":"no","StrictHostKeyChecking":"ask","TCPKeepAlive":"yes","Tunnel":"yes","TunnelDevice":"any:any","UpdateHostKeys":"ask","UsePrivilegedPort":"no","User":"moul","UserKnownHostsFile":"~/.ssh/known_hosts ~/.ssh/known_hosts2","VerifyHostKeyDNS":"no","VisualHostKey":"yes","XAuthLocation":"xauth","HostName":"zzz.com","ProxyCommand":"nc %h %p"}},"templates":{"mmm":{"Port":"25","User":"mmmm","HostName":"5.5.5.5","Inherits":["tata"]}},"defaults":{"Port":"22","User":"root"},"asshknownhostfile":"~/.ssh/assh_known_hosts"}`)
+		So(config.String(), ShouldEqual, `{"hosts":{"*.ddd":{"PasswordAuthentication":"yes","HostName":"1.3.5.7"},"empty":{},"nnn":{"Port":"26","Inherits":["mmm"]},"ooo1":{"Port":"23","Aliases":["ooo11","ooo12"]},"ooo2":{"Port":"24","Aliases":["ooo21","ooo22"]},"tata":{"Inherits":["tutu","titi","toto","tutu"]},"titi":{"Port":"23","User":"moul","HostName":"tata","ProxyCommand":"nc -v 4242","NoControlMasterMkdir":"true"},"tonton":{"ResolveNameservers":["a.com","1.2.3.4"]},"toto":{"HostName":"1.2.3.4"},"toto[1-5]toto":{"User":"toto1"},"toto[7-9]toto":{"User":"toto2"},"toutou":{"ResolveCommand":"dig -t %h"},"tutu":{"Inherits":["toto","tutu","*.ddd"],"Gateways":["titi","direct","1.2.3.4"]},"zzz":{"AddressFamily":"any","AskPassGUI":"yes","BatchMode":"no","CanonicalDomains":"42.am","CanonicalizeFallbackLocal":"no","CanonicalizeHostname":"yes","CanonicalizeMaxDots":"1","CanonicalizePermittedCNAMEs":"*.a.example.com:*.b.example.com:*.c.example.com","ChallengeResponseAuthentication":"yes","CheckHostIP":"yes","Cipher":"blowfish","Ciphers":["aes128-ctr,aes192-ctr","aes256-ctr"],"ClearAllForwardings":"yes","Compression":"yes","CompressionLevel":6,"ConnectionAttempts":"1","ConnectTimeout":10,"ControlMaster":"yes","ControlPath":"/tmp/%L-%l-%n-%p-%u-%r-%C-%h","ControlPersist":"yes","DynamicForward":["0.0.0.0:4242","0.0.0.0:4343"],"EnableSSHKeysign":"yes","EscapeChar":"~","ExitOnForwardFailure":"yes","FingerprintHash":"sha256","ForwardAgent":"yes","ForwardX11":"yes","ForwardX11Timeout":42,"ForwardX11Trusted":"yes","GatewayPorts":"yes","GlobalKnownHostsFile":["/etc/ssh/ssh_known_hosts","/tmp/ssh_known_hosts"],"GSSAPIAuthentication":"no","GSSAPIClientIdentity":"moul","GSSAPIDelegateCredentials":"no","GSSAPIKeyExchange":"no","GSSAPIRenewalForcesRekey":"no","GSSAPIServerIdentity":"gssapi.example.com","GSSAPITrustDns":"no","HashKnownHosts":"no","HostbasedAuthentication":"no","HostbasedKeyTypes":"*","HostKeyAlgorithms":"ecdsa-sha2-nistp256-cert-v01@openssh.com","HostKeyAlias":"z","IdentitiesOnly":"yes","IdentityFile":["~/.ssh/identity","~/.ssh/identity2"],"IgnoreUnknown":"testtest","IPQoS":["lowdelay","highdelay"],"KbdInteractiveAuthentication":"yes","KbdInteractiveDevices":["bsdauth","test"],"KexAlgorithms":["curve25519-sha256@libssh.org","test"],"KeychainIntegration":"yes","LocalCommand":"echo %h \u003e /tmp/logs","LocalForward":["0.0.0.0:1234","0.0.0.0:1235"],"LogLevel":"DEBUG3","MACs":["umac-64-etm@openssh.com,umac-128-etm@openssh.com","test"],"Match":"all","NoHostAuthenticationForLocalhost":"yes","NumberOfPasswordPrompts":"3","PasswordAuthentication":"yes","PermitLocalCommand":"yes","PKCS11Provider":"/a/b/c/pkcs11.so","Port":"22","PreferredAuthentications":"gssapi-with-mic,hostbased,publickey","Protocol":["2","3"],"ProxyUseFdpass":"no","PubkeyAuthentication":"yes","RekeyLimit":"default none","RemoteForward":["0.0.0.0:1234","0.0.0.0:1255"],"RequestTTY":"yes","RevokedHostKeys":"/a/revoked-keys","RhostsRSAAuthentication":"no","RSAAuthentication":"yes","SendEnv":["CUSTOM_*,TEST","TEST2"],"ServerAliveCountMax":3,"StreamLocalBindMask":"0177","StreamLocalBindUnlink":"no","StrictHostKeyChecking":"ask","TCPKeepAlive":"yes","Tunnel":"yes","TunnelDevice":"any:any","UpdateHostKeys":"ask","UsePrivilegedPort":"no","User":"moul","UserKnownHostsFile":["~/.ssh/known_hosts ~/.ssh/known_hosts2","/tmp/known_hosts"],"VerifyHostKeyDNS":"no","VisualHostKey":"yes","XAuthLocation":"xauth","HostName":"zzz.com","ProxyCommand":"nc %h %p"}},"templates":{"mmm":{"Port":"25","User":"mmmm","HostName":"5.5.5.5","Inherits":["tata"]}},"defaults":{"Port":"22","User":"root"},"asshknownhostfile":"~/.ssh/assh_known_hosts"}`)
 	})
 }
 
@@ -1341,6 +1383,7 @@ Host zzz
   ControlPath /tmp/%L-%l-%n-%p-%u-%r-%C-%h
   ControlPersist yes
   DynamicForward 0.0.0.0:4242
+  DynamicForward 0.0.0.0:4343
   EnableSSHKeysign yes
   EscapeChar ~
   ExitOnForwardFailure yes
@@ -1350,7 +1393,7 @@ Host zzz
   ForwardX11Timeout 42
   ForwardX11Trusted yes
   GatewayPorts yes
-  GlobalKnownHostsFile /etc/ssh/ssh_known_hosts
+  GlobalKnownHostsFile /etc/ssh/ssh_known_hosts /tmp/ssh_known_hosts
   GSSAPIAuthentication no
   GSSAPIClientIdentity moul
   GSSAPIDelegateCredentials no
@@ -1365,16 +1408,18 @@ Host zzz
   HostKeyAlias z
   IdentitiesOnly yes
   IdentityFile ~/.ssh/identity
+  IdentityFile ~/.ssh/identity2
   IgnoreUnknown testtest
-  IPQoS lowdelay
+  IPQoS lowdelay highdelay
   KbdInteractiveAuthentication yes
-  KbdInteractiveDevices bsdauth
-  KexAlgorithms curve25519-sha256@libssh.org
+  KbdInteractiveDevices bsdauth,test
+  KexAlgorithms curve25519-sha256@libssh.org,test
   KeychainIntegration yes
   LocalCommand echo %h > /tmp/logs
   LocalForward 0.0.0.0:1234
+  LocalForward 0.0.0.0:1235
   LogLevel DEBUG3
-  MACs umac-64-etm@openssh.com,umac-128-etm@openssh.com
+  MACs umac-64-etm@openssh.com,umac-128-etm@openssh.com,test
   Match all
   NoHostAuthenticationForLocalhost yes
   NumberOfPasswordPrompts 3
@@ -1383,16 +1428,18 @@ Host zzz
   PKCS11Provider /a/b/c/pkcs11.so
   Port 22
   PreferredAuthentications gssapi-with-mic,hostbased,publickey
-  Protocol 2
+  Protocol 2,3
   ProxyUseFdpass no
   PubkeyAuthentication yes
   RekeyLimit default none
   RemoteForward 0.0.0.0:1234
+  RemoteForward 0.0.0.0:1255
   RequestTTY yes
   RevokedHostKeys /a/revoked-keys
   RhostsRSAAuthentication no
   RSAAuthentication yes
   SendEnv CUSTOM_*,TEST
+  SendEnv TEST2
   ServerAliveCountMax 3
   StreamLocalBindMask 0177
   StreamLocalBindUnlink no
@@ -1403,7 +1450,7 @@ Host zzz
   UpdateHostKeys ask
   UsePrivilegedPort no
   User moul
-  UserKnownHostsFile ~/.ssh/known_hosts ~/.ssh/known_hosts2
+  UserKnownHostsFile ~/.ssh/known_hosts ~/.ssh/known_hosts2 /tmp/known_hosts
   VerifyHostKeyDNS no
   VisualHostKey yes
   XAuthLocation xauth
