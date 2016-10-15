@@ -110,13 +110,13 @@ type Host struct {
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
-	Inherits             []string   `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
-	Gateways             []string   `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
-	ResolveNameservers   []string   `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
-	ResolveCommand       string     `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
-	NoControlMasterMkdir string     `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
-	Aliases              []string   `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
-	Hooks                *HostHooks `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
+	Inherits             composeyaml.Stringorslice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
+	Gateways             composeyaml.Stringorslice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
+	ResolveNameservers   composeyaml.Stringorslice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
+	ResolveCommand       string                    `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
+	NoControlMasterMkdir string                    `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
+	Aliases              composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
+	Hooks                *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
 
 	// private assh fields
 	knownHosts []string
