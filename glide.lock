@@ -1,14 +1,22 @@
-hash: bbd6140b8ec60ebcfbecd808c4b79cf375fec3adc372efcb7b5a7c852749ff2a
-updated: 2016-07-30T16:06:51.982754778+02:00
+hash: 8281cf015a53a23b35321e80207da975eb4cdec6fdcbd479691d0a45d86e39b7
+updated: 2016-10-15T20:50:50.183076536+02:00
 imports:
 - name: github.com/bugsnag/osext
   version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
 - name: github.com/deckarep/gosx-notifier
   version: 9daaf8a4715ebe4daf300036644762fe27d3aded
+- name: github.com/docker/docker
+  version: 2a3ba03424cd5286f4410e2c0c1fb093f297c572
+  subpackages:
+  - api/types/strslice
 - name: github.com/docker/go-units
-  version: f2d77a61e3c169b43402a0a1e84f06daf29b8190
+  version: f2145db703495b2e525c59662db69a7344b00bb8
+- name: github.com/docker/libcompose
+  version: fbdac0a6a80837c63eb6c8f43514f7bb3f32df6c
+  subpackages:
+  - yaml
 - name: github.com/dustin/go-humanize
-  version: 2fcb5204cdc65b4bec9fd0a87606bb0d0e3c54e8
+  version: bd88f87ad3a420f7bcf05e90566fd1ceb351fa7f
 - name: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
 - name: github.com/go-ole/go-ole
@@ -58,7 +66,7 @@ imports:
 - name: github.com/urfave/cli
   version: 11c134509d89c2018675f369955218a180dc7428
 - name: golang.org/x/crypto
-  version: bc89c496413265e715159bdc8478ee9a92fdc265
+  version: 5f31782cfb2b6373211f8f9fbf31283fa234b570
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -71,4 +79,4 @@ imports:
   - unix
 - name: gopkg.in/yaml.v2
   version: 7ad95dd0798a40da1ccdff6dff35fd177b5edf40
-devImports: []
+testImports: []

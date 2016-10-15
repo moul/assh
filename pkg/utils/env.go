@@ -53,10 +53,19 @@ func ExpandUser(path string) (string, error) {
 	return path, nil
 }
 
-// expandField expands environment variables in field
+// ExpandField expands environment variables in field
 func ExpandField(input string) string {
 	if input == "" {
 		return ""
 	}
 	return ExpandEnvSafe(input)
+}
+
+// ExpandSliceField expands environment variables in every entries of a slice field
+func ExpandSliceField(input []string) []string {
+	ret := []string{}
+	for _, entry := range input {
+		ret = append(ret, ExpandField(entry))
+	}
+	return ret
 }

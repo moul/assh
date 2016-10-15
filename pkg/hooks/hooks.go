@@ -3,13 +3,12 @@ package hooks
 import (
 	"fmt"
 	"strings"
+
+	composeyaml "github.com/docker/libcompose/yaml"
 )
 
 // Hooks represents a slice of Hook
-type Hooks []Hook
-
-// Hook is a string
-type Hook string
+type Hooks composeyaml.Stringorslice
 
 // HookDriver represents a hook driver
 type HookDriver interface {
@@ -55,7 +54,7 @@ func (hd *HookDrivers) Close() []error {
 }
 
 // New returns an HookDriver instance
-func New(expr Hook) (HookDriver, error) {
+func New(expr string) (HookDriver, error) {
 	driverName := strings.Split(string(expr), " ")[0]
 	param := strings.Join(strings.Split(string(expr), " ")[1:], " ")
 	switch driverName {
