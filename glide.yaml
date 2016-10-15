@@ -62,3 +62,6 @@ import:
 - package: github.com/haklop/gnotifier
 - package: github.com/guelfey/go.dbus
 - package: github.com/dustin/go-humanize
+- package: github.com/docker/libcompose
+  subpackages:
+  - yaml
