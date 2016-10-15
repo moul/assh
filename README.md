@@ -118,13 +118,11 @@ hosts:
 
   hostb:
     Hostname: 5.6.7.8
-    Gateways:
-    - hosta
+    Gateways: hosta
 
   hostc:
     Hostname: 9.10.11.12
-    Gateways:
-    - hostb
+    Gateways: hostb
 
   hostd:
     Hostname: 13.14.15.16
@@ -258,8 +256,7 @@ Usage: `exec <binary> [args...]`
 ```yaml
 defaults:
   Hooks:
-    OnConnect:
-    - exec echo '{{.Host}}' | jq .
+    OnConnect: exec echo '{{.Host}}' | jq .
 # executes: `echo '{"HostName":"localhost","Port":"22","User":"moul","ControlPersist":"yes",...}' | jq .
 # which results in printing a pretty JSON of the host
 # {
@@ -274,8 +271,7 @@ defaults:
 ```yaml
 defaults:
   Hooks:
-    OnConnect:
-    - exec echo 'New SSH connection to {{.Host.Prototype}}.' | mail -s "SSH connection journal" m+assh@42.am
+    OnConnect: exec echo 'New SSH connection to {{.Host.Prototype}}.' | mail -s "SSH connection journal" m+assh@42.am
 # send an email with the connection prototype
 ```
 
@@ -325,8 +321,7 @@ Usage: `notify <line:string...>`
 ```yaml
 defaults:
   Hooks:
-    OnConnect:
-    - notify New SSH connection to {{.Host.Prototype}}.
+    OnConnect: notify New SSH connection to {{.Host.Prototype}}.
 ```
 
 ![](https://github.com/moul/advanced-ssh-config/raw/master/resources/new_connection_notification.png)
@@ -372,8 +367,7 @@ hosts:
     # ssh maggie ->   ssh 5.6.7.8 -u maggie       <- direct access
     #              or ssh 5.6.7.8/homer -u maggie   <- using homer as a gateway
     User: maggie
-    Inherits:
-    - bart                     # inherits rules from "bart"
+    Inherits: bart             # inherits rules from "bart"
 
   bart-access:
     # ssh bart-access ->  ssh home.simpson.springfield.us -u bart
@@ -403,8 +397,7 @@ hosts:
     # same as above, but with fixed hostname
     Port: 24
     Hostname: dolphin
-    Aliases:
-    - ecco
+    Aliases: ecco
 
   schooltemplate:
     User: student
@@ -415,8 +408,7 @@ hosts:
     # ssh school ->   ssh gw.school.com -l student -o ForwardX11=no -i ~/.ssh/school-rsa
     Hostname: gw.school.com
     ForwardX11: no
-    Inherits:
-    - schooltemplate
+    Inherits: schooltemplate
 
   "expanded-host[0-7]*":
     # ssh somehost2042 ->       ssh somehost2042.some.zone
@@ -424,10 +416,8 @@ hosts:
 
   vm-*.school.com:
     # ssh vm-42.school.com ->   ssh vm-42.school.com/gw.school.com -l student -o ForwardX11=yes -i ~/.ssh/school-rsa
-    Gateways:
-    - schoolgw
-    Inherits:
-    - schooltemplate
+    Gateways: schoolgw
+    Inherits: schooltemplate
     # do not automatically create `ControlPath` -> may result in error
     NoControlMasterMkdir: true
 
@@ -822,8 +812,7 @@ If your ssh client doesn't support this feature, you can configure a custom `Pro
 hosts:
   myserver:
     host: 1.2.3.4
-    gateways:
-    - mygateway
+    gateways: mygateway
     # configure a custom proxycommand
     proxycommand: /bin/nc %h %p
 
