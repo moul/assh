@@ -699,6 +699,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Accepting string or slices for list options ([#119](https://github.com/moul/advanced-ssh-config/issues/119))
 * Add new `PubkeyAcceptedKeyTypes` OpenSSH 7+ field ([#175](https://github.com/moul/advanced-ssh-config/issues/175))
 * Gracefully report an error when calling assh without configuration file ([#171](https://github.com/moul/advanced-ssh-config/issues/171))
 * Fix `written bytes` calculation ([@quentinperez](https://github.com/quentinperez))
