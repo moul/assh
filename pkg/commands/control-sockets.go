@@ -102,7 +102,7 @@ func cmdCsFlush(c *cli.Context) error {
 	}
 
 	if success > 0 {
-		fmt.Printf("Closed %d control sockets.", success)
+		fmt.Printf("Closed %d control sockets.\n", success)
 	}
 
 	return nil
