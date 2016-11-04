@@ -698,6 +698,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Support of `write`, `notify` and `exec` hook drivers
 * Add `assh config json` command
 * Add `assh config {build,json} --expand` option
+* Round the hook's `ConnectionDuration` variable value
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.1...master)
 
