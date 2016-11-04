@@ -19,7 +19,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/dustin/go-humanize"
+	humanize "github.com/dustin/go-humanize"
 	shlex "github.com/flynn/go-shlex"
 	"github.com/urfave/cli"
 
@@ -339,6 +339,8 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	stats.DisconnectedAt = time.Now()
 	stats.ConnectionDuration = stats.DisconnectedAt.Sub(stats.ConnectedAt)
 	averageSpeed := float64(stats.WrittenBytes) / stats.ConnectionDuration.Seconds()
+	// round duraction
+	stats.ConnectionDuration = ((stats.ConnectionDuration + time.Second/2) / time.Second) * time.Second
 	stats.AverageSpeed = math.Ceil(averageSpeed*1000) / 1000
 	// human
 	stats.WrittenBytesHuman = humanize.Bytes(stats.WrittenBytes)
