@@ -110,13 +110,13 @@ type Host struct {
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
-	Inherits             composeyaml.Stringorslice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
-	Gateways             composeyaml.Stringorslice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
-	ResolveNameservers   composeyaml.Stringorslice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
-	ResolveCommand       string                    `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
-	NoControlMasterMkdir string                    `yaml:"nocontrolmastermkdir,omitempty,flow" json:"NoControlMasterMkdir,omitempty"`
-	Aliases              composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
-	Hooks                *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
+	Inherits           composeyaml.Stringorslice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
+	Gateways           composeyaml.Stringorslice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
+	ResolveNameservers composeyaml.Stringorslice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
+	ResolveCommand     string                    `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
+	ControlMasterMkdir string                    `yaml:"controlmastermkdir,omitempty,flow" json:"ControlMasterMkdir,omitempty"`
+	Aliases            composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
+	Hooks              *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
 
 	// private assh fields
 	knownHosts []string
@@ -474,7 +474,7 @@ func (h *Host) Options() OptionsList {
 	//Gateways
 	//ResolveNameservers
 	//ResolveCommand
-	//NoControlMasterMkdir
+	//ControlMasterMkdir
 	//Aliases
 	//Hooks
 
@@ -970,10 +970,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.ResolveCommand = utils.ExpandField(h.ResolveCommand)
 
-	if h.NoControlMasterMkdir == "" {
-		h.NoControlMasterMkdir = defaults.NoControlMasterMkdir
+	if h.ControlMasterMkdir == "" {
+		h.ControlMasterMkdir = defaults.ControlMasterMkdir
 	}
-	h.NoControlMasterMkdir = utils.ExpandField(h.NoControlMasterMkdir)
+	h.ControlMasterMkdir = utils.ExpandField(h.ControlMasterMkdir)
 
 	if len(h.Gateways) == 0 {
 		h.Gateways = defaults.Gateways
@@ -1313,8 +1313,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.HostName != "" {
 			fmt.Fprintf(w, "  # HostName: %s\n", h.HostName)
 		}
-		if BoolVal(h.NoControlMasterMkdir) {
-			fmt.Fprintf(w, "  # NoControlMasterMkdir: true\n")
+		if BoolVal(h.ControlMasterMkdir) {
+			fmt.Fprintf(w, "  # ControlMasterMkdir: true\n")
 		}
 		if len(h.Inherits) > 0 {
 			fmt.Fprintf(w, "  # Inherits: [%s]\n", strings.Join(h.Inherits, ", "))
