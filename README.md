@@ -143,7 +143,7 @@ hosts:
 
 * Automatically regenerates `~/.ssh/config` file when needed
 * Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically run in debug mode)
-* Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be disabled with the `NoControlMasterMkdir: true` configuration in host or globally.
+* Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be enabled with the `ControlMasterMkdir: true` configuration in host or globally.
 
 ### Hooks
 
@@ -419,7 +419,7 @@ hosts:
     Gateways: schoolgw
     Inherits: schooltemplate
     # do not automatically create `ControlPath` -> may result in error
-    NoControlMasterMkdir: true
+    ControlMasterMkdir: true
 
   "*.shortcut1":
     ResolveCommand: /bin/sh -c "echo %h | sed s/.shortcut1/.my-long-domain-name.com/"
@@ -689,6 +689,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Remove the `NoControlMasterMkdir` option, and add the `ControlMasterMkdir` option instead ([#173](https://github.com/moul/advanced-ssh-config/issues/173))
 * Accepting string or slices for list options ([#119](https://github.com/moul/advanced-ssh-config/issues/119))
 * Add new `PubkeyAcceptedKeyTypes` OpenSSH 7+ field ([#175](https://github.com/moul/advanced-ssh-config/issues/175))
 * Gracefully report an error when calling assh without configuration file ([#171](https://github.com/moul/advanced-ssh-config/issues/171))
