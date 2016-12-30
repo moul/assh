@@ -27,7 +27,7 @@ func cmdWrapper(c *cli.Context) error {
 		}
 	}
 	for _, flag := range config.SSHStringFlags {
-		if val := c.String(flag); val != "" {
+		for _, val := range c.StringSlice(flag) {
 			options = append(options, fmt.Sprintf("-%s", flag))
 			options = append(options, val)
 		}
