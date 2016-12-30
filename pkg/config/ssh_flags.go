@@ -13,7 +13,6 @@ var SSHStringFlags = []string{"b", "c", "D", "E", "e", "F", "I", "i", "L", "l", 
 
 func init() {
 	// Populate SSHFlags
-	// FIXME: support slice flags (-O a -O b -O c === []string{"a", "b", "c"}
 	// FIXME: support count flags (-vvv == -v -v -v)
 	// FIXME: support joined bool flags (-it == -i -t)
 	for _, flag := range SSHBoolFlags {
@@ -22,9 +21,9 @@ func init() {
 		})
 	}
 	for _, flag := range SSHStringFlags {
-		SSHFlags = append(SSHFlags, cli.StringFlag{
-			Name:  flag,
-			Value: "",
+		SSHFlags = append(SSHFlags, cli.StringSliceFlag{
+			Name: flag,
+			//Value: "",
 		})
 	}
 }
