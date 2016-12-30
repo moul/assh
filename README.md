@@ -689,6 +689,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
+* Support multiple string arguments of the same type on `assh wrapper ssh` ([#185](https://github.com/moul/advanced-ssh-config/issues/185))
 * Remove the `NoControlMasterMkdir` option, and add the `ControlMasterMkdir` option instead ([#173](https://github.com/moul/advanced-ssh-config/issues/173))
 * Accepting string or slices for list options ([#119](https://github.com/moul/advanced-ssh-config/issues/119))
 * Add new `PubkeyAcceptedKeyTypes` OpenSSH 7+ field ([#175](https://github.com/moul/advanced-ssh-config/issues/175))
