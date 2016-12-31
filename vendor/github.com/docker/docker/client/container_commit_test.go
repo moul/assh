@@ -67,7 +67,7 @@ func TestContainerCommit(t *testing.T) {
 			if len(changes) != len(expectedChanges) {
 				return nil, fmt.Errorf("expected container changes size to be '%d', got %d", len(expectedChanges), len(changes))
 			}
-			b, err := json.Marshal(types.ContainerCommitResponse{
+			b, err := json.Marshal(types.IDResponse{
 				ID: "new_container_id",
 			})
 			if err != nil {
@@ -91,6 +91,6 @@ func TestContainerCommit(t *testing.T) {
 		t.Fatal(err)
 	}
 	if r.ID != "new_container_id" {
-		t.Fatalf("expected `container_id`, got %s", r.ID)
+		t.Fatalf("expected `new_container_id`, got %s", r.ID)
 	}
 }

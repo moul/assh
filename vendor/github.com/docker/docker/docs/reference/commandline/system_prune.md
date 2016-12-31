@@ -1,8 +1,17 @@
 ---
 title: "system prune"
 description: "Remove unused data"
-keywords: [system, prune, delete, remove]
+keywords: "system, prune, delete, remove"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # system prune
 
@@ -12,12 +21,12 @@ Usage:	docker system prune [OPTIONS]
 Delete unused data
 
 Options:
-  -a, --all     Remove all unused images not just dangling ones
+  -a, --all     Remove all unused data not just dangling ones
   -f, --force   Do not prompt for confirmation
       --help    Print usage
 ```
 
-Remove all unused containers, volumes and images (both dangling and unreferenced).
+Remove all unused containers, volumes, networks and images (both dangling and unreferenced).
 
 Example output:
 
@@ -26,9 +35,11 @@ $ docker system prune -a
 WARNING! This will remove:
 	- all stopped containers
 	- all volumes not used by at least one container
+	- all networks not used by at least one container
 	- all images without at least one container associated to them
 Are you sure you want to continue? [y/N] y
-Deleted Containers:0998aa37185a1a7036b0e12cf1ac1b6442dcfa30a5c9650a42ed5010046f195b
+Deleted Containers:
+0998aa37185a1a7036b0e12cf1ac1b6442dcfa30a5c9650a42ed5010046f195b
 73958bfb884fa81fa4cc6baf61055667e940ea2357b4036acbbe25a60f442a4d
 
 Deleted Volumes:
@@ -59,8 +70,10 @@ Total reclaimed space: 13.5 MB
 * [volume ls](volume_ls.md)
 * [volume inspect](volume_inspect.md)
 * [volume rm](volume_rm.md)
-* [Understand Data Volumes](../../tutorials/dockervolumes.md)
+* [volume prune](volume_prune.md)
+* [Understand Data Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/)
 * [system df](system_df.md)
 * [container prune](container_prune.md)
 * [image prune](image_prune.md)
+* [network prune](network_prune.md)
 * [system prune](system_prune.md)

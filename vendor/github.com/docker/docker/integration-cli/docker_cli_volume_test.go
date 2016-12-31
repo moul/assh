@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -15,8 +16,8 @@ import (
 func (s *DockerSuite) TestVolumeCLICreate(c *check.C) {
 	dockerCmd(c, "volume", "create")
 
-	_, err := runCommand(exec.Command(dockerBinary, "volume", "create", "-d", "nosuchdriver"))
-	c.Assert(err, check.Not(check.IsNil))
+	_, _, err := dockerCmdWithError("volume", "create", "-d", "nosuchdriver")
+	c.Assert(err, check.NotNil)
 
 	// test using hidden --name option
 	out, _ := dockerCmd(c, "volume", "create", "--name=test")
@@ -26,21 +27,6 @@ func (s *DockerSuite) TestVolumeCLICreate(c *check.C) {
 	out, _ = dockerCmd(c, "volume", "create", "test2")
 	name = strings.TrimSpace(out)
 	c.Assert(name, check.Equals, "test2")
-}
-
-func (s *DockerSuite) TestVolumeCLICreateOptionConflict(c *check.C) {
-	dockerCmd(c, "volume", "create", "test")
-	out, _, err := dockerCmdWithError("volume", "create", "test", "--driver", "nosuchdriver")
-	c.Assert(err, check.NotNil, check.Commentf("volume create exception name already in use with another driver"))
-	c.Assert(out, checker.Contains, "A volume named test already exists")
-
-	out, _ = dockerCmd(c, "volume", "inspect", "--format={{ .Driver }}", "test")
-	_, _, err = dockerCmdWithError("volume", "create", "test", "--driver", strings.TrimSpace(out))
-	c.Assert(err, check.IsNil)
-
-	// make sure hidden --name option conflicts with positional arg name
-	out, _, err = dockerCmdWithError("volume", "create", "--name", "test2", "test2")
-	c.Assert(err, check.NotNil, check.Commentf("Conflicting options: either specify --name or provide positional arg, not both"))
 }
 
 func (s *DockerSuite) TestVolumeCLIInspect(c *check.C) {
@@ -264,6 +250,7 @@ func (s *DockerSuite) TestVolumeCLIRm(c *check.C) {
 	)
 }
 
+// FIXME(vdemeester) should be a unit test in cli/command/volume package
 func (s *DockerSuite) TestVolumeCLINoArgs(c *check.C) {
 	out, _ := dockerCmd(c, "volume")
 	// no args should produce the cmd usage output
@@ -271,15 +258,20 @@ func (s *DockerSuite) TestVolumeCLINoArgs(c *check.C) {
 	c.Assert(out, checker.Contains, usage)
 
 	// invalid arg should error and show the command usage on stderr
-	_, stderr, _, err := runCommandWithStdoutStderr(exec.Command(dockerBinary, "volume", "somearg"))
-	c.Assert(err, check.NotNil, check.Commentf(stderr))
-	c.Assert(stderr, checker.Contains, usage)
+	icmd.RunCommand(dockerBinary, "volume", "somearg").Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Error:    "exit status 1",
+		Err:      usage,
+	})
 
 	// invalid flag should error and show the flag error and cmd usage
-	_, stderr, _, err = runCommandWithStdoutStderr(exec.Command(dockerBinary, "volume", "--no-such-flag"))
-	c.Assert(err, check.NotNil, check.Commentf(stderr))
-	c.Assert(stderr, checker.Contains, usage)
-	c.Assert(stderr, checker.Contains, "unknown flag: --no-such-flag")
+	result := icmd.RunCommand(dockerBinary, "volume", "--no-such-flag")
+	result.Assert(c, icmd.Expected{
+		ExitCode: 125,
+		Error:    "exit status 125",
+		Err:      usage,
+	})
+	c.Assert(result.Stderr(), checker.Contains, "unknown flag: --no-such-flag")
 }
 
 func (s *DockerSuite) TestVolumeCLIInspectTmplError(c *check.C) {
@@ -310,6 +302,7 @@ func (s *DockerSuite) TestVolumeCLICreateWithOpts(c *check.C) {
 			c.Assert(info[4], checker.Equals, "tmpfs")
 			c.Assert(info[5], checker.Contains, "uid=1000")
 			c.Assert(info[5], checker.Contains, "size=1024k")
+			break
 		}
 	}
 	c.Assert(found, checker.Equals, true)
@@ -417,4 +410,25 @@ func (s *DockerSuite) TestVolumeCLIRmForce(c *check.C) {
 	dockerCmd(c, "volume", "create", "test")
 	out, _ = dockerCmd(c, "volume", "ls")
 	c.Assert(out, checker.Contains, name)
+}
+
+func (s *DockerSuite) TestVolumeCliInspectWithVolumeOpts(c *check.C) {
+	testRequires(c, DaemonIsLinux)
+
+	// Without options
+	name := "test1"
+	dockerCmd(c, "volume", "create", "-d", "local", name)
+	out, _ := dockerCmd(c, "volume", "inspect", "--format={{ .Options }}", name)
+	c.Assert(strings.TrimSpace(out), checker.Contains, "map[]")
+
+	// With options
+	name = "test2"
+	k1, v1 := "type", "tmpfs"
+	k2, v2 := "device", "tmpfs"
+	k3, v3 := "o", "size=1m,uid=1000"
+	dockerCmd(c, "volume", "create", "-d", "local", name, "--opt", fmt.Sprintf("%s=%s", k1, v1), "--opt", fmt.Sprintf("%s=%s", k2, v2), "--opt", fmt.Sprintf("%s=%s", k3, v3))
+	out, _ = dockerCmd(c, "volume", "inspect", "--format={{ .Options }}", name)
+	c.Assert(strings.TrimSpace(out), checker.Contains, fmt.Sprintf("%s:%s", k1, v1))
+	c.Assert(strings.TrimSpace(out), checker.Contains, fmt.Sprintf("%s:%s", k2, v2))
+	c.Assert(strings.TrimSpace(out), checker.Contains, fmt.Sprintf("%s:%s", k3, v3))
 }

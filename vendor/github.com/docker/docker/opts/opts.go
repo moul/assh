@@ -2,7 +2,9 @@ package opts
 
 import (
 	"fmt"
+	"math/big"
 	"net"
+	"path"
 	"regexp"
 	"strings"
 
@@ -105,6 +107,12 @@ func (opts *ListOpts) Len() int {
 // Type returns a string name for this Option type
 func (opts *ListOpts) Type() string {
 	return "list"
+}
+
+// WithValidator returns the ListOpts with validator set.
+func (opts *ListOpts) WithValidator(validator ValidatorFctType) *ListOpts {
+	opts.validator = validator
+	return opts
 }
 
 // NamedOption is an interface that list and map options
@@ -224,6 +232,15 @@ func ValidateIPAddress(val string) (string, error) {
 	return "", fmt.Errorf("%s is not an ip address", val)
 }
 
+// ValidateMACAddress validates a MAC address.
+func ValidateMACAddress(val string) (string, error) {
+	_, err := net.ParseMAC(strings.TrimSpace(val))
+	if err != nil {
+		return "", err
+	}
+	return val, nil
+}
+
 // ValidateDNSSearch validates domain for resolvconf search configuration.
 // A zero length domain is represented by a dot (.).
 func ValidateDNSSearch(val string) (string, error) {
@@ -318,4 +335,70 @@ func (o *FilterOpt) Type() string {
 // Value returns the value of this option
 func (o *FilterOpt) Value() filters.Args {
 	return o.filter
+}
+
+// NanoCPUs is a type for fixed point fractional number.
+type NanoCPUs int64
+
+// String returns the string format of the number
+func (c *NanoCPUs) String() string {
+	return big.NewRat(c.Value(), 1e9).FloatString(3)
+}
+
+// Set sets the value of the NanoCPU by passing a string
+func (c *NanoCPUs) Set(value string) error {
+	cpus, err := ParseCPUs(value)
+	*c = NanoCPUs(cpus)
+	return err
+}
+
+// Type returns the type
+func (c *NanoCPUs) Type() string {
+	return "decimal"
+}
+
+// Value returns the value in int64
+func (c *NanoCPUs) Value() int64 {
+	return int64(*c)
+}
+
+// ParseCPUs takes a string ratio and returns an integer value of nano cpus
+func ParseCPUs(value string) (int64, error) {
+	cpu, ok := new(big.Rat).SetString(value)
+	if !ok {
+		return 0, fmt.Errorf("failed to parse %v as a rational number", value)
+	}
+	nano := cpu.Mul(cpu, big.NewRat(1e9, 1))
+	if !nano.IsInt() {
+		return 0, fmt.Errorf("value is too precise")
+	}
+	return nano.Num().Int64(), nil
+}
+
+// ParseLink parses and validates the specified string as a link format (name:alias)
+func ParseLink(val string) (string, string, error) {
+	if val == "" {
+		return "", "", fmt.Errorf("empty string specified for links")
+	}
+	arr := strings.Split(val, ":")
+	if len(arr) > 2 {
+		return "", "", fmt.Errorf("bad format for links: %s", val)
+	}
+	if len(arr) == 1 {
+		return val, val, nil
+	}
+	// This is kept because we can actually get a HostConfig with links
+	// from an already created container and the format is not `foo:bar`
+	// but `/foo:/c1/bar`
+	if strings.HasPrefix(arr[0], "/") {
+		_, alias := path.Split(arr[1])
+		return arr[0][1:], alias, nil
+	}
+	return arr[0], arr[1], nil
+}
+
+// ValidateLink validates that the specified string has a valid link format (containerName:alias).
+func ValidateLink(val string) (string, error) {
+	_, _, err := ParseLink(val)
+	return val, err
 }

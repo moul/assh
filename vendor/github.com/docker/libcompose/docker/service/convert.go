@@ -167,6 +167,7 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		WorkingDir:   c.WorkingDir,
 		Volumes:      toMap(Filter(vols, isVolume)),
 		MacAddress:   c.MacAddress,
+		StopSignal:   c.StopSignal,
 	}
 
 	ulimits := []*units.Ulimit{}
@@ -180,15 +181,18 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		}
 	}
 
+	memorySwappiness := int64(c.MemSwappiness)
+
 	resources := container.Resources{
-		CgroupParent: c.CgroupParent,
-		Memory:       int64(c.MemLimit),
-		MemorySwap:   int64(c.MemSwapLimit),
-		CPUShares:    int64(c.CPUShares),
-		CPUQuota:     int64(c.CPUQuota),
-		CpusetCpus:   c.CPUSet,
-		Ulimits:      ulimits,
-		Devices:      deviceMappings,
+		CgroupParent:     c.CgroupParent,
+		Memory:           int64(c.MemLimit),
+		MemorySwap:       int64(c.MemSwapLimit),
+		MemorySwappiness: &memorySwappiness,
+		CPUShares:        int64(c.CPUShares),
+		CPUQuota:         int64(c.CPUQuota),
+		CpusetCpus:       c.CPUSet,
+		Ulimits:          ulimits,
+		Devices:          deviceMappings,
 	}
 
 	networkMode := c.NetworkMode
@@ -233,21 +237,35 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		}
 	}
 
+	tmpfs := map[string]string{}
+	for _, path := range c.Tmpfs {
+		split := strings.SplitN(path, ":", 2)
+		if len(split) == 1 {
+			tmpfs[split[0]] = ""
+		} else if len(split) == 2 {
+			tmpfs[split[0]] = split[1]
+		}
+	}
+
 	hostConfig := &container.HostConfig{
 		VolumesFrom: volumesFrom,
 		CapAdd:      strslice.StrSlice(utils.CopySlice(c.CapAdd)),
 		CapDrop:     strslice.StrSlice(utils.CopySlice(c.CapDrop)),
+		GroupAdd:    c.GroupAdd,
 		ExtraHosts:  utils.CopySlice(c.ExtraHosts),
 		Privileged:  c.Privileged,
 		Binds:       Filter(vols, isBind),
 		DNS:         utils.CopySlice(c.DNS),
+		DNSOptions:  utils.CopySlice(c.DNSOpts),
 		DNSSearch:   utils.CopySlice(c.DNSSearch),
+		Isolation:   container.Isolation(c.Isolation),
 		LogConfig: container.LogConfig{
 			Type:   c.Logging.Driver,
 			Config: utils.CopyMap(c.Logging.Options),
 		},
 		NetworkMode:    container.NetworkMode(networkMode),
 		ReadonlyRootfs: c.ReadOnly,
+		OomScoreAdj:    int(c.OomScoreAdj),
 		PidMode:        container.PidMode(c.Pid),
 		UTSMode:        container.UTSMode(c.Uts),
 		IpcMode:        container.IpcMode(c.Ipc),
@@ -255,6 +273,7 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		RestartPolicy:  *restartPolicy,
 		ShmSize:        int64(c.ShmSize),
 		SecurityOpt:    utils.CopySlice(c.SecurityOpt),
+		Tmpfs:          tmpfs,
 		VolumeDriver:   c.VolumeDriver,
 		Resources:      resources,
 	}

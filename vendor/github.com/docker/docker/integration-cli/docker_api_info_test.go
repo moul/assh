@@ -38,3 +38,16 @@ func (s *DockerSuite) TestInfoAPI(c *check.C) {
 		c.Assert(out, checker.Contains, linePrefix)
 	}
 }
+
+func (s *DockerSuite) TestInfoAPIVersioned(c *check.C) {
+	testRequires(c, DaemonIsLinux) // Windows only supports 1.25 or later
+	endpoint := "/v1.20/info"
+
+	status, body, err := sockRequest("GET", endpoint, nil)
+	c.Assert(status, checker.Equals, http.StatusOK)
+	c.Assert(err, checker.IsNil)
+
+	out := string(body)
+	c.Assert(out, checker.Contains, "ExecutionDriver")
+	c.Assert(out, checker.Contains, "not supported")
+}

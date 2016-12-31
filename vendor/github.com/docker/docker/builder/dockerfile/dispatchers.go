@@ -8,6 +8,7 @@ package dockerfile
 // package.
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"runtime"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/builder"
@@ -70,14 +72,20 @@ func env(b *Builder, args []string, attributes map[string]bool, original string)
 		if len(args[j]) == 0 {
 			return errBlankCommandNames("ENV")
 		}
-
 		newVar := args[j] + "=" + args[j+1] + ""
 		commitStr += " " + newVar
 
 		gotOne := false
 		for i, envVar := range b.runConfig.Env {
 			envParts := strings.SplitN(envVar, "=", 2)
-			if envParts[0] == args[j] {
+			compareFrom := envParts[0]
+			compareTo := args[j]
+			if runtime.GOOS == "windows" {
+				// Case insensitive environment variables on Windows
+				compareFrom = strings.ToUpper(compareFrom)
+				compareTo = strings.ToUpper(compareTo)
+			}
+			if compareFrom == compareTo {
 				b.runConfig.Env[i] = newVar
 				gotOne = true
 				break
@@ -204,7 +212,7 @@ func from(b *Builder, args []string, attributes map[string]bool, original string
 	// Windows cannot support a container with no base image.
 	if name == api.NoBaseImageSpecifier {
 		if runtime.GOOS == "windows" {
-			return fmt.Errorf("Windows does not support FROM scratch")
+			return errors.New("Windows does not support FROM scratch")
 		}
 		b.image = ""
 		b.noBaseImage = true
@@ -221,6 +229,7 @@ func from(b *Builder, args []string, attributes map[string]bool, original string
 			}
 		}
 	}
+	b.from = image
 
 	return b.processImageFrom(image)
 }
@@ -246,7 +255,7 @@ func onbuild(b *Builder, args []string, attributes map[string]bool, original str
 	triggerInstruction := strings.ToUpper(strings.TrimSpace(args[0]))
 	switch triggerInstruction {
 	case "ONBUILD":
-		return fmt.Errorf("Chaining ONBUILD via `ONBUILD ONBUILD` isn't allowed")
+		return errors.New("Chaining ONBUILD via `ONBUILD ONBUILD` isn't allowed")
 	case "MAINTAINER", "FROM":
 		return fmt.Errorf("%s isn't allowed as an ONBUILD trigger", triggerInstruction)
 	}
@@ -278,7 +287,37 @@ func workdir(b *Builder, args []string, attributes map[string]bool, original str
 		return err
 	}
 
-	return b.commit("", b.runConfig.Cmd, fmt.Sprintf("WORKDIR %v", b.runConfig.WorkingDir))
+	// For performance reasons, we explicitly do a create/mkdir now
+	// This avoids having an unnecessary expensive mount/unmount calls
+	// (on Windows in particular) during each container create.
+	// Prior to 1.13, the mkdir was deferred and not executed at this step.
+	if b.disableCommit {
+		// Don't call back into the daemon if we're going through docker commit --change "WORKDIR /foo".
+		// We've already updated the runConfig and that's enough.
+		return nil
+	}
+	b.runConfig.Image = b.image
+
+	if hit, err := b.probeCache(); err != nil {
+		return err
+	} else if hit {
+		return nil
+	}
+
+	// Actually copy the struct
+	workdirConfig := *b.runConfig
+	workdirConfig.Cmd = strslice.StrSlice(append(getShell(b.runConfig), fmt.Sprintf("#(nop) WORKDIR %s", b.runConfig.WorkingDir)))
+
+	container, err := b.docker.ContainerCreate(types.ContainerCreateConfig{Config: &workdirConfig})
+	if err != nil {
+		return err
+	}
+	b.tmpContainers[container.ID] = struct{}{}
+	if err := b.docker.ContainerCreateWorkdir(container.ID); err != nil {
+		return err
+	}
+
+	return b.commit(container.ID, b.runConfig.Cmd, "WORKDIR "+b.runConfig.WorkingDir)
 }
 
 // RUN some command yo
@@ -293,7 +332,7 @@ func workdir(b *Builder, args []string, attributes map[string]bool, original str
 //
 func run(b *Builder, args []string, attributes map[string]bool, original string) error {
 	if b.image == "" && !b.noBaseImage {
-		return fmt.Errorf("Please provide a source image with `from` prior to run")
+		return errors.New("Please provide a source image with `from` prior to run")
 	}
 
 	if err := b.flags.Parse(); err != nil {
@@ -346,8 +385,8 @@ func run(b *Builder, args []string, attributes map[string]bool, original string)
 			// the entire file (see 'leftoverArgs' processing in evaluator.go )
 			continue
 		}
-		if _, ok := configEnv[key]; !ok {
-			cmdBuildEnv = append(cmdBuildEnv, fmt.Sprintf("%s=%s", key, val))
+		if _, ok := configEnv[key]; !ok && val != nil {
+			cmdBuildEnv = append(cmdBuildEnv, fmt.Sprintf("%s=%s", key, *val))
 		}
 	}
 
@@ -461,7 +500,7 @@ func healthcheck(b *Builder, args []string, attributes map[string]bool, original
 	args = args[1:]
 	if typ == "NONE" {
 		if len(args) != 0 {
-			return fmt.Errorf("HEALTHCHECK NONE takes no arguments")
+			return errors.New("HEALTHCHECK NONE takes no arguments")
 		}
 		test := strslice.StrSlice{typ}
 		b.runConfig.Healthcheck = &container.HealthConfig{
@@ -489,7 +528,7 @@ func healthcheck(b *Builder, args []string, attributes map[string]bool, original
 		case "CMD":
 			cmdSlice := handleJSONArgs(args, attributes)
 			if len(cmdSlice) == 0 {
-				return fmt.Errorf("Missing command after HEALTHCHECK CMD")
+				return errors.New("Missing command after HEALTHCHECK CMD")
 			}
 
 			if !attributes["json"] {
@@ -650,7 +689,7 @@ func volume(b *Builder, args []string, attributes map[string]bool, original stri
 	for _, v := range args {
 		v = strings.TrimSpace(v)
 		if v == "" {
-			return fmt.Errorf("VOLUME specified can not be an empty string")
+			return errors.New("VOLUME specified can not be an empty string")
 		}
 		b.runConfig.Volumes[v] = struct{}{}
 	}
@@ -690,7 +729,7 @@ func arg(b *Builder, args []string, attributes map[string]bool, original string)
 
 	var (
 		name       string
-		value      string
+		newValue   string
 		hasDefault bool
 	)
 
@@ -707,7 +746,7 @@ func arg(b *Builder, args []string, attributes map[string]bool, original string)
 		}
 
 		name = parts[0]
-		value = parts[1]
+		newValue = parts[1]
 		hasDefault = true
 	} else {
 		name = arg
@@ -718,9 +757,12 @@ func arg(b *Builder, args []string, attributes map[string]bool, original string)
 
 	// If there is a default value associated with this arg then add it to the
 	// b.buildArgs if one is not already passed to the builder. The args passed
-	// to builder override the default value of 'arg'.
-	if _, ok := b.options.BuildArgs[name]; !ok && hasDefault {
-		b.options.BuildArgs[name] = value
+	// to builder override the default value of 'arg'. Note that a 'nil' for
+	// a value means that the user specified "--build-arg FOO" and "FOO" wasn't
+	// defined as an env var - and in that case we DO want to use the default
+	// value specified in the ARG cmd.
+	if baValue, ok := b.options.BuildArgs[name]; (!ok || baValue == nil) && hasDefault {
+		b.options.BuildArgs[name] = &newValue
 	}
 
 	return b.commit("", b.runConfig.Cmd, fmt.Sprintf("ARG %s", arg))

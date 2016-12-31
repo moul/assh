@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/docker/docker/pkg/integration"
 	"github.com/docker/docker/pkg/integration/checker"
 	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/go-check/check"
@@ -268,7 +269,7 @@ func (s *DockerSuite) TestCpToSymlinkToDirectory(c *check.C) {
 
 	containerID := strings.TrimSpace(out)
 
-	// Create a temp directory to hold a test file nested in a direcotry.
+	// Create a temp directory to hold a test file nested in a directory.
 	testDir, err := ioutil.TempDir("", "test-cp-to-symlink-to-dir-")
 	c.Assert(err, checker.IsNil)
 	defer os.RemoveAll(testDir)
@@ -545,7 +546,7 @@ func (s *DockerSuite) TestCpToStdout(c *check.C) {
 	// failed to set up container
 	c.Assert(strings.TrimSpace(out), checker.Equals, "0")
 
-	out, _, err := runCommandPipelineWithOutput(
+	out, _, err := integration.RunCommandPipelineWithOutput(
 		exec.Command(dockerBinary, "cp", containerID+":/test", "-"),
 		exec.Command("tar", "-vtf", "-"))
 

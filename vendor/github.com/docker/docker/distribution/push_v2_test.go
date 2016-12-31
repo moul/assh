@@ -180,7 +180,7 @@ func TestLayerAlreadyExists(t *testing.T) {
 			maxExistenceChecks: 1,
 			metadata:           []metadata.V2Metadata{{Digest: digest.Digest("apple"), SourceRepository: "docker.io/library/busybox"}},
 			remoteErrors:       map[digest.Digest]error{digest.Digest("apple"): distribution.ErrAccessDenied},
-			expectedError:      distribution.ErrAccessDenied,
+			expectedError:      nil,
 			expectedRequests:   []string{"apple"},
 		},
 		{
@@ -310,7 +310,7 @@ func TestLayerAlreadyExists(t *testing.T) {
 			expectedRemovals:   []metadata.V2Metadata{taggedMetadata("key3", "apple", "docker.io/library/busybox")},
 		},
 		{
-			name:       "stop on first error",
+			name:       "don't stop on first error",
 			targetRepo: "user/app",
 			hmacKey:    "key",
 			metadata: []metadata.V2Metadata{
@@ -321,9 +321,12 @@ func TestLayerAlreadyExists(t *testing.T) {
 			maxExistenceChecks: 3,
 			remoteErrors:       map[digest.Digest]error{"orange": distribution.ErrAccessDenied},
 			remoteBlobs:        map[digest.Digest]distribution.Descriptor{digest.Digest("apple"): {}},
-			expectedError:      distribution.ErrAccessDenied,
-			expectedRequests:   []string{"plum", "orange"},
-			expectedRemovals:   []metadata.V2Metadata{taggedMetadata("key", "plum", "docker.io/user/app")},
+			expectedError:      nil,
+			expectedRequests:   []string{"plum", "orange", "banana"},
+			expectedRemovals: []metadata.V2Metadata{
+				taggedMetadata("key", "plum", "docker.io/user/app"),
+				taggedMetadata("key", "banana", "docker.io/user/app"),
+			},
 		},
 		{
 			name:       "remove outdated metadata",
@@ -384,9 +387,11 @@ func TestLayerAlreadyExists(t *testing.T) {
 		ctx := context.Background()
 		ms := &mockV2MetadataService{}
 		pd := &v2PushDescriptor{
-			hmacKey:           []byte(tc.hmacKey),
-			repoInfo:          repoInfo,
-			layer:             layer.EmptyLayer,
+			hmacKey:  []byte(tc.hmacKey),
+			repoInfo: repoInfo,
+			layer: &storeLayer{
+				Layer: layer.EmptyLayer,
+			},
 			repo:              repo,
 			v2MetadataService: ms,
 			pushState:         &pushState{remoteLayers: make(map[layer.DiffID]distribution.Descriptor)},

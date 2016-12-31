@@ -11,7 +11,7 @@ func TestEnvfileLookupReturnsEmptyIfError(t *testing.T) {
 	envfileLookup := &EnvfileLookup{
 		Path: "anything/file.env",
 	}
-	actuals := envfileLookup.Lookup("any", "", nil)
+	actuals := envfileLookup.Lookup("any", nil)
 	if len(actuals) != 0 {
 		t.Fatalf("expected an empty slice, got %v", actuals)
 	}
@@ -40,11 +40,11 @@ and_underscore=working too
 		Path: envfile,
 	}
 
-	validateLookup(t, "baz=quux", envfileLookup.Lookup("baz", "", nil))
-	validateLookup(t, "foo=bar", envfileLookup.Lookup("foo", "", nil))
-	validateLookup(t, "_foobar=foobaz", envfileLookup.Lookup("_foobar", "", nil))
-	validateLookup(t, "with.dots=working", envfileLookup.Lookup("with.dots", "", nil))
-	validateLookup(t, "and_underscore=working too", envfileLookup.Lookup("and_underscore", "", nil))
+	validateLookup(t, "baz=quux", envfileLookup.Lookup("baz", nil))
+	validateLookup(t, "foo=bar", envfileLookup.Lookup("foo", nil))
+	validateLookup(t, "_foobar=foobaz", envfileLookup.Lookup("_foobar", nil))
+	validateLookup(t, "with.dots=working", envfileLookup.Lookup("with.dots", nil))
+	validateLookup(t, "and_underscore=working too", envfileLookup.Lookup("and_underscore", nil))
 }
 
 func validateLookup(t *testing.T, expected string, actuals []string) {

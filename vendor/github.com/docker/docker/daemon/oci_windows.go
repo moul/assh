@@ -6,6 +6,7 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/container"
 	"github.com/docker/docker/oci"
+	"github.com/docker/docker/pkg/sysinfo"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -17,9 +18,7 @@ func (daemon *Daemon) createSpec(c *container.Container) (*specs.Spec, error) {
 		return nil, err
 	}
 
-	// TODO Windows - this can be removed. Not used (UID/GID)
-	rootUID, rootGID := daemon.GetRemappedUIDGID()
-	if err := c.SetupWorkingDirectory(rootUID, rootGID); err != nil {
+	if err := c.SetupWorkingDirectory(0, 0); err != nil {
 		return nil, err
 	}
 
@@ -64,19 +63,34 @@ func (daemon *Daemon) createSpec(c *container.Container) (*specs.Spec, error) {
 	s.Process.Terminal = c.Config.Tty
 	s.Process.User.Username = c.Config.User
 
-	// In spec.Root
-	s.Root.Path = c.BaseFS
-	s.Root.Readonly = c.HostConfig.ReadonlyRootfs
+	// In spec.Root. This is not set for Hyper-V containers
+	isHyperV := false
+	if c.HostConfig.Isolation.IsDefault() {
+		// Container using default isolation, so take the default from the daemon configuration
+		isHyperV = daemon.defaultIsolation.IsHyperV()
+	} else {
+		// Container may be requesting an explicit isolation mode.
+		isHyperV = c.HostConfig.Isolation.IsHyperV()
+	}
+	if !isHyperV {
+		s.Root.Path = c.BaseFS
+	}
+	s.Root.Readonly = false // Windows does not support a read-only root filesystem
 
 	// In s.Windows.Resources
 	// @darrenstahlmsft implement these resources
 	cpuShares := uint16(c.HostConfig.CPUShares)
 	cpuPercent := uint8(c.HostConfig.CPUPercent)
+	if c.HostConfig.NanoCPUs > 0 {
+		cpuPercent = uint8(c.HostConfig.NanoCPUs * 100 / int64(sysinfo.NumCPU()) / 1e9)
+	}
+	cpuCount := uint64(c.HostConfig.CPUCount)
 	memoryLimit := uint64(c.HostConfig.Memory)
 	s.Windows.Resources = &specs.WindowsResources{
 		CPU: &specs.WindowsCPUResources{
 			Percent: &cpuPercent,
 			Shares:  &cpuShares,
+			Count:   &cpuCount,
 		},
 		Memory: &specs.WindowsMemoryResources{
 			Limit: &memoryLimit,

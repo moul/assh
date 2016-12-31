@@ -77,6 +77,7 @@ func (s *CliSuite) TestNamedVolume(c *C) {
 }
 
 func (s *CliSuite) TestV2Volume(c *C) {
+	testRequires(c, not(DaemonVersionIs("1.9")))
 	p := s.ProjectFromText(c, "up", `version: "2"
 services:
   with_volume:

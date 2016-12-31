@@ -4,28 +4,29 @@ import (
 	"fmt"
 	"sync"
 
-	units "src/github.com/docker/go-units"
+	units "github.com/docker/go-units"
 )
 
 const (
 	winOSType                  = "windows"
 	defaultStatsTableFormat    = "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}\t{{.PIDs}}"
-	winDefaultStatsTableFormat = "table {{.Container}}\t{{.CPUPerc}}\t{{{.MemUsage}}\t{.NetIO}}\t{{.BlockIO}}"
-	emptyStatsTableFormat      = "Waiting for statistics..."
+	winDefaultStatsTableFormat = "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
 
-	containerHeader  = "CONTAINER"
-	cpuPercHeader    = "CPU %"
-	netIOHeader      = "NET I/O"
-	blockIOHeader    = "BLOCK I/O"
-	winMemPercHeader = "PRIV WORKING SET"  // Used only on Window
-	memPercHeader    = "MEM %"             // Used only on Linux
-	memUseHeader     = "MEM USAGE / LIMIT" // Used only on Linux
-	pidsHeader       = "PIDS"              // Used only on Linux
+	containerHeader = "CONTAINER"
+	cpuPercHeader   = "CPU %"
+	netIOHeader     = "NET I/O"
+	blockIOHeader   = "BLOCK I/O"
+	memPercHeader   = "MEM %"             // Used only on Linux
+	winMemUseHeader = "PRIV WORKING SET"  // Used only on Windows
+	memUseHeader    = "MEM USAGE / LIMIT" // Used only on Linux
+	pidsHeader      = "PIDS"              // Used only on Linux
 )
 
 // StatsEntry represents represents the statistics data collected from a container
 type StatsEntry struct {
+	Container        string
 	Name             string
+	ID               string
 	CPUPercentage    float64
 	Memory           float64 // On Windows this is the private working set
 	MemoryLimit      float64 // Not used on Windows
@@ -86,7 +87,7 @@ func (cs *ContainerStats) SetError(err error) {
 func (cs *ContainerStats) SetStatistics(s StatsEntry) {
 	cs.mutex.Lock()
 	defer cs.mutex.Unlock()
-	s.Name = cs.Name
+	s.Container = cs.Container
 	s.OSType = cs.OSType
 	cs.StatsEntry = s
 }
@@ -110,9 +111,9 @@ func NewStatsFormat(source, osType string) Format {
 }
 
 // NewContainerStats returns a new ContainerStats entity and sets in it the given name
-func NewContainerStats(name, osType string) *ContainerStats {
+func NewContainerStats(container, osType string) *ContainerStats {
 	return &ContainerStats{
-		StatsEntry: StatsEntry{Name: name, OSType: osType},
+		StatsEntry: StatsEntry{Container: container, OSType: osType},
 	}
 }
 
@@ -139,7 +140,18 @@ type containerStatsContext struct {
 
 func (c *containerStatsContext) Container() string {
 	c.AddHeader(containerHeader)
-	return c.s.Name
+	return c.s.Container
+}
+
+func (c *containerStatsContext) Name() string {
+	c.AddHeader(nameHeader)
+	name := c.s.Name[1:]
+	return name
+}
+
+func (c *containerStatsContext) ID() string {
+	c.AddHeader(containerIDHeader)
+	return c.s.ID
 }
 
 func (c *containerStatsContext) CPUPerc() string {
@@ -151,20 +163,24 @@ func (c *containerStatsContext) CPUPerc() string {
 }
 
 func (c *containerStatsContext) MemUsage() string {
-	c.AddHeader(memUseHeader)
-	if c.s.IsInvalid || c.s.OSType == winOSType {
+	header := memUseHeader
+	if c.s.OSType == winOSType {
+		header = winMemUseHeader
+	}
+	c.AddHeader(header)
+	if c.s.IsInvalid {
 		return fmt.Sprintf("-- / --")
+	}
+	if c.s.OSType == winOSType {
+		return fmt.Sprintf("%s", units.BytesSize(c.s.Memory))
 	}
 	return fmt.Sprintf("%s / %s", units.BytesSize(c.s.Memory), units.BytesSize(c.s.MemoryLimit))
 }
 
 func (c *containerStatsContext) MemPerc() string {
 	header := memPercHeader
-	if c.s.OSType == winOSType {
-		header = winMemPercHeader
-	}
 	c.AddHeader(header)
-	if c.s.IsInvalid {
+	if c.s.IsInvalid || c.s.OSType == winOSType {
 		return fmt.Sprintf("--")
 	}
 	return fmt.Sprintf("%.2f%%", c.s.MemoryPercentage)

@@ -1,8 +1,17 @@
 ---
 title: "volume create"
 description: "The volume create command description and usage"
-keywords: ["volume, create"]
+keywords: "volume, create"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # volume create
 
@@ -78,4 +87,5 @@ $ docker volume create --driver local --opt type=nfs --opt o=addr=192.168.1.1,rw
 * [volume inspect](volume_inspect.md)
 * [volume ls](volume_ls.md)
 * [volume rm](volume_rm.md)
-* [Understand Data Volumes](../../tutorials/dockervolumes.md)
+* [volume prune](volume_prune.md)
+* [Understand Data Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/)

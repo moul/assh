@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/docker/docker/pkg/streamformatter"
@@ -63,7 +64,7 @@ func (s *imageRouter) postCommit(ctx context.Context, w http.ResponseWriter, r *
 		return err
 	}
 
-	return httputils.WriteJSON(w, http.StatusCreated, &types.ContainerCommitResponse{
+	return httputils.WriteJSON(w, http.StatusCreated, &types.IDResponse{
 		ID: string(imgID),
 	})
 }
@@ -247,8 +248,18 @@ func (s *imageRouter) getImagesJSON(ctx context.Context, w http.ResponseWriter, 
 		return err
 	}
 
-	// FIXME: The filter parameter could just be a match filter
-	images, err := s.backend.Images(r.Form.Get("filters"), r.Form.Get("filter"), httputils.BoolValue(r, "all"), false)
+	imageFilters, err := filters.FromParam(r.Form.Get("filters"))
+	if err != nil {
+		return err
+	}
+
+	version := httputils.VersionFromContext(ctx)
+	filterParam := r.Form.Get("filter")
+	if versions.LessThan(version, "1.28") && filterParam != "" {
+		imageFilters.Add("reference", filterParam)
+	}
+
+	images, err := s.backend.Images(imageFilters, httputils.BoolValue(r, "all"), false)
 	if err != nil {
 		return err
 	}
@@ -320,16 +331,12 @@ func (s *imageRouter) postImagesPrune(ctx context.Context, w http.ResponseWriter
 		return err
 	}
 
-	if err := httputils.CheckForJSON(r); err != nil {
+	pruneFilters, err := filters.FromParam(r.Form.Get("filters"))
+	if err != nil {
 		return err
 	}
 
-	var cfg types.ImagesPruneConfig
-	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
-		return err
-	}
-
-	pruneReport, err := s.backend.ImagesPrune(&cfg)
+	pruneReport, err := s.backend.ImagesPrune(pruneFilters)
 	if err != nil {
 		return err
 	}

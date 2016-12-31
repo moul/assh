@@ -54,7 +54,7 @@ func TestHealthStates(t *testing.T) {
 		EventsService: e,
 	}
 
-	controller, err := newController(daemon, task)
+	controller, err := newController(daemon, task, nil)
 	if err != nil {
 		t.Fatalf("create controller fail %v", err)
 	}
@@ -87,7 +87,7 @@ func TestHealthStates(t *testing.T) {
 			}
 		case <-timer.C:
 			if expectedErr != nil {
-				t.Fatalf("time limit exceeded, didn't get expected error")
+				t.Fatal("time limit exceeded, didn't get expected error")
 			}
 		}
 	}

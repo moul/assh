@@ -5,22 +5,20 @@ import (
 	"io"
 	"os"
 
-	"golang.org/x/net/context"
-
-	"github.com/docker/docker/cli"
-	"github.com/docker/docker/cli/command"
-	"github.com/docker/docker/cli/command/image"
-	"github.com/docker/docker/pkg/jsonmessage"
-	// FIXME migrate to docker/distribution/reference
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/cli"
+	"github.com/docker/docker/cli/command"
+	"github.com/docker/docker/cli/command/image"
 	apiclient "github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
+	// FIXME migrate to docker/distribution/reference
 	"github.com/docker/docker/reference"
 	"github.com/docker/docker/registry"
-	runconfigopts "github.com/docker/docker/runconfig/opts"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"golang.org/x/net/context"
 )
 
 type createOptions struct {
@@ -30,7 +28,7 @@ type createOptions struct {
 // NewCreateCommand creates a new cobra.Command for `docker create`
 func NewCreateCommand(dockerCli *command.DockerCli) *cobra.Command {
 	var opts createOptions
-	var copts *runconfigopts.ContainerOptions
+	var copts *containerOptions
 
 	cmd := &cobra.Command{
 		Use:   "create [OPTIONS] IMAGE [COMMAND] [ARG...]",
@@ -55,12 +53,12 @@ func NewCreateCommand(dockerCli *command.DockerCli) *cobra.Command {
 	flags.Bool("help", false, "Print usage")
 
 	command.AddTrustedFlags(flags, true)
-	copts = runconfigopts.AddFlags(flags)
+	copts = addFlags(flags)
 	return cmd
 }
 
-func runCreate(dockerCli *command.DockerCli, flags *pflag.FlagSet, opts *createOptions, copts *runconfigopts.ContainerOptions) error {
-	config, hostConfig, networkingConfig, err := runconfigopts.Parse(flags, copts)
+func runCreate(dockerCli *command.DockerCli, flags *pflag.FlagSet, opts *createOptions, copts *containerOptions) error {
+	config, hostConfig, networkingConfig, err := parse(flags, copts)
 	if err != nil {
 		reportError(dockerCli.Err(), "create", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
@@ -69,7 +67,7 @@ func runCreate(dockerCli *command.DockerCli, flags *pflag.FlagSet, opts *createO
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(dockerCli.Out(), "%s\n", response.ID)
+	fmt.Fprintln(dockerCli.Out(), response.ID)
 	return nil
 }
 
@@ -118,10 +116,11 @@ type cidFile struct {
 func (cid *cidFile) Close() error {
 	cid.file.Close()
 
-	if !cid.written {
-		if err := os.Remove(cid.path); err != nil {
-			return fmt.Errorf("failed to remove the CID file '%s': %s \n", cid.path, err)
-		}
+	if cid.written {
+		return nil
+	}
+	if err := os.Remove(cid.path); err != nil {
+		return fmt.Errorf("failed to remove the CID file '%s': %s \n", cid.path, err)
 	}
 
 	return nil
@@ -148,7 +147,7 @@ func newCIDFile(path string) (*cidFile, error) {
 	return &cidFile{path: path, file: f}, nil
 }
 
-func createContainer(ctx context.Context, dockerCli *command.DockerCli, config *container.Config, hostConfig *container.HostConfig, networkingConfig *networktypes.NetworkingConfig, cidfile, name string) (*types.ContainerCreateResponse, error) {
+func createContainer(ctx context.Context, dockerCli *command.DockerCli, config *container.Config, hostConfig *container.HostConfig, networkingConfig *networktypes.NetworkingConfig, cidfile, name string) (*container.ContainerCreateCreatedBody, error) {
 	stderr := dockerCli.Err()
 
 	var containerIDFile *cidFile
@@ -170,7 +169,7 @@ func createContainer(ctx context.Context, dockerCli *command.DockerCli, config *
 
 		if ref, ok := ref.(reference.NamedTagged); ok && command.IsTrusted() {
 			var err error
-			trustedRef, err = image.TrustedReference(ctx, dockerCli, ref)
+			trustedRef, err = image.TrustedReference(ctx, dockerCli, ref, nil)
 			if err != nil {
 				return nil, err
 			}

@@ -24,6 +24,10 @@ const (
 	flagToken               = "token"
 	flagTaskHistoryLimit    = "task-history-limit"
 	flagExternalCA          = "external-ca"
+	flagMaxSnapshots        = "max-snapshots"
+	flagSnapshotInterval    = "snapshot-interval"
+	flagLockKey             = "lock-key"
+	flagAutolock            = "autolock"
 )
 
 type swarmOptions struct {
@@ -31,9 +35,12 @@ type swarmOptions struct {
 	dispatcherHeartbeat time.Duration
 	nodeCertExpiry      time.Duration
 	externalCA          ExternalCAOption
+	maxSnapshots        uint64
+	snapshotInterval    uint64
+	autolock            bool
 }
 
-// NodeAddrOption is a pflag.Value for listen and remote addresses
+// NodeAddrOption is a pflag.Value for listening addresses
 type NodeAddrOption struct {
 	addr string
 }
@@ -164,14 +171,14 @@ func parseExternalCA(caSpec string) (*swarm.ExternalCA, error) {
 
 func addSwarmFlags(flags *pflag.FlagSet, opts *swarmOptions) {
 	flags.Int64Var(&opts.taskHistoryLimit, flagTaskHistoryLimit, 5, "Task history retention limit")
-	flags.DurationVar(&opts.dispatcherHeartbeat, flagDispatcherHeartbeat, time.Duration(5*time.Second), "Dispatcher heartbeat period")
-	flags.DurationVar(&opts.nodeCertExpiry, flagCertExpiry, time.Duration(90*24*time.Hour), "Validity period for node certificates")
+	flags.DurationVar(&opts.dispatcherHeartbeat, flagDispatcherHeartbeat, time.Duration(5*time.Second), "Dispatcher heartbeat period (ns|us|ms|s|m|h)")
+	flags.DurationVar(&opts.nodeCertExpiry, flagCertExpiry, time.Duration(90*24*time.Hour), "Validity period for node certificates (ns|us|ms|s|m|h)")
 	flags.Var(&opts.externalCA, flagExternalCA, "Specifications of one or more certificate signing endpoints")
+	flags.Uint64Var(&opts.maxSnapshots, flagMaxSnapshots, 0, "Number of additional Raft snapshots to retain")
+	flags.Uint64Var(&opts.snapshotInterval, flagSnapshotInterval, 10000, "Number of log entries between Raft snapshots")
 }
 
-func (opts *swarmOptions) ToSpec(flags *pflag.FlagSet) swarm.Spec {
-	spec := swarm.Spec{}
-
+func (opts *swarmOptions) mergeSwarmSpec(spec *swarm.Spec, flags *pflag.FlagSet) {
 	if flags.Changed(flagTaskHistoryLimit) {
 		spec.Orchestration.TaskHistoryRetentionLimit = &opts.taskHistoryLimit
 	}
@@ -184,5 +191,19 @@ func (opts *swarmOptions) ToSpec(flags *pflag.FlagSet) swarm.Spec {
 	if flags.Changed(flagExternalCA) {
 		spec.CAConfig.ExternalCAs = opts.externalCA.Value()
 	}
+	if flags.Changed(flagMaxSnapshots) {
+		spec.Raft.KeepOldSnapshots = &opts.maxSnapshots
+	}
+	if flags.Changed(flagSnapshotInterval) {
+		spec.Raft.SnapshotInterval = opts.snapshotInterval
+	}
+	if flags.Changed(flagAutolock) {
+		spec.EncryptionConfig.AutoLockManagers = opts.autolock
+	}
+}
+
+func (opts *swarmOptions) ToSpec(flags *pflag.FlagSet) swarm.Spec {
+	var spec swarm.Spec
+	opts.mergeSwarmSpec(&spec, flags)
 	return spec
 }

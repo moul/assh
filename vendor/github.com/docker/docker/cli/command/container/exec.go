@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"io"
 
-	"golang.org/x/net/context"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	apiclient "github.com/docker/docker/client"
+	options "github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/promise"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type execOptions struct {
@@ -22,11 +22,19 @@ type execOptions struct {
 	detach      bool
 	user        string
 	privileged  bool
+	env         *options.ListOpts
+}
+
+func newExecOptions() *execOptions {
+	var values []string
+	return &execOptions{
+		env: options.NewListOptsRef(&values, options.ValidateEnv),
+	}
 }
 
 // NewExecCommand creats a new cobra.Command for `docker exec`
 func NewExecCommand(dockerCli *command.DockerCli) *cobra.Command {
-	var opts execOptions
+	opts := newExecOptions()
 
 	cmd := &cobra.Command{
 		Use:   "exec [OPTIONS] CONTAINER COMMAND [ARG...]",
@@ -35,7 +43,7 @@ func NewExecCommand(dockerCli *command.DockerCli) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			container := args[0]
 			execCmd := args[1:]
-			return runExec(dockerCli, &opts, container, execCmd)
+			return runExec(dockerCli, opts, container, execCmd)
 		},
 	}
 
@@ -48,12 +56,14 @@ func NewExecCommand(dockerCli *command.DockerCli) *cobra.Command {
 	flags.BoolVarP(&opts.detach, "detach", "d", false, "Detached mode: run command in the background")
 	flags.StringVarP(&opts.user, "user", "u", "", "Username or UID (format: <name|uid>[:<group|gid>])")
 	flags.BoolVarP(&opts.privileged, "privileged", "", false, "Give extended privileges to the command")
+	flags.VarP(opts.env, "env", "e", "Set environment variables")
+	flags.SetAnnotation("env", "version", []string{"1.25"})
 
 	return cmd
 }
 
 func runExec(dockerCli *command.DockerCli, opts *execOptions, container string, execCmd []string) error {
-	execConfig, err := parseExec(opts, container, execCmd)
+	execConfig, err := parseExec(opts, execCmd)
 	// just in case the ParseExec does not exit
 	if container == "" || err != nil {
 		return cli.StatusError{StatusCode: 1}
@@ -76,7 +86,7 @@ func runExec(dockerCli *command.DockerCli, opts *execOptions, container string, 
 
 	execID := response.ID
 	if execID == "" {
-		fmt.Fprintf(dockerCli.Out(), "exec ID empty")
+		fmt.Fprintln(dockerCli.Out(), "exec ID empty")
 		return nil
 	}
 
@@ -131,7 +141,7 @@ func runExec(dockerCli *command.DockerCli, opts *execOptions, container string, 
 
 	if execConfig.Tty && dockerCli.In().IsTerminal() {
 		if err := MonitorTtySize(ctx, dockerCli, execID, true); err != nil {
-			fmt.Fprintf(dockerCli.Err(), "Error monitoring TTY size: %s\n", err)
+			fmt.Fprintln(dockerCli.Err(), "Error monitoring TTY size:", err)
 		}
 	}
 
@@ -158,7 +168,7 @@ func getExecExitCode(ctx context.Context, client apiclient.ContainerAPIClient, e
 	resp, err := client.ContainerExecInspect(ctx, execID)
 	if err != nil {
 		// If we can't connect, then the daemon probably died.
-		if err != apiclient.ErrConnectionFailed {
+		if !apiclient.IsErrConnectionFailed(err) {
 			return false, -1, err
 		}
 		return false, -1, nil
@@ -169,14 +179,13 @@ func getExecExitCode(ctx context.Context, client apiclient.ContainerAPIClient, e
 
 // parseExec parses the specified args for the specified command and generates
 // an ExecConfig from it.
-func parseExec(opts *execOptions, container string, execCmd []string) (*types.ExecConfig, error) {
+func parseExec(opts *execOptions, execCmd []string) (*types.ExecConfig, error) {
 	execConfig := &types.ExecConfig{
 		User:       opts.user,
 		Privileged: opts.privileged,
 		Tty:        opts.tty,
 		Cmd:        execCmd,
 		Detach:     opts.detach,
-		// container is not used here
 	}
 
 	// If -d is not set, attach to everything by default
@@ -186,6 +195,10 @@ func parseExec(opts *execOptions, container string, execCmd []string) (*types.Ex
 		if opts.interactive {
 			execConfig.AttachStdin = true
 		}
+	}
+
+	if opts.env != nil {
+		execConfig.Env = opts.env.GetAll()
 	}
 
 	return execConfig, nil

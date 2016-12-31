@@ -2,8 +2,10 @@ package service
 
 import (
 	"path/filepath"
+	"reflect"
 	"testing"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/libcompose/config"
 	"github.com/docker/libcompose/docker/ctx"
 	"github.com/docker/libcompose/lookup"
@@ -78,4 +80,105 @@ func TestParseLabels(t *testing.T) {
 
 	assert.Equal(t, yaml.Command{bashCmd}, sc.Entrypoint)
 	assert.Equal(t, []string{"less"}, []string(cfg.Entrypoint))
+}
+
+func TestDNSOpt(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		DNSOpts: []string{
+			"use-vc",
+			"no-tld-query",
+		},
+	}
+	_, hostCfg, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.True(t, reflect.DeepEqual([]string{
+		"use-vc",
+		"no-tld-query",
+	}, hostCfg.DNSOptions))
+}
+
+func TestGroupAdd(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		GroupAdd: []string{
+			"root",
+			"1",
+		},
+	}
+	_, hostCfg, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.True(t, reflect.DeepEqual([]string{
+		"root",
+		"1",
+	}, hostCfg.GroupAdd))
+}
+
+func TestIsolation(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		Isolation: "default",
+	}
+	_, hostCfg, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.Equal(t, container.Isolation("default"), hostCfg.Isolation)
+}
+
+func TestMemSwappiness(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		MemSwappiness: yaml.MemStringorInt(10),
+	}
+	_, hostCfg, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.Equal(t, int64(10), *hostCfg.MemorySwappiness)
+}
+
+func TestOomScoreAdj(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		OomScoreAdj: 500,
+	}
+	_, hostCfg, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.Equal(t, 500, hostCfg.OomScoreAdj)
+}
+
+func TestStopSignal(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		StopSignal: "SIGTERM",
+	}
+	cfg, _, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.Equal(t, "SIGTERM", cfg.StopSignal)
+}
+
+func TestTmpfs(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		Tmpfs: yaml.Stringorslice{"/run"},
+	}
+	_, hostCfg, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.True(t, reflect.DeepEqual(map[string]string{
+		"/run": "",
+	}, hostCfg.Tmpfs))
+
+	sc = &config.ServiceConfig{
+		Tmpfs: yaml.Stringorslice{"/run:rw,noexec,nosuid,size=65536k"},
+	}
+	_, hostCfg, err = Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.True(t, reflect.DeepEqual(map[string]string{
+		"/run": "rw,noexec,nosuid,size=65536k",
+	}, hostCfg.Tmpfs))
 }

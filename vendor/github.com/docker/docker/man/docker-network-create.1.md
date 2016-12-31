@@ -6,6 +6,7 @@ docker-network-create - create a new network
 
 # SYNOPSIS
 **docker network create**
+[**--attachable**]
 [**--aux-address**=*map[]*]
 [**-d**|**--driver**=*DRIVER*]
 [**--gateway**=*[]*]
@@ -73,11 +74,11 @@ name conflicts.
 
 ## Connect containers
 
-When you start a container use the `--net` flag to connect it to a network.
+When you start a container use the `--network` flag to connect it to a network.
 This adds the `busybox` container to the `mynet` network.
 
 ```bash
-$ docker run -itd --net=mynet busybox
+$ docker run -itd --network=mynet busybox
 ```
 
 If you want to add a container to a network after the container is already
@@ -143,6 +144,9 @@ to create an externally isolated `overlay` network, you can specify the
 `--internal` option.
 
 # OPTIONS
+**--attachable**
+  Enable manual container attachment
+
 **--aux-address**=map[]
   Auxiliary IPv4 or IPv6 addresses used by network driver
 

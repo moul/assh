@@ -10,14 +10,15 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/mount"
-	"github.com/docker/docker/utils"
 	"github.com/docker/docker/volume"
 )
 
@@ -35,7 +36,7 @@ var (
 	// volumeNameRegex ensures the name assigned for the volume is valid.
 	// This name is used to create the bind directory, so we need to avoid characters that
 	// would make the path to escape the root directory.
-	volumeNameRegex = utils.RestrictedVolumeNamePattern
+	volumeNameRegex = api.RestrictedNamePattern
 )
 
 type validationError struct {
@@ -268,7 +269,7 @@ func (r *Root) validateName(name string) error {
 		return validationError{fmt.Errorf("volume name is too short, names should be at least two alphanumeric characters")}
 	}
 	if !volumeNameRegex.MatchString(name) {
-		return validationError{fmt.Errorf("%q includes invalid characters for a local volume name, only %q are allowed", name, utils.RestrictedNameChars)}
+		return validationError{fmt.Errorf("%q includes invalid characters for a local volume name, only %q are allowed. If you intented to pass a host directory, use absolute path", name, api.RestrictedNameChars)}
 	}
 	return nil
 }
@@ -348,4 +349,16 @@ func validateOpts(opts map[string]string) error {
 
 func (v *localVolume) Status() map[string]interface{} {
 	return nil
+}
+
+// getAddress finds out address/hostname from options
+func getAddress(opts string) string {
+	optsList := strings.Split(opts, ",")
+	for i := 0; i < len(optsList); i++ {
+		if strings.HasPrefix(optsList[i], "addr=") {
+			addr := (strings.SplitN(optsList[i], "=", 2)[1])
+			return addr
+		}
+	}
+	return ""
 }

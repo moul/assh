@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/go-units"
 )
 
@@ -78,6 +79,7 @@ func (s *State) String() string {
 		if h := s.Health; h != nil {
 			return fmt.Sprintf("Up %s (%s)", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)), h.String())
 		}
+
 		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)))
 	}
 
@@ -98,6 +100,23 @@ func (s *State) String() string {
 	}
 
 	return fmt.Sprintf("Exited (%d) %s ago", s.ExitCodeValue, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
+}
+
+// HealthString returns a single string to describe health status.
+func (s *State) HealthString() string {
+	if s.Health == nil {
+		return types.NoHealthcheck
+	}
+
+	return s.Health.String()
+}
+
+// IsValidHealthString checks if the provided string is a valid container health status or not.
+func IsValidHealthString(s string) bool {
+	return s == types.Starting ||
+		s == types.Healthy ||
+		s == types.Unhealthy ||
+		s == types.NoHealthcheck
 }
 
 // StateString returns a single string to describe state
@@ -158,26 +177,24 @@ func wait(waitChan <-chan struct{}, timeout time.Duration) error {
 // immediately. If you want wait forever you must supply negative timeout.
 // Returns exit code, that was passed to SetStopped
 func (s *State) WaitStop(timeout time.Duration) (int, error) {
-	s.Lock()
-	if !s.Running {
-		exitCode := s.ExitCodeValue
-		s.Unlock()
-		return exitCode, nil
+	ctx := context.Background()
+	if timeout >= 0 {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
 	}
-	waitChan := s.waitChan
-	s.Unlock()
-	if err := wait(waitChan, timeout); err != nil {
+	if err := s.WaitWithContext(ctx); err != nil {
+		if status, ok := err.(*StateStatus); ok {
+			return status.ExitCode(), nil
+		}
 		return -1, err
 	}
-	s.Lock()
-	defer s.Unlock()
-	return s.ExitCode(), nil
+	return 0, nil
 }
 
 // WaitWithContext waits for the container to stop. Optional context can be
 // passed for canceling the request.
 func (s *State) WaitWithContext(ctx context.Context) error {
-	// todo(tonistiigi): make other wait functions use this
 	s.Lock()
 	if !s.Running {
 		state := newStateStatus(s.ExitCode(), s.Error())

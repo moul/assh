@@ -1,5 +1,3 @@
-// +build experimental
-
 package stack
 
 import (
@@ -45,10 +43,8 @@ func runServices(dockerCli *command.DockerCli, opts servicesOptions) error {
 	ctx := context.Background()
 	client := dockerCli.Client()
 
-	filter := opts.filter.Value()
-	filter.Add("label", labelNamespace+"="+opts.namespace)
-
-	services, err := client.ServiceList(ctx, types.ServiceListOptions{Filter: filter})
+	filter := getStackFilterFromOpt(opts.namespace, opts.filter)
+	services, err := client.ServiceList(ctx, types.ServiceListOptions{Filters: filter})
 	if err != nil {
 		return err
 	}
@@ -69,7 +65,7 @@ func runServices(dockerCli *command.DockerCli, opts servicesOptions) error {
 			taskFilter.Add("service", service.ID)
 		}
 
-		tasks, err := client.TaskList(ctx, types.TaskListOptions{Filter: taskFilter})
+		tasks, err := client.TaskList(ctx, types.TaskListOptions{Filters: taskFilter})
 		if err != nil {
 			return err
 		}

@@ -45,26 +45,30 @@ func newListCommand(dockerCli *command.DockerCli) *cobra.Command {
 
 func runList(dockerCli *command.DockerCli, opts listOptions) error {
 	client := dockerCli.Client()
+	out := dockerCli.Out()
 	ctx := context.Background()
 
 	nodes, err := client.NodeList(
 		ctx,
-		types.NodeListOptions{Filter: opts.filter.Value()})
+		types.NodeListOptions{Filters: opts.filter.Value()})
 	if err != nil {
 		return err
 	}
 
-	info, err := client.Info(ctx)
-	if err != nil {
-		return err
-	}
-
-	out := dockerCli.Out()
-	if opts.quiet {
-		printQuiet(out, nodes)
-	} else {
+	if len(nodes) > 0 && !opts.quiet {
+		// only non-empty nodes and not quiet, should we call /info api
+		info, err := client.Info(ctx)
+		if err != nil {
+			return err
+		}
 		printTable(out, nodes, info)
+	} else if !opts.quiet {
+		// no nodes and not quiet, print only one line with columns ID, HOSTNAME, ...
+		printTable(out, nodes, types.Info{})
+	} else {
+		printQuiet(out, nodes)
 	}
+
 	return nil
 }
 

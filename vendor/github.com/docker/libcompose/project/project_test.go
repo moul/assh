@@ -152,7 +152,7 @@ func TestParseWithDefaultEnvironmentLookup(t *testing.T) {
 type TestEnvironmentLookup struct {
 }
 
-func (t *TestEnvironmentLookup) Lookup(key, serviceName string, config *config.ServiceConfig) []string {
+func (t *TestEnvironmentLookup) Lookup(key string, config *config.ServiceConfig) []string {
 	return []string{fmt.Sprintf("%s=X", key)}
 }
 
@@ -201,7 +201,8 @@ func TestParseWithMultipleComposeFiles(t *testing.T) {
 	configThree := []byte(`
   multiple:
     image: busybox
-    mem_limit: 40000000
+    mem_limit: "40m"
+    memswap_limit: 40000000
     ports:
       - 10000`)
 
@@ -243,5 +244,6 @@ func TestParseWithMultipleComposeFiles(t *testing.T) {
 	assert.Equal(t, "busybox", multipleConfig.Image)
 	assert.Equal(t, "multi", multipleConfig.ContainerName)
 	assert.Equal(t, []string{"8000", "9000", "10000"}, multipleConfig.Ports)
-	assert.Equal(t, yaml.StringorInt(40000000), multipleConfig.MemLimit)
+	assert.Equal(t, yaml.MemStringorInt(41943040), multipleConfig.MemLimit)
+	assert.Equal(t, yaml.MemStringorInt(40000000), multipleConfig.MemSwapLimit)
 }

@@ -1,18 +1,27 @@
 ---
 title: "swarm leave"
 description: "The swarm leave command description and usage"
-keywords: ["swarm, leave"]
+keywords: "swarm, leave"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # swarm leave
 
 ```markdown
-Usage:  docker swarm leave [OPTIONS]
+Usage:	docker swarm leave [OPTIONS]
 
-Leave the swarm (workers only).
+Leave the swarm
 
 Options:
-      --force   Force this node to leave the swarm, ignoring warnings
+  -f, --force   Force this node to leave the swarm, ignoring warnings
       --help    Print usage
 ```
 
@@ -46,4 +55,7 @@ To remove an inactive node, use the [`node rm`](node_rm.md) command instead.
 * [node rm](node_rm.md)
 * [swarm init](swarm_init.md)
 * [swarm join](swarm_join.md)
+* [swarm join-token](swarm_join_token.md)
+* [swarm unlock](swarm_unlock.md)
+* [swarm unlock-key](swarm_unlock_key.md)
 * [swarm update](swarm_update.md)

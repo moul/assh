@@ -1,5 +1,3 @@
-// +build experimental
-
 package plugin
 
 import (
@@ -8,7 +6,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
-	"github.com/docker/docker/reference"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 )
@@ -43,19 +40,8 @@ func runRemove(dockerCli *command.DockerCli, opts *rmOptions) error {
 
 	var errs cli.Errors
 	for _, name := range opts.plugins {
-		named, err := reference.ParseNamed(name) // FIXME: validate
-		if err != nil {
-			return err
-		}
-		if reference.IsNameOnly(named) {
-			named = reference.WithDefaultTag(named)
-		}
-		ref, ok := named.(reference.NamedTagged)
-		if !ok {
-			return fmt.Errorf("invalid name: %s", named.String())
-		}
 		// TODO: pass names to api instead of making multiple api calls
-		if err := dockerCli.Client().PluginRemove(ctx, ref.String(), types.PluginRemoveOptions{Force: opts.force}); err != nil {
+		if err := dockerCli.Client().PluginRemove(ctx, name, types.PluginRemoveOptions{Force: opts.force}); err != nil {
 			errs = append(errs, err)
 			continue
 		}

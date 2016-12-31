@@ -18,7 +18,7 @@ import (
 )
 
 // ErrReadLogsNotSupported is returned when the logger does not support reading logs.
-var ErrReadLogsNotSupported = errors.New("configured logging reader does not support reading")
+var ErrReadLogsNotSupported = errors.New("configured logging driver does not support reading")
 
 const (
 	// TimeFormat is the time format used for timestamps sent to log readers.
@@ -49,7 +49,7 @@ func CopyMessage(msg *Message) *Message {
 	m.Timestamp = msg.Timestamp
 	m.Partial = msg.Partial
 	m.Attrs = make(LogAttributes)
-	for k, v := range m.Attrs {
+	for k, v := range msg.Attrs {
 		m.Attrs[k] = v
 	}
 	return m

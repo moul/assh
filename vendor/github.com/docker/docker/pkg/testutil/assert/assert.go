@@ -4,8 +4,11 @@ package assert
 import (
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // TestingT is an interface which defines the methods of testing.T that are
@@ -41,6 +44,15 @@ func EqualStringSlice(t TestingT, actual, expected []string) {
 func NilError(t TestingT, err error) {
 	if err != nil {
 		fatal(t, "Expected no error, got: %s", err.Error())
+	}
+}
+
+// DeepEqual compare the actual value to the expected value and fails the test if
+// they are not "deeply equal".
+func DeepEqual(t TestingT, actual, expected interface{}) {
+	if !reflect.DeepEqual(actual, expected) {
+		fatal(t, "Expected (%T):\n%v\n\ngot (%T):\n%s\n",
+			expected, spew.Sdump(expected), actual, spew.Sdump(actual))
 	}
 }
 

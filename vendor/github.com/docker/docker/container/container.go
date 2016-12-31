@@ -19,12 +19,16 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	mounttypes "github.com/docker/docker/api/types/mount"
 	networktypes "github.com/docker/docker/api/types/network"
+	swarmtypes "github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/container/stream"
 	"github.com/docker/docker/daemon/exec"
 	"github.com/docker/docker/daemon/logger"
 	"github.com/docker/docker/daemon/logger/jsonfilelog"
 	"github.com/docker/docker/daemon/network"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/layer"
+	"github.com/docker/docker/libcontainerd"
+	"github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/docker/docker/pkg/promise"
@@ -32,17 +36,22 @@ import (
 	"github.com/docker/docker/pkg/symlink"
 	"github.com/docker/docker/restartmanager"
 	"github.com/docker/docker/runconfig"
-	runconfigopts "github.com/docker/docker/runconfig/opts"
 	"github.com/docker/docker/volume"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/libnetwork"
 	"github.com/docker/libnetwork/netlabel"
 	"github.com/docker/libnetwork/options"
 	"github.com/docker/libnetwork/types"
+	agentexec "github.com/docker/swarmkit/agent/exec"
 	"github.com/opencontainers/runc/libcontainer/label"
 )
 
 const configFileName = "config.v2.json"
+
+const (
+	// DefaultStopTimeout is the timeout (in seconds) for the syscall signal used to stop a container.
+	DefaultStopTimeout = 10
+)
 
 var (
 	errInvalidEndpoint = fmt.Errorf("invalid endpoint while building port map info")
@@ -59,9 +68,9 @@ func (DetachError) Error() string {
 // CommonContainer holds the fields for a container which are
 // applicable across all platforms supported by the daemon.
 type CommonContainer struct {
-	*runconfig.StreamConfig
+	StreamConfig *stream.Config
 	// embed for Container to support states directly.
-	*State          `json:"State"` // Needed for remote api version <= 1.11
+	*State          `json:"State"` // Needed for Engine API version <= 1.11
 	Root            string         `json:"-"` // Path to the "home" of the container, including metadata.
 	BaseFS          string         `json:"-"` // Path to the graphdriver mountpoint
 	RWLayer         layer.RWLayer  `json:"-"`
@@ -85,6 +94,8 @@ type CommonContainer struct {
 	MountPoints            map[string]*volume.MountPoint
 	HostConfig             *containertypes.HostConfig `json:"-"` // do not serialize the host config in the json, otherwise we'll make the container unportable
 	ExecCommands           *exec.Store                `json:"-"`
+	SecretStore            agentexec.SecretGetter     `json:"-"`
+	SecretReferences       []*swarmtypes.SecretReference
 	// logDriver for closing
 	LogDriver      logger.Logger  `json:"-"`
 	LogCopier      *logger.Copier `json:"-"`
@@ -102,7 +113,7 @@ func NewBaseContainer(id, root string) *Container {
 			ExecCommands:  exec.NewStore(),
 			Root:          root,
 			MountPoints:   make(map[string]*volume.MountPoint),
-			StreamConfig:  runconfig.NewStreamConfig(),
+			StreamConfig:  stream.NewConfig(),
 			attachContext: &attachContext{},
 		},
 	}
@@ -141,7 +152,7 @@ func (container *Container) ToDisk() error {
 		return err
 	}
 
-	jsonSource, err := ioutils.NewAtomicFileWriter(pth, 0666)
+	jsonSource, err := ioutils.NewAtomicFileWriter(pth, 0644)
 	if err != nil {
 		return err
 	}
@@ -201,7 +212,7 @@ func (container *Container) WriteHostConfig() error {
 		return err
 	}
 
-	f, err := ioutils.NewAtomicFileWriter(pth, 0666)
+	f, err := ioutils.NewAtomicFileWriter(pth, 0644)
 	if err != nil {
 		return err
 	}
@@ -218,7 +229,7 @@ func (container *Container) SetupWorkingDirectory(rootUID, rootGID int) error {
 
 	container.Config.WorkingDir = filepath.Clean(container.Config.WorkingDir)
 
-	// If can't mount container FS at this point (eg Hyper-V Containers on
+	// If can't mount container FS at this point (e.g. Hyper-V Containers on
 	// Windows) bail out now with no action.
 	if !container.canMountFS() {
 		return nil
@@ -311,12 +322,13 @@ func (container *Container) CheckpointDir() string {
 }
 
 // StartLogger starts a new logger driver for the container.
-func (container *Container) StartLogger(cfg containertypes.LogConfig) (logger.Logger, error) {
+func (container *Container) StartLogger() (logger.Logger, error) {
+	cfg := container.HostConfig.LogConfig
 	c, err := logger.GetLogDriver(cfg.Type)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get logging factory: %v", err)
+		return nil, fmt.Errorf("failed to get logging factory: %v", err)
 	}
-	ctx := logger.Context{
+	info := logger.Info{
 		Config:              cfg.Config,
 		ContainerID:         container.ID,
 		ContainerName:       container.Name,
@@ -332,12 +344,12 @@ func (container *Container) StartLogger(cfg containertypes.LogConfig) (logger.Lo
 
 	// Set logging file for "json-logger"
 	if cfg.Type == jsonfilelog.Name {
-		ctx.LogPath, err = container.GetRootResourcePath(fmt.Sprintf("%s-json.log", container.ID))
+		info.LogPath, err = container.GetRootResourcePath(fmt.Sprintf("%s-json.log", container.ID))
 		if err != nil {
 			return nil, err
 		}
 	}
-	return c(ctx)
+	return c(info)
 }
 
 // GetProcessLabel returns the process label for the container.
@@ -370,7 +382,7 @@ func (container *Container) Attach(stdin io.ReadCloser, stdout io.Writer, stderr
 
 // AttachStreams connects streams to a TTY.
 // Used by exec too. Should this move somewhere else?
-func AttachStreams(ctx context.Context, streamConfig *runconfig.StreamConfig, openStdin, stdinOnce, tty bool, stdin io.ReadCloser, stdout io.Writer, stderr io.Writer, keys []byte) chan error {
+func AttachStreams(ctx context.Context, streamConfig *stream.Config, openStdin, stdinOnce, tty bool, stdin io.ReadCloser, stdout io.Writer, stderr io.Writer, keys []byte) chan error {
 	var (
 		cStdout, cStderr io.ReadCloser
 		cStdin           io.WriteCloser
@@ -560,6 +572,32 @@ func (container *Container) AddMountPointWithVolume(destination string, vol volu
 	}
 }
 
+// UnmountVolumes unmounts all volumes
+func (container *Container) UnmountVolumes(volumeEventLog func(name, action string, attributes map[string]string)) error {
+	var errors []string
+	for _, volumeMount := range container.MountPoints {
+		// Check if the mounpoint has an ID, this is currently the best way to tell if it's actually mounted
+		// TODO(cpuguyh83): there should be a better way to handle this
+		if volumeMount.Volume != nil && volumeMount.ID != "" {
+			if err := volumeMount.Volume.Unmount(volumeMount.ID); err != nil {
+				errors = append(errors, err.Error())
+				continue
+			}
+			volumeMount.ID = ""
+
+			attributes := map[string]string{
+				"driver":    volumeMount.Volume.DriverName(),
+				"container": container.ID,
+			}
+			volumeEventLog(volumeMount.Volume.Name(), "unmount", attributes)
+		}
+	}
+	if len(errors) > 0 {
+		return fmt.Errorf("error while unmounting volumes for container %s: %s", container.ID, strings.Join(errors, "; "))
+	}
+	return nil
+}
+
 // IsDestinationMounted checks whether a path is mounted on the container or not.
 func (container *Container) IsDestinationMounted(destination string) bool {
 	return container.MountPoints[destination] != nil
@@ -576,6 +614,14 @@ func (container *Container) StopSignal() int {
 		stopSignal, _ = signal.ParseSignal(signal.DefaultStopSignal)
 	}
 	return int(stopSignal)
+}
+
+// StopTimeout returns the timeout (in seconds) used to stop the container.
+func (container *Container) StopTimeout() int {
+	if container.Config.StopTimeout != nil {
+		return *container.Config.StopTimeout
+	}
+	return DefaultStopTimeout
 }
 
 // InitDNSHostConfig ensures that the dns fields are never nil.
@@ -769,7 +815,7 @@ func (container *Container) BuildJoinOptions(n libnetwork.Network) ([]libnetwork
 	var joinOptions []libnetwork.EndpointOption
 	if epConfig, ok := container.NetworkSettings.Networks[n.Name()]; ok {
 		for _, str := range epConfig.Links {
-			name, alias, err := runconfigopts.ParseLink(str)
+			name, alias, err := opts.ParseLink(str)
 			if err != nil {
 				return nil, err
 			}
@@ -998,4 +1044,67 @@ func (container *Container) CancelAttachContext() {
 		container.attachContext.ctx = nil
 	}
 	container.attachContext.mu.Unlock()
+}
+
+func (container *Container) startLogging() error {
+	if container.HostConfig.LogConfig.Type == "none" {
+		return nil // do not start logging routines
+	}
+
+	l, err := container.StartLogger()
+	if err != nil {
+		return fmt.Errorf("failed to initialize logging driver: %v", err)
+	}
+
+	copier := logger.NewCopier(map[string]io.Reader{"stdout": container.StdoutPipe(), "stderr": container.StderrPipe()}, l)
+	container.LogCopier = copier
+	copier.Run()
+	container.LogDriver = l
+
+	// set LogPath field only for json-file logdriver
+	if jl, ok := l.(*jsonfilelog.JSONFileLogger); ok {
+		container.LogPath = jl.LogPath()
+	}
+
+	return nil
+}
+
+// StdinPipe gets the stdin stream of the container
+func (container *Container) StdinPipe() io.WriteCloser {
+	return container.StreamConfig.StdinPipe()
+}
+
+// StdoutPipe gets the stdout stream of the container
+func (container *Container) StdoutPipe() io.ReadCloser {
+	return container.StreamConfig.StdoutPipe()
+}
+
+// StderrPipe gets the stderr stream of the container
+func (container *Container) StderrPipe() io.ReadCloser {
+	return container.StreamConfig.StderrPipe()
+}
+
+// CloseStreams closes the container's stdio streams
+func (container *Container) CloseStreams() error {
+	return container.StreamConfig.CloseStreams()
+}
+
+// InitializeStdio is called by libcontainerd to connect the stdio.
+func (container *Container) InitializeStdio(iop libcontainerd.IOPipe) error {
+	if err := container.startLogging(); err != nil {
+		container.Reset(false)
+		return err
+	}
+
+	container.StreamConfig.CopyToPipe(iop)
+
+	if container.StreamConfig.Stdin() == nil && !container.Config.Tty {
+		if iop.Stdin != nil {
+			if err := iop.Stdin.Close(); err != nil {
+				logrus.Warnf("error closing stdin: %+v", err)
+			}
+		}
+	}
+
+	return nil
 }

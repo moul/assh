@@ -50,17 +50,6 @@ func TestImageList(t *testing.T) {
 		},
 		{
 			options: types.ImageListOptions{
-				All:       true,
-				MatchName: "image_name",
-			},
-			expectedQueryParams: map[string]string{
-				"all":     "1",
-				"filter":  "image_name",
-				"filters": "",
-			},
-		},
-		{
-			options: types.ImageListOptions{
 				Filters: filters,
 			},
 			expectedQueryParams: map[string]string{
@@ -93,7 +82,7 @@ func TestImageList(t *testing.T) {
 						return nil, fmt.Errorf("%s not set in URL query properly. Expected '%s', got %s", key, expected, actual)
 					}
 				}
-				content, err := json.Marshal([]types.Image{
+				content, err := json.Marshal([]types.ImageSummary{
 					{
 						ID: "image_id2",
 					},
@@ -118,5 +107,53 @@ func TestImageList(t *testing.T) {
 		if len(images) != 2 {
 			t.Fatalf("expected 2 images, got %v", images)
 		}
+	}
+}
+
+func TestImageListApiBefore125(t *testing.T) {
+	expectedFilter := "image:tag"
+	client := &Client{
+		client: newMockClient(func(req *http.Request) (*http.Response, error) {
+			query := req.URL.Query()
+			actualFilter := query.Get("filter")
+			if actualFilter != expectedFilter {
+				return nil, fmt.Errorf("filter not set in URL query properly. Expected '%s', got %s", expectedFilter, actualFilter)
+			}
+			actualFilters := query.Get("filters")
+			if actualFilters != "" {
+				return nil, fmt.Errorf("filters should have not been present, were with value: %s", actualFilters)
+			}
+			content, err := json.Marshal([]types.ImageSummary{
+				{
+					ID: "image_id2",
+				},
+				{
+					ID: "image_id2",
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewReader(content)),
+			}, nil
+		}),
+		version: "1.24",
+	}
+
+	filters := filters.NewArgs()
+	filters.Add("reference", "image:tag")
+
+	options := types.ImageListOptions{
+		Filters: filters,
+	}
+
+	images, err := client.ImageList(context.Background(), options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(images) != 2 {
+		t.Fatalf("expected 2 images, got %v", images)
 	}
 }

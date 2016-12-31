@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 
 	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/stringutils"
+	"github.com/docker/docker/pkg/system"
 )
 
 // IsKilled process the specified error and returns whether the process was killed or not.
@@ -35,7 +37,7 @@ func IsKilled(err error) bool {
 func runCommandWithOutput(cmd *exec.Cmd) (output string, exitCode int, err error) {
 	exitCode = 0
 	out, err := cmd.CombinedOutput()
-	exitCode = icmd.ProcessExitCode(err)
+	exitCode = system.ProcessExitCode(err)
 	output = string(out)
 	return
 }
@@ -223,4 +225,10 @@ func RunAtDifferentDate(date time.Time, block func()) {
 	icmd.RunCommand("date", date.Format(timeLayout))
 	block()
 	return
+}
+
+// ReadBody read the specified ReadCloser content and returns it
+func ReadBody(b io.ReadCloser) ([]byte, error) {
+	defer b.Close()
+	return ioutil.ReadAll(b)
 }

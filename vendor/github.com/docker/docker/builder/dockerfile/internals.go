@@ -43,7 +43,7 @@ func (b *Builder) commit(id string, autoCmd strslice.StrSlice, comment string) e
 		return nil
 	}
 	if b.image == "" && !b.noBaseImage {
-		return fmt.Errorf("Please provide a source image with `from` prior to commit")
+		return errors.New("Please provide a source image with `from` prior to commit")
 	}
 	b.runConfig.Image = b.image
 
@@ -137,7 +137,7 @@ func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalD
 	}
 
 	if len(infos) == 0 {
-		return fmt.Errorf("No source files were specified")
+		return errors.New("No source files were specified")
 	}
 	if len(infos) > 1 && !strings.HasSuffix(dest, string(os.PathSeparator)) {
 		return fmt.Errorf("When using %s with more than one source file, the destination must be a directory and end with a /", cmdName)
@@ -180,7 +180,7 @@ func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalD
 		return nil
 	}
 
-	container, err := b.docker.ContainerCreate(types.ContainerCreateConfig{Config: b.runConfig}, true)
+	container, err := b.docker.ContainerCreate(types.ContainerCreateConfig{Config: b.runConfig})
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalD
 
 	comment := fmt.Sprintf("%s %s in %s", cmdName, origPaths, dest)
 
-	// Twiddle the destination when its a relative path - meaning, make it
+	// Twiddle the destination when it's a relative path - meaning, make it
 	// relative to the WORKINGDIR
 	if dest, err = normaliseDest(cmdName, b.runConfig.WorkingDir, dest); err != nil {
 		return err
@@ -384,11 +384,11 @@ func (b *Builder) processImageFrom(img builder.Image) error {
 	}
 
 	// Check to see if we have a default PATH, note that windows won't
-	// have one as its set by HCS
+	// have one as it's set by HCS
 	if system.DefaultPathEnv != "" {
 		// Convert the slice of strings that represent the current list
 		// of env vars into a map so we can see if PATH is already set.
-		// If its not set then go ahead and give it our default value
+		// If it's not set then go ahead and give it our default value
 		configEnv := opts.ConvertKVStringsToMap(b.runConfig.Env)
 		if _, ok := configEnv["PATH"]; !ok {
 			b.runConfig.Env = append(b.runConfig.Env,
@@ -410,7 +410,7 @@ func (b *Builder) processImageFrom(img builder.Image) error {
 		fmt.Fprintf(b.Stderr, "# Executing %d build %s...\n", nTriggers, word)
 	}
 
-	// Copy the ONBUILD triggers, and remove them from the config, since the config will be comitted.
+	// Copy the ONBUILD triggers, and remove them from the config, since the config will be committed.
 	onBuildTriggers := b.runConfig.OnBuild
 	b.runConfig.OnBuild = []string{}
 
@@ -456,7 +456,7 @@ func (b *Builder) probeCache() (bool, error) {
 		return false, nil
 	}
 
-	fmt.Fprintf(b.Stdout, " ---> Using cache\n")
+	fmt.Fprint(b.Stdout, " ---> Using cache\n")
 	logrus.Debugf("[BUILDER] Use cached version: %s", b.runConfig.Cmd)
 	b.image = string(cache)
 
@@ -465,7 +465,7 @@ func (b *Builder) probeCache() (bool, error) {
 
 func (b *Builder) create() (string, error) {
 	if b.image == "" && !b.noBaseImage {
-		return "", fmt.Errorf("Please provide a source image with `from` prior to run")
+		return "", errors.New("Please provide a source image with `from` prior to run")
 	}
 	b.runConfig.Image = b.image
 
@@ -487,6 +487,7 @@ func (b *Builder) create() (string, error) {
 		Isolation:   b.options.Isolation,
 		ShmSize:     b.options.ShmSize,
 		Resources:   resources,
+		NetworkMode: container.NetworkMode(b.options.NetworkMode),
 	}
 
 	config := *b.runConfig
@@ -495,7 +496,7 @@ func (b *Builder) create() (string, error) {
 	c, err := b.docker.ContainerCreate(types.ContainerCreateConfig{
 		Config:     b.runConfig,
 		HostConfig: hostConfig,
-	}, true)
+	})
 	if err != nil {
 		return "", err
 	}
@@ -536,7 +537,7 @@ func (b *Builder) run(cID string) (err error) {
 		}
 	}()
 
-	if err := b.docker.ContainerStart(cID, nil, true, ""); err != nil {
+	if err := b.docker.ContainerStart(cID, nil, "", ""); err != nil {
 		close(finished)
 		if cancelErr := <-cancelErrCh; cancelErr != nil {
 			logrus.Debugf("Build cancelled (%v) and got an error from ContainerStart: %v",

@@ -1,8 +1,17 @@
 ---
 title: "ps"
 description: "The ps command description and usage"
-keywords: ["container, running, list"]
+keywords: "container, running, list"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # ps
 
@@ -24,6 +33,7 @@ Options:
                         - ancestor=(<image-name>[:tag]|<image-id>|<image@digest>)
                           containers created from an image or a descendant.
                         - is-task=(true|false)
+                        - health=(starting|healthy|unhealthy|none)
       --format string   Pretty-print containers using a Go template
       --help            Print usage
   -n, --last int        Show n last created containers (includes all states) (default -1)
@@ -72,6 +82,7 @@ The currently supported filters are:
 * isolation (default|process|hyperv)   (Windows daemon only)
 * volume (volume name or mount point) - filters containers that mount volumes.
 * network (network id or name) - filters containers connected to the provided network
+* health (starting|healthy|unhealthy|none) - filters containers based on healthcheck status
 
 #### Label
 
@@ -145,6 +156,7 @@ $ docker ps -a --filter 'exited=137'
 CONTAINER ID        IMAGE               COMMAND                CREATED             STATUS                       PORTS               NAMES
 b3e1c0ed5bfe        ubuntu:latest       "sleep 1000"           12 seconds ago      Exited (137) 5 seconds ago                       grave_kowalevski
 a2eb5558d669        redis:latest        "/entrypoint.sh redi   2 hours ago         Exited (137) 2 hours ago                         sharp_lalande
+```
 
 Any of these events result in a `137` status:
 
@@ -220,7 +232,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 ```
 
 The following matches containers based on the layer `d0e008c6cf02` or an image
-that have this layer in it's layer stack.
+that have this layer in its layer stack.
 
 ```bash
 $ docker ps --filter ancestor=d0e008c6cf02
@@ -271,7 +283,7 @@ CONTAINER ID        IMAGE       COMMAND       CREATED             STATUS        
 The `volume` filter shows only containers that mount a specific volume or have
 a volume mounted in a specific path:
 
-```bash
+```bash{% raw %}
 $ docker ps --filter volume=remote-volume --format "table {{.ID}}\t{{.Mounts}}"
 CONTAINER ID        MOUNTS
 9c3527ed70ce        remote-volume
@@ -279,7 +291,7 @@ CONTAINER ID        MOUNTS
 $ docker ps --filter volume=/data --format "table {{.ID}}\t{{.Mounts}}"
 CONTAINER ID        MOUNTS
 9c3527ed70ce        remote-volume
-```
+{% endraw %}```
 
 #### Network
 
@@ -304,7 +316,9 @@ example shows all containers that are attached to the `net1` network, using
 the network id as a filter;
 
 ```bash
+{% raw %}
 $ docker network inspect --format "{{.ID}}" net1
+{% endraw %}
 
 8c0b4110ae930dbe26b258de9bc34a03f98056ed6f27f991d32919bfe401d7c5
 
@@ -333,8 +347,9 @@ Placeholder   | Description
 `.Size`       | Container disk size.
 `.Names`      | Container names.
 `.Labels`     | All labels assigned to the container.
-`.Label`      | Value of a specific label for this container. For example `'{{.Label "com.docker.swarm.cpu"}}'`
+`.Label`      | Value of a specific label for this container. For example `'{% raw %}{{.Label "com.docker.swarm.cpu"}}{% endraw %}'`
 `.Mounts`     | Names of the volumes mounted in this container.
+`.Networks`   | Names of the networks attached to this container.
 
 When using the `--format` option, the `ps` command will either output the data
 exactly as the template declares or, when using the `table` directive, includes
@@ -344,7 +359,9 @@ The following example uses a template without headers and outputs the `ID` and
 `Command` entries separated by a colon for all running containers:
 
 ```bash
+{% raw %}
 $ docker ps --format "{{.ID}}: {{.Command}}"
+{% endraw %}
 
 a87ecb4f327c: /bin/sh -c #(nop) MA
 01946d9d34d8: /bin/sh -c #(nop) MA
@@ -355,7 +372,9 @@ c1d3b0166030: /bin/sh -c yum -y up
 To list all running containers with their labels in a table format you can use:
 
 ```bash
+{% raw %}
 $ docker ps --format "table {{.ID}}\t{{.Labels}}"
+{% endraw %}
 
 CONTAINER ID        LABELS
 a87ecb4f327c        com.docker.swarm.node=ubuntu,com.docker.swarm.storage=ssd

@@ -169,6 +169,12 @@ func NetworksFromServices(cli client.NetworkAPIClient, projectName string, netwo
 			networkNames[network.Name] = network
 		}
 	}
+	if len(networkConfigs) == 0 {
+		network := NewNetwork(projectName, "default", &config.NetworkConfig{
+			Driver: "bridge",
+		}, cli)
+		networks = append(networks, network)
+	}
 	for name, config := range networkConfigs {
 		network := NewNetwork(projectName, name, config, cli)
 		networks = append(networks, network)

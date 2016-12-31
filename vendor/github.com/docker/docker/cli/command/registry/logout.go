@@ -11,11 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewLogoutCommand creates a new `docker login` command
+// NewLogoutCommand creates a new `docker logout` command
 func NewLogoutCommand(dockerCli *command.DockerCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "logout [SERVER]",
-		Short: "Log out from a Docker registry.",
+		Short: "Log out from a Docker registry",
 		Long:  "Log out from a Docker registry.\nIf no server is specified, the default is defined by the daemon.",
 		Args:  cli.RequiresMaxArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -47,7 +47,7 @@ func runLogout(dockerCli *command.DockerCli, serverAddress string) error {
 	)
 	if !isDefaultRegistry {
 		hostnameAddress = registry.ConvertToHostname(serverAddress)
-		// the tries below are kept for backward compatibily where a user could have
+		// the tries below are kept for backward compatibility where a user could have
 		// saved the registry in one of the following format.
 		regsToTry = append(regsToTry, hostnameAddress, "http://"+hostnameAddress, "https://"+hostnameAddress)
 	}
@@ -68,7 +68,7 @@ func runLogout(dockerCli *command.DockerCli, serverAddress string) error {
 
 	fmt.Fprintf(dockerCli.Out(), "Removing login credentials for %s\n", hostnameAddress)
 	for _, r := range regsToLogout {
-		if err := dockerCli.CredentialsStore().Erase(r); err != nil {
+		if err := dockerCli.CredentialsStore(r).Erase(r); err != nil {
 			fmt.Fprintf(dockerCli.Err(), "WARNING: could not erase credentials: %v\n", err)
 		}
 	}

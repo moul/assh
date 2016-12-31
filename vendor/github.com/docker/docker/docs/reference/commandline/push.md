@@ -1,8 +1,17 @@
 ---
 title: "push"
 description: "The push command description and usage"
-keywords: ["share, push, image"]
+keywords: "share, push, image"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # push
 
@@ -26,6 +35,13 @@ Killing the `docker push` process, for example by pressing `CTRL-c` while it is
 running in a terminal, terminates the push operation.
 
 Registry credentials are managed by [docker login](login.md).
+
+## Concurrent uploads
+
+By default the Docker daemon will push five layers of an image at a time.
+If you are on a low bandwidth connection this may cause timeout issues and you may want to lower
+this via the `--max-concurrent-uploads` daemon option. See the
+[daemon documentation](dockerd.md) for more details.
 
 ## Examples
 

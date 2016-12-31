@@ -33,6 +33,7 @@ var acceptedPsFilterTags = map[string]bool{
 	"label":     true,
 	"name":      true,
 	"status":    true,
+	"health":    true,
 	"since":     true,
 	"volume":    true,
 	"network":   true,
@@ -165,7 +166,9 @@ func (daemon *Daemon) filterByNameIDMatches(ctx *listContext) []*container.Conta
 
 // reduceContainers parses the user's filtering options and generates the list of containers to return based on a reducer.
 func (daemon *Daemon) reduceContainers(config *types.ContainerListOptions, reducer containerReducer) ([]*types.Container, error) {
-	containers := []*types.Container{}
+	var (
+		containers = []*types.Container{}
+	)
 
 	ctx, err := daemon.foldFilter(config)
 	if err != nil {
@@ -190,6 +193,7 @@ func (daemon *Daemon) reduceContainers(config *types.ContainerListOptions, reduc
 			ctx.idx++
 		}
 	}
+
 	return containers, nil
 }
 
@@ -213,7 +217,7 @@ func (daemon *Daemon) reducePsContainer(container *container.Container, ctx *lis
 
 // foldFilter generates the container filter based on the user's filtering options.
 func (daemon *Daemon) foldFilter(config *types.ContainerListOptions) (*listContext, error) {
-	psFilters := config.Filter
+	psFilters := config.Filters
 
 	if err := psFilters.Validate(acceptedPsFilterTags); err != nil {
 		return nil, err
@@ -256,6 +260,17 @@ func (daemon *Daemon) foldFilter(config *types.ContainerListOptions) (*listConte
 		} else {
 			return nil, fmt.Errorf("Invalid filter 'is-task=%s'", psFilters.Get("is-task"))
 		}
+	}
+
+	err = psFilters.WalkValues("health", func(value string) error {
+		if !container.IsValidHealthString(value) {
+			return fmt.Errorf("Unrecognised filter value for health: %s", value)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	var beforeContFilter, sinceContFilter *container.Container
@@ -381,6 +396,11 @@ func includeContainerInList(container *container.Container, ctx *listContext) it
 
 	// Do not include container if its status doesn't match the filter
 	if !ctx.filters.Match("status", container.State.StateString()) {
+		return excludeContainer
+	}
+
+	// Do not include container if its health doesn't match the filter
+	if !ctx.filters.ExactMatch("health", container.State.HealthString()) {
 		return excludeContainer
 	}
 
@@ -519,7 +539,7 @@ func (daemon *Daemon) transformContainer(container *container.Container, ctx *li
 		}
 		if len(bindings) == 0 {
 			newC.Ports = append(newC.Ports, types.Port{
-				PrivatePort: p,
+				PrivatePort: uint16(p),
 				Type:        port.Proto(),
 			})
 			continue
@@ -530,8 +550,8 @@ func (daemon *Daemon) transformContainer(container *container.Container, ctx *li
 				return nil, err
 			}
 			newC.Ports = append(newC.Ports, types.Port{
-				PrivatePort: p,
-				PublicPort:  h,
+				PrivatePort: uint16(p),
+				PublicPort:  uint16(h),
 				Type:        port.Proto(),
 				IP:          binding.HostIP,
 			})
@@ -608,7 +628,7 @@ func (daemon *Daemon) filterVolumes(vols []volume.Volume, filter filters.Args) (
 			}
 		}
 		if filter.Include("label") {
-			v, ok := vol.(volume.LabeledVolume)
+			v, ok := vol.(volume.DetailedVolume)
 			if !ok {
 				continue
 			}

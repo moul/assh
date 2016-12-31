@@ -1,8 +1,17 @@
 ---
 title: "Dockerfile reference"
 description: "Dockerfiles use a simple DSL which allows you to automate the steps you would normally manually take to create an image."
-keywords: ["builder, docker, Dockerfile, automation,  image creation"]
+keywords: "builder, docker, Dockerfile, automation, image creation"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # Dockerfile reference
 
@@ -14,14 +23,14 @@ instructions in succession.
 
 This page describes the commands you can use in a `Dockerfile`. When you are
 done reading this page, refer to the [`Dockerfile` Best
-Practices](../userguide/eng-image/dockerfile_best-practices.md) for a tip-oriented guide.
+Practices](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) for a tip-oriented guide.
 
 ## Usage
 
 The [`docker build`](commandline/build.md) command builds an image from
 a `Dockerfile` and a *context*. The build's context is the files at a specified
 location `PATH` or `URL`. The `PATH` is a directory on your local filesystem.
-The `URL` is a the location of a Git repository.
+The `URL` is a Git repository location.
 
 A context is processed recursively. So, a `PATH` includes any subdirectories and
 the `URL` includes the repository and its submodules. A simple build command
@@ -83,20 +92,20 @@ instructions.
 Whenever possible, Docker will re-use the intermediate images (cache),
 to accelerate the `docker build` process significantly. This is indicated by
 the `Using cache` message in the console output.
-(For more information, see the [Build cache section](../userguide/eng-image/dockerfile_best-practices.md#build-cache)) in the
+(For more information, see the [Build cache section](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#/build-cache)) in the
 `Dockerfile` best practices guide:
 
     $ docker build -t svendowideit/ambassador .
     Sending build context to Docker daemon 15.36 kB
-    Step 1 : FROM alpine:3.2
+    Step 1/4 : FROM alpine:3.2
      ---> 31f630c65071
-    Step 2 : MAINTAINER SvenDowideit@home.org.au
+    Step 2/4 : MAINTAINER SvenDowideit@home.org.au
      ---> Using cache
      ---> 2a1c91448f5f
-    Step 3 : RUN apk update &&      apk add socat &&        rm -r /var/cache/
+    Step 3/4 : RUN apk update &&      apk add socat &&        rm -r /var/cache/
      ---> Using cache
      ---> 21ed6e7fbb73
-    Step 4 : CMD env | grep _TCP= | (sed 's/.*_PORT_\([0-9]*\)_TCP=tcp:\/\/\(.*\):\(.*\)/socat -t 100000000 TCP4-LISTEN:\1,fork,reuseaddr TCP4:\2:\3 \&/' && echo wait) | sh
+    Step 4/4 : CMD env | grep _TCP= | (sed 's/.*_PORT_\([0-9]*\)_TCP=tcp:\/\/\(.*\):\(.*\)/socat -t 100000000 TCP4-LISTEN:\1,fork,reuseaddr TCP4:\2:\3 \&/' && echo wait) | sh
      ---> Using cache
      ---> 7ea8aef582cc
     Successfully built 7ea8aef582cc
@@ -109,7 +118,7 @@ image you can specify it with `--cache-from` option. Images specified with
 registries.
 
 When you're done with your build, you're ready to look into [*Pushing a
-repository to its registry*](../tutorials/dockerrepos.md#contributing-to-docker-hub).
+repository to its registry*](https://docs.docker.com/engine/tutorials/dockerrepos/#/contributing-to-docker-hub).
 
 ## Format
 
@@ -129,7 +138,7 @@ instruction must be \`FROM\`** in order to specify the [*Base
 Image*](glossary.md#base-image) from which you are building.
 
 Docker treats lines that *begin* with `#` as a comment, unless the line is
-a valid [parser directive](builder.md#parser-directives). A `#` marker anywhere
+a valid [parser directive](#parser-directives). A `#` marker anywhere
 else in a line is treated as an argument. This allows statements like:
 
 ```Dockerfile
@@ -246,7 +255,7 @@ of this dockerfile is that second and third lines are considered a single
 instruction:
 
 ```Dockerfile
-FROM windowsservercore
+FROM microsoft/nanoserver
 COPY testfile.txt c:\\
 RUN dir c:\
 ```
@@ -255,9 +264,9 @@ Results in:
 
     PS C:\John> docker build -t cmd .
     Sending build context to Docker daemon 3.072 kB
-    Step 1 : FROM windowsservercore
-     ---> dbfee88ee9fd
-    Step 2 : COPY testfile.txt c:RUN dir c:
+    Step 1/2 : FROM microsoft/nanoserver
+     ---> 22738ff49c6d
+    Step 2/2 : COPY testfile.txt c:\RUN dir c:
     GetFileAttributesEx c:RUN: The system cannot find the file specified.
     PS C:\John>
 
@@ -271,7 +280,7 @@ expected with the use of natural platform semantics for file paths on `Windows`:
 
     # escape=`
 
-    FROM windowsservercore
+    FROM microsoft/nanoserver
     COPY testfile.txt c:\
     RUN dir c:\
 
@@ -279,30 +288,29 @@ Results in:
 
     PS C:\John> docker build -t succeeds --no-cache=true .
     Sending build context to Docker daemon 3.072 kB
-    Step 1 : FROM windowsservercore
-     ---> dbfee88ee9fd
-    Step 2 : COPY testfile.txt c:\
-     ---> 99ceb62e90df
-    Removing intermediate container 62afbe726221
-    Step 3 : RUN dir c:\
-     ---> Running in a5ff53ad6323
+    Step 1/3 : FROM microsoft/nanoserver
+     ---> 22738ff49c6d
+    Step 2/3 : COPY testfile.txt c:\
+     ---> 96655de338de
+    Removing intermediate container 4db9acbb1682
+    Step 3/3 : RUN dir c:\
+     ---> Running in a2c157f842f5
      Volume in drive C has no label.
-     Volume Serial Number is 1440-27FA
-
+     Volume Serial Number is 7E6D-E0F7
+    
      Directory of c:\
-
-    03/25/2016  05:28 AM    <DIR>          inetpub
-    03/25/2016  04:22 AM    <DIR>          PerfLogs
-    04/22/2016  10:59 PM    <DIR>          Program Files
-    03/25/2016  04:22 AM    <DIR>          Program Files (x86)
-    04/18/2016  09:26 AM                 4 testfile.txt
-    04/22/2016  10:59 PM    <DIR>          Users
-    04/22/2016  10:59 PM    <DIR>          Windows
-                   1 File(s)              4 bytes
-                   6 Dir(s)  21,252,689,920 bytes free
-     ---> 2569aa19abef
-    Removing intermediate container a5ff53ad6323
-    Successfully built 2569aa19abef
+    
+    10/05/2016  05:04 PM             1,894 License.txt
+    10/05/2016  02:22 PM    <DIR>          Program Files
+    10/05/2016  02:14 PM    <DIR>          Program Files (x86)
+    10/28/2016  11:18 AM                62 testfile.txt
+    10/28/2016  11:20 AM    <DIR>          Users
+    10/28/2016  11:20 AM    <DIR>          Windows
+               2 File(s)          1,956 bytes
+               4 Dir(s)  21,259,096,064 bytes free
+     ---> 01c7f3bef04f
+    Removing intermediate container a2c157f842f5
+    Successfully built 01c7f3bef04f
     PS C:\John>
 
 ## Environment replacement
@@ -483,7 +491,7 @@ Or
 The `FROM` instruction sets the [*Base Image*](glossary.md#base-image)
 for subsequent instructions. As such, a valid `Dockerfile` must have `FROM` as
 its first instruction. The image can be any valid image – it is especially easy
-to start by **pulling an image** from the [*Public Repositories*](../tutorials/dockerrepos.md).
+to start by **pulling an image** from the [*Public Repositories*](https://docs.docker.com/engine/tutorials/dockerrepos/).
 
 - `FROM` must be the first non-comment instruction in the `Dockerfile`.
 
@@ -504,7 +512,7 @@ default is `/bin/sh -c` on Linux or `cmd /S /C` on Windows)
 - `RUN ["executable", "param1", "param2"]` (*exec* form)
 
 The `RUN` instruction will execute any commands in a new layer on top of the
-current image and commit the results. The resulting comitted image will be
+current image and commit the results. The resulting committed image will be
 used for the next step in the `Dockerfile`.
 
 Layering `RUN` instructions and generating commits conforms to the core
@@ -519,13 +527,15 @@ command.
 
 In the *shell* form you can use a `\` (backslash) to continue a single
 RUN instruction onto the next line. For example, consider these two lines:
+
 ```
-RUN /bin/bash -c 'source $HOME/.bashrc ;\
+RUN /bin/bash -c 'source $HOME/.bashrc; \
 echo $HOME'
 ```
 Together they are equivalent to this single line:
+
 ```
-RUN /bin/bash -c 'source $HOME/.bashrc ; echo $HOME'
+RUN /bin/bash -c 'source $HOME/.bashrc; echo $HOME'
 ```
 
 > **Note**:
@@ -563,7 +573,7 @@ cache for `RUN` instructions can be invalidated by using the `--no-cache`
 flag, for example `docker build --no-cache`.
 
 See the [`Dockerfile` Best Practices
-guide](../userguide/eng-image/dockerfile_best-practices.md#build-cache) for more information.
+guide](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#/build-cache) for more information.
 
 The cache for `RUN` instructions can be invalidated by `ADD` instructions. See
 [below](#add) for details.
@@ -641,7 +651,7 @@ If the user specifies arguments to `docker run` then they will override the
 default specified in `CMD`.
 
 > **Note**:
-> don't confuse `RUN` with `CMD`. `RUN` actually runs a command and commits
+> Don't confuse `RUN` with `CMD`. `RUN` actually runs a command and commits
 > the result; `CMD` does not execute anything at build time, but specifies
 > the intended command for the image.
 
@@ -718,7 +728,7 @@ To set up port redirection on the host system, see [using the -P
 flag](run.md#expose-incoming-ports). The Docker network feature supports
 creating networks without the need to expose ports within the network, for
 detailed information see the  [overview of this
-feature](../userguide/networking/index.md)).
+feature](https://docs.docker.com/engine/userguide/networking/)).
 
 ## ENV
 
@@ -751,7 +761,7 @@ and
     ENV myDog Rex The Dog
     ENV myCat fluffy
 
-will yield the same net results in the final container, but the first form
+will yield the same net results in the final image, but the first form
 is preferred because it produces a single cache layer.
 
 The environment variables set using `ENV` will persist when a container is run
@@ -773,7 +783,7 @@ ADD has two forms:
 whitespace)
 
 The `ADD` instruction copies new files, directories or remote file URLs from `<src>`
-and adds them to the filesystem of the container at the path `<dest>`.
+and adds them to the filesystem of the image at the path `<dest>`.
 
 Multiple `<src>` resource may be specified but if they are files or
 directories then they must be relative to the source directory that is
@@ -806,7 +816,7 @@ of whether or not the file has changed and the cache should be updated.
 > can only contain a URL based `ADD` instruction. You can also pass a
 > compressed archive through STDIN: (`docker build - < archive.tar.gz`),
 > the `Dockerfile` at the root of the archive and the rest of the
-> archive will get used at the context of the build.
+> archive will be used as the context of the build.
 
 > **Note**:
 > If your URL files are protected using authentication, you
@@ -819,7 +829,7 @@ of whether or not the file has changed and the cache should be updated.
 > following instructions from the Dockerfile if the contents of `<src>` have
 > changed. This includes invalidating the cache for `RUN` instructions.
 > See the [`Dockerfile` Best Practices
-guide](../userguide/eng-image/dockerfile_best-practices.md#build-cache) for more information.
+guide](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#/build-cache) for more information.
 
 
 `ADD` obeys the following rules:
@@ -848,7 +858,7 @@ guide](../userguide/eng-image/dockerfile_best-practices.md#build-cache) for more
 - If `<src>` is a *local* tar archive in a recognized compression format
   (identity, gzip, bzip2 or xz) then it is unpacked as a directory. Resources
   from *remote* URLs are **not** decompressed. When a directory is copied or
-  unpacked, it has the same behavior as `tar -x`: the result is the union of:
+  unpacked, it has the same behavior as `tar -x`, the result is the union of:
 
     1. Whatever existed at the destination path and
     2. The contents of the source tree, with conflicts resolved in favor
@@ -1194,7 +1204,7 @@ containers. The value can be a JSON array, `VOLUME ["/var/log/"]`, or a plain
 string with multiple arguments, such as `VOLUME /var/log` or `VOLUME /var/log
 /var/db`. For more information/examples and mounting instructions via the
 Docker client, refer to
-[*Share Directories via Volumes*](../tutorials/dockervolumes.md#mount-a-host-directory-as-a-data-volume)
+[*Share Directories via Volumes*](https://docs.docker.com/engine/tutorials/dockervolumes/#/mount-a-host-directory-as-a-data-volume)
 documentation.
 
 The `docker run` command initializes the newly created volume with any data
@@ -1258,6 +1268,19 @@ For example:
 The output of the final `pwd` command in this `Dockerfile` would be
 `/path/$DIRNAME`
 
+On Windows, `WORKDIR` behaves differently depending on whether using Windows
+Server containers or Hyper-V containers. For Hyper-V containers, the engine
+is, for architectural reasons, unable to create the directory if it does not
+previously exist. For Windows Server containers, the directory is created
+if it does not exist. Hence, for consistency between Windows Server and 
+Hyper-V containers, it is strongly recommended to include an explicit instruction
+to create the directory in the Dockerfile. For example:
+
+    # escape=`
+    FROM microsoft/nanoserver
+    RUN mkdir c:\myapp
+    WORKDIR c:\myapp
+
 ## ARG
 
     ARG <name>[=<default value>]
@@ -1265,10 +1288,10 @@ The output of the final `pwd` command in this `Dockerfile` would be
 The `ARG` instruction defines a variable that users can pass at build-time to
 the builder with the `docker build` command using the `--build-arg
 <varname>=<value>` flag. If a user specifies a build argument that was not
-defined in the Dockerfile, the build outputs an error.
+defined in the Dockerfile, the build outputs a warning.
 
 ```
-One or more build-args were not consumed, failing build.
+[Warning] One or more build-args [foo] were not consumed.
 ```
 
 The Dockerfile author can define a single variable by specifying `ARG` once or many
@@ -1378,8 +1401,11 @@ corresponding `ARG` instruction in the Dockerfile.
 * `NO_PROXY`
 * `no_proxy`
 
-To use these, simply pass them on the command line using the `--build-arg
-<varname>=<value>` flag.
+To use these, simply pass them on the command line using the flag:
+
+```
+--build-arg <varname>=<value>
+```
 
 ### Impact on build caching
 
@@ -1582,7 +1608,7 @@ well as alternate shells available including `sh`.
 The `SHELL` instruction can appear multiple times. Each `SHELL` instruction overrides
 all previous `SHELL` instructions, and affects all subsequent instructions. For example:
 
-    FROM windowsservercore
+    FROM microsoft/windowsservercore
 
     # Executed as cmd /S /C echo default
     RUN echo default
@@ -1631,7 +1657,7 @@ the `escape` parser directive:
 
     # escape=`
 
-    FROM windowsservercore
+    FROM microsoft/nanoserver
     SHELL ["powershell","-command"]
     RUN New-Item -ItemType Directory C:\Example
     ADD Execute-MyCmdlet.ps1 c:\example\
@@ -1640,36 +1666,36 @@ the `escape` parser directive:
 Resulting in:
 
     PS E:\docker\build\shell> docker build -t shell .
-    Sending build context to Docker daemon 3.584 kB
-    Step 1 : FROM windowsservercore
-     ---> 5bc36a335344
-    Step 2 : SHELL powershell -command
-     ---> Running in 87d7a64c9751
-     ---> 4327358436c1
-    Removing intermediate container 87d7a64c9751
-    Step 3 : RUN New-Item -ItemType Directory C:\Example
-     ---> Running in 3e6ba16b8df9
-
-
+    Sending build context to Docker daemon 4.096 kB
+    Step 1/5 : FROM microsoft/nanoserver
+     ---> 22738ff49c6d
+    Step 2/5 : SHELL powershell -command
+     ---> Running in 6fcdb6855ae2
+     ---> 6331462d4300
+    Removing intermediate container 6fcdb6855ae2
+    Step 3/5 : RUN New-Item -ItemType Directory C:\Example
+     ---> Running in d0eef8386e97
+    
+    
         Directory: C:\
-
-
+    
+    
     Mode                LastWriteTime         Length Name
     ----                -------------         ------ ----
-    d-----         6/2/2016   2:59 PM                Example
-
-
-     ---> 1f1dfdcec085
-    Removing intermediate container 3e6ba16b8df9
-    Step 4 : ADD Execute-MyCmdlet.ps1 c:\example\
-     ---> 6770b4c17f29
-    Removing intermediate container b139e34291dc
-    Step 5 : RUN c:\example\Execute-MyCmdlet -sample 'hello world'
-     ---> Running in abdcf50dfd1f
-    Hello from Execute-MyCmdlet.ps1 - passed hello world
-     ---> ba0e25255fda
-    Removing intermediate container abdcf50dfd1f
-    Successfully built ba0e25255fda
+    d-----       10/28/2016  11:26 AM                Example
+    
+    
+     ---> 3f2fbf1395d9
+    Removing intermediate container d0eef8386e97
+    Step 4/5 : ADD Execute-MyCmdlet.ps1 c:\example\
+     ---> a955b2621c31
+    Removing intermediate container b825593d39fc
+    Step 5/5 : RUN c:\example\Execute-MyCmdlet 'hello world'
+     ---> Running in be6d8e63fe75
+    hello world
+     ---> 8e559e9bf424
+    Removing intermediate container be6d8e63fe75
+    Successfully built 8e559e9bf424
     PS E:\docker\build\shell>
 
 The `SHELL` instruction could also be used to modify the way in which
@@ -1677,14 +1703,14 @@ a shell operates. For example, using `SHELL cmd /S /C /V:ON|OFF` on Windows, del
 environment variable expansion semantics could be modified.
 
 The `SHELL` instruction can also be used on Linux should an alternate shell be
-required such `zsh`, `csh`, `tcsh` and others.
+required such as `zsh`, `csh`, `tcsh` and others.
 
 The `SHELL` feature was added in Docker 1.12.
 
 ## Dockerfile examples
 
 Below you can see some examples of Dockerfile syntax. If you're interested in
-something more realistic, take a look at the list of [Dockerization examples](../examples/index.md).
+something more realistic, take a look at the list of [Dockerization examples](https://docs.docker.com/engine/examples/).
 
 ```
 # Nginx
@@ -1728,6 +1754,6 @@ FROM ubuntu
 RUN echo moo > oink
 # Will output something like ===> 695d7793cbe4
 
-# You᾿ll now have two images, 907ad6c2736f with /bar, and 695d7793cbe4 with
+# You'll now have two images, 907ad6c2736f with /bar, and 695d7793cbe4 with
 # /oink.
 ```

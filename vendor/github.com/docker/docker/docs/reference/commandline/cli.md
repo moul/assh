@@ -1,8 +1,17 @@
 ---
 title: "Use the Docker command line"
 description: "Docker's CLI command description and usage"
-keywords: ["Docker, Docker documentation, CLI,  command line"]
+keywords: "Docker, Docker documentation, CLI, command line"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # Use the Docker command line
 
@@ -11,18 +20,17 @@ or execute `docker help`:
 
 ```bash
 $ docker
-Usage: docker [OPTIONS] COMMAND [arg...]
+Usage: docker [OPTIONS] COMMAND [ARG...]
        docker [ --help | -v | --version ]
 
 A self-sufficient runtime for containers.
 
 Options:
-
       --config string      Location of client config files (default "/root/.docker")
   -D, --debug              Enable debug mode
       --help               Print usage
   -H, --host value         Daemon socket(s) to connect to (default [])
-  -l, --log-level string   Set the logging level (debug, info, warn, error, fatal) (default "info")
+  -l, --log-level string   Set the logging level ("debug", "info", "warn", "error", "fatal") (default "info")
       --tls                Use TLS; implied by --tlsverify
       --tlscacert string   Trust certs signed only by this CA (default "/root/.docker/ca.pem")
       --tlscert string     Path to TLS certificate file (default "/root/.docker/cert.pem")
@@ -41,7 +49,7 @@ each `docker` command with `sudo`. To avoid having to use `sudo` with the
 `docker` and add users to it.
 
 For more information about installing Docker or `sudo` configuration, refer to
-the [installation](../../installation/index.md) instructions for your operating system.
+the [installation](https://docs.docker.com/engine/installation/) instructions for your operating system.
 
 ## Environment variables
 
@@ -61,10 +69,13 @@ by the `docker` command line:
   Equates to `--disable-content-trust=false` for build, create, pull, push, run.
 * `DOCKER_CONTENT_TRUST_SERVER` The URL of the Notary server to use. This defaults
   to the same URL as the registry.
+* `DOCKER_HIDE_LEGACY_COMMANDS` When set, Docker hides "legacy" top-level commands (such as `docker rm`, and 
+  `docker pull`) in `docker help` output, and only `Management commands` per object-type (e.g., `docker container`) are
+  printed. This may become the default in a future release, at which point this environment-variable is removed.
 * `DOCKER_TMPDIR` Location for temporary Docker files.
 
-Because Docker is developed using 'Go', you can also use any environment
-variables used by the 'Go' runtime. In particular, you may find these useful:
+Because Docker is developed using Go, you can also use any environment
+variables used by the Go runtime. In particular, you may find these useful:
 
 * `HTTP_PROXY`
 * `HTTPS_PROXY`
@@ -114,6 +125,40 @@ falls back to the default table format. For a list of supported formatting
 directives, see the
 [**Formatting** section in the `docker ps` documentation](ps.md)
 
+The property `imagesFormat` specifies the default format for `docker images` output.
+When the `--format` flag is not provided with the `docker images` command,
+Docker's client uses this property. If this property is not set, the client
+falls back to the default table format. For a list of supported formatting
+directives, see the [**Formatting** section in the `docker images` documentation](images.md)
+
+The property `serviceInspectFormat` specifies the default format for `docker
+service inspect` output. When the `--format` flag is not provided with the
+`docker service inspect` command, Docker's client uses this property. If this
+property is not set, the client falls back to the default json format. For a
+list of supported formatting directives, see the
+[**Formatting** section in the `docker service inspect` documentation](service_inspect.md)
+
+The property `statsFormat` specifies the default format for `docker
+stats` output. When the `--format` flag is not provided with the
+`docker stats` command, Docker's client uses this property. If this
+property is not set, the client falls back to the default table
+format. For a list of supported formatting directives, see
+[**Formatting** section in the `docker stats` documentation](stats.md)
+
+The property `credsStore` specifies an external binary to serve as the default
+credential store. When this property is set, `docker login` will attempt to
+store credentials in the binary specified by `docker-credential-<value>` which
+is visible on `$PATH`. If this property is not set, credentials will be stored
+in the `auths` property of the config. For more information, see the
+[**Credentials store** section in the `docker login` documentation](login.md#credentials-store)
+
+The property `credHelpers` specifies a set of credential helpers to use
+preferentially over `credsStore` or `auths` when storing and retrieving
+credentials for specific registries. If this property is set, the binary
+`docker-credential-<value>` will be used when storing or retrieving credentials
+for a specific registry. For more information, see the
+[**Credential helpers** section in the `docker login` documentation](login.md#credential-helpers)
+
 Once attached to a container, users detach from it and leave it running using
 the using `CTRL-p CTRL-q` key sequence. This detach key sequence is customizable
 using the `detachKeys` property. Specify a `<sequence>` value for the
@@ -132,30 +177,25 @@ Users can override your custom or the default key sequence on a per-container
 basis. To do this, the user specifies the `--detach-keys` flag with the `docker
 attach`, `docker exec`, `docker run` or `docker start` command.
 
-The property `imagesFormat` specifies the default format for `docker images` output.
-When the `--format` flag is not provided with the `docker images` command,
-Docker's client uses this property. If this property is not set, the client
-falls back to the default table format. For a list of supported formatting
-directives, see the [**Formatting** section in the `docker images` documentation](images.md)
-
-The property `serviceInspectFormat` specifies the default format for `docker
-service inspect` output. When the `--format` flag is not provided with the
-`docker service inspect` command, Docker's client uses this property. If this
-property is not set, the client falls back to the default json format. For a
-list of supported formatting directives, see the
-[**Formatting** section in the `docker service inspect` documentation](service_inspect.md)
-
 Following is a sample `config.json` file:
 
+    {% raw %}
     {
       "HttpHeaders": {
         "MyHeader": "MyValue"
       },
       "psFormat": "table {{.ID}}\\t{{.Image}}\\t{{.Command}}\\t{{.Labels}}",
       "imagesFormat": "table {{.ID}}\\t{{.Repository}}\\t{{.Tag}}\\t{{.CreatedAt}}",
+      "statsFormat": "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}",
       "serviceInspectFormat": "pretty",
-      "detachKeys": "ctrl-e,e"
+      "detachKeys": "ctrl-e,e",
+      "credsStore": "secretservice",
+      "credHelpers": {
+        "awesomereg.example.org": "hip-star",
+        "unicorn.example.com": "vcbait"
+      }
     }
+    {% endraw %}
 
 ### Notary
 

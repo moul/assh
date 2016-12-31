@@ -15,8 +15,11 @@
 # the case. Therefore, you don't have to disable it anymore.
 #
 
-# ppc64le/golang is a debian:jessie based image with golang installed
-FROM ppc64le/golang:1.6.3
+FROM ppc64le/debian:jessie
+
+# allow replacing httpredir or deb mirror
+ARG APT_MIRROR=deb.debian.org
+RUN sed -ri "s/(httpredir|deb).debian.org/$APT_MIRROR/g" /etc/apt/sources.list
 
 # Packaged dependencies
 RUN apt-get update && apt-get install -y \
@@ -26,6 +29,7 @@ RUN apt-get update && apt-get install -y \
 	bash-completion \
 	btrfs-tools \
 	build-essential \
+	cmake \
 	createrepo \
 	curl \
 	dpkg-sig \
@@ -47,6 +51,7 @@ RUN apt-get update && apt-get install -y \
 	python-websocket \
 	xfsprogs \
 	tar \
+	vim-common \
 	--no-install-recommends
 
 # Get lvm2 source for compiling statically
@@ -89,26 +94,13 @@ RUN set -x \
 
 
 # Install Go
-# ppc64le doesn't have official go binaries, so use the version of go installed from the image
-# to build go from source.
-# NOTE: ppc64le has compatibility issues with older versions of go, so make sure the version >= 1.6
-ENV GO_VERSION 1.7.1
-ENV GO_DOWNLOAD_URL https://storage.googleapis.com/golang/go${GO_VERSION}.src.tar.gz
+# NOTE: official ppc64le go binaries weren't available until go 1.6.4 and 1.7.4
+ENV GO_VERSION 1.7.4
+RUN curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-ppc64le.tar.gz" \
+	| tar -xzC /usr/local
 
-RUN set -x \
-	&& TEMPDIR="$(mktemp -d)" \
-	&& mv /usr/local/go $TEMPDIR \
-	&& GOROOT_BOOTSTRAP=$TEMPDIR/go \
-	&& cd /usr/local \
-	&& curl -fsSL "$GO_DOWNLOAD_URL" -o golang.tar.gz \
-	&& tar -C /usr/local -xzf golang.tar.gz \
-	&& rm golang.tar.gz \
-	&& cd go/src && ./make.bash 2>&1 \
-	&& rm -rf $TEMPDIR
-
-ENV GOROOT_BOOTSTRAP /usr/local/go
-ENV PATH /usr/local/go/bin/:$PATH
-ENV GOPATH /go:/go/src/github.com/docker/docker/vendor
+ENV PATH /go/bin:/usr/local/go/bin:$PATH
+ENV GOPATH /go
 
 # Dependency for golint
 ENV GO_TOOLS_COMMIT 823804e1ae08dbb14eb807afc7db9993bc9e3cc3
@@ -139,7 +131,7 @@ RUN set -x \
 	&& rm -rf "$GOPATH"
 
 # Install notary and notary-server
-ENV NOTARY_VERSION v0.3.0
+ENV NOTARY_VERSION v0.5.0
 RUN set -x \
 	&& export GOPATH="$(mktemp -d)" \
 	&& git clone https://github.com/docker/notary.git "$GOPATH/src/github.com/docker/notary" \
@@ -183,10 +175,11 @@ RUN ./contrib/download-frozen-image-v2.sh /docker-frozen-images \
 	ppc64le/hello-world:latest@sha256:186a40a9a02ca26df0b6c8acdfb8ac2f3ae6678996a838f977e57fac9d963974
 # See also "hack/make/.ensure-frozen-images" (which needs to be updated any time this list is)
 
-# Install tomlv, runc, containerd and grimes
+# Install tomlv, vndr, runc, containerd, tini, docker-proxy
 # Please edit hack/dockerfile/install-binaries.sh to update them.
+COPY hack/dockerfile/binaries-commits /tmp/binaries-commits
 COPY hack/dockerfile/install-binaries.sh /tmp/install-binaries.sh
-RUN /tmp/install-binaries.sh tomlv runc containerd grimes
+RUN /tmp/install-binaries.sh tomlv vndr runc containerd tini proxy
 
 # Wrap all commands in the "docker-in-docker" script to allow nested containers
 ENTRYPOINT ["hack/dind"]

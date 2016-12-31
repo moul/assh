@@ -9,13 +9,13 @@ import (
 
 func (s *DockerSuite) TestPause(c *check.C) {
 	testRequires(c, IsPausable)
-	defer unpauseAllContainers()
+	defer unpauseAllContainers(c)
 
 	name := "testeventpause"
 	runSleepingContainer(c, "-d", "--name", name)
 
 	dockerCmd(c, "pause", name)
-	pausedContainers, err := getSliceOfPausedContainers()
+	pausedContainers, err := getPausedContainers()
 	c.Assert(err, checker.IsNil)
 	c.Assert(len(pausedContainers), checker.Equals, 1)
 
@@ -31,7 +31,7 @@ func (s *DockerSuite) TestPause(c *check.C) {
 
 func (s *DockerSuite) TestPauseMultipleContainers(c *check.C) {
 	testRequires(c, IsPausable)
-	defer unpauseAllContainers()
+	defer unpauseAllContainers(c)
 
 	containers := []string{
 		"testpausewithmorecontainers1",
@@ -41,7 +41,7 @@ func (s *DockerSuite) TestPauseMultipleContainers(c *check.C) {
 		runSleepingContainer(c, "-d", "--name", name)
 	}
 	dockerCmd(c, append([]string{"pause"}, containers...)...)
-	pausedContainers, err := getSliceOfPausedContainers()
+	pausedContainers, err := getPausedContainers()
 	c.Assert(err, checker.IsNil)
 	c.Assert(len(pausedContainers), checker.Equals, len(containers))
 

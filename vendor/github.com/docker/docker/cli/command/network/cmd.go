@@ -1,8 +1,6 @@
 package network
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/docker/docker/cli"
@@ -15,9 +13,7 @@ func NewNetworkCommand(dockerCli *command.DockerCli) *cobra.Command {
 		Use:   "network",
 		Short: "Manage networks",
 		Args:  cli.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Fprintf(dockerCli.Err(), "\n"+cmd.UsageString())
-		},
+		RunE:  dockerCli.ShowHelp,
 	}
 	cmd.AddCommand(
 		newConnectCommand(dockerCli),
@@ -26,6 +22,7 @@ func NewNetworkCommand(dockerCli *command.DockerCli) *cobra.Command {
 		newInspectCommand(dockerCli),
 		newListCommand(dockerCli),
 		newRemoveCommand(dockerCli),
+		NewPruneCommand(dockerCli),
 	)
 	return cmd
 }

@@ -1,8 +1,17 @@
 ---
 title: "Docker run reference"
 description: "Configure containers at runtime"
-keywords: ["docker, run, configure,  runtime"]
+keywords: "docker, run, configure, runtime"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # Docker run reference
 
@@ -54,15 +63,15 @@ Only the operator (the person executing `docker run`) can set the
 following options.
 
  - [Detached vs foreground](#detached-vs-foreground)
-     - [Detached (-d)](#detached-d)
+     - [Detached (-d)](#detached--d)
      - [Foreground](#foreground)
  - [Container identification](#container-identification)
-     - [Name (--name)](#name-name)
+     - [Name (--name)](#name---name)
      - [PID equivalent](#pid-equivalent)
- - [IPC settings (--ipc)](#ipc-settings-ipc)
+ - [IPC settings (--ipc)](#ipc-settings---ipc)
  - [Network settings](#network-settings)
- - [Restart policies (--restart)](#restart-policies-restart)
- - [Clean up (--rm)](#clean-up-rm)
+ - [Restart policies (--restart)](#restart-policies---restart)
+ - [Clean up (--rm)](#clean-up---rm)
  - [Runtime constraints on resources](#runtime-constraints-on-resources)
  - [Runtime privilege and Linux capabilities](#runtime-privilege-and-linux-capabilities)
 
@@ -114,8 +123,8 @@ and pass along signals. All of that is configurable:
     --sig-proxy=true: Proxy all received signals to the process (non-TTY mode only)
     -i              : Keep STDIN open even if not attached
 
-If you do not specify `-a` then Docker will [attach all standard
-streams]( https://github.com/docker/docker/blob/75a7f4d90cde0295bcfb7213004abce8d4779b75/commands.go#L1797).
+If you do not specify `-a` then Docker will [attach to both stdout and stderr
+]( https://github.com/docker/docker/blob/4118e0c9eebda2412a09ae66e90c34b85fae3275/runconfig/opts/parse.go#L267).
 You can specify to which of the three standard streams (`STDIN`, `STDOUT`,
 `STDERR`) you'd like to connect instead, as in:
 
@@ -234,7 +243,7 @@ $ docker run --name my-redis -d redis
 Debug the redis container by running another container that has strace in it:
 
 ```bash
-$ docker run --it --pid=container:my-redis bash
+$ docker run -it --pid=container:my-redis my_strace_docker_image bash
 $ strace -p 1
 ```
 
@@ -336,13 +345,13 @@ Supported networks :
       <td class="no-wrap"><strong>container</strong>:&lt;name|id&gt;</td>
       <td>
         Use the network stack of another container, specified via
-        its *name* or *id*.
+        its <i>name</i> or <i>id</i>.
       </td>
     </tr>
     <tr>
       <td class="no-wrap"><strong>NETWORK</strong></td>
       <td>
-        Connects the container to a user created network (using `docker network create` command)
+        Connects the container to a user created network (using <code>docker network create</code> command)
       </td>
     </tr>
   </tbody>
@@ -379,7 +388,7 @@ network mode a container has its own UTS namespace by default. As such
 `--hostname` is allowed in `host` network mode and will only change the
 hostname inside the container.
 Similar to `--hostname`, the `--add-host`, `--dns`, `--dns-search`, and
-`--dns-opt` options can be used in `host` network mode. These options update
+`--dns-option` options can be used in `host` network mode. These options update
 `/etc/hosts` or `/etc/resolv.conf` inside the container. No change are made to
 `/etc/hosts` and `/etc/resolv.conf` on the host.
 
@@ -398,7 +407,7 @@ or a High Performance Web Server.
 With the network set to `container` a container will share the
 network stack of another container.  The other container's name must be
 provided in the format of `--network container:<name|id>`. Note that `--add-host`
-`--hostname` `--dns` `--dns-search` `--dns-opt` and `--mac-address` are
+`--hostname` `--dns` `--dns-search` `--dns-option` and `--mac-address` are
 invalid in `container` netmode, and `--publish` `--publish-all` `--expose` are
 also invalid in `container` netmode.
 
@@ -415,7 +424,7 @@ running the `redis-cli` command and connecting to the Redis server over the
 You can create a network using a Docker network driver or an external network
 driver plugin. You can connect multiple containers to the same network. Once
 connected to a user-defined network, the containers can communicate easily using
-only another container's IP address or name.  
+only another container's IP address or name.
 
 For `overlay` networks or custom plugins that support multi-host connectivity,
 containers connected to the same multi-host network but launched from different
@@ -532,13 +541,17 @@ will try forever to restart the container. The number of (attempted) restarts
 for a container can be obtained via [`docker inspect`](commandline/inspect.md). For example, to get the number of restarts
 for container "my-container";
 
+    {% raw %}
     $ docker inspect -f "{{ .RestartCount }}" my-container
     # 2
+    {% endraw %}
 
 Or, to get the last time the container was (re)started;
 
+    {% raw %}
     $ docker inspect -f "{{ .State.StartedAt }}" my-container
     # 2015-03-04T23:47:07.691840179Z
+    {% endraw %}
 
 
 Combining `--restart` (restart policy) with the `--rm` (clean up) flag results
@@ -611,15 +624,15 @@ but the volume for `/bar` will not. Volumes inherited via `--volumes-from` will 
 with the same logic -- if the original volume was specified with a name it will **not** be removed.
 
 ## Security configuration
-    --security-opt="label=user:USER"   : Set the label user for the container
-    --security-opt="label=role:ROLE"   : Set the label role for the container
-    --security-opt="label=type:TYPE"   : Set the label type for the container
-    --security-opt="label=level:LEVEL" : Set the label level for the container
-    --security-opt="label=disable"     : Turn off label confinement for the container
-    --security-opt="apparmor=PROFILE"  : Set the apparmor profile to be applied to the container
-    --security-opt="no-new-privileges" : Disable container processes from gaining new privileges
-    --security-opt="seccomp=unconfined": Turn off seccomp confinement for the container
-    --security-opt="seccomp=profile.json: White listed syscalls seccomp Json file to be used as a seccomp filter
+    --security-opt="label=user:USER"     : Set the label user for the container
+    --security-opt="label=role:ROLE"     : Set the label role for the container
+    --security-opt="label=type:TYPE"     : Set the label type for the container
+    --security-opt="label=level:LEVEL"   : Set the label level for the container
+    --security-opt="label=disable"       : Turn off label confinement for the container
+    --security-opt="apparmor=PROFILE"    : Set the apparmor profile to be applied to the container
+    --security-opt="no-new-privileges"   : Disable container processes from gaining new privileges
+    --security-opt="seccomp=unconfined"  : Turn off seccomp confinement for the container
+    --security-opt="seccomp=profile.json": White listed syscalls seccomp Json file to be used as a seccomp filter
 
 
 You can override the default labeling scheme for each container by specifying
@@ -673,10 +686,13 @@ container:
 | `--memory-reservation=""`  | Memory soft limit (format: `<number>[<unit>]`). Number is a positive integer. Unit can be one of `b`, `k`, `m`, or `g`.                         |
 | `--kernel-memory=""`       | Kernel memory limit (format: `<number>[<unit>]`). Number is a positive integer. Unit can be one of `b`, `k`, `m`, or `g`. Minimum is 4M.        |
 | `-c`, `--cpu-shares=0`     | CPU shares (relative weight)                                                                                                                    |
+| `--cpus=0.000`             | Number of CPUs. Number is a fractional number. 0.000 means no limit.                                                                            |
 | `--cpu-period=0`           | Limit the CPU CFS (Completely Fair Scheduler) period                                                                                            |
 | `--cpuset-cpus=""`         | CPUs in which to allow execution (0-3, 0,1)                                                                                                     |
 | `--cpuset-mems=""`         | Memory nodes (MEMs) in which to allow execution (0-3, 0,1). Only effective on NUMA systems.                                                     |
 | `--cpu-quota=0`            | Limit the CPU CFS (Completely Fair Scheduler) quota                                                                                             |
+| `--cpu-rt-period=0`        | Limit the CPU real-time period. In microseconds. Requires parent cgroups be set and cannot be higher than parent. Also check rtprio ulimits.    |
+| `--cpu-rt-runtime=0`       | Limit the CPU real-time runtime. In microseconds. Requires parent cgroups be set and cannot be higher than parent. Also check rtprio ulimits.   |
 | `--blkio-weight=0`         | Block IO weight (relative weight) accepts a weight value between 10 and 1000.                                                                   |
 | `--blkio-weight-device=""` | Block IO weight (relative device weight, format: `DEVICE_NAME:WEIGHT`)                                                                          |
 | `--device-read-bps=""`     | Limit read rate from a device (format: `<device-path>:<number>[<unit>]`). Number is a positive integer. Unit can be one of `kb`, `mb`, or `gb`. |
@@ -721,7 +737,7 @@ We have four ways to set user memory usage:
       <td class="no-wrap"><strong>memory=L&lt;inf, memory-swap=2*L</strong></td>
       <td>
         (specify memory without memory-swap) The container is not allowed to
-        use more than L bytes of memory, swap *plus* memory usage is double
+        use more than L bytes of memory, swap <i>plus</i> memory usage is double
         of that.
       </td>
     </tr>
@@ -731,7 +747,7 @@ We have four ways to set user memory usage:
       </td>
       <td>
         (specify both memory and memory-swap) The container is not allowed to
-        use more than L bytes of memory, swap *plus* memory usage is limited
+        use more than L bytes of memory, swap <i>plus</i> memory usage is limited
         by S.
       </td>
     </tr>
@@ -820,7 +836,7 @@ The container has unlimited memory which can cause the host to run out memory
 and require killing system processes to free memory. The `--oom-score-adj`
 parameter can be changed to select the priority of which containers will
 be killed when the system is out of memory, with negative scores making them
-less likely to be killed an positive more likely.
+less likely to be killed, and positive scores more likely.
 
 ### Kernel memory constraints
 
@@ -954,6 +970,13 @@ Examples:
     $ docker run -it --cpu-period=50000 --cpu-quota=25000 ubuntu:14.04 /bin/bash
 
 If there is 1 CPU, this means the container can get 50% CPU worth of run-time every 50ms.
+
+In addition to use `--cpu-period` and `--cpu-quota` for setting CPU period constraints,
+it is possible to specify `--cpus` with a float number to achieve the same purpose.
+For example, if there is 1 CPU, then `--cpus=0.5` will achieve the same result as
+setting `--cpu-period=50000` and `--cpu-quota=25000` (50% CPU).
+
+The default value for `--cpus` is `0.000`, which means there is no limit.
 
 For more information, see the [CFS documentation on bandwidth limiting](https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt).
 
@@ -1215,10 +1238,6 @@ since Docker 1.12. In Docker 1.10 and 1.11 this did not happen and it may be nec
 to use a custom seccomp profile or use `--security-opt seccomp=unconfined` when adding
 capabilities.
 
-It is only possible to grant capabilities to a container running as a user other than `root`
-on a system with a Linux kernel version of 4.3 or later, as this requires "ambient capabilities"
-to be granted. These will be added if the kernel allows it from Docker version 1.13.
-
 ## Logging drivers (--log-driver)
 
 The container can have a different logging driver than the Docker daemon. Use
@@ -1238,7 +1257,7 @@ container's logging driver. The following options are supported:
 
 The `docker logs` command is available only for the `json-file` and `journald`
 logging drivers.  For detailed information on working with logging drivers, see
-[Configure a logging driver](../admin/logging/overview.md).
+[Configure a logging driver](https://docs.docker.com/engine/admin/logging/overview/).
 
 
 ## Overriding Dockerfile image defaults
@@ -1361,7 +1380,7 @@ If the operator uses `--link` when starting a new client container in the
 default bridge network, then the client container can access the exposed
 port via a private networking interface.
 If `--link` is used when starting a container in a user-defined network as
-described in [*Docker network overview*](../userguide/networking/index.md),
+described in [*Docker network overview*](https://docs.docker.com/engine/userguide/networking/),
 it will provide a named alias for the container being linked to.
 
 ### ENV (environment variables)
@@ -1369,34 +1388,12 @@ it will provide a named alias for the container being linked to.
 When a new container is created, Docker will set the following environment
 variables automatically:
 
-<table>
- <tr>
-  <th>Variable</th>
-  <th>Value</th>
- </tr>
- <tr>
-  <td><code>HOME</code></td>
-  <td>
-    Set based on the value of <code>USER</code>
-  </td>
- </tr>
- <tr>
-  <td><code>HOSTNAME</code></td>
-  <td>
-    The hostname associated with the container
-  </td>
- </tr>
- <tr>
-  <td><code>PATH</code></td>
-  <td>
-    Includes popular directories, such as :<br>
-    <code>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</code>
-  </td>
- <tr>
-  <td><code>TERM</code></td>
-  <td><code>xterm</code> if the container is allocated a pseudo-TTY</td>
- </tr>
-</table>
+| Variable | Value |
+| -------- | ----- |
+| `HOME` | Set based on the value of `USER` |
+| `HOSTNAME` | The hostname associated with the container |
+| `PATH` | Includes popular directories, such as `:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin` |
+| `TERM` | `xterm` if the container is allocated a pseudo-TTY |
 
 Additionally, the operator can **set any environment variable** in the
 container by using one or more `-e` flags, even overriding those mentioned
@@ -1425,6 +1422,7 @@ Similarly the operator can set the **hostname** with `-h`.
 
 Example:
 
+    {% raw %}
     $ docker run --name=test -d \
         --health-cmd='stat /etc/passwd || exit 1' \
         --health-interval=2s \
@@ -1469,6 +1467,7 @@ Example:
         }
       ]
     }
+    {% endraw %}
 
 The health status is also displayed in the `docker ps` output.
 
@@ -1512,7 +1511,7 @@ The example below mounts an empty tmpfs into the container with the `rw`,
 
 The volumes commands are complex enough to have their own documentation
 in section [*Manage data in
-containers*](../tutorials/dockervolumes.md). A developer can define
+containers*](https://docs.docker.com/engine/tutorials/dockervolumes/). A developer can define
 one or more `VOLUME`'s associated with an image, but only the operator
 can give access from one container to another (or from a container to a
 volume mounted on the host).

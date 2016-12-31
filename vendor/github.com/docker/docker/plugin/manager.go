@@ -1,27 +1,36 @@
-// +build experimental
-
 package plugin
 
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/digest"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/image"
+	"github.com/docker/docker/layer"
 	"github.com/docker/docker/libcontainerd"
-	"github.com/docker/docker/plugin/store"
+	"github.com/docker/docker/pkg/ioutils"
+	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/docker/plugin/v2"
+	"github.com/docker/docker/reference"
 	"github.com/docker/docker/registry"
+	"github.com/pkg/errors"
 )
 
-var (
-	manager *Manager
-)
+const configFileName = "config.json"
+const rootFSFileName = "rootfs"
+
+var validFullID = regexp.MustCompile(`^([a-f0-9]{64})$`)
 
 func (pm *Manager) restorePlugin(p *v2.Plugin) error {
-	p.RuntimeSourcePath = filepath.Join(pm.runRoot, p.GetID())
 	if p.IsEnabled() {
 		return pm.restore(p)
 	}
@@ -30,49 +39,84 @@ func (pm *Manager) restorePlugin(p *v2.Plugin) error {
 
 type eventLogger func(id, name, action string)
 
+// ManagerConfig defines configuration needed to start new manager.
+type ManagerConfig struct {
+	Store              *Store // remove
+	Executor           libcontainerd.Remote
+	RegistryService    registry.Service
+	LiveRestoreEnabled bool // TODO: remove
+	LogPluginEvent     eventLogger
+	Root               string
+	ExecRoot           string
+}
+
 // Manager controls the plugin subsystem.
 type Manager struct {
-	libRoot           string
-	runRoot           string
-	pluginStore       *store.Store
-	containerdClient  libcontainerd.Client
-	registryService   registry.Service
-	liveRestore       bool
-	pluginEventLogger eventLogger
+	config           ManagerConfig
+	mu               sync.RWMutex // protects cMap
+	muGC             sync.RWMutex // protects blobstore deletions
+	cMap             map[*v2.Plugin]*controller
+	containerdClient libcontainerd.Client
+	blobStore        *basicBlobStore
 }
 
-// GetManager returns the singleton plugin Manager
-func GetManager() *Manager {
-	return manager
+// controller represents the manager's control on a plugin.
+type controller struct {
+	restart       bool
+	exitChan      chan bool
+	timeoutInSecs int
 }
 
-// Init (was NewManager) instantiates the singleton Manager.
-// TODO: revert this to NewManager once we get rid of all the singletons.
-func Init(root string, ps *store.Store, remote libcontainerd.Remote, rs registry.Service, liveRestore bool, evL eventLogger) (err error) {
-	if manager != nil {
-		return nil
-	}
+// pluginRegistryService ensures that all resolved repositories
+// are of the plugin class.
+type pluginRegistryService struct {
+	registry.Service
+}
 
-	root = filepath.Join(root, "plugins")
-	manager = &Manager{
-		libRoot:           root,
-		runRoot:           "/run/docker",
-		pluginStore:       ps,
-		registryService:   rs,
-		liveRestore:       liveRestore,
-		pluginEventLogger: evL,
+func (s pluginRegistryService) ResolveRepository(name reference.Named) (repoInfo *registry.RepositoryInfo, err error) {
+	repoInfo, err = s.Service.ResolveRepository(name)
+	if repoInfo != nil {
+		repoInfo.Class = "plugin"
 	}
-	if err := os.MkdirAll(manager.runRoot, 0700); err != nil {
-		return err
+	return
+}
+
+// NewManager returns a new plugin manager.
+func NewManager(config ManagerConfig) (*Manager, error) {
+	if config.RegistryService != nil {
+		config.RegistryService = pluginRegistryService{config.RegistryService}
 	}
-	manager.containerdClient, err = remote.Client(manager)
+	manager := &Manager{
+		config: config,
+	}
+	if err := os.MkdirAll(manager.config.Root, 0700); err != nil {
+		return nil, errors.Wrapf(err, "failed to mkdir %v", manager.config.Root)
+	}
+	if err := os.MkdirAll(manager.config.ExecRoot, 0700); err != nil {
+		return nil, errors.Wrapf(err, "failed to mkdir %v", manager.config.ExecRoot)
+	}
+	if err := os.MkdirAll(manager.tmpDir(), 0700); err != nil {
+		return nil, errors.Wrapf(err, "failed to mkdir %v", manager.tmpDir())
+	}
+	var err error
+	manager.containerdClient, err = config.Executor.Client(manager) // todo: move to another struct
 	if err != nil {
-		return err
+		return nil, errors.Wrap(err, "failed to create containerd client")
 	}
-	if err := manager.init(); err != nil {
-		return err
+	manager.blobStore, err = newBasicBlobStore(filepath.Join(manager.config.Root, "storage/blobs"))
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	manager.cMap = make(map[*v2.Plugin]*controller)
+	if err := manager.reload(); err != nil {
+		return nil, errors.Wrap(err, "failed to restore plugins")
+	}
+	return manager, nil
+}
+
+func (pm *Manager) tmpDir() string {
+	return filepath.Join(pm.config.Root, "tmp")
 }
 
 // StateChanged updates plugin internals using libcontainerd events.
@@ -81,82 +125,137 @@ func (pm *Manager) StateChanged(id string, e libcontainerd.StateInfo) error {
 
 	switch e.State {
 	case libcontainerd.StateExit:
-		p, err := pm.pluginStore.GetByID(id)
+		p, err := pm.config.Store.GetV2Plugin(id)
 		if err != nil {
 			return err
 		}
-		p.RLock()
-		if p.ExitChan != nil {
-			close(p.ExitChan)
+
+		pm.mu.RLock()
+		c := pm.cMap[p]
+
+		if c.exitChan != nil {
+			close(c.exitChan)
 		}
-		restart := p.Restart
-		p.RUnlock()
-		p.RemoveFromDisk()
+		restart := c.restart
+		pm.mu.RUnlock()
+
+		os.RemoveAll(filepath.Join(pm.config.ExecRoot, id))
+
+		if p.PropagatedMount != "" {
+			if err := mount.Unmount(p.PropagatedMount); err != nil {
+				logrus.Warnf("Could not unmount %s: %v", p.PropagatedMount, err)
+			}
+		}
+
 		if restart {
-			pm.enable(p, true)
+			pm.enable(p, c, true)
 		}
 	}
 
 	return nil
 }
 
-// AttachStreams attaches io streams to the plugin
-func (pm *Manager) AttachStreams(id string, iop libcontainerd.IOPipe) error {
-	iop.Stdin.Close()
-
-	logger := logrus.New()
-	logger.Hooks.Add(logHook{id})
-	// TODO: cache writer per id
-	w := logger.Writer()
-	go func() {
-		io.Copy(w, iop.Stdout)
-	}()
-	go func() {
-		// TODO: update logrus and use logger.WriterLevel
-		io.Copy(w, iop.Stderr)
-	}()
-	return nil
-}
-
-func (pm *Manager) init() error {
-	dt, err := os.Open(filepath.Join(pm.libRoot, "plugins.json"))
+func (pm *Manager) reload() error { // todo: restore
+	dir, err := ioutil.ReadDir(pm.config.Root)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
+		return errors.Wrapf(err, "failed to read %v", pm.config.Root)
 	}
-	defer dt.Close()
-
 	plugins := make(map[string]*v2.Plugin)
-	if err := json.NewDecoder(dt).Decode(&plugins); err != nil {
-		return err
+	for _, v := range dir {
+		if validFullID.MatchString(v.Name()) {
+			p, err := pm.loadPlugin(v.Name())
+			if err != nil {
+				return err
+			}
+			plugins[p.GetID()] = p
+		}
 	}
-	pm.pluginStore.SetAll(plugins)
 
-	var group sync.WaitGroup
-	group.Add(len(plugins))
+	pm.config.Store.SetAll(plugins)
+
+	var wg sync.WaitGroup
+	wg.Add(len(plugins))
 	for _, p := range plugins {
+		c := &controller{} // todo: remove this
+		pm.cMap[p] = c
 		go func(p *v2.Plugin) {
-			defer group.Done()
+			defer wg.Done()
 			if err := pm.restorePlugin(p); err != nil {
 				logrus.Errorf("failed to restore plugin '%s': %s", p.Name(), err)
 				return
 			}
 
-			pm.pluginStore.Add(p)
-			requiresManualRestore := !pm.liveRestore && p.IsEnabled()
+			if p.Rootfs != "" {
+				p.Rootfs = filepath.Join(pm.config.Root, p.PluginObj.ID, "rootfs")
+			}
+
+			// We should only enable rootfs propagation for certain plugin types that need it.
+			for _, typ := range p.PluginObj.Config.Interface.Types {
+				if (typ.Capability == "volumedriver" || typ.Capability == "graphdriver") && typ.Prefix == "docker" && strings.HasPrefix(typ.Version, "1.") {
+					if p.PluginObj.Config.PropagatedMount != "" {
+						// TODO: sanitize PropagatedMount and prevent breakout
+						p.PropagatedMount = filepath.Join(p.Rootfs, p.PluginObj.Config.PropagatedMount)
+						if err := os.MkdirAll(p.PropagatedMount, 0755); err != nil {
+							logrus.Errorf("failed to create PropagatedMount directory at %s: %v", p.PropagatedMount, err)
+							return
+						}
+					}
+				}
+			}
+
+			pm.save(p)
+			requiresManualRestore := !pm.config.LiveRestoreEnabled && p.IsEnabled()
 
 			if requiresManualRestore {
 				// if liveRestore is not enabled, the plugin will be stopped now so we should enable it
-				if err := pm.enable(p, true); err != nil {
+				if err := pm.enable(p, c, true); err != nil {
 					logrus.Errorf("failed to enable plugin '%s': %s", p.Name(), err)
 				}
 			}
 		}(p)
 	}
-	group.Wait()
+	wg.Wait()
 	return nil
+}
+
+func (pm *Manager) loadPlugin(id string) (*v2.Plugin, error) {
+	p := filepath.Join(pm.config.Root, id, configFileName)
+	dt, err := ioutil.ReadFile(p)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error reading %v", p)
+	}
+	var plugin v2.Plugin
+	if err := json.Unmarshal(dt, &plugin); err != nil {
+		return nil, errors.Wrapf(err, "error decoding %v", p)
+	}
+	return &plugin, nil
+}
+
+func (pm *Manager) save(p *v2.Plugin) error {
+	pluginJSON, err := json.Marshal(p)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal plugin json")
+	}
+	if err := ioutils.AtomicWriteFile(filepath.Join(pm.config.Root, p.GetID(), configFileName), pluginJSON, 0600); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GC cleans up unrefrenced blobs. This is recommended to run in a goroutine
+func (pm *Manager) GC() {
+	pm.muGC.Lock()
+	defer pm.muGC.Unlock()
+
+	whitelist := make(map[digest.Digest]struct{})
+	for _, p := range pm.config.Store.GetAll() {
+		whitelist[p.Config] = struct{}{}
+		for _, b := range p.Blobsums {
+			whitelist[b] = struct{}{}
+		}
+	}
+
+	pm.blobStore.gc(whitelist)
 }
 
 type logHook struct{ id string }
@@ -168,4 +267,56 @@ func (logHook) Levels() []logrus.Level {
 func (l logHook) Fire(entry *logrus.Entry) error {
 	entry.Data = logrus.Fields{"plugin": l.id}
 	return nil
+}
+
+func attachToLog(id string) func(libcontainerd.IOPipe) error {
+	return func(iop libcontainerd.IOPipe) error {
+		iop.Stdin.Close()
+
+		logger := logrus.New()
+		logger.Hooks.Add(logHook{id})
+		// TODO: cache writer per id
+		w := logger.Writer()
+		go func() {
+			io.Copy(w, iop.Stdout)
+		}()
+		go func() {
+			// TODO: update logrus and use logger.WriterLevel
+			io.Copy(w, iop.Stderr)
+		}()
+		return nil
+	}
+}
+
+func validatePrivileges(requiredPrivileges, privileges types.PluginPrivileges) error {
+	// todo: make a better function that doesn't check order
+	if !reflect.DeepEqual(privileges, requiredPrivileges) {
+		return errors.New("incorrect privileges")
+	}
+	return nil
+}
+
+func configToRootFS(c []byte) (*image.RootFS, error) {
+	var pluginConfig types.PluginConfig
+	if err := json.Unmarshal(c, &pluginConfig); err != nil {
+		return nil, err
+	}
+	// validation for empty rootfs is in distribution code
+	if pluginConfig.Rootfs == nil {
+		return nil, nil
+	}
+
+	return rootFSFromPlugin(pluginConfig.Rootfs), nil
+}
+
+func rootFSFromPlugin(pluginfs *types.PluginConfigRootfs) *image.RootFS {
+	rootFS := image.RootFS{
+		Type:    pluginfs.Type,
+		DiffIDs: make([]layer.DiffID, len(pluginfs.DiffIds)),
+	}
+	for i := range pluginfs.DiffIds {
+		rootFS.DiffIDs[i] = layer.DiffID(pluginfs.DiffIds[i])
+	}
+
+	return &rootFS
 }

@@ -26,19 +26,18 @@ var (
 
 type mounts []container.Mount
 
-// volumeToAPIType converts a volume.Volume to the type used by the remote API
+// volumeToAPIType converts a volume.Volume to the type used by the Engine API
 func volumeToAPIType(v volume.Volume) *types.Volume {
 	tv := &types.Volume{
 		Name:   v.Name(),
 		Driver: v.DriverName(),
 	}
-	if v, ok := v.(volume.LabeledVolume); ok {
+	if v, ok := v.(volume.DetailedVolume); ok {
 		tv.Labels = v.Labels()
-	}
-
-	if v, ok := v.(volume.ScopedVolume); ok {
+		tv.Options = v.Options()
 		tv.Scope = v.Scope()
 	}
+
 	return tv
 }
 
@@ -191,7 +190,7 @@ func (daemon *Daemon) registerMountPoints(container *container.Container, hostCo
 			mp.Name = v.Name()
 			mp.Driver = v.DriverName()
 
-			// only use the cached path here since getting the path is not neccessary right now and calling `Path()` may be slow
+			// only use the cached path here since getting the path is not necessary right now and calling `Path()` may be slow
 			if cv, ok := v.(interface {
 				CachedPath() string
 			}); ok {
