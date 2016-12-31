@@ -21,9 +21,10 @@ import (
 	"github.com/docker/docker/pkg/symlink"
 	"github.com/docker/docker/volume"
 	"github.com/opencontainers/runc/libcontainer/apparmor"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/devices"
 	"github.com/opencontainers/runc/libcontainer/user"
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 func setResources(s *specs.Spec, r containertypes.Resources) error {
@@ -87,7 +88,7 @@ func setDevices(s *specs.Spec, c *container.Container) error {
 			return err
 		}
 		for _, d := range hostDevices {
-			devs = append(devs, specDevice(d))
+			devs = append(devs, oci.Device(d))
 		}
 		rwm := "rwm"
 		devPermissions = []specs.DeviceCgroup{
@@ -98,7 +99,7 @@ func setDevices(s *specs.Spec, c *container.Container) error {
 		}
 	} else {
 		for _, deviceMapping := range c.HostConfig.Devices {
-			d, dPermissions, err := getDevicesFromPath(deviceMapping)
+			d, dPermissions, err := oci.DevicesFromPath(deviceMapping.PathOnHost, deviceMapping.PathInContainer, deviceMapping.CgroupPermissions)
 			if err != nil {
 				return err
 			}
@@ -220,18 +221,6 @@ func setCapabilities(s *specs.Spec, c *container.Container) error {
 	return nil
 }
 
-func delNamespace(s *specs.Spec, nsType specs.NamespaceType) {
-	idx := -1
-	for i, n := range s.Linux.Namespaces {
-		if n.Type == nsType {
-			idx = i
-		}
-	}
-	if idx >= 0 {
-		s.Linux.Namespaces = append(s.Linux.Namespaces[:idx], s.Linux.Namespaces[idx+1:]...)
-	}
-}
-
 func setNamespaces(daemon *Daemon, s *specs.Spec, c *container.Container) error {
 	userNS := false
 	// user
@@ -282,7 +271,7 @@ func setNamespaces(daemon *Daemon, s *specs.Spec, c *container.Container) error 
 			setNamespace(s, nsUser)
 		}
 	} else if c.HostConfig.IpcMode.IsHost() {
-		delNamespace(s, specs.NamespaceType("ipc"))
+		oci.RemoveNamespace(s, specs.NamespaceType("ipc"))
 	} else {
 		ns := specs.Namespace{Type: "ipc"}
 		setNamespace(s, ns)
@@ -303,14 +292,14 @@ func setNamespaces(daemon *Daemon, s *specs.Spec, c *container.Container) error 
 			setNamespace(s, nsUser)
 		}
 	} else if c.HostConfig.PidMode.IsHost() {
-		delNamespace(s, specs.NamespaceType("pid"))
+		oci.RemoveNamespace(s, specs.NamespaceType("pid"))
 	} else {
 		ns := specs.Namespace{Type: "pid"}
 		setNamespace(s, ns)
 	}
 	// uts
 	if c.HostConfig.UTSMode.IsHost() {
-		delNamespace(s, specs.NamespaceType("uts"))
+		oci.RemoveNamespace(s, specs.NamespaceType("uts"))
 		s.Hostname = ""
 	}
 
@@ -472,7 +461,7 @@ func setMounts(daemon *Daemon, s *specs.Spec, c *container.Container, mounts []c
 		}
 
 		if m.Source == "tmpfs" {
-			data := c.HostConfig.Tmpfs[m.Destination]
+			data := m.Data
 			options := []string{"noexec", "nosuid", "nodev", string(volume.DefaultPropagationMode)}
 			if data != "" {
 				options = append(options, strings.Split(data, ",")...)
@@ -595,7 +584,7 @@ func (daemon *Daemon) populateCommonSpec(s *specs.Spec, c *container.Container) 
 			s.Process.Args = append([]string{"/dev/init", c.Path}, c.Args...)
 			var path string
 			if daemon.configStore.InitPath == "" && c.HostConfig.InitPath == "" {
-				path, err = exec.LookPath("docker-init")
+				path, err = exec.LookPath(DefaultInitBinary)
 				if err != nil {
 					return err
 				}
@@ -655,6 +644,29 @@ func (daemon *Daemon) createSpec(c *container.Container) (*specs.Spec, error) {
 	}
 	s.Linux.Resources.OOMScoreAdj = &c.HostConfig.OomScoreAdj
 	s.Linux.Sysctl = c.HostConfig.Sysctls
+
+	p := *s.Linux.CgroupsPath
+	if useSystemd {
+		initPath, err := cgroups.GetInitCgroupDir("cpu")
+		if err != nil {
+			return nil, err
+		}
+		p, _ = cgroups.GetThisCgroupDir("cpu")
+		if err != nil {
+			return nil, err
+		}
+		p = filepath.Join(initPath, p)
+	}
+
+	// Clean path to guard against things like ../../../BAD
+	parentPath := filepath.Dir(p)
+	if !filepath.IsAbs(parentPath) {
+		parentPath = filepath.Clean("/" + parentPath)
+	}
+
+	if err := daemon.initCgroupsPath(parentPath); err != nil {
+		return nil, fmt.Errorf("linux init cgroups path: %v", err)
+	}
 	if err := setDevices(&s, c); err != nil {
 		return nil, fmt.Errorf("linux runtime spec devices: %v", err)
 	}
@@ -678,12 +690,27 @@ func (daemon *Daemon) createSpec(c *container.Container) (*specs.Spec, error) {
 		return nil, err
 	}
 
+	if err := daemon.setupSecretDir(c); err != nil {
+		return nil, err
+	}
+
 	ms, err := daemon.setupMounts(c)
 	if err != nil {
 		return nil, err
 	}
+
 	ms = append(ms, c.IpcMounts()...)
-	ms = append(ms, c.TmpfsMounts()...)
+
+	tmpfsMounts, err := c.TmpfsMounts()
+	if err != nil {
+		return nil, err
+	}
+	ms = append(ms, tmpfsMounts...)
+
+	if m := c.SecretMount(); m != nil {
+		ms = append(ms, *m)
+	}
+
 	sort.Sort(mounts(ms))
 	if err := setMounts(daemon, &s, c, ms); err != nil {
 		return nil, fmt.Errorf("linux mounts: %v", err)
@@ -706,12 +733,27 @@ func (daemon *Daemon) createSpec(c *container.Container) (*specs.Spec, error) {
 	}
 
 	if apparmor.IsEnabled() {
-		appArmorProfile := "docker-default"
-		if len(c.AppArmorProfile) > 0 {
+		var appArmorProfile string
+		if c.AppArmorProfile != "" {
 			appArmorProfile = c.AppArmorProfile
 		} else if c.HostConfig.Privileged {
 			appArmorProfile = "unconfined"
+		} else {
+			appArmorProfile = "docker-default"
 		}
+
+		if appArmorProfile == "docker-default" {
+			// Unattended upgrades and other fun services can unload AppArmor
+			// profiles inadvertently. Since we cannot store our profile in
+			// /etc/apparmor.d, nor can we practically add other ways of
+			// telling the system to keep our profile loaded, in order to make
+			// sure that we keep the default profile enabled we dynamically
+			// reload it if necessary.
+			if err := ensureDefaultAppArmorProfile(); err != nil {
+				return nil, err
+			}
+		}
+
 		s.Process.ApparmorProfile = appArmorProfile
 	}
 	s.Process.SelinuxLabel = c.GetProcessLabel()

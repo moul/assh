@@ -1,5 +1,3 @@
-// +build experimental
-
 package plugin
 
 import (
@@ -9,6 +7,8 @@ import (
 
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
+	"github.com/docker/docker/cli/command/image"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/reference"
 	"github.com/docker/docker/registry"
 	"github.com/spf13/cobra"
@@ -16,13 +16,18 @@ import (
 
 func newPushCommand(dockerCli *command.DockerCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "push PLUGIN",
-		Short: "Push a plugin",
+		Use:   "push PLUGIN[:TAG]",
+		Short: "Push a plugin to a registry",
 		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runPush(dockerCli, args[0])
 		},
 	}
+
+	flags := cmd.Flags()
+
+	command.AddTrustedFlags(flags, true)
+
 	return cmd
 }
 
@@ -51,5 +56,16 @@ func runPush(dockerCli *command.DockerCli, name string) error {
 	if err != nil {
 		return err
 	}
-	return dockerCli.Client().PluginPush(ctx, ref.String(), encodedAuth)
+	responseBody, err := dockerCli.Client().PluginPush(ctx, ref.String(), encodedAuth)
+	if err != nil {
+		return err
+	}
+	defer responseBody.Close()
+
+	if command.IsTrusted() {
+		repoInfo.Class = "plugin"
+		return image.PushTrustedReference(dockerCli, repoInfo, named, authConfig, responseBody)
+	}
+
+	return jsonmessage.DisplayJSONMessagesToStream(responseBody, dockerCli.Out(), nil)
 }

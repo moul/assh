@@ -1,9 +1,17 @@
 ---
 title: "volume rm"
 description: "the volume rm command description and usage"
-keywords: ["volume, rm"]
+keywords: "volume, rm"
 ---
 
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # volume rm
 
@@ -30,4 +38,5 @@ Remove one or more volumes. You cannot remove a volume that is in use by a conta
 * [volume create](volume_create.md)
 * [volume inspect](volume_inspect.md)
 * [volume ls](volume_ls.md)
-* [Understand Data Volumes](../../tutorials/dockervolumes.md)
+* [volume prune](volume_prune.md)
+* [Understand Data Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/)

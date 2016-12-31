@@ -19,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/docker/docker/daemon/logger"
+	"github.com/docker/docker/daemon/logger/loggerutils"
 	"github.com/docker/docker/dockerversion"
 )
 
@@ -28,6 +29,7 @@ const (
 	regionEnvKey          = "AWS_REGION"
 	logGroupKey           = "awslogs-group"
 	logStreamKey          = "awslogs-stream"
+	tagKey                = "tag"
 	batchPublishFrequency = 5 * time.Second
 
 	// See: http://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutLogEvents.html
@@ -86,13 +88,17 @@ func init() {
 // also taken from environment variables AWS_REGION, AWS_ACCESS_KEY_ID,
 // AWS_SECRET_ACCESS_KEY, the shared credentials file (~/.aws/credentials), and
 // the EC2 Instance Metadata Service.
-func New(ctx logger.Context) (logger.Logger, error) {
-	logGroupName := ctx.Config[logGroupKey]
-	logStreamName := ctx.ContainerID
-	if ctx.Config[logStreamKey] != "" {
-		logStreamName = ctx.Config[logStreamKey]
+func New(info logger.Info) (logger.Logger, error) {
+	logGroupName := info.Config[logGroupKey]
+	logStreamName, err := loggerutils.ParseLogTag(info, "{{.FullID}}")
+	if err != nil {
+		return nil, err
 	}
-	client, err := newAWSLogsClient(ctx)
+
+	if info.Config[logStreamKey] != "" {
+		logStreamName = info.Config[logStreamKey]
+	}
+	client, err := newAWSLogsClient(info)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +127,13 @@ var newRegionFinder = func() regionFinder {
 // Customizations to the default client from the SDK include a Docker-specific
 // User-Agent string and automatic region detection using the EC2 Instance
 // Metadata Service when region is otherwise unspecified.
-func newAWSLogsClient(ctx logger.Context) (api, error) {
+func newAWSLogsClient(info logger.Info) (api, error) {
 	var region *string
 	if os.Getenv(regionEnvKey) != "" {
 		region = aws.String(os.Getenv(regionEnvKey))
 	}
-	if ctx.Config[regionKey] != "" {
-		region = aws.String(ctx.Config[regionKey])
+	if info.Config[regionKey] != "" {
+		region = aws.String(info.Config[regionKey])
 	}
 	if region == nil || *region == "" {
 		logrus.Info("Trying to get region from EC2 Metadata")
@@ -350,6 +356,7 @@ func ValidateLogOpt(cfg map[string]string) error {
 		case logGroupKey:
 		case logStreamKey:
 		case regionKey:
+		case tagKey:
 		default:
 			return fmt.Errorf("unknown log opt '%s' for %s log driver", key, name)
 		}

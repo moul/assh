@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/Microsoft/go-winio"
@@ -30,7 +31,8 @@ import (
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/docker/docker/pkg/longpath"
 	"github.com/docker/docker/pkg/reexec"
-	"github.com/docker/go-units"
+	units "github.com/docker/go-units"
+	"golang.org/x/sys/windows"
 )
 
 // filterDriver is an HCSShim driver type for the Windows Filter driver.
@@ -45,12 +47,20 @@ var (
 		"UtilityVM/Files/EFI/Microsoft/Boot/BCD.LOG1": "bcd.log1.bak",
 		"UtilityVM/Files/EFI/Microsoft/Boot/BCD.LOG2": "bcd.log2.bak",
 	}
+	noreexec = false
 )
 
 // init registers the windows graph drivers to the register.
 func init() {
 	graphdriver.Register("windowsfilter", InitFilter)
-	reexec.Register("docker-windows-write-layer", writeLayer)
+	// DOCKER_WINDOWSFILTER_NOREEXEC allows for inline processing which makes
+	// debugging issues in the re-exec codepath significantly easier.
+	if os.Getenv("DOCKER_WINDOWSFILTER_NOREEXEC") != "" {
+		logrus.Warnf("WindowsGraphDriver is set to not re-exec. This is intended for debugging purposes only.")
+		noreexec = true
+	} else {
+		reexec.Register("docker-windows-write-layer", writeLayerReexec)
+	}
 }
 
 type checker struct {
@@ -106,7 +116,7 @@ func win32FromHresult(hr uintptr) uintptr {
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa364993(v=vs.85).aspx
 func getFileSystemType(drive string) (fsType string, hr error) {
 	var (
-		modkernel32              = syscall.NewLazyDLL("kernel32.dll")
+		modkernel32              = windows.NewLazySystemDLL("kernel32.dll")
 		procGetVolumeInformation = modkernel32.NewProc("GetVolumeInformationW")
 		buf                      = make([]uint16, 255)
 		size                     = syscall.MAX_PATH + 1
@@ -153,13 +163,19 @@ func (d *Driver) Exists(id string) bool {
 
 // CreateReadWrite creates a layer that is writable for use as a container
 // file system.
-func (d *Driver) CreateReadWrite(id, parent, mountLabel string, storageOpt map[string]string) error {
-	return d.create(id, parent, mountLabel, false, storageOpt)
+func (d *Driver) CreateReadWrite(id, parent string, opts *graphdriver.CreateOpts) error {
+	if opts != nil {
+		return d.create(id, parent, opts.MountLabel, false, opts.StorageOpt)
+	}
+	return d.create(id, parent, "", false, nil)
 }
 
 // Create creates a new read-only layer with the given id.
-func (d *Driver) Create(id, parent, mountLabel string, storageOpt map[string]string) error {
-	return d.create(id, parent, mountLabel, true, storageOpt)
+func (d *Driver) Create(id, parent string, opts *graphdriver.CreateOpts) error {
+	if opts != nil {
+		return d.create(id, parent, opts.MountLabel, true, opts.StorageOpt)
+	}
+	return d.create(id, parent, "", true, nil)
 }
 
 func (d *Driver) create(id, parent, mountLabel string, readOnly bool, storageOpt map[string]string) error {
@@ -243,8 +259,63 @@ func (d *Driver) Remove(id string) error {
 	if err != nil {
 		return err
 	}
-	os.RemoveAll(filepath.Join(d.info.HomeDir, "sysfile-backups", rID)) // ok to fail
-	return hcsshim.DestroyLayer(d.info, rID)
+
+	// This retry loop is due to a bug in Windows (Internal bug #9432268)
+	// if GetContainers fails with ErrVmcomputeOperationInvalidState
+	// it is a transient error. Retry until it succeeds.
+	var computeSystems []hcsshim.ContainerProperties
+	retryCount := 0
+	for {
+		// Get and terminate any template VMs that are currently using the layer
+		computeSystems, err = hcsshim.GetContainers(hcsshim.ComputeSystemQuery{})
+		if err != nil {
+			if err == hcsshim.ErrVmcomputeOperationInvalidState {
+				if retryCount >= 5 {
+					// If we are unable to get the list of containers
+					// go ahead and attempt to delete the layer anyway
+					// as it will most likely work.
+					break
+				}
+				retryCount++
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			return err
+		}
+		break
+	}
+
+	for _, computeSystem := range computeSystems {
+		if strings.Contains(computeSystem.RuntimeImagePath, id) && computeSystem.IsRuntimeTemplate {
+			container, err := hcsshim.OpenContainer(computeSystem.ID)
+			if err != nil {
+				return err
+			}
+			defer container.Close()
+			err = container.Terminate()
+			if hcsshim.IsPending(err) {
+				err = container.Wait()
+			} else if hcsshim.IsAlreadyStopped(err) {
+				err = nil
+			}
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	layerPath := filepath.Join(d.info.HomeDir, rID)
+	tmpID := fmt.Sprintf("%s-removing", rID)
+	tmpLayerPath := filepath.Join(d.info.HomeDir, tmpID)
+	if err := os.Rename(layerPath, tmpLayerPath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if err := hcsshim.DestroyLayer(d.info, tmpID); err != nil {
+		logrus.Errorf("Failed to DestroyLayer %s: %s", id, err)
+	}
+
+	return nil
 }
 
 // Get returns the rootfs path for the id. This will mount the dir at its given path.
@@ -331,7 +402,7 @@ func (d *Driver) Cleanup() error {
 // Diff produces an archive of the changes between the specified
 // layer and its parent layer which may be "".
 // The layer should be mounted when calling this function
-func (d *Driver) Diff(id, parent string) (_ archive.Archive, err error) {
+func (d *Driver) Diff(id, parent string) (_ io.ReadCloser, err error) {
 	rID, err := d.resolveID(id)
 	if err != nil {
 		return
@@ -366,7 +437,7 @@ func (d *Driver) Diff(id, parent string) (_ archive.Archive, err error) {
 
 // Changes produces a list of changes between the specified layer
 // and its parent layer. If parent is "", then all changes will be ADD changes.
-// The layer should be mounted when calling this function
+// The layer should not be mounted when calling this function.
 func (d *Driver) Changes(id, parent string) ([]archive.Change, error) {
 	rID, err := d.resolveID(id)
 	if err != nil {
@@ -377,13 +448,12 @@ func (d *Driver) Changes(id, parent string) ([]archive.Change, error) {
 		return nil, err
 	}
 
-	// this is assuming that the layer is unmounted
-	if err := hcsshim.UnprepareLayer(d.info, rID); err != nil {
+	if err := hcsshim.ActivateLayer(d.info, rID); err != nil {
 		return nil, err
 	}
 	defer func() {
-		if err := hcsshim.PrepareLayer(d.info, rID, parentChain); err != nil {
-			logrus.Warnf("Failed to Deactivate %s: %s", rID, err)
+		if err2 := hcsshim.DeactivateLayer(d.info, rID); err2 != nil {
+			logrus.Errorf("changes() failed to DeactivateLayer %s %s: %s", id, rID, err2)
 		}
 	}()
 
@@ -423,7 +493,7 @@ func (d *Driver) Changes(id, parent string) ([]archive.Change, error) {
 // layer with the specified id and parent, returning the size of the
 // new layer in bytes.
 // The layer should not be mounted when calling this function
-func (d *Driver) ApplyDiff(id, parent string, diff archive.Reader) (int64, error) {
+func (d *Driver) ApplyDiff(id, parent string, diff io.Reader) (int64, error) {
 	var layerChain []string
 	if parent != "" {
 		rPId, err := d.resolveID(parent)
@@ -514,7 +584,7 @@ func writeTarFromLayer(r hcsshim.LayerReader, w io.Writer) error {
 }
 
 // exportLayer generates an archive from a layer based on the given ID.
-func (d *Driver) exportLayer(id string, parentLayerPaths []string) (archive.Archive, error) {
+func (d *Driver) exportLayer(id string, parentLayerPaths []string) (io.ReadCloser, error) {
 	archive, w := io.Pipe()
 	go func() {
 		err := winio.RunWithPrivilege(winio.SeBackupPrivilege, func() error {
@@ -577,7 +647,7 @@ func writeBackupStreamFromTarAndSaveMutatedFiles(buf *bufio.Writer, w io.Writer,
 	return backuptar.WriteBackupStreamFromTarFile(buf, t, hdr)
 }
 
-func writeLayerFromTar(r archive.Reader, w hcsshim.LayerWriter, root string) (int64, error) {
+func writeLayerFromTar(r io.Reader, w hcsshim.LayerWriter, root string) (int64, error) {
 	t := tar.NewReader(r)
 	hdr, err := t.Next()
 	totalSize := int64(0)
@@ -622,64 +692,74 @@ func writeLayerFromTar(r archive.Reader, w hcsshim.LayerWriter, root string) (in
 }
 
 // importLayer adds a new layer to the tag and graph store based on the given data.
-func (d *Driver) importLayer(id string, layerData archive.Reader, parentLayerPaths []string) (size int64, err error) {
-	cmd := reexec.Command(append([]string{"docker-windows-write-layer", d.info.HomeDir, id}, parentLayerPaths...)...)
-	output := bytes.NewBuffer(nil)
-	cmd.Stdin = layerData
-	cmd.Stdout = output
-	cmd.Stderr = output
+func (d *Driver) importLayer(id string, layerData io.Reader, parentLayerPaths []string) (size int64, err error) {
+	if !noreexec {
+		cmd := reexec.Command(append([]string{"docker-windows-write-layer", d.info.HomeDir, id}, parentLayerPaths...)...)
+		output := bytes.NewBuffer(nil)
+		cmd.Stdin = layerData
+		cmd.Stdout = output
+		cmd.Stderr = output
 
-	if err = cmd.Start(); err != nil {
-		return
+		if err = cmd.Start(); err != nil {
+			return
+		}
+
+		if err = cmd.Wait(); err != nil {
+			return 0, fmt.Errorf("re-exec error: %v: output: %s", err, output)
+		}
+
+		return strconv.ParseInt(output.String(), 10, 64)
 	}
-
-	if err = cmd.Wait(); err != nil {
-		return 0, fmt.Errorf("re-exec error: %v: output: %s", err, output)
-	}
-
-	return strconv.ParseInt(output.String(), 10, 64)
+	return writeLayer(layerData, d.info.HomeDir, id, parentLayerPaths...)
 }
 
-// writeLayer is the re-exec entry point for writing a layer from a tar file
-func writeLayer() {
-	home := os.Args[1]
-	id := os.Args[2]
-	parentLayerPaths := os.Args[3:]
-
-	err := func() error {
-		err := winio.EnableProcessPrivileges([]string{winio.SeBackupPrivilege, winio.SeRestorePrivilege})
-		if err != nil {
-			return err
-		}
-
-		info := hcsshim.DriverInfo{
-			Flavour: filterDriver,
-			HomeDir: home,
-		}
-
-		w, err := hcsshim.NewLayerWriter(info, id, parentLayerPaths)
-		if err != nil {
-			return err
-		}
-
-		size, err := writeLayerFromTar(os.Stdin, w, filepath.Join(home, id))
-		if err != nil {
-			return err
-		}
-
-		err = w.Close()
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprint(os.Stdout, size)
-		return nil
-	}()
-
+// writeLayerReexec is the re-exec entry point for writing a layer from a tar file
+func writeLayerReexec() {
+	size, err := writeLayer(os.Stdin, os.Args[1], os.Args[2], os.Args[3:]...)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		os.Exit(1)
 	}
+	fmt.Fprint(os.Stdout, size)
+}
+
+// writeLayer writes a layer from a tar file.
+func writeLayer(layerData io.Reader, home string, id string, parentLayerPaths ...string) (int64, error) {
+	err := winio.EnableProcessPrivileges([]string{winio.SeBackupPrivilege, winio.SeRestorePrivilege})
+	if err != nil {
+		return 0, err
+	}
+	if noreexec {
+		defer func() {
+			if err := winio.DisableProcessPrivileges([]string{winio.SeBackupPrivilege, winio.SeRestorePrivilege}); err != nil {
+				// This should never happen, but just in case when in debugging mode.
+				// See https://github.com/docker/docker/pull/28002#discussion_r86259241 for rationale.
+				panic("Failed to disabled process privileges while in non re-exec mode")
+			}
+		}()
+	}
+
+	info := hcsshim.DriverInfo{
+		Flavour: filterDriver,
+		HomeDir: home,
+	}
+
+	w, err := hcsshim.NewLayerWriter(info, id, parentLayerPaths)
+	if err != nil {
+		return 0, err
+	}
+
+	size, err := writeLayerFromTar(layerData, w, filepath.Join(home, id))
+	if err != nil {
+		return 0, err
+	}
+
+	err = w.Close()
+	if err != nil {
+		return 0, err
+	}
+
+	return size, nil
 }
 
 // resolveID computes the layerID information based on the given id.
@@ -695,11 +775,7 @@ func (d *Driver) resolveID(id string) (string, error) {
 
 // setID stores the layerId in disk.
 func (d *Driver) setID(id, altID string) error {
-	err := ioutil.WriteFile(filepath.Join(d.dir(id), "layerId"), []byte(altID), 0600)
-	if err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(filepath.Join(d.dir(id), "layerId"), []byte(altID), 0600)
 }
 
 // getLayerChain returns the layer chain information.

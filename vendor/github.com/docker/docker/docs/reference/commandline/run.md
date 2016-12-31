@@ -1,8 +1,17 @@
 ---
 title: "run"
 description: "The run command description and usage"
-keywords: ["run, command, container"]
+keywords: "run, command, container"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # run
 
@@ -20,10 +29,20 @@ Options:
       --cap-drop value              Drop Linux capabilities (default [])
       --cgroup-parent string        Optional parent cgroup for the container
       --cidfile string              Write the container ID to the file
-      --cpu-percent int             CPU percent (Windows only)
+      --cpu-count int               The number of CPUs available for execution by the container.
+                                    Windows daemon only. On Windows Server containers, this is
+                                    approximated as a percentage of total CPU usage.
+      --cpu-percent int             Limit percentage of CPU available for execution
+                                    by the container. Windows daemon only.
+                                    The processor resource controls are mutually
+                                    exclusive, the order of precedence is CPUCount
+                                    first, then CPUShares, and CPUPercent last.
       --cpu-period int              Limit CPU CFS (Completely Fair Scheduler) period
       --cpu-quota int               Limit CPU CFS (Completely Fair Scheduler) quota
   -c, --cpu-shares int              CPU shares (relative weight)
+      --cpus NanoCPUs               Number of CPUs (default 0.000)
+      --cpu-rt-period int           Limit the CPU real-time period in microseconds
+      --cpu-rt-runtime int          Limit the CPU real-time runtime in microseconds
       --cpuset-cpus string          CPUs in which to allow execution (0-3, 0,1)
       --cpuset-mems string          MEMs in which to allow execution (0-3, 0,1)
   -d, --detach                      Run container in background and print container ID
@@ -35,7 +54,7 @@ Options:
       --device-write-iops value     Limit write rate (IO per second) to a device (default [])
       --disable-content-trust       Skip image verification (default true)
       --dns value                   Set custom DNS servers (default [])
-      --dns-opt value               Set DNS options (default [])
+      --dns-option value            Set DNS options (default [])
       --dns-search value            Set custom DNS search domains (default [])
       --entrypoint string           Overwrite the default ENTRYPOINT of the image
   -e, --env value                   Set environment variables (default [])
@@ -43,9 +62,9 @@ Options:
       --expose value                Expose a port or a range of ports (default [])
       --group-add value             Add additional groups to join (default [])
       --health-cmd string           Command to run to check health
-      --health-interval duration    Time between running the check
+      --health-interval duration    Time between running the check (ns|us|ms|s|m|h) (default 0s)
       --health-retries int          Consecutive failures needed to report unhealthy
-      --health-timeout duration     Maximum time to allow one check to run
+      --health-timeout duration     Maximum time to allow one check to run (ns|us|ms|s|m|h) (default 0s)
       --help                        Print usage
   -h, --hostname string             Container host name
   -i, --interactive                 Keep STDIN open even if not attached
@@ -101,6 +120,7 @@ Options:
                                     or `g` (gigabytes). If you omit the unit, the system uses bytes.
       --sig-proxy                   Proxy received signals to the process (default true)
       --stop-signal string          Signal to stop a container, SIGTERM by default (default "SIGTERM")
+      --stop-timeout=10             Timeout (in seconds) to stop a container
       --storage-opt value           Storage driver options for the container (default [])
       --sysctl value                Sysctl options (default map[])
       --tmpfs value                 Mount a tmpfs directory (default [])
@@ -132,7 +152,7 @@ of all containers.
 The `docker run` command can be used in combination with `docker commit` to
 [*change the command that a container runs*](commit.md). There is additional detailed information about `docker run` in the [Docker run reference](../run.md).
 
-For information on connecting a container to a network, see the ["*Docker network overview*"](../../userguide/networking/index.md).
+For information on connecting a container to a network, see the ["*Docker network overview*"](https://docs.docker.com/engine/userguide/networking/).
 
 ## Examples
 
@@ -194,8 +214,13 @@ The `-w` lets the command being executed inside directory given, here
     $ docker run -it --storage-opt size=120G fedora /bin/bash
 
 This (size) will allow to set the container rootfs size to 120G at creation time.
-User cannot pass a size less than the Default BaseFS Size. This option is only
-available for the `devicemapper`, `btrfs`, `windowsfilter`, and `zfs` graph drivers.
+This option is only available for the `devicemapper`, `btrfs`, `overlay2`,
+`windowsfilter` and `zfs` graph drivers.
+For the `devicemapper`, `btrfs`, `windowsfilter` and `zfs` graph drivers,
+user cannot pass a size less than the Default BaseFS Size.
+For the `overlay2` storage driver, the size option is only available if the
+backing fs is `xfs` and mounted with the `pquota` mount option.
+Under these conditions, user can pass any size less then the backing fs size.
 
 ### Mount tmpfs (--tmpfs)
 
@@ -232,11 +257,31 @@ specified volumes for the container.
 
 By bind-mounting the docker unix socket and statically linked docker
 binary (refer to [get the linux binary](
-../../installation/binaries.md#get-the-linux-binary)),
+https://docs.docker.com/engine/installation/binaries/#/get-the-linux-binary)),
 you give the container the full access to create and manipulate the host's
 Docker daemon.
 
-For in-depth information about volumes, refer to [manage data in containers](../../tutorials/dockervolumes.md)
+On Windows, the paths must be specified using Windows-style semantics. 
+
+    PS C:\> docker run -v c:\foo:c:\dest microsoft/nanoserver cmd /s /c type c:\dest\somefile.txt
+    Contents of file
+	
+    PS C:\> docker run -v c:\foo:d: microsoft/nanoserver cmd /s /c type d:\somefile.txt
+    Contents of file
+
+The following examples will fail when using Windows-based containers, as the 
+destination of a volume or bind-mount inside the container must be one of: 
+a non-existing or empty directory; or a drive other than C:. Further, the source
+of a bind mount must be a local directory, not a file.
+
+    net use z: \\remotemachine\share
+    docker run -v z:\foo:c:\dest ...
+    docker run -v \\uncpath\to\directory:c:\dest ...
+    docker run -v c:\foo\somefile.txt:c:\dest ...
+    docker run -v c:\foo:c: ...
+    docker run -v c:\foo:c:\existing-directory-with-contents ...
+
+For in-depth information about volumes, refer to [manage data in containers](https://docs.docker.com/engine/tutorials/dockervolumes/)
 
 ### Publish or expose port (-p, --expose)
 
@@ -244,7 +289,7 @@ For in-depth information about volumes, refer to [manage data in containers](../
 
 This binds port `8080` of the container to port `80` on `127.0.0.1` of the host
 machine. The [Docker User
-Guide](../../userguide/networking/default_network/dockerlinks.md)
+Guide](https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/)
 explains in detail how to manipulate ports in Docker.
 
     $ docker run --expose 80 ubuntu bash
@@ -356,7 +401,7 @@ format:
 You can load multiple label-files by supplying multiple  `--label-file` flags.
 
 For additional information on working with labels, see [*Labels - custom
-metadata in Docker*](../../userguide/labels-custom-metadata.md) in the Docker User
+metadata in Docker*](https://docs.docker.com/engine/userguide/labels-custom-metadata/) in the Docker User
 Guide.
 
 ### Connect a container to a network (--network)
@@ -612,8 +657,13 @@ or a signal name in the format SIGNAME, for instance SIGKILL.
 
 ### Optional security options (--security-opt)
 
-On Windows, this flag can be used to specify the `credentialspec` option. 
-The `credentialspec` must be in the format `file://spec.txt` or `registry://keyname`. 
+On Windows, this flag can be used to specify the `credentialspec` option.
+The `credentialspec` must be in the format `file://spec.txt` or `registry://keyname`.
+
+### Stop container with timeout (--stop-timeout)
+
+The `--stop-timeout` flag sets the timeout (in seconds) that a pre-defined (see `--stop-signal`) system call
+signal that will be sent to the container to exit. After timeout elapses the container will be killed with SIGKILL.
 
 ### Specify isolation technology for container (--isolation)
 
@@ -662,7 +712,7 @@ network namespace, run this command:
 
 
 > **Note**: Not all sysctls are namespaced. Docker does not support changing sysctls
-> inside of a container that also modify the host system. As the kernel 
+> inside of a container that also modify the host system. As the kernel
 > evolves we expect to see more sysctls become namespaced.
 
 #### Currently supported sysctls

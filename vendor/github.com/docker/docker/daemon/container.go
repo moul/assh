@@ -2,8 +2,8 @@ package daemon
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
-	"regexp"
 	"time"
 
 	"github.com/docker/docker/api/errors"
@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/container"
 	"github.com/docker/docker/daemon/network"
 	"github.com/docker/docker/image"
+	"github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/docker/pkg/truncindex"
@@ -90,9 +91,9 @@ func (daemon *Daemon) load(id string) (*container.Container, error) {
 func (daemon *Daemon) Register(c *container.Container) error {
 	// Attach to stdout and stderr
 	if c.Config.OpenStdin {
-		c.NewInputPipes()
+		c.StreamConfig.NewInputPipes()
 	} else {
-		c.NewNopInputPipe()
+		c.StreamConfig.NewNopInputPipe()
 	}
 
 	daemon.containers.Add(c.ID, c)
@@ -101,7 +102,7 @@ func (daemon *Daemon) Register(c *container.Container) error {
 	return nil
 }
 
-func (daemon *Daemon) newContainer(name string, config *containertypes.Config, imgID image.ID, managed bool) (*container.Container, error) {
+func (daemon *Daemon) newContainer(name string, config *containertypes.Config, hostConfig *containertypes.HostConfig, imgID image.ID, managed bool) (*container.Container, error) {
 	var (
 		id             string
 		err            error
@@ -112,7 +113,16 @@ func (daemon *Daemon) newContainer(name string, config *containertypes.Config, i
 		return nil, err
 	}
 
-	daemon.generateHostname(id, config)
+	if hostConfig.NetworkMode.IsHost() {
+		if config.Hostname == "" {
+			config.Hostname, err = os.Hostname()
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		daemon.generateHostname(id, config)
+	}
 	entrypoint, args := daemon.getEntrypointAndArgs(config.Entrypoint, config.Cmd)
 
 	base := daemon.newBaseContainer(id)
@@ -203,7 +213,7 @@ func (daemon *Daemon) setHostConfig(container *container.Container, hostConfig *
 
 // verifyContainerSettings performs validation of the hostconfig and config
 // structures.
-func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostConfig, config *containertypes.Config, update bool, validateHostname bool) ([]string, error) {
+func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostConfig, config *containertypes.Config, update bool) ([]string, error) {
 
 	// First perform verification of settings common across all platforms.
 	if config != nil {
@@ -221,15 +231,10 @@ func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostCon
 			}
 		}
 
-		// Validate if the given hostname is RFC 1123 (https://tools.ietf.org/html/rfc1123) compliant.
-		if validateHostname && len(config.Hostname) > 0 {
-			// RFC1123 specifies that 63 bytes is the maximium length
-			// Windows has the limitation of 63 bytes in length
-			// Linux hostname is limited to HOST_NAME_MAX=64, not including the terminating null byte.
-			// We limit the length to 63 bytes here to match RFC1035 and RFC1123.
-			matched, _ := regexp.MatchString("^(([[:alnum:]]|[[:alnum:]][[:alnum:]\\-]*[[:alnum:]])\\.)*([[:alnum:]]|[[:alnum:]][[:alnum:]\\-]*[[:alnum:]])$", config.Hostname)
-			if len(config.Hostname) > 63 || !matched {
-				return nil, fmt.Errorf("invalid hostname format: %s", config.Hostname)
+		// Validate if Env contains empty variable or not (e.g., ``, `=foo`)
+		for _, env := range config.Env {
+			if _, err := opts.ValidateEnv(env); err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -260,11 +265,11 @@ func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostCon
 	switch p.Name {
 	case "always", "unless-stopped", "no":
 		if p.MaximumRetryCount != 0 {
-			return nil, fmt.Errorf("maximum restart count not valid with restart policy of '%s'", p.Name)
+			return nil, fmt.Errorf("maximum retry count cannot be used with restart policy '%s'", p.Name)
 		}
 	case "on-failure":
-		if p.MaximumRetryCount < 1 {
-			return nil, fmt.Errorf("maximum restart count must be a positive integer")
+		if p.MaximumRetryCount < 0 {
+			return nil, fmt.Errorf("maximum retry count cannot be negative")
 		}
 	case "":
 	// do nothing

@@ -1,8 +1,6 @@
 package image
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/docker/docker/cli"
@@ -15,9 +13,7 @@ func NewImageCommand(dockerCli *command.DockerCli) *cobra.Command {
 		Use:   "image",
 		Short: "Manage images",
 		Args:  cli.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Fprintf(dockerCli.Err(), "\n"+cmd.UsageString())
-		},
+		RunE:  dockerCli.ShowHelp,
 	}
 	cmd.AddCommand(
 		NewBuildCommand(dockerCli),
@@ -33,6 +29,5 @@ func NewImageCommand(dockerCli *command.DockerCli) *cobra.Command {
 		newInspectCommand(dockerCli),
 		NewPruneCommand(dockerCli),
 	)
-
 	return cmd
 }

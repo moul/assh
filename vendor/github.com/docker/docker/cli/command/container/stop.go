@@ -1,19 +1,20 @@
 package container
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type stopOptions struct {
-	time int
+	time        int
+	timeChanged bool
 
 	containers []string
 }
@@ -28,6 +29,7 @@ func NewStopCommand(dockerCli *command.DockerCli) *cobra.Command {
 		Args:  cli.RequiresMinArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.containers = args
+			opts.timeChanged = cmd.Flags().Changed("time")
 			return runStop(dockerCli, &opts)
 		},
 	}
@@ -39,22 +41,27 @@ func NewStopCommand(dockerCli *command.DockerCli) *cobra.Command {
 
 func runStop(dockerCli *command.DockerCli, opts *stopOptions) error {
 	ctx := context.Background()
-	timeout := time.Duration(opts.time) * time.Second
+
+	var timeout *time.Duration
+	if opts.timeChanged {
+		timeoutValue := time.Duration(opts.time) * time.Second
+		timeout = &timeoutValue
+	}
 
 	var errs []string
 
 	errChan := parallelOperation(ctx, opts.containers, func(ctx context.Context, id string) error {
-		return dockerCli.Client().ContainerStop(ctx, id, &timeout)
+		return dockerCli.Client().ContainerStop(ctx, id, timeout)
 	})
 	for _, container := range opts.containers {
 		if err := <-errChan; err != nil {
 			errs = append(errs, err.Error())
-		} else {
-			fmt.Fprintf(dockerCli.Out(), "%s\n", container)
+			continue
 		}
+		fmt.Fprintln(dockerCli.Out(), container)
 	}
 	if len(errs) > 0 {
-		return fmt.Errorf("%s", strings.Join(errs, "\n"))
+		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
 }

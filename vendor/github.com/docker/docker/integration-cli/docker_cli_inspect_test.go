@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/integration-cli/environment"
 	"github.com/docker/docker/pkg/integration/checker"
+	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/go-check/check"
 )
 
@@ -54,7 +55,7 @@ func (s *DockerSuite) TestInspectDefault(c *check.C) {
 
 func (s *DockerSuite) TestInspectStatus(c *check.C) {
 	if daemonPlatform != "windows" {
-		defer unpauseAllContainers()
+		defer unpauseAllContainers(c)
 	}
 	out, _ := runSleepingContainer(c, "-d")
 	out = strings.TrimSpace(out)
@@ -142,11 +143,12 @@ func (s *DockerSuite) TestInspectImageFilterInt(c *check.C) {
 }
 
 func (s *DockerSuite) TestInspectContainerFilterInt(c *check.C) {
-	runCmd := exec.Command(dockerBinary, "run", "-i", "-a", "stdin", "busybox", "cat")
-	runCmd.Stdin = strings.NewReader("blahblah")
-	out, _, _, err := runCommandWithStdoutStderr(runCmd)
-	c.Assert(err, checker.IsNil, check.Commentf("failed to run container: %v, output: %q", err, out))
-
+	result := icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "run", "-i", "-a", "stdin", "busybox", "cat"},
+		Stdin:   strings.NewReader("blahblah"),
+	})
+	result.Assert(c, icmd.Success)
+	out := result.Stdout()
 	id := strings.TrimSpace(out)
 
 	out = inspectField(c, id, "State.ExitCode")
@@ -157,9 +159,9 @@ func (s *DockerSuite) TestInspectContainerFilterInt(c *check.C) {
 	//now get the exit code to verify
 	formatStr := fmt.Sprintf("--format={{eq .State.ExitCode %d}}", exitCode)
 	out, _ = dockerCmd(c, "inspect", formatStr, id)
-	result, err := strconv.ParseBool(strings.TrimSuffix(out, "\n"))
+	inspectResult, err := strconv.ParseBool(strings.TrimSuffix(out, "\n"))
 	c.Assert(err, checker.IsNil)
-	c.Assert(result, checker.Equals, true)
+	c.Assert(inspectResult, checker.Equals, true)
 }
 
 func (s *DockerSuite) TestInspectImageGraphDriver(c *check.C) {
@@ -211,7 +213,7 @@ func (s *DockerSuite) TestInspectBindMountPoint(c *check.C) {
 	if daemonPlatform == "windows" {
 		modifier = ""
 		// TODO Windows: Temporary check - remove once TP5 support is dropped
-		if windowsDaemonKV < 14350 {
+		if environment.WindowsKernelVersion(testEnv.DaemonKernelVersion()) < 14350 {
 			c.Skip("Needs later Windows build for RO volumes")
 		}
 		// Linux creates the host directory if it doesn't exist. Windows does not.
@@ -416,4 +418,51 @@ func (s *DockerSuite) TestInspectAmpersand(c *check.C) {
 	c.Assert(out, checker.Contains, `soanni&rtr`)
 	out, _ = dockerCmd(c, "inspect", name)
 	c.Assert(out, checker.Contains, `soanni&rtr`)
+}
+
+func (s *DockerSuite) TestInspectPlugin(c *check.C) {
+	testRequires(c, DaemonIsLinux, IsAmd64, Network)
+	_, _, err := dockerCmdWithError("plugin", "install", "--grant-all-permissions", pNameWithTag)
+	c.Assert(err, checker.IsNil)
+
+	out, _, err := dockerCmdWithError("inspect", "--type", "plugin", "--format", "{{.Name}}", pNameWithTag)
+	c.Assert(err, checker.IsNil)
+	c.Assert(strings.TrimSpace(out), checker.Equals, pNameWithTag)
+
+	out, _, err = dockerCmdWithError("inspect", "--format", "{{.Name}}", pNameWithTag)
+	c.Assert(err, checker.IsNil)
+	c.Assert(strings.TrimSpace(out), checker.Equals, pNameWithTag)
+
+	// Even without tag the inspect still work
+	out, _, err = dockerCmdWithError("inspect", "--type", "plugin", "--format", "{{.Name}}", pNameWithTag)
+	c.Assert(err, checker.IsNil)
+	c.Assert(strings.TrimSpace(out), checker.Equals, pNameWithTag)
+
+	out, _, err = dockerCmdWithError("inspect", "--format", "{{.Name}}", pNameWithTag)
+	c.Assert(err, checker.IsNil)
+	c.Assert(strings.TrimSpace(out), checker.Equals, pNameWithTag)
+
+	_, _, err = dockerCmdWithError("plugin", "disable", pNameWithTag)
+	c.Assert(err, checker.IsNil)
+
+	out, _, err = dockerCmdWithError("plugin", "remove", pNameWithTag)
+	c.Assert(err, checker.IsNil)
+	c.Assert(out, checker.Contains, pNameWithTag)
+}
+
+// Test case for 29185
+func (s *DockerSuite) TestInspectUnknownObject(c *check.C) {
+	// This test should work on both Windows and Linux
+	out, _, err := dockerCmdWithError("inspect", "foobar")
+	c.Assert(err, checker.NotNil)
+	c.Assert(out, checker.Contains, "Error: No such object: foobar")
+	c.Assert(err.Error(), checker.Contains, "Error: No such object: foobar")
+}
+
+func (s *DockerSuite) TestInpectInvalidReference(c *check.C) {
+	// This test should work on both Windows and Linux
+	out, _, err := dockerCmdWithError("inspect", "FooBar")
+	c.Assert(err, checker.NotNil)
+	c.Assert(out, checker.Contains, "Error: No such object: FooBar")
+	c.Assert(err.Error(), checker.Contains, "Error: No such object: FooBar")
 }

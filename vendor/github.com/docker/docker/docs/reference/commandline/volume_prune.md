@@ -1,8 +1,17 @@
 ---
 title: "volume prune"
 description: "Remove unused volumes"
-keywords: [volume, prune, delete]
+keywords: "volume, prune, delete"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # volume prune
 
@@ -37,8 +46,9 @@ Total reclaimed space: 36 B
 * [volume ls](volume_ls.md)
 * [volume inspect](volume_inspect.md)
 * [volume rm](volume_rm.md)
-* [Understand Data Volumes](../../tutorials/dockervolumes.md)
+* [Understand Data Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/)
 * [system df](system_df.md)
 * [container prune](container_prune.md)
 * [image prune](image_prune.md)
+* [network prune](network_prune.md)
 * [system prune](system_prune.md)

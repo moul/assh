@@ -1,8 +1,17 @@
 ---
 title: "export"
 description: "The export command description and usage"
-keywords: ["export, file, system, container"]
+keywords: "export, file, system, container"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # export
 
@@ -22,7 +31,7 @@ the container, `docker export` will export the contents of the *underlying*
 directory, not the contents of the volume.
 
 Refer to [Backup, restore, or migrate data
-volumes](../../tutorials/dockervolumes.md#backup-restore-or-migrate-data-volumes) in
+volumes](https://docs.docker.com/engine/tutorials/dockervolumes/#backup-restore-or-migrate-data-volumes) in
 the user guide for examples on exporting data in a volume.
 
 ## Examples

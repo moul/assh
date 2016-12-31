@@ -10,6 +10,7 @@ docker-images - List images
 [**-a**|**--all**]
 [**--digests**]
 [**-f**|**--filter**[=*[]*]]
+[**--format**=*"TEMPLATE"*]
 [**--no-trunc**]
 [**-q**|**--quiet**]
 [REPOSITORY[:TAG]]
@@ -39,7 +40,7 @@ versions.
 
 **-f**, **--filter**=[]
    Filters the output based on these conditions:
-   - dangling=(true|false) - finds unused images.
+   - dangling=(true|false) - find unused images
    - label=<key> or label=<key>=<value>
    - before=(<image-name>[:tag]|<image-id>|<image@digest>)
    - since=(<image-name>[:tag]|<image-id>|<image@digest>)
@@ -51,9 +52,9 @@ versions.
       .Repository - Image repository
       .Tag - Image tag
       .Digest - Image digest
-      .CreatedSince - Elapsed time since the image was created.
-      .CreatedAt - Time when the image was created..
-      .Size - Image disk size.
+      .CreatedSince - Elapsed time since the image was created
+      .CreatedAt - Time when the image was created
+      .Size - Image disk size
 
 **--help**
   Print usage statement
@@ -101,6 +102,43 @@ Previously, the docker images command supported the --tree and --dot arguments,
 which displayed different visualizations of the image data. Docker core removed
 this functionality in the 1.7 version. If you liked this functionality, you can
 still find it in the third-party dockviz tool: https://github.com/justone/dockviz.
+
+## Listing images in a desired format
+
+When using the --format option, the image command will either output the data 
+exactly as the template declares or, when using the `table` directive, will 
+include column headers as well. You can use special characters like `\t` for
+inserting tab spacing between columns. 
+
+The following example uses a template without headers and outputs the ID and 
+Repository entries separated by a colon for all images:
+
+    docker images --format "{{.ID}}: {{.Repository}}"
+    77af4d6b9913: <none>
+    b6fa739cedf5: committ
+    78a85c484bad: ipbabble
+    30557a29d5ab: docker
+    5ed6274db6ce: <none>
+    746b819f315e: postgres
+    746b819f315e: postgres
+    746b819f315e: postgres
+    746b819f315e: postgres
+
+To list all images with their repository and tag in a table format you can use:
+
+    docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+    IMAGE ID            REPOSITORY                TAG
+    77af4d6b9913        <none>                    <none>
+    b6fa739cedf5        committ                   latest
+    78a85c484bad        ipbabble                  <none>
+    30557a29d5ab        docker                    latest
+    5ed6274db6ce        <none>                    <none>
+    746b819f315e        postgres                  9
+    746b819f315e        postgres                  9.3
+    746b819f315e        postgres                  9.3.5
+    746b819f315e        postgres                  latest
+
+Valid template placeholders are listed above.
 
 ## Listing only the shortened image IDs
 

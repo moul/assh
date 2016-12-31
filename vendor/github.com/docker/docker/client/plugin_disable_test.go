@@ -1,5 +1,3 @@
-// +build experimental
-
 package client
 
 import (
@@ -10,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/docker/docker/api/types"
 	"golang.org/x/net/context"
 )
 
@@ -18,7 +17,7 @@ func TestPluginDisableError(t *testing.T) {
 		client: newMockClient(errorMock(http.StatusInternalServerError, "Server error")),
 	}
 
-	err := client.PluginDisable(context.Background(), "plugin_name")
+	err := client.PluginDisable(context.Background(), "plugin_name", types.PluginDisableOptions{})
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
 		t.Fatalf("expected a Server Error, got %v", err)
 	}
@@ -42,7 +41,7 @@ func TestPluginDisable(t *testing.T) {
 		}),
 	}
 
-	err := client.PluginDisable(context.Background(), "plugin_name")
+	err := client.PluginDisable(context.Background(), "plugin_name", types.PluginDisableOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

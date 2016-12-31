@@ -1,10 +1,9 @@
 package container
 
 import (
+	"errors"
 	"fmt"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/cli"
@@ -12,20 +11,23 @@ import (
 	runconfigopts "github.com/docker/docker/runconfig/opts"
 	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type updateOptions struct {
-	blkioWeight       uint16
-	cpuPeriod         int64
-	cpuQuota          int64
-	cpusetCpus        string
-	cpusetMems        string
-	cpuShares         int64
-	memoryString      string
-	memoryReservation string
-	memorySwap        string
-	kernelMemory      string
-	restartPolicy     string
+	blkioWeight        uint16
+	cpuPeriod          int64
+	cpuQuota           int64
+	cpuRealtimePeriod  int64
+	cpuRealtimeRuntime int64
+	cpusetCpus         string
+	cpusetMems         string
+	cpuShares          int64
+	memoryString       string
+	memoryReservation  string
+	memorySwap         string
+	kernelMemory       string
+	restartPolicy      string
 
 	nFlag int
 
@@ -48,9 +50,11 @@ func NewUpdateCommand(dockerCli *command.DockerCli) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	flags.Uint16Var(&opts.blkioWeight, "blkio-weight", 0, "Block IO (relative weight), between 10 and 1000")
+	flags.Uint16Var(&opts.blkioWeight, "blkio-weight", 0, "Block IO (relative weight), between 10 and 1000, or 0 to disable (default 0)")
 	flags.Int64Var(&opts.cpuPeriod, "cpu-period", 0, "Limit CPU CFS (Completely Fair Scheduler) period")
 	flags.Int64Var(&opts.cpuQuota, "cpu-quota", 0, "Limit CPU CFS (Completely Fair Scheduler) quota")
+	flags.Int64Var(&opts.cpuRealtimePeriod, "cpu-rt-period", 0, "Limit the CPU real-time period in microseconds")
+	flags.Int64Var(&opts.cpuRealtimeRuntime, "cpu-rt-runtime", 0, "Limit the CPU real-time runtime in microseconds")
 	flags.StringVar(&opts.cpusetCpus, "cpuset-cpus", "", "CPUs in which to allow execution (0-3, 0,1)")
 	flags.StringVar(&opts.cpusetMems, "cpuset-mems", "", "MEMs in which to allow execution (0-3, 0,1)")
 	flags.Int64VarP(&opts.cpuShares, "cpu-shares", "c", 0, "CPU shares (relative weight)")
@@ -67,7 +71,7 @@ func runUpdate(dockerCli *command.DockerCli, opts *updateOptions) error {
 	var err error
 
 	if opts.nFlag == 0 {
-		return fmt.Errorf("You must provide one or more flags when using this command.")
+		return errors.New("You must provide one or more flags when using this command.")
 	}
 
 	var memory int64
@@ -115,16 +119,18 @@ func runUpdate(dockerCli *command.DockerCli, opts *updateOptions) error {
 	}
 
 	resources := containertypes.Resources{
-		BlkioWeight:       opts.blkioWeight,
-		CpusetCpus:        opts.cpusetCpus,
-		CpusetMems:        opts.cpusetMems,
-		CPUShares:         opts.cpuShares,
-		Memory:            memory,
-		MemoryReservation: memoryReservation,
-		MemorySwap:        memorySwap,
-		KernelMemory:      kernelMemory,
-		CPUPeriod:         opts.cpuPeriod,
-		CPUQuota:          opts.cpuQuota,
+		BlkioWeight:        opts.blkioWeight,
+		CpusetCpus:         opts.cpusetCpus,
+		CpusetMems:         opts.cpusetMems,
+		CPUShares:          opts.cpuShares,
+		Memory:             memory,
+		MemoryReservation:  memoryReservation,
+		MemorySwap:         memorySwap,
+		KernelMemory:       kernelMemory,
+		CPUPeriod:          opts.cpuPeriod,
+		CPUQuota:           opts.cpuQuota,
+		CPURealtimePeriod:  opts.cpuRealtimePeriod,
+		CPURealtimeRuntime: opts.cpuRealtimeRuntime,
 	}
 
 	updateConfig := containertypes.UpdateConfig{
@@ -143,15 +149,15 @@ func runUpdate(dockerCli *command.DockerCli, opts *updateOptions) error {
 		if err != nil {
 			errs = append(errs, err.Error())
 		} else {
-			fmt.Fprintf(dockerCli.Out(), "%s\n", container)
+			fmt.Fprintln(dockerCli.Out(), container)
 		}
 		warns = append(warns, r.Warnings...)
 	}
 	if len(warns) > 0 {
-		fmt.Fprintf(dockerCli.Out(), "%s", strings.Join(warns, "\n"))
+		fmt.Fprintln(dockerCli.Out(), strings.Join(warns, "\n"))
 	}
 	if len(errs) > 0 {
-		return fmt.Errorf("%s", strings.Join(errs, "\n"))
+		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
 }

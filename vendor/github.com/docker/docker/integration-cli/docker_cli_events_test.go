@@ -14,6 +14,7 @@ import (
 
 	eventtypes "github.com/docker/docker/api/types/events"
 	eventstestutils "github.com/docker/docker/daemon/events/testutils"
+	"github.com/docker/docker/pkg/integration"
 	"github.com/docker/docker/pkg/integration/checker"
 	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/go-check/check"
@@ -221,7 +222,7 @@ func (s *DockerSuite) TestEventsImageImport(c *check.C) {
 	cleanedContainerID := strings.TrimSpace(out)
 
 	since := daemonUnixTime(c)
-	out, _, err := runCommandPipelineWithOutput(
+	out, _, err := integration.RunCommandPipelineWithOutput(
 		exec.Command(dockerBinary, "export", cleanedContainerID),
 		exec.Command(dockerBinary, "import", "-"),
 	)
@@ -276,14 +277,13 @@ func (s *DockerSuite) TestEventsImageLoad(c *check.C) {
 }
 
 func (s *DockerSuite) TestEventsPluginOps(c *check.C) {
-	testRequires(c, DaemonIsLinux, ExperimentalDaemon)
+	testRequires(c, DaemonIsLinux, IsAmd64, Network)
 
-	pluginName := "tiborvass/no-remove:latest"
 	since := daemonUnixTime(c)
 
-	dockerCmd(c, "plugin", "install", pluginName, "--grant-all-permissions")
-	dockerCmd(c, "plugin", "disable", pluginName)
-	dockerCmd(c, "plugin", "remove", pluginName)
+	dockerCmd(c, "plugin", "install", pNameWithTag, "--grant-all-permissions")
+	dockerCmd(c, "plugin", "disable", pNameWithTag)
+	dockerCmd(c, "plugin", "remove", pNameWithTag)
 
 	out, _ := dockerCmd(c, "events", "--since", since, "--until", daemonUnixTime(c))
 	events := strings.Split(out, "\n")
@@ -292,7 +292,7 @@ func (s *DockerSuite) TestEventsPluginOps(c *check.C) {
 	nEvents := len(events)
 	c.Assert(nEvents, checker.GreaterOrEqualThan, 4)
 
-	pluginEvents := eventActionsByIDAndType(c, events, pluginName, "plugin")
+	pluginEvents := eventActionsByIDAndType(c, events, pNameWithTag, "plugin")
 	c.Assert(pluginEvents, checker.HasLen, 4, check.Commentf("events: %v", events))
 
 	c.Assert(pluginEvents[0], checker.Equals, "pull", check.Commentf(out))
@@ -639,6 +639,37 @@ func (s *DockerSuite) TestEventsFilterType(c *check.C) {
 		"--filter", "type=network")
 	events = strings.Split(strings.TrimSpace(out), "\n")
 	c.Assert(len(events), checker.GreaterOrEqualThan, 1, check.Commentf("Events == %s", events))
+}
+
+// #25798
+func (s *DockerSuite) TestEventsSpecialFiltersWithExecCreate(c *check.C) {
+	since := daemonUnixTime(c)
+	runSleepingContainer(c, "--name", "test-container", "-d")
+	waitRun("test-container")
+
+	dockerCmd(c, "exec", "test-container", "echo", "hello-world")
+
+	out, _ := dockerCmd(
+		c,
+		"events",
+		"--since", since,
+		"--until", daemonUnixTime(c),
+		"--filter",
+		"event='exec_create: echo hello-world'",
+	)
+
+	events := strings.Split(strings.TrimSpace(out), "\n")
+	c.Assert(len(events), checker.Equals, 1, check.Commentf(out))
+
+	out, _ = dockerCmd(
+		c,
+		"events",
+		"--since", since,
+		"--until", daemonUnixTime(c),
+		"--filter",
+		"event=exec_create",
+	)
+	c.Assert(len(events), checker.Equals, 1, check.Commentf(out))
 }
 
 func (s *DockerSuite) TestEventsFilterImageInContainerAction(c *check.C) {

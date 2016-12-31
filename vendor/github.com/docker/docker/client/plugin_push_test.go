@@ -1,5 +1,3 @@
-// +build experimental
-
 package client
 
 import (
@@ -18,7 +16,7 @@ func TestPluginPushError(t *testing.T) {
 		client: newMockClient(errorMock(http.StatusInternalServerError, "Server error")),
 	}
 
-	err := client.PluginPush(context.Background(), "plugin_name", "")
+	_, err := client.PluginPush(context.Background(), "plugin_name", "")
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
 		t.Fatalf("expected a Server Error, got %v", err)
 	}
@@ -37,7 +35,7 @@ func TestPluginPush(t *testing.T) {
 			}
 			auth := req.Header.Get("X-Registry-Auth")
 			if auth != "authtoken" {
-				return nil, fmt.Errorf("Invalid auth header : expected %s, got %s", "authtoken", auth)
+				return nil, fmt.Errorf("Invalid auth header : expected 'authtoken', got %s", auth)
 			}
 			return &http.Response{
 				StatusCode: http.StatusOK,
@@ -46,7 +44,7 @@ func TestPluginPush(t *testing.T) {
 		}),
 	}
 
-	err := client.PluginPush(context.Background(), "plugin_name", "authtoken")
+	_, err := client.PluginPush(context.Background(), "plugin_name", "authtoken")
 	if err != nil {
 		t.Fatal(err)
 	}

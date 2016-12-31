@@ -12,6 +12,7 @@ import (
 
 	"io/ioutil"
 
+	"github.com/docker/docker/pkg/integration"
 	"github.com/docker/docker/pkg/integration/checker"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/go-connections/nat"
@@ -355,7 +356,7 @@ func (s *DockerTrustSuite) TestCreateWhenCertExpired(c *check.C) {
 	// Certificates have 10 years of expiration
 	elevenYearsFromNow := time.Now().Add(time.Hour * 24 * 365 * 11)
 
-	runAtDifferentDate(elevenYearsFromNow, func() {
+	integration.RunAtDifferentDate(elevenYearsFromNow, func() {
 		// Try create
 		createCmd := exec.Command(dockerBinary, "create", repoName)
 		s.trustedCmd(createCmd)
@@ -364,7 +365,7 @@ func (s *DockerTrustSuite) TestCreateWhenCertExpired(c *check.C) {
 		c.Assert(string(out), checker.Contains, "could not validate the path to a trusted root", check.Commentf("Missing expected output on trusted create in the distant future:\n%s", out))
 	})
 
-	runAtDifferentDate(elevenYearsFromNow, func() {
+	integration.RunAtDifferentDate(elevenYearsFromNow, func() {
 		// Try create
 		createCmd := exec.Command(dockerBinary, "create", "--disable-content-trust", repoName)
 		s.trustedCmd(createCmd)
@@ -416,14 +417,14 @@ func (s *DockerTrustSuite) TestTrustedCreateFromBadTrustServer(c *check.C) {
 	c.Assert(err, check.IsNil)
 	c.Assert(string(out), checker.Contains, "Signing and pushing trust metadata", check.Commentf("Missing expected output on trusted push:\n%s", out))
 
-	// Now, try creating with the original client from this new trust server. This should fallback to our cached timestamp and metadata.
+	// Now, try creating with the original client from this new trust server. This should fail because the new root is invalid.
 	createCmd = exec.Command(dockerBinary, "create", repoName)
 	s.trustedCmd(createCmd)
 	out, _, err = runCommandWithOutput(createCmd)
-	if err != nil {
-		c.Fatalf("Error falling back to cached trust data: %s\n%s", err, out)
+	if err == nil {
+		c.Fatalf("Continuing with cached data even though it's an invalid root rotation: %s\n%s", err, out)
 	}
-	if !strings.Contains(string(out), "Error while downloading remote metadata, using cached timestamp") {
+	if !strings.Contains(out, "could not rotate trust to a new trusted root") {
 		c.Fatalf("Missing expected output on trusted create:\n%s", out)
 	}
 
@@ -495,4 +496,19 @@ exec "$@"`,
 	c.Assert(id, check.Not(check.Equals), "")
 	out, _ = dockerCmd(c, "start", "-a", id)
 	c.Assert(strings.TrimSpace(out), check.Equals, "foo")
+}
+
+// #22471
+func (s *DockerSuite) TestCreateStopTimeout(c *check.C) {
+	name1 := "test_create_stop_timeout_1"
+	dockerCmd(c, "create", "--name", name1, "--stop-timeout", "15", "busybox")
+
+	res := inspectFieldJSON(c, name1, "Config.StopTimeout")
+	c.Assert(res, checker.Contains, "15")
+
+	name2 := "test_create_stop_timeout_2"
+	dockerCmd(c, "create", "--name", name2, "busybox")
+
+	res = inspectFieldJSON(c, name2, "Config.StopTimeout")
+	c.Assert(res, checker.Contains, "null")
 }

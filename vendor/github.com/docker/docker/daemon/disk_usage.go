@@ -6,6 +6,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/digest"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/pkg/directory"
 	"github.com/docker/docker/volume"
@@ -44,7 +45,7 @@ func (daemon *Daemon) SystemDiskUsage() (*types.DiskUsage, error) {
 	}
 
 	// Get all top images with extra attributes
-	allImages, err := daemon.Images("", "", false, true)
+	allImages, err := daemon.Images(filters.NewArgs(), false, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve image list: %v", err)
 	}
@@ -61,7 +62,7 @@ func (daemon *Daemon) SystemDiskUsage() (*types.DiskUsage, error) {
 			logrus.Warnf("failed to determine size of volume %v", name)
 			sz = -1
 		}
-		tv.UsageData = &types.VolumeUsageData{Size: sz, RefCount: len(refs)}
+		tv.UsageData = &types.VolumeUsageData{Size: sz, RefCount: int64(len(refs))}
 		allVolumes = append(allVolumes, tv)
 
 		return nil

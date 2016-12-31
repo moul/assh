@@ -196,6 +196,11 @@ func (client *NopClient) ContainerWait(ctx context.Context, container string) (i
 	return 0, errNoEngine
 }
 
+// ContainersPrune requests the daemon to delete unused data
+func (client *NopClient) ContainersPrune(ctx context.Context, cfg types.ContainersPruneConfig) (types.ContainersPruneReport, error) {
+	return types.ContainersPruneReport{}, errNoEngine
+}
+
 // CopyFromContainer gets the content from the container and returns it as a Reader to manipulate it in the host
 func (client *NopClient) CopyFromContainer(ctx context.Context, container, srcPath string) (io.ReadCloser, types.ContainerPathStat, error) {
 	return nil, types.ContainerPathStat{}, errNoEngine
@@ -204,6 +209,11 @@ func (client *NopClient) CopyFromContainer(ctx context.Context, container, srcPa
 // CopyToContainer copies content into the container filesystem
 func (client *NopClient) CopyToContainer(ctx context.Context, container, path string, content io.Reader, options types.CopyToContainerOptions) error {
 	return errNoEngine
+}
+
+// DiskUsage requests the current data usage from the daemon
+func (client *NopClient) DiskUsage(ctx context.Context) (types.DiskUsage, error) {
+	return types.DiskUsage{}, errNoEngine
 }
 
 // Events returns a stream of events in the daemon in a ReadCloser
@@ -274,6 +284,11 @@ func (client *NopClient) ImageSave(ctx context.Context, images []string) (io.Rea
 // ImageTag tags an image in the docker host
 func (client *NopClient) ImageTag(ctx context.Context, image, ref string) error {
 	return errNoEngine
+}
+
+// ImagesPrune requests the daemon to delete unused data
+func (client *NopClient) ImagesPrune(ctx context.Context, cfg types.ImagesPruneConfig) (types.ImagesPruneReport, error) {
+	return types.ImagesPruneReport{}, errNoEngine
 }
 
 // Info returns information about the docker server
@@ -353,4 +368,9 @@ func (client *NopClient) VolumeList(ctx context.Context, filter filters.Args) (t
 // VolumeRemove removes a volume from the docker host
 func (client *NopClient) VolumeRemove(ctx context.Context, volumeID string, force bool) error {
 	return errNoEngine
+}
+
+// VolumesPrune requests the daemon to delete unused data
+func (client *NopClient) VolumesPrune(ctx context.Context, cfg types.VolumesPruneConfig) (types.VolumesPruneReport, error) {
+	return types.VolumesPruneReport{}, errNoEngine
 }

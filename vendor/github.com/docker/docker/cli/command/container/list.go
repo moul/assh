@@ -3,15 +3,14 @@ package container
 import (
 	"io/ioutil"
 
-	"golang.org/x/net/context"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/cli/command/formatter"
 	"github.com/docker/docker/opts"
-	"github.com/docker/docker/utils/templates"
+	"github.com/docker/docker/pkg/templates"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type psOptions struct {
@@ -59,43 +58,47 @@ func newListCommand(dockerCli *command.DockerCli) *cobra.Command {
 	return &cmd
 }
 
-type preProcessor struct {
-	types.Container
-	opts *types.ContainerListOptions
-}
+// listOptionsProcessor is used to set any container list options which may only
+// be embedded in the format template.
+// This is passed directly into tmpl.Execute in order to allow the preprocessor
+// to set any list options that were not provided by flags (e.g. `.Size`).
+// It is using a `map[string]bool` so that unknown fields passed into the
+// template format do not cause errors. These errors will get picked up when
+// running through the actual template processor.
+type listOptionsProcessor map[string]bool
 
-// Size sets the size option when called by a template execution.
-func (p *preProcessor) Size() bool {
-	p.opts.Size = true
+// Size sets the size of the map when called by a template execution.
+func (o listOptionsProcessor) Size() bool {
+	o["size"] = true
 	return true
 }
 
 func buildContainerListOptions(opts *psOptions) (*types.ContainerListOptions, error) {
 	options := &types.ContainerListOptions{
-		All:    opts.all,
-		Limit:  opts.last,
-		Size:   opts.size,
-		Filter: opts.filter.Value(),
+		All:     opts.all,
+		Limit:   opts.last,
+		Size:    opts.size,
+		Filters: opts.filter.Value(),
 	}
 
 	if opts.nLatest && opts.last == -1 {
 		options.Limit = 1
 	}
 
-	// Currently only used with Size, so we can determine if the user
-	// put {{.Size}} in their format.
-	pre := &preProcessor{opts: options}
 	tmpl, err := templates.Parse(opts.format)
 
 	if err != nil {
 		return nil, err
 	}
 
+	optionsProcessor := listOptionsProcessor{}
 	// This shouldn't error out but swallowing the error makes it harder
 	// to track down if preProcessor issues come up. Ref #24696
-	if err := tmpl.Execute(ioutil.Discard, pre); err != nil {
+	if err := tmpl.Execute(ioutil.Discard, optionsProcessor); err != nil {
 		return nil, err
 	}
+	// At the moment all we need is to capture .Size for preprocessor
+	options.Size = opts.size || optionsProcessor["size"]
 
 	return options, nil
 }

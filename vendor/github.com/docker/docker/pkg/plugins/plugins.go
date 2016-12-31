@@ -41,9 +41,14 @@ type plugins struct {
 	plugins map[string]*Plugin
 }
 
+type extpointHandlers struct {
+	sync.RWMutex
+	extpointHandlers map[string][]func(string, *Client)
+}
+
 var (
-	storage          = plugins{plugins: make(map[string]*Plugin)}
-	extpointHandlers = make(map[string]func(string, *Client))
+	storage  = plugins{plugins: make(map[string]*Plugin)}
+	handlers = extpointHandlers{extpointHandlers: make(map[string][]func(string, *Client))}
 )
 
 // Manifest lists what a plugin implements.
@@ -71,6 +76,12 @@ type Plugin struct {
 	activated bool
 	// wait for activation to finish
 	activateWait *sync.Cond
+}
+
+// BasePath returns the path to which all paths returned by the plugin are relative to.
+// For v1 plugins, this always returns the host's root directory.
+func (p *Plugin) BasePath() string {
+	return "/"
 }
 
 // Name returns the name of the plugin.
@@ -128,13 +139,17 @@ func (p *Plugin) activateWithLock() error {
 
 	p.Manifest = m
 
+	handlers.RLock()
 	for _, iface := range m.Implements {
-		handler, handled := extpointHandlers[iface]
+		hdlrs, handled := handlers.extpointHandlers[iface]
 		if !handled {
 			continue
 		}
-		handler(p.name, p.client)
+		for _, handler := range hdlrs {
+			handler(p.name, p.client)
+		}
 	}
+	handlers.RUnlock()
 	return nil
 }
 
@@ -226,7 +241,18 @@ func Get(name, imp string) (*Plugin, error) {
 
 // Handle adds the specified function to the extpointHandlers.
 func Handle(iface string, fn func(string, *Client)) {
-	extpointHandlers[iface] = fn
+	handlers.Lock()
+	hdlrs, ok := handlers.extpointHandlers[iface]
+	if !ok {
+		hdlrs = []func(string, *Client){}
+	}
+
+	hdlrs = append(hdlrs, fn)
+	handlers.extpointHandlers[iface] = hdlrs
+	for _, p := range storage.plugins {
+		p.activated = false
+	}
+	handlers.Unlock()
 }
 
 // GetAll returns all the plugins for the specified implementation

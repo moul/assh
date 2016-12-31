@@ -1,8 +1,17 @@
 ---
 title: "swarm join"
 description: "The swarm join command description and usage"
-keywords: ["swarm, join"]
+keywords: "swarm, join"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # swarm join
 
@@ -12,10 +21,10 @@ Usage:  docker swarm join [OPTIONS] HOST:PORT
 Join a swarm as a node and/or manager
 
 Options:
-      --advertise-addr value   Advertised address (format: <ip|interface>[:port])
-      --help                   Print usage
-      --listen-addr value      Listen address (format: <ip|interface>[:port)
-      --token string           Token for entry into the swarm
+      --advertise-addr string   Advertised address (format: <ip|interface>[:port])
+      --help                    Print usage
+      --listen-addr node-addr   Listen address (format: <ip|interface>[:port]) (default 0.0.0.0:2377)
+      --token string            Token for entry into the swarm
 ```
 
 Join a node to a swarm. The node joins as a manager node or worker node based upon the token you
@@ -68,7 +77,7 @@ This flag is generally not necessary when joining an existing swarm.
 
 This flag specifies the address that will be advertised to other members of the
 swarm for API access. If unspecified, Docker will check if the system has a
-single IP address, and use that IP address with with the listening port (see
+single IP address, and use that IP address with the listening port (see
 `--listen-addr`). If the system has multiple IP addresses, `--advertise-addr`
 must be specified so that the correct address is chosen for inter-manager
 communication and overlay networking.
@@ -89,5 +98,8 @@ Secret value required for nodes to join the swarm
 ## Related information
 
 * [swarm init](swarm_init.md)
+* [swarm join-token](swarm_join_token.md)
 * [swarm leave](swarm_leave.md)
+* [swarm unlock](swarm_unlock.md)
+* [swarm unlock-key](swarm_unlock_key.md)
 * [swarm update](swarm_update.md)

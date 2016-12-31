@@ -15,8 +15,13 @@ docker-create - Create a new container
 [**--cap-drop**[=*[]*]]
 [**--cgroup-parent**[=*CGROUP-PATH*]]
 [**--cidfile**[=*CIDFILE*]]
+[**--cpu-count**[=*0*]]
+[**--cpu-percent**[=*0*]]
 [**--cpu-period**[=*0*]]
 [**--cpu-quota**[=*0*]]
+[**--cpu-rt-period**[=*0*]]
+[**--cpu-rt-runtime**[=*0*]]
+[**--cpus**[=*0.0*]]
 [**--cpuset-cpus**[=*CPUSET-CPUS*]]
 [**--cpuset-mems**[=*CPUSET-MEMS*]]
 [**--device**[=*[]*]]
@@ -26,7 +31,7 @@ docker-create - Create a new container
 [**--device-write-iops**[=*[]*]]
 [**--dns**[=*[]*]]
 [**--dns-search**[=*[]*]]
-[**--dns-opt**[=*[]*]]
+[**--dns-option**[=*[]*]]
 [**-e**|**--env**[=*[]*]]
 [**--entrypoint**[=*ENTRYPOINT*]]
 [**--env-file**[=*[]*]]
@@ -68,6 +73,7 @@ docker-create - Create a new container
 [**--security-opt**[=*[]*]]
 [**--storage-opt**[=*[]*]]
 [**--stop-signal**[=*SIGNAL*]]
+[**--stop-timeout**[=*TIMEOUT*]]
 [**--shm-size**[=*[]*]]
 [**--sysctl**[=*[]*]]
 [**-t**|**--tty**]
@@ -119,8 +125,22 @@ The initial status of the container created with **docker create** is 'created'.
 **--cidfile**=""
    Write the container ID to the file
 
+**--cpu-count**=*0*
+    Limit the number of CPUs available for execution by the container.
+    
+    On Windows Server containers, this is approximated as a percentage of total CPU usage.
+
+    On Windows Server containers, the processor resource controls are mutually exclusive, the order of precedence is CPUCount first, then CPUShares, and CPUPercent last.
+
+**--cpu-percent**=*0*
+    Limit the percentage of CPU available for execution by a container running on a Windows daemon.
+
+    On Windows Server containers, the processor resource controls are mutually exclusive, the order of precedence is CPUCount first, then CPUShares, and CPUPercent last.
+
 **--cpu-period**=*0*
     Limit the CPU CFS (Completely Fair Scheduler) period
+
+    Limit the container's CPU usage. This flag tell the kernel to restrict the container's CPU usage to the period you specify.
 
 **--cpuset-cpus**=""
    CPUs in which to allow execution (0-3, 0,1)
@@ -134,6 +154,22 @@ two memory nodes.
 
 **--cpu-quota**=*0*
    Limit the CPU CFS (Completely Fair Scheduler) quota
+
+**--cpu-rt-period**=0
+   Limit the CPU real-time period in microseconds
+
+   Limit the container's Real Time CPU usage. This flag tell the kernel to restrict the container's Real Time CPU usage to the period you specify.
+
+**--cpu-rt-runtime**=0
+   Limit the CPU real-time runtime in microseconds
+
+   Limit the containers Real Time CPU usage. This flag tells the kernel to limit the amount of time in a given CPU period Real Time tasks may consume. Ex:
+   Period of 1,000,000us and Runtime of 950,000us means that this container could consume 95% of available CPU and leave the remaining 5% to normal priority tasks.
+
+   The sum of all runtimes across containers cannot exceed the amount allotted to the parent cgroup.
+
+**--cpus**=0.0
+   Number of CPUs. The default is *0.0*.
 
 **--device**=[]
    Add a host device to the container (e.g. --device=/dev/sdc:/dev/xvdc:rwm)
@@ -153,7 +189,7 @@ two memory nodes.
 **--dns**=[]
    Set custom DNS servers
 
-**--dns-opt**=[]
+**--dns-option**=[]
    Set custom DNS options
 
 **--dns-search**=[]
@@ -186,12 +222,12 @@ two memory nodes.
 **--ip**=""
    Sets the container's interface IPv4 address (e.g. 172.23.0.9)
 
-   It can only be used in conjunction with **--net** for user-defined networks
+   It can only be used in conjunction with **--network** for user-defined networks
 
 **--ip6**=""
    Sets the container's interface IPv6 address (e.g. 2001:db8::1b99)
 
-   It can only be used in conjunction with **--net** for user-defined networks
+   It can only be used in conjunction with **--network** for user-defined networks
 
 **--ipc**=""
    Default is to create a private IPC namespace (POSIX SysV IPC) for the container
@@ -269,7 +305,7 @@ unit, `b` is used. Set LIMIT to `-1` to enable unlimited swap.
 **--name**=""
    Assign a name to the container
 
-**--net**="*bridge*"
+**--network**="*bridge*"
    Set the Network mode for the container
                                'bridge': create a network stack on the default Docker bridge
                                'none': no networking
@@ -343,11 +379,17 @@ unit, `b` is used. Set LIMIT to `-1` to enable unlimited swap.
 
    $ docker create -it --storage-opt size=120G fedora /bin/bash
 
-   This (size) will allow to set the container rootfs size to 120G at creation time. User cannot pass a size less than the Default BaseFS Size.
-   This option is only available for the `devicemapper`, `btrfs`, and `zfs` graph drivers.
+   This (size) will allow to set the container rootfs size to 120G at creation time.
+   This option is only available for the `devicemapper`, `btrfs`, `overlay2` and `zfs` graph drivers.
+   For the `devicemapper`, `btrfs` and `zfs` storage drivers, user cannot pass a size less than the Default BaseFS Size.
+   For the `overlay2` storage driver, the size option is only available if the backing fs is `xfs` and mounted with the `pquota` mount option.
+   Under these conditions, user can pass any size less then the backing fs size.
   
 **--stop-signal**=*SIGTERM*
   Signal to stop a container. Default is SIGTERM.
+
+**--stop-timeout**=*10*
+  Timeout (in seconds) to stop a container. Default is 10.
 
 **--sysctl**=SYSCTL
   Configure namespaced kernel parameters at runtime
@@ -362,7 +404,7 @@ unit, `b` is used. Set LIMIT to `-1` to enable unlimited swap.
   Network Namespace - current sysctls allowed:
       Sysctls beginning with net.*
 
-  Note: if you use --net=host using these sysctls will not be allowed.
+  Note: if you use --network=host using these sysctls will not be allowed.
 
 **-t**, **--tty**=*true*|*false*
    Allocate a pseudo-TTY. The default is *false*.

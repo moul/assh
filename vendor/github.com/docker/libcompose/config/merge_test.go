@@ -405,20 +405,3 @@ services:
 		}
 	}
 }
-
-func TestNilNetworks(t *testing.T) {
-	composeFile := []byte(`
-version: '2'
-networks:
-  public:`)
-
-	config, err := CreateConfig(composeFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for key, networkConfig := range config.Networks {
-		if networkConfig == nil {
-			t.Fatalf("networkConfig %s was nil, shouldn't be", key)
-		}
-	}
-}

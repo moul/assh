@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	units "github.com/docker/go-units"
@@ -35,6 +35,7 @@ func NewPruneCommand(dockerCli *command.DockerCli) *cobra.Command {
 			fmt.Fprintln(dockerCli.Out(), "Total reclaimed space:", units.HumanSize(float64(spaceReclaimed)))
 			return nil
 		},
+		Tags: map[string]string{"version": "1.25"},
 	}
 
 	flags := cmd.Flags()
@@ -51,7 +52,7 @@ func runPrune(dockerCli *command.DockerCli, opts pruneOptions) (spaceReclaimed u
 		return
 	}
 
-	report, err := dockerCli.Client().VolumesPrune(context.Background(), types.VolumesPruneConfig{})
+	report, err := dockerCli.Client().VolumesPrune(context.Background(), filters.Args{})
 	if err != nil {
 		return
 	}

@@ -1,8 +1,17 @@
 ---
 title: "node inspect"
 description: "The node inspect command description and usage"
-keywords: ["node, inspect"]
+keywords: "node, inspect"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # node inspect
 
@@ -12,7 +21,7 @@ Usage:  docker node inspect [OPTIONS] self|NODE [NODE...]
 Display detailed information on one or more nodes
 
 Options:
-  -f, --format string   Format the output using the given go template
+  -f, --format string   Format the output using the given Go template
       --help            Print usage
       --pretty          Print the information in a human friendly format.
 ```
@@ -79,7 +88,8 @@ Example output:
             }
         },
         "Status": {
-            "State": "ready"
+            "State": "ready",
+            "Addr": "168.0.32.137"
         },
         "ManagerStatus": {
             "Leader": true,
@@ -89,8 +99,10 @@ Example output:
     }
     ]
 
+    {% raw %}
     $ docker node inspect --format '{{ .ManagerStatus.Leader }}' self
     false
+    {% endraw %}
 
     $ docker node inspect --pretty self
     ID:                     e216jshn25ckzbvmwlnh5jr3g
@@ -99,6 +111,7 @@ Example output:
     Status:
      State:                 Ready
      Availability:          Active
+     Address:               172.17.0.2
     Manager Status:
      Address:               172.17.0.2:2377
      Raft Status:           Reachable
@@ -116,7 +129,9 @@ Example output:
 
 ## Related information
 
-* [node update](node_update.md)
-* [node ps](node_ps.md)
+* [node demote](node_demote.md)
 * [node ls](node_ls.md)
+* [node promote](node_promote.md)
+* [node ps](node_ps.md)
 * [node rm](node_rm.md)
+* [node update](node_update.md)

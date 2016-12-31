@@ -1,13 +1,12 @@
 package container
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
@@ -16,6 +15,7 @@ import (
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/cli/command/formatter"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type statsOptions struct {
@@ -80,6 +80,16 @@ func runStats(dockerCli *command.DockerCli, opts *statsOptions) error {
 		}
 	}
 
+	// Get the daemonOSType if not set already
+	if daemonOSType == "" {
+		svctx := context.Background()
+		sv, err := dockerCli.Client().ServerVersion(svctx)
+		if err != nil {
+			return err
+		}
+		daemonOSType = sv.Os
+	}
+
 	// waitFirst is a WaitGroup to wait first stat data's reach for each container
 	waitFirst := &sync.WaitGroup{}
 
@@ -98,7 +108,7 @@ func runStats(dockerCli *command.DockerCli, opts *statsOptions) error {
 			s := formatter.NewContainerStats(container.ID[:12], daemonOSType)
 			if cStats.add(s) {
 				waitFirst.Add(1)
-				go collect(s, ctx, dockerCli.Client(), !opts.noStream, waitFirst)
+				go collect(ctx, s, dockerCli.Client(), !opts.noStream, waitFirst)
 			}
 		}
 	}
@@ -115,7 +125,7 @@ func runStats(dockerCli *command.DockerCli, opts *statsOptions) error {
 				s := formatter.NewContainerStats(e.ID[:12], daemonOSType)
 				if cStats.add(s) {
 					waitFirst.Add(1)
-					go collect(s, ctx, dockerCli.Client(), !opts.noStream, waitFirst)
+					go collect(ctx, s, dockerCli.Client(), !opts.noStream, waitFirst)
 				}
 			}
 		})
@@ -124,7 +134,7 @@ func runStats(dockerCli *command.DockerCli, opts *statsOptions) error {
 			s := formatter.NewContainerStats(e.ID[:12], daemonOSType)
 			if cStats.add(s) {
 				waitFirst.Add(1)
-				go collect(s, ctx, dockerCli.Client(), !opts.noStream, waitFirst)
+				go collect(ctx, s, dockerCli.Client(), !opts.noStream, waitFirst)
 			}
 		})
 
@@ -150,7 +160,7 @@ func runStats(dockerCli *command.DockerCli, opts *statsOptions) error {
 			s := formatter.NewContainerStats(name, daemonOSType)
 			if cStats.add(s) {
 				waitFirst.Add(1)
-				go collect(s, ctx, dockerCli.Client(), !opts.noStream, waitFirst)
+				go collect(ctx, s, dockerCli.Client(), !opts.noStream, waitFirst)
 			}
 		}
 
@@ -163,28 +173,30 @@ func runStats(dockerCli *command.DockerCli, opts *statsOptions) error {
 		var errs []string
 		cStats.mu.Lock()
 		for _, c := range cStats.cs {
-			cErr := c.GetError()
-			if cErr != nil {
-				errs = append(errs, fmt.Sprintf("%s: %v", c.Name, cErr))
+			if err := c.GetError(); err != nil {
+				errs = append(errs, err.Error())
 			}
 		}
 		cStats.mu.Unlock()
 		if len(errs) > 0 {
-			return fmt.Errorf("%s", strings.Join(errs, ", "))
+			return errors.New(strings.Join(errs, "\n"))
 		}
 	}
 
 	// before print to screen, make sure each container get at least one valid stat data
 	waitFirst.Wait()
-	f := "table"
-	if len(opts.format) > 0 {
-		f = opts.format
+	format := opts.format
+	if len(format) == 0 {
+		if len(dockerCli.ConfigFile().StatsFormat) > 0 {
+			format = dockerCli.ConfigFile().StatsFormat
+		} else {
+			format = formatter.TableFormatKey
+		}
 	}
 	statsCtx := formatter.Context{
 		Output: dockerCli.Out(),
-		Format: formatter.NewStatsFormat(f, daemonOSType),
+		Format: formatter.NewStatsFormat(format, daemonOSType),
 	}
-
 	cleanScreen := func() {
 		if !opts.noStream {
 			fmt.Fprint(dockerCli.Out(), "\033[2J")

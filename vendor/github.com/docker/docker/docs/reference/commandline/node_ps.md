@@ -1,9 +1,18 @@
 ---
 title: "node ps"
 description: "The node ps command description and usage"
-keywords: ["node, tasks", "ps"]
+keywords: node, tasks, ps
 aliases: ["/engine/reference/commandline/node_tasks/"]
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # node ps
 
@@ -13,7 +22,6 @@ Usage:  docker node ps [OPTIONS] [NODE...]
 List tasks running on one or more nodes, defaults to current node.
 
 Options:
-  -a, --all            Display all instances
   -f, --filter value   Filter output based on conditions provided
       --help           Print usage
       --no-resolve     Do not map IDs to Names
@@ -91,7 +99,9 @@ The `desired-state` filter can take the values `running`, `shutdown`, and `accep
 
 ## Related information
 
+* [node demote](node_demote.md)
 * [node inspect](node_inspect.md)
-* [node update](node_update.md)
 * [node ls](node_ls.md)
+* [node promote](node_promote.md)
 * [node rm](node_rm.md)
+* [node update](node_update.md)

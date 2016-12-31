@@ -3,13 +3,12 @@ package container
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
-
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	units "github.com/docker/go-units"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type pruneOptions struct {
@@ -35,6 +34,7 @@ func NewPruneCommand(dockerCli *command.DockerCli) *cobra.Command {
 			fmt.Fprintln(dockerCli.Out(), "Total reclaimed space:", units.HumanSize(float64(spaceReclaimed)))
 			return nil
 		},
+		Tags: map[string]string{"version": "1.25"},
 	}
 
 	flags := cmd.Flags()
@@ -44,20 +44,20 @@ func NewPruneCommand(dockerCli *command.DockerCli) *cobra.Command {
 }
 
 const warning = `WARNING! This will remove all stopped containers.
-Are you sure you want to continue? [y/N] `
+Are you sure you want to continue?`
 
 func runPrune(dockerCli *command.DockerCli, opts pruneOptions) (spaceReclaimed uint64, output string, err error) {
 	if !opts.force && !command.PromptForConfirmation(dockerCli.In(), dockerCli.Out(), warning) {
 		return
 	}
 
-	report, err := dockerCli.Client().ContainersPrune(context.Background(), types.ContainersPruneConfig{})
+	report, err := dockerCli.Client().ContainersPrune(context.Background(), filters.Args{})
 	if err != nil {
 		return
 	}
 
 	if len(report.ContainersDeleted) > 0 {
-		output = "Deleted Containers:"
+		output = "Deleted Containers:\n"
 		for _, id := range report.ContainersDeleted {
 			output += id + "\n"
 		}

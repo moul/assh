@@ -18,7 +18,7 @@ daemon.
     Print usage statement
 
 **-f**, **--format**=""
-    Format the output using the given go template.
+    Format the output using the given Go template.
 
 # EXAMPLES
 
@@ -59,4 +59,4 @@ To view all available fields, you can use the format `{{json .}}`.
 # HISTORY
 June 2014, updated by Sven Dowideit <SvenDowideit@home.org.au>
 June 2015, updated by John Howard <jhoward@microsoft.com>
-June 2015, updated by Patrick Hemmer <patrick.hemmer@gmail.com
+June 2015, updated by Patrick Hemmer <patrick.hemmer@gmail.com>

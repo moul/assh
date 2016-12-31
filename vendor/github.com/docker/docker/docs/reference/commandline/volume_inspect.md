@@ -1,8 +1,17 @@
 ---
 title: "volume inspect"
 description: "The volume inspect command description and usage"
-keywords: ["volume, inspect"]
+keywords: "volume, inspect"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # volume inspect
 
@@ -12,7 +21,7 @@ Usage:  docker volume inspect [OPTIONS] VOLUME [VOLUME...]
 Display detailed information on one or more volumes
 
 Options:
-  -f, --format string   Format the output using the given go template
+  -f, --format string   Format the output using the given Go template
       --help            Print usage
 ```
 
@@ -36,12 +45,15 @@ Example output:
       }
     ]
 
+    {% raw %}
     $ docker volume inspect --format '{{ .Mountpoint }}' 85bffb0677236974f93955d8ecc4df55ef5070117b0e53333cc1b443777be24d
     /var/lib/docker/volumes/85bffb0677236974f93955d8ecc4df55ef5070117b0e53333cc1b443777be24d/_data
+    {% endraw %}
 
 ## Related information
 
 * [volume create](volume_create.md)
 * [volume ls](volume_ls.md)
 * [volume rm](volume_rm.md)
-* [Understand Data Volumes](../../tutorials/dockervolumes.md)
+* [volume prune](volume_prune.md)
+* [Understand Data Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/)

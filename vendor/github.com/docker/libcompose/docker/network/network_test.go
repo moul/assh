@@ -34,7 +34,12 @@ func TestNetworksFromServices(t *testing.T) {
 		expectedError    bool
 	}{
 		{
-			expectedNetworks: []*Network{},
+			expectedNetworks: []*Network{
+				{
+					name:        "default",
+					projectName: "prj",
+				},
+			},
 		},
 		{
 			networkConfigs: map[string]*config.NetworkConfig{

@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/cli/command/node"
 	"github.com/docker/docker/cli/command/plugin"
 	"github.com/docker/docker/cli/command/registry"
+	"github.com/docker/docker/cli/command/secret"
 	"github.com/docker/docker/cli/command/service"
 	"github.com/docker/docker/cli/command/stack"
 	"github.com/docker/docker/cli/command/swarm"
@@ -22,24 +23,55 @@ import (
 // AddCommands adds all the commands from cli/command to the root command
 func AddCommands(cmd *cobra.Command, dockerCli *command.DockerCli) {
 	cmd.AddCommand(
-		node.NewNodeCommand(dockerCli),
-		service.NewServiceCommand(dockerCli),
-		stack.NewStackCommand(dockerCli),
-		stack.NewTopLevelDeployCommand(dockerCli),
-		swarm.NewSwarmCommand(dockerCli),
+		// checkpoint
+		checkpoint.NewCheckpointCommand(dockerCli),
+
+		// container
 		container.NewContainerCommand(dockerCli),
-		image.NewImageCommand(dockerCli),
-		system.NewSystemCommand(dockerCli),
 		container.NewRunCommand(dockerCli),
+
+		// image
+		image.NewImageCommand(dockerCli),
 		image.NewBuildCommand(dockerCli),
+
+		// node
+		node.NewNodeCommand(dockerCli),
+
+		// network
 		network.NewNetworkCommand(dockerCli),
-		hide(system.NewEventsCommand(dockerCli)),
+
+		// plugin
+		plugin.NewPluginCommand(dockerCli),
+
+		// registry
 		registry.NewLoginCommand(dockerCli),
 		registry.NewLogoutCommand(dockerCli),
 		registry.NewSearchCommand(dockerCli),
+
+		// secret
+		secret.NewSecretCommand(dockerCli),
+
+		// service
+		service.NewServiceCommand(dockerCli),
+
+		// system
+		system.NewSystemCommand(dockerCli),
 		system.NewVersionCommand(dockerCli),
+
+		// stack
+		stack.NewStackCommand(dockerCli),
+		stack.NewTopLevelDeployCommand(dockerCli),
+
+		// swarm
+		swarm.NewSwarmCommand(dockerCli),
+
+		// volume
 		volume.NewVolumeCommand(dockerCli),
+
+		// legacy commands may be hidden
+		hide(system.NewEventsCommand(dockerCli)),
 		hide(system.NewInfoCommand(dockerCli)),
+		hide(system.NewInspectCommand(dockerCli)),
 		hide(container.NewAttachCommand(dockerCli)),
 		hide(container.NewCommitCommand(dockerCli)),
 		hide(container.NewCopyCommand(dockerCli)),
@@ -71,13 +103,14 @@ func AddCommands(cmd *cobra.Command, dockerCli *command.DockerCli) {
 		hide(image.NewRemoveCommand(dockerCli)),
 		hide(image.NewSaveCommand(dockerCli)),
 		hide(image.NewTagCommand(dockerCli)),
-		hide(system.NewInspectCommand(dockerCli)),
-		checkpoint.NewCheckpointCommand(dockerCli),
-		plugin.NewPluginCommand(dockerCli),
 	)
+
 }
 
 func hide(cmd *cobra.Command) *cobra.Command {
+	// If the environment variable with name "DOCKER_HIDE_LEGACY_COMMANDS" is not empty,
+	// these legacy commands (such as `docker ps`, `docker exec`, etc)
+	// will not be shown in output console.
 	if os.Getenv("DOCKER_HIDE_LEGACY_COMMANDS") == "" {
 		return cmd
 	}

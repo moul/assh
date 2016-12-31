@@ -1,5 +1,3 @@
-// +build experimental
-
 package main
 
 import (
@@ -11,6 +9,7 @@ import (
 )
 
 func (s *DockerSwarmSuite) TestStackRemove(c *check.C) {
+	testRequires(c, ExperimentalDaemon)
 	d := s.AddDaemon(c, true, true)
 
 	stackArgs := append([]string{"stack", "remove", "UNKNOWN_STACK"})
@@ -21,6 +20,7 @@ func (s *DockerSwarmSuite) TestStackRemove(c *check.C) {
 }
 
 func (s *DockerSwarmSuite) TestStackTasks(c *check.C) {
+	testRequires(c, ExperimentalDaemon)
 	d := s.AddDaemon(c, true, true)
 
 	stackArgs := append([]string{"stack", "ps", "UNKNOWN_STACK"})
@@ -31,6 +31,7 @@ func (s *DockerSwarmSuite) TestStackTasks(c *check.C) {
 }
 
 func (s *DockerSwarmSuite) TestStackServices(c *check.C) {
+	testRequires(c, ExperimentalDaemon)
 	d := s.AddDaemon(c, true, true)
 
 	stackArgs := append([]string{"stack", "services", "UNKNOWN_STACK"})
@@ -38,6 +39,30 @@ func (s *DockerSwarmSuite) TestStackServices(c *check.C) {
 	out, err := d.Cmd(stackArgs...)
 	c.Assert(err, checker.IsNil)
 	c.Assert(out, check.Equals, "Nothing found in stack: UNKNOWN_STACK\n")
+}
+
+func (s *DockerSwarmSuite) TestStackDeployComposeFile(c *check.C) {
+	testRequires(c, ExperimentalDaemon)
+	d := s.AddDaemon(c, true, true)
+
+	testStackName := "testdeploy"
+	stackArgs := []string{
+		"stack", "deploy",
+		"--compose-file", "fixtures/deploy/default.yaml",
+		testStackName,
+	}
+	out, err := d.Cmd(stackArgs...)
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+
+	out, err = d.Cmd([]string{"stack", "ls"}...)
+	c.Assert(err, checker.IsNil)
+	c.Assert(out, check.Equals, "NAME        SERVICES\n"+"testdeploy  2\n")
+
+	out, err = d.Cmd([]string{"stack", "rm", testStackName}...)
+	c.Assert(err, checker.IsNil)
+	out, err = d.Cmd([]string{"stack", "ls"}...)
+	c.Assert(err, checker.IsNil)
+	c.Assert(out, check.Equals, "NAME  SERVICES\n")
 }
 
 // testDAB is the DAB JSON used for testing.
@@ -58,7 +83,8 @@ const testDAB = `{
     }
 }`
 
-func (s *DockerSwarmSuite) TestStackWithDAB(c *check.C) {
+func (s *DockerSwarmSuite) TestStackDeployWithDAB(c *check.C) {
+	testRequires(c, ExperimentalDaemon)
 	// setup
 	testStackName := "test"
 	testDABFileName := testStackName + ".dab"
@@ -67,7 +93,11 @@ func (s *DockerSwarmSuite) TestStackWithDAB(c *check.C) {
 	c.Assert(err, checker.IsNil)
 	d := s.AddDaemon(c, true, true)
 	// deploy
-	stackArgs := []string{"stack", "deploy", testStackName}
+	stackArgs := []string{
+		"stack", "deploy",
+		"--bundle-file", testDABFileName,
+		testStackName,
+	}
 	out, err := d.Cmd(stackArgs...)
 	c.Assert(err, checker.IsNil)
 	c.Assert(out, checker.Contains, "Loading bundle from test.dab\n")
@@ -89,21 +119,4 @@ func (s *DockerSwarmSuite) TestStackWithDAB(c *check.C) {
 	out, err = d.Cmd(stackArgs...)
 	c.Assert(err, checker.IsNil)
 	c.Assert(out, check.Equals, "NAME  SERVICES\n")
-}
-
-func (s *DockerSwarmSuite) TestStackWithDABExtension(c *check.C) {
-	// setup
-	testStackName := "test.dab"
-	testDABFileName := testStackName
-	defer os.RemoveAll(testDABFileName)
-	err := ioutil.WriteFile(testDABFileName, []byte(testDAB), 0444)
-	c.Assert(err, checker.IsNil)
-	d := s.AddDaemon(c, true, true)
-	// deploy
-	stackArgs := []string{"stack", "deploy", testStackName}
-	out, err := d.Cmd(stackArgs...)
-	c.Assert(err, checker.IsNil)
-	c.Assert(out, checker.Contains, "Loading bundle from test.dab\n")
-	c.Assert(out, checker.Contains, "Creating service test_srv1\n")
-	c.Assert(out, checker.Contains, "Creating service test_srv2\n")
 }

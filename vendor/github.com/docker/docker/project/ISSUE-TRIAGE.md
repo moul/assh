@@ -30,7 +30,7 @@ reopened when the necessary information is provided.
 
 ### 2. Classify the Issue
 
-An issue can have multiple of the following labels. Typically, a properly classified issues should
+An issue can have multiple of the following labels. Typically, a properly classified issue should
 have:
 
 - One label identifying its kind (`kind/*`).
@@ -42,7 +42,7 @@ have:
 | Kind             | Description                                                                                                                     |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------|
 | kind/bug         | Bugs are bugs. The cause may or may not be known at triage time so debugging should be taken account into the time estimate.    |
-| kind/enhancement | Enhancement are not bugs or new features but can drastically improve usability or performance of a project component.           |
+| kind/enhancement | Enhancements are not bugs or new features but can drastically improve usability or performance of a project component.           |
 | kind/feature     | Functionality or other elements that the project does not currently support.  Features are new and shiny.                       |
 | kind/question    | Contains a user or contributor question requiring a response.                                                                   |
 
@@ -78,7 +78,7 @@ have:
 | area/testing              |
 | area/volumes              |
 
-### Platform
+#### Platform
 
 | Platform                  |
 |---------------------------|
@@ -105,6 +105,18 @@ written a whole plugin for Docker in a personal project and never contributed to
 Docker. With that kind of experience, you could take on an <strong
 class="gh-label expert">exp/expert</strong> level task.
 
+#### Triage status
+
+To communicate the triage status with other collaborators, you can apply status
+labels to issues. These labels prevent duplicating effort.
+
+| Status                        | Description                                                                                                                                                                 |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| status/confirmed              | You triaged the issue, and were able to reproduce the issue. Always leave a comment how you reproduced, so that the person working on resolving the issue has a way to set up a test-case.
+| status/accepted               | Apply to enhancements / feature requests that we think are good to have. Adding this label helps contributors find things to work on.
+| status/more-info-needed       | Apply this to issues that are missing information (e.g. no `docker version` or `docker info` output, or no steps to reproduce), or require feedback from the reporter. If the issue is not updated after a week, it can generally be closed.
+| status/needs-attention        | Apply this label if an issue (or PR) needs more eyes.
+
 ### 3. Prioritizing issue
 
 When, and only when, an issue is attached to a specific milestone, the issue can be labeled with the
@@ -117,4 +129,4 @@ following labels to indicate their degree of priority (from more urgent to less 
 | priority/P2 | Normal priority: default priority applied.                                                                                        |
 | priority/P3 | Best effort: those are nice to have / minor issues.                                                                               |
 
-And that's it. That should be all the information required for a new or existing contributor to come in an resolve an issue.
+And that's it. That should be all the information required for a new or existing contributor to come in a resolve an issue.

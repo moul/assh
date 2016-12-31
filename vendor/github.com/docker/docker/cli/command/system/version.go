@@ -1,6 +1,7 @@
 package system
 
 import (
+	"fmt"
 	"runtime"
 	"time"
 
@@ -10,8 +11,7 @@ import (
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/dockerversion"
-	"github.com/docker/docker/utils"
-	"github.com/docker/docker/utils/templates"
+	"github.com/docker/docker/pkg/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -21,17 +21,16 @@ var versionTemplate = `Client:
  Go version:   {{.Client.GoVersion}}
  Git commit:   {{.Client.GitCommit}}
  Built:        {{.Client.BuildTime}}
- OS/Arch:      {{.Client.Os}}/{{.Client.Arch}}{{if .Client.Experimental}}
- Experimental: {{.Client.Experimental}}{{end}}{{if .ServerOK}}
+ OS/Arch:      {{.Client.Os}}/{{.Client.Arch}}{{if .ServerOK}}
 
 Server:
  Version:      {{.Server.Version}}
- API version:  {{.Server.APIVersion}}
+ API version:  {{.Server.APIVersion}} (minimum version {{.Server.MinAPIVersion}})
  Go version:   {{.Server.GoVersion}}
  Git commit:   {{.Server.GitCommit}}
  Built:        {{.Server.BuildTime}}
- OS/Arch:      {{.Server.Os}}/{{.Server.Arch}}{{if .Server.Experimental}}
- Experimental: {{.Server.Experimental}}{{end}}{{end}}`
+ OS/Arch:      {{.Server.Os}}/{{.Server.Arch}}
+ Experimental: {{.Server.Experimental}}{{end}}`
 
 type versionOptions struct {
 	format string
@@ -52,7 +51,7 @@ func NewVersionCommand(dockerCli *command.DockerCli) *cobra.Command {
 
 	flags := cmd.Flags()
 
-	flags.StringVarP(&opts.format, "format", "f", "", "Format the output using the given go template")
+	flags.StringVarP(&opts.format, "format", "f", "", "Format the output using the given Go template")
 
 	return cmd
 }
@@ -71,16 +70,20 @@ func runVersion(dockerCli *command.DockerCli, opts *versionOptions) error {
 			Status: "Template parsing error: " + err.Error()}
 	}
 
+	APIVersion := dockerCli.Client().ClientVersion()
+	if defaultAPIVersion := dockerCli.DefaultVersion(); APIVersion != defaultAPIVersion {
+		APIVersion = fmt.Sprintf("%s (downgraded from %s)", APIVersion, defaultAPIVersion)
+	}
+
 	vd := types.VersionResponse{
 		Client: &types.Version{
-			Version:      dockerversion.Version,
-			APIVersion:   dockerCli.Client().ClientVersion(),
-			GoVersion:    runtime.Version(),
-			GitCommit:    dockerversion.GitCommit,
-			BuildTime:    dockerversion.BuildTime,
-			Os:           runtime.GOOS,
-			Arch:         runtime.GOARCH,
-			Experimental: utils.ExperimentalBuild(),
+			Version:    dockerversion.Version,
+			APIVersion: APIVersion,
+			GoVersion:  runtime.Version(),
+			GitCommit:  dockerversion.GitCommit,
+			BuildTime:  dockerversion.BuildTime,
+			Os:         runtime.GOOS,
+			Arch:       runtime.GOARCH,
 		},
 	}
 

@@ -400,7 +400,7 @@ func (s *DockerDaemonSuite) TestDaemonEvents(c *check.C) {
 	daemonConfig := `{"labels":["foo=bar"]}`
 	fmt.Fprintf(configFile, "%s", daemonConfig)
 	configFile.Close()
-	c.Assert(s.d.Start(fmt.Sprintf("--config-file=%s", configFilePath)), check.IsNil)
+	s.d.Start(c, fmt.Sprintf("--config-file=%s", configFilePath))
 
 	// Get daemon ID
 	out, err := s.d.Cmd("info")
@@ -418,18 +418,18 @@ func (s *DockerDaemonSuite) TestDaemonEvents(c *check.C) {
 
 	configFile, err = os.Create(configFilePath)
 	c.Assert(err, checker.IsNil)
-	daemonConfig = `{"max-concurrent-downloads":1,"labels":["bar=foo"]}`
+	daemonConfig = `{"max-concurrent-downloads":1,"labels":["bar=foo"], "shutdown-timeout": 10}`
 	fmt.Fprintf(configFile, "%s", daemonConfig)
 	configFile.Close()
 
-	syscall.Kill(s.d.cmd.Process.Pid, syscall.SIGHUP)
+	c.Assert(s.d.Signal(syscall.SIGHUP), checker.IsNil)
 
 	time.Sleep(3 * time.Second)
 
 	out, err = s.d.Cmd("events", "--since=0", "--until", daemonUnixTime(c))
 	c.Assert(err, checker.IsNil)
 
-	c.Assert(out, checker.Contains, fmt.Sprintf("daemon reload %s (cluster-advertise=, cluster-store=, cluster-store-opts={}, debug=true, default-runtime=runc, labels=[\"bar=foo\"], live-restore=false, max-concurrent-downloads=1, max-concurrent-uploads=5, name=%s, runtimes=runc:{docker-runc []})", daemonID, daemonName))
+	c.Assert(out, checker.Contains, fmt.Sprintf("daemon reload %s (cluster-advertise=, cluster-store=, cluster-store-opts={}, debug=true, default-runtime=runc, insecure-registries=[], labels=[\"bar=foo\"], live-restore=false, max-concurrent-downloads=1, max-concurrent-uploads=5, name=%s, runtimes=runc:{docker-runc []}, shutdown-timeout=10)", daemonID, daemonName))
 }
 
 func (s *DockerDaemonSuite) TestDaemonEventsWithFilters(c *check.C) {
@@ -444,7 +444,7 @@ func (s *DockerDaemonSuite) TestDaemonEventsWithFilters(c *check.C) {
 	daemonConfig := `{"labels":["foo=bar"]}`
 	fmt.Fprintf(configFile, "%s", daemonConfig)
 	configFile.Close()
-	c.Assert(s.d.Start(fmt.Sprintf("--config-file=%s", configFilePath)), check.IsNil)
+	s.d.Start(c, fmt.Sprintf("--config-file=%s", configFilePath))
 
 	// Get daemon ID
 	out, err := s.d.Cmd("info")
@@ -460,7 +460,7 @@ func (s *DockerDaemonSuite) TestDaemonEventsWithFilters(c *check.C) {
 	}
 	c.Assert(daemonID, checker.Not(checker.Equals), "")
 
-	syscall.Kill(s.d.cmd.Process.Pid, syscall.SIGHUP)
+	c.Assert(s.d.Signal(syscall.SIGHUP), checker.IsNil)
 
 	time.Sleep(3 * time.Second)
 

@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	units "github.com/docker/go-units"
@@ -36,6 +36,7 @@ func NewPruneCommand(dockerCli *command.DockerCli) *cobra.Command {
 			fmt.Fprintln(dockerCli.Out(), "Total reclaimed space:", units.HumanSize(float64(spaceReclaimed)))
 			return nil
 		},
+		Tags: map[string]string{"version": "1.25"},
 	}
 
 	flags := cmd.Flags()
@@ -53,6 +54,9 @@ Are you sure you want to continue?`
 )
 
 func runPrune(dockerCli *command.DockerCli, opts pruneOptions) (spaceReclaimed uint64, output string, err error) {
+	pruneFilters := filters.NewArgs()
+	pruneFilters.Add("dangling", fmt.Sprintf("%v", !opts.all))
+
 	warning := danglingWarning
 	if opts.all {
 		warning = allImageWarning
@@ -61,9 +65,7 @@ func runPrune(dockerCli *command.DockerCli, opts pruneOptions) (spaceReclaimed u
 		return
 	}
 
-	report, err := dockerCli.Client().ImagesPrune(context.Background(), types.ImagesPruneConfig{
-		DanglingOnly: !opts.all,
-	})
+	report, err := dockerCli.Client().ImagesPrune(context.Background(), pruneFilters)
 	if err != nil {
 		return
 	}

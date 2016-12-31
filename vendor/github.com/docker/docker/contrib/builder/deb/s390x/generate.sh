@@ -45,6 +45,7 @@ for version in "${versions[@]}"; do
 		bash-completion # for bash-completion debhelper integration
 		btrfs-tools # for "btrfs/ioctl.h" (and "version.h" if possible)
 		build-essential # "essential for building Debian packages"
+		cmake # tini dep
 		curl ca-certificates # for downloading Go
 		debhelper # for easy ".deb" building
 		dh-apparmor # for apparmor debhelper
@@ -57,6 +58,7 @@ for version in "${versions[@]}"; do
 		libsqlite3-dev # for "sqlite3.h"
 		pkg-config # for detecting things like libsystemd-journal dynamically
 		libsystemd-dev
+		vim-common # tini dep
 	)
 
 	case "$suite" in
@@ -77,7 +79,7 @@ for version in "${versions[@]}"; do
 	echo >> "$version/Dockerfile"
 
 	awk '$1 == "ENV" && $2 == "GO_VERSION" { print; exit }' ../../../../Dockerfile >> "$version/Dockerfile"
-	echo 'RUN curl -fSL "https://storage.googleapis.com/golang/go${GO_VERSION}.linux-s390x.tar.gz" | tar xzC /usr/local' >> "$version/Dockerfile"
+	echo 'RUN curl -fSL "https://golang.org/dl/go${GO_VERSION}.linux-s390x.tar.gz" | tar xzC /usr/local' >> "$version/Dockerfile"
 	echo 'ENV PATH $PATH:/usr/local/go/bin' >> "$version/Dockerfile"
 
 	echo >> "$version/Dockerfile"

@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 	"io"
-	"strings"
 	"text/tabwriter"
 
+	distreference "github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
@@ -49,22 +49,21 @@ func newListCommand(dockerCli *command.DockerCli) *cobra.Command {
 func runList(dockerCli *command.DockerCli, opts listOptions) error {
 	ctx := context.Background()
 	client := dockerCli.Client()
+	out := dockerCli.Out()
 
-	services, err := client.ServiceList(ctx, types.ServiceListOptions{Filter: opts.filter.Value()})
+	services, err := client.ServiceList(ctx, types.ServiceListOptions{Filters: opts.filter.Value()})
 	if err != nil {
 		return err
 	}
 
-	out := dockerCli.Out()
-	if opts.quiet {
-		PrintQuiet(out, services)
-	} else {
+	if len(services) > 0 && !opts.quiet {
+		// only non-empty services and not quiet, should we call TaskList and NodeList api
 		taskFilter := filters.NewArgs()
 		for _, service := range services {
 			taskFilter.Add("service", service.ID)
 		}
 
-		tasks, err := client.TaskList(ctx, types.TaskListOptions{Filter: taskFilter})
+		tasks, err := client.TaskList(ctx, types.TaskListOptions{Filters: taskFilter})
 		if err != nil {
 			return err
 		}
@@ -75,7 +74,13 @@ func runList(dockerCli *command.DockerCli, opts listOptions) error {
 		}
 
 		PrintNotQuiet(out, services, nodes, tasks)
+	} else if !opts.quiet {
+		// no services and not quiet, print only one line with columns ID, NAME, MODE, REPLICAS...
+		PrintNotQuiet(out, services, []swarm.Node{}, []swarm.Task{})
+	} else {
+		PrintQuiet(out, services)
 	}
+
 	return nil
 }
 
@@ -90,37 +95,57 @@ func PrintNotQuiet(out io.Writer, services []swarm.Service, nodes []swarm.Node, 
 	}
 
 	running := map[string]int{}
+	tasksNoShutdown := map[string]int{}
+
 	for _, task := range tasks {
-		if _, nodeActive := activeNodes[task.NodeID]; nodeActive && task.Status.State == "running" {
+		if task.DesiredState != swarm.TaskStateShutdown {
+			tasksNoShutdown[task.ServiceID]++
+		}
+
+		if _, nodeActive := activeNodes[task.NodeID]; nodeActive && task.Status.State == swarm.TaskStateRunning {
 			running[task.ServiceID]++
 		}
 	}
 
-	printTable(out, services, running)
+	printTable(out, services, running, tasksNoShutdown)
 }
 
-func printTable(out io.Writer, services []swarm.Service, running map[string]int) {
+func printTable(out io.Writer, services []swarm.Service, running, tasksNoShutdown map[string]int) {
 	writer := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 
 	// Ignore flushing errors
 	defer writer.Flush()
 
-	fmt.Fprintf(writer, listItemFmt, "ID", "NAME", "REPLICAS", "IMAGE", "COMMAND")
+	fmt.Fprintf(writer, listItemFmt, "ID", "NAME", "MODE", "REPLICAS", "IMAGE")
+
 	for _, service := range services {
+		mode := ""
 		replicas := ""
 		if service.Spec.Mode.Replicated != nil && service.Spec.Mode.Replicated.Replicas != nil {
+			mode = "replicated"
 			replicas = fmt.Sprintf("%d/%d", running[service.ID], *service.Spec.Mode.Replicated.Replicas)
 		} else if service.Spec.Mode.Global != nil {
-			replicas = "global"
+			mode = "global"
+			replicas = fmt.Sprintf("%d/%d", running[service.ID], tasksNoShutdown[service.ID])
 		}
+		image := service.Spec.TaskTemplate.ContainerSpec.Image
+		ref, err := distreference.ParseNamed(image)
+		if err == nil {
+			// update image string for display
+			namedTagged, ok := ref.(distreference.NamedTagged)
+			if ok {
+				image = namedTagged.Name() + ":" + namedTagged.Tag()
+			}
+		}
+
 		fmt.Fprintf(
 			writer,
 			listItemFmt,
 			stringid.TruncateID(service.ID),
 			service.Spec.Name,
+			mode,
 			replicas,
-			service.Spec.TaskTemplate.ContainerSpec.Image,
-			strings.Join(service.Spec.TaskTemplate.ContainerSpec.Args, " "))
+			image)
 	}
 }
 

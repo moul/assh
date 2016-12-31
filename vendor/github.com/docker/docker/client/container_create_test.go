@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"golang.org/x/net/context"
 )
@@ -20,7 +19,7 @@ func TestContainerCreateError(t *testing.T) {
 	}
 	_, err := client.ContainerCreate(context.Background(), nil, nil, nil, "nothing")
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
-		t.Fatalf("expected a Server Error, got %v", err)
+		t.Fatalf("expected a Server Error while testing StatusInternalServerError, got %v", err)
 	}
 
 	// 404 doesn't automagitally means an unknown image
@@ -29,7 +28,7 @@ func TestContainerCreateError(t *testing.T) {
 	}
 	_, err = client.ContainerCreate(context.Background(), nil, nil, nil, "nothing")
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
-		t.Fatalf("expected a Server Error, got %v", err)
+		t.Fatalf("expected a Server Error while testing StatusNotFound, got %v", err)
 	}
 }
 
@@ -54,7 +53,7 @@ func TestContainerCreateWithName(t *testing.T) {
 			if name != "container_name" {
 				return nil, fmt.Errorf("container name not set in URL query properly. Expected `container_name`, got %s", name)
 			}
-			b, err := json.Marshal(types.ContainerCreateResponse{
+			b, err := json.Marshal(container.ContainerCreateCreatedBody{
 				ID: "container_id",
 			})
 			if err != nil {

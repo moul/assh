@@ -3,6 +3,7 @@ package daemon
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"runtime"
 	"time"
 
@@ -19,7 +20,10 @@ import (
 // ContainerStats writes information about the container to the stream
 // given in the config object.
 func (daemon *Daemon) ContainerStats(ctx context.Context, prefixOrName string, config *backend.ContainerStatsConfig) error {
-	// Remote API version (used for backwards compatibility)
+	if runtime.GOOS == "solaris" {
+		return fmt.Errorf("%+v does not support stats", runtime.GOOS)
+	}
+	// Engine API version (used for backwards compatibility)
 	apiVersion := config.Version
 
 	container, err := daemon.GetContainer(prefixOrName)
@@ -27,8 +31,8 @@ func (daemon *Daemon) ContainerStats(ctx context.Context, prefixOrName string, c
 		return err
 	}
 
-	// If the container is not running and requires no stream, return an empty stats.
-	if !container.IsRunning() && !config.Stream {
+	// If the container is either not running or restarting and requires no stream, return an empty stats.
+	if (!container.IsRunning() || container.IsRestarting()) && !config.Stream {
 		return json.NewEncoder(config.OutStream).Encode(&types.Stats{})
 	}
 
@@ -44,6 +48,8 @@ func (daemon *Daemon) ContainerStats(ctx context.Context, prefixOrName string, c
 	var preRead time.Time
 	getStatJSON := func(v interface{}) *types.StatsJSON {
 		ss := v.(types.StatsJSON)
+		ss.Name = container.Name
+		ss.ID = container.ID
 		ss.PreCPUStats = preCPUStats
 		ss.PreRead = preRead
 		preCPUStats = ss.CPUStats

@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 
 	containertypes "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/utils"
-	"github.com/docker/docker/volume"
 )
 
 // Container holds fields specific to the Windows implementation. See
@@ -17,9 +15,6 @@ import (
 type Container struct {
 	CommonContainer
 
-	HostnamePath   string
-	HostsPath      string
-	ResolvConfPath string
 	// Fields below here are platform specific.
 }
 
@@ -34,7 +29,7 @@ func (container *Container) CreateDaemonEnvironment(_ bool, linkedEnv []string) 
 	// because the env on the container can override certain default values
 	// we need to replace the 'env' keys where they match and append anything
 	// else.
-	return utils.ReplaceOrAppendEnvValues(linkedEnv, container.Config.Env)
+	return ReplaceOrAppendEnvValues(linkedEnv, container.Config.Env)
 }
 
 // UnmountIpcMounts unmounts Ipc related mounts.
@@ -47,47 +42,27 @@ func (container *Container) IpcMounts() []Mount {
 	return nil
 }
 
-// UnmountVolumes explicitly unmounts volumes from the container.
-func (container *Container) UnmountVolumes(forceSyscall bool, volumeEventLog func(name, action string, attributes map[string]string)) error {
-	var (
-		volumeMounts []volume.MountPoint
-		err          error
-	)
-
-	for _, mntPoint := range container.MountPoints {
-		// Do not attempt to get the mountpoint destination on the host as it
-		// is not accessible on Windows in the case that a container is running.
-		// (It's a special reparse point which doesn't have any contextual meaning).
-		volumeMounts = append(volumeMounts, volume.MountPoint{Volume: mntPoint.Volume, ID: mntPoint.ID})
-	}
-
-	// atm, this is a no-op.
-	if volumeMounts, err = appendNetworkMounts(container, volumeMounts); err != nil {
-		return err
-	}
-
-	for _, volumeMount := range volumeMounts {
-		if volumeMount.Volume != nil {
-			if err := volumeMount.Volume.Unmount(volumeMount.ID); err != nil {
-				return err
-			}
-			volumeMount.ID = ""
-
-			attributes := map[string]string{
-				"driver":    volumeMount.Volume.DriverName(),
-				"container": container.ID,
-			}
-			volumeEventLog(volumeMount.Volume.Name(), "unmount", attributes)
-		}
-	}
-
+// SecretMount returns the mount for the secret path
+func (container *Container) SecretMount() *Mount {
 	return nil
 }
 
+// UnmountSecrets unmounts the fs for secrets
+func (container *Container) UnmountSecrets() error {
+	return nil
+}
+
+// DetachAndUnmount unmounts all volumes.
+// On Windows it only delegates to `UnmountVolumes` since there is nothing to
+// force unmount.
+func (container *Container) DetachAndUnmount(volumeEventLog func(name, action string, attributes map[string]string)) error {
+	return container.UnmountVolumes(volumeEventLog)
+}
+
 // TmpfsMounts returns the list of tmpfs mounts
-func (container *Container) TmpfsMounts() []Mount {
+func (container *Container) TmpfsMounts() ([]Mount, error) {
 	var mounts []Mount
-	return mounts
+	return mounts, nil
 }
 
 // UpdateContainer updates configuration of a container
@@ -110,13 +85,6 @@ func (container *Container) UpdateContainer(hostConfig *containertypes.HostConfi
 		container.HostConfig.RestartPolicy = hostConfig.RestartPolicy
 	}
 	return nil
-}
-
-// appendNetworkMounts appends any network mounts to the array of mount points passed in.
-// Windows does not support network mounts (not to be confused with SMB network mounts), so
-// this is a no-op.
-func appendNetworkMounts(container *Container, volumeMounts []volume.MountPoint) ([]volume.MountPoint, error) {
-	return volumeMounts, nil
 }
 
 // cleanResourcePath cleans a resource path by removing C:\ syntax, and prepares

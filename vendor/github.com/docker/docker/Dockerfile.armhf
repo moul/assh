@@ -17,6 +17,10 @@
 
 FROM armhf/debian:jessie
 
+# allow replacing httpredir or deb mirror
+ARG APT_MIRROR=deb.debian.org
+RUN sed -ri "s/(httpredir|deb).debian.org/$APT_MIRROR/g" /etc/apt/sources.list
+
 # Packaged dependencies
 RUN apt-get update && apt-get install -y \
 	apparmor \
@@ -27,6 +31,7 @@ RUN apt-get update && apt-get install -y \
 	build-essential \
 	createrepo \
 	curl \
+	cmake \
 	dpkg-sig \
 	git \
 	iptables \
@@ -46,6 +51,7 @@ RUN apt-get update && apt-get install -y \
 	python-websocket \
 	xfsprogs \
 	tar \
+	vim-common \
 	--no-install-recommends \
 	&& pip install awscli==1.10.15
 
@@ -66,11 +72,11 @@ RUN cd /usr/local/lvm2 \
 # See https://git.fedorahosted.org/cgit/lvm2.git/tree/INSTALL
 
 # Install Go
-ENV GO_VERSION 1.7.1
-RUN curl -fsSL "https://storage.googleapis.com/golang/go${GO_VERSION}.linux-armv6l.tar.gz" \
+ENV GO_VERSION 1.7.4
+RUN curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-armv6l.tar.gz" \
 	| tar -xzC /usr/local
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
-ENV GOPATH /go:/go/src/github.com/docker/docker/vendor
+ENV GOPATH /go
 
 # We're building for armhf, which is ARMv7, so let's be explicit about that
 ENV GOARCH arm
@@ -120,7 +126,7 @@ RUN set -x \
 	&& rm -rf "$GOPATH"
 
 # Install notary and notary-server
-ENV NOTARY_VERSION v0.3.0
+ENV NOTARY_VERSION v0.5.0
 RUN set -x \
 	&& export GOPATH="$(mktemp -d)" \
 	&& git clone https://github.com/docker/notary.git "$GOPATH/src/github.com/docker/notary" \
@@ -164,10 +170,11 @@ RUN ./contrib/download-frozen-image-v2.sh /docker-frozen-images \
 	armhf/hello-world:latest@sha256:161dcecea0225975b2ad5f768058212c1e0d39e8211098666ffa1ac74cfb7791
 # See also "hack/make/.ensure-frozen-images" (which needs to be updated any time this list is)
 
-# Install tomlv, runc, containerd and grimes
+# Install tomlv, vndr, runc, containerd, tini, docker-proxy
 # Please edit hack/dockerfile/install-binaries.sh to update them.
+COPY hack/dockerfile/binaries-commits /tmp/binaries-commits
 COPY hack/dockerfile/install-binaries.sh /tmp/install-binaries.sh
-RUN /tmp/install-binaries.sh tomlv runc containerd grimes
+RUN /tmp/install-binaries.sh tomlv vndr runc containerd tini proxy
 
 ENTRYPOINT ["hack/dind"]
 

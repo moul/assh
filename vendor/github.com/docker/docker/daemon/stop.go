@@ -16,7 +16,7 @@ import (
 // will wait for a graceful termination. An error is returned if the
 // container is not found, is already stopped, or if there is a
 // problem stopping the container.
-func (daemon *Daemon) ContainerStop(name string, seconds int) error {
+func (daemon *Daemon) ContainerStop(name string, seconds *int) error {
 	container, err := daemon.GetContainer(name)
 	if err != nil {
 		return err
@@ -25,7 +25,11 @@ func (daemon *Daemon) ContainerStop(name string, seconds int) error {
 		err := fmt.Errorf("Container %s is already stopped", name)
 		return errors.NewErrorWithStatusCode(err, http.StatusNotModified)
 	}
-	if err := daemon.containerStop(container, seconds); err != nil {
+	if seconds == nil {
+		stopTimeout := container.StopTimeout()
+		seconds = &stopTimeout
+	}
+	if err := daemon.containerStop(container, *seconds); err != nil {
 		return fmt.Errorf("Cannot stop container %s: %v", name, err)
 	}
 	return nil
@@ -48,7 +52,7 @@ func (daemon *Daemon) containerStop(container *container.Container, seconds int)
 	if err := daemon.killPossiblyDeadProcess(container, stopSignal); err != nil {
 		// While normally we might "return err" here we're not going to
 		// because if we can't stop the container by this point then
-		// its probably because its already stopped. Meaning, between
+		// it's probably because it's already stopped. Meaning, between
 		// the time of the IsRunning() call above and now it stopped.
 		// Also, since the err return will be environment specific we can't
 		// look for any particular (common) error that would indicate

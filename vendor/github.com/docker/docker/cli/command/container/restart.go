@@ -1,19 +1,20 @@
 package container
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type restartOptions struct {
-	nSeconds int
+	nSeconds        int
+	nSecondsChanged bool
 
 	containers []string
 }
@@ -28,6 +29,7 @@ func NewRestartCommand(dockerCli *command.DockerCli) *cobra.Command {
 		Args:  cli.RequiresMinArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.containers = args
+			opts.nSecondsChanged = cmd.Flags().Changed("time")
 			return runRestart(dockerCli, &opts)
 		},
 	}
@@ -40,16 +42,21 @@ func NewRestartCommand(dockerCli *command.DockerCli) *cobra.Command {
 func runRestart(dockerCli *command.DockerCli, opts *restartOptions) error {
 	ctx := context.Background()
 	var errs []string
+	var timeout *time.Duration
+	if opts.nSecondsChanged {
+		timeoutValue := time.Duration(opts.nSeconds) * time.Second
+		timeout = &timeoutValue
+	}
+
 	for _, name := range opts.containers {
-		timeout := time.Duration(opts.nSeconds) * time.Second
-		if err := dockerCli.Client().ContainerRestart(ctx, name, &timeout); err != nil {
+		if err := dockerCli.Client().ContainerRestart(ctx, name, timeout); err != nil {
 			errs = append(errs, err.Error())
-		} else {
-			fmt.Fprintf(dockerCli.Out(), "%s\n", name)
+			continue
 		}
+		fmt.Fprintln(dockerCli.Out(), name)
 	}
 	if len(errs) > 0 {
-		return fmt.Errorf("%s", strings.Join(errs, "\n"))
+		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
 }

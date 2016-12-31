@@ -81,7 +81,7 @@ type MockEnvironmentLookup struct {
 	Variables map[string]string
 }
 
-func (m MockEnvironmentLookup) Lookup(key, serviceName string, config *ServiceConfig) []string {
+func (m MockEnvironmentLookup) Lookup(key string, config *ServiceConfig) []string {
 	return []string{fmt.Sprintf("%s=%s", key, m.Variables[key])}
 }
 
@@ -99,7 +99,7 @@ func testInterpolatedConfig(t *testing.T, expectedConfig, interpolatedConfig str
 	yaml.Unmarshal(expectedConfigBytes, &expectedData)
 	yaml.Unmarshal(interpolatedConfigBytes, &interpolatedData)
 
-	_ = Interpolate(MockEnvironmentLookup{envVariables}, &interpolatedData)
+	_ = InterpolateRawServiceMap(&interpolatedData, MockEnvironmentLookup{envVariables})
 
 	for k := range envVariables {
 		os.Unsetenv(k)
@@ -113,8 +113,7 @@ func testInvalidInterpolatedConfig(t *testing.T, interpolatedConfig string) {
 	interpolatedData := make(RawServiceMap)
 	yaml.Unmarshal(interpolatedConfigBytes, &interpolatedData)
 
-	err := Interpolate(new(MockEnvironmentLookup), &interpolatedData)
-
+	err := InterpolateRawServiceMap(&interpolatedData, new(MockEnvironmentLookup))
 	assert.NotNil(t, err)
 }
 

@@ -81,17 +81,13 @@ func (s *DockerSuite) TestExecAfterContainerRestart(c *check.C) {
 
 func (s *DockerDaemonSuite) TestExecAfterDaemonRestart(c *check.C) {
 	// TODO Windows CI: Requires a little work to get this ported.
-	testRequires(c, DaemonIsLinux)
-	testRequires(c, SameHostDaemon)
-
-	err := s.d.StartWithBusybox()
-	c.Assert(err, checker.IsNil)
+	testRequires(c, DaemonIsLinux, SameHostDaemon)
+	s.d.StartWithBusybox(c)
 
 	out, err := s.d.Cmd("run", "-d", "--name", "top", "-p", "80", "busybox:latest", "top")
 	c.Assert(err, checker.IsNil, check.Commentf("Could not run top: %s", out))
 
-	err = s.d.Restart()
-	c.Assert(err, checker.IsNil, check.Commentf("Could not restart daemon"))
+	s.d.Restart(c)
 
 	out, err = s.d.Cmd("start", "top")
 	c.Assert(err, checker.IsNil, check.Commentf("Could not start top after daemon restart: %s", out))
@@ -119,6 +115,17 @@ func (s *DockerSuite) TestExecEnv(c *check.C) {
 	c.Assert(out, checker.Contains, "HOME=/root")
 }
 
+func (s *DockerSuite) TestExecSetEnv(c *check.C) {
+	testRequires(c, DaemonIsLinux)
+	runSleepingContainer(c, "-e", "HOME=/root", "-d", "--name", "testing")
+	c.Assert(waitRun("testing"), check.IsNil)
+
+	out, _ := dockerCmd(c, "exec", "-e", "HOME=/another", "-e", "ABC=xyz", "testing", "env")
+	c.Assert(out, checker.Not(checker.Contains), "HOME=/root")
+	c.Assert(out, checker.Contains, "HOME=/another")
+	c.Assert(out, checker.Contains, "ABC=xyz")
+}
+
 func (s *DockerSuite) TestExecExitStatus(c *check.C) {
 	runSleepingContainer(c, "-d", "--name", "top")
 
@@ -128,7 +135,7 @@ func (s *DockerSuite) TestExecExitStatus(c *check.C) {
 
 func (s *DockerSuite) TestExecPausedContainer(c *check.C) {
 	testRequires(c, IsPausable)
-	defer unpauseAllContainers()
+	defer unpauseAllContainers(c)
 
 	out, _ := runSleepingContainer(c, "-d", "--name", "testing")
 	ContainerID := strings.TrimSpace(out)
@@ -199,6 +206,7 @@ func (s *DockerSuite) TestExecTTYWithoutStdin(c *check.C) {
 	}
 }
 
+// FIXME(vdemeester) this should be a unit tests on cli/command/container package
 func (s *DockerSuite) TestExecParseError(c *check.C) {
 	// TODO Windows CI: Requires some extra work. Consider copying the
 	// runSleepingContainer helper to have an exec version.
@@ -206,10 +214,11 @@ func (s *DockerSuite) TestExecParseError(c *check.C) {
 	dockerCmd(c, "run", "-d", "--name", "top", "busybox", "top")
 
 	// Test normal (non-detached) case first
-	cmd := exec.Command(dockerBinary, "exec", "top")
-	_, stderr, _, err := runCommandWithStdoutStderr(cmd)
-	c.Assert(err, checker.NotNil)
-	c.Assert(stderr, checker.Contains, "See 'docker exec --help'")
+	icmd.RunCommand(dockerBinary, "exec", "top").Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Error:    "exit status 1",
+		Err:      "See 'docker exec --help'",
+	})
 }
 
 func (s *DockerSuite) TestExecStopNotHanging(c *check.C) {
@@ -377,7 +386,7 @@ func (s *DockerSuite) TestRunMutableNetworkFiles(c *check.C) {
 	// Not applicable on Windows to Windows CI.
 	testRequires(c, SameHostDaemon, DaemonIsLinux)
 	for _, fn := range []string{"resolv.conf", "hosts"} {
-		deleteAllContainers()
+		deleteAllContainers(c)
 
 		content, err := runCommandAndReadContainerFile(fn, exec.Command(dockerBinary, "run", "-d", "--name", "c1", "busybox", "sh", "-c", fmt.Sprintf("echo success >/etc/%s && top", fn)))
 		c.Assert(err, checker.IsNil)
@@ -527,4 +536,64 @@ func (s *DockerSuite) TestExecEnvLinksHost(c *check.C) {
 	out, _ := dockerCmd(c, "exec", "bar", "env")
 	c.Assert(out, checker.Contains, "HOSTNAME=myhost")
 	c.Assert(out, checker.Contains, "DB_NAME=/bar/db")
+}
+
+func (s *DockerSuite) TestExecWindowsOpenHandles(c *check.C) {
+	testRequires(c, DaemonIsWindows)
+	runSleepingContainer(c, "-d", "--name", "test")
+	exec := make(chan bool)
+	go func() {
+		dockerCmd(c, "exec", "test", "cmd", "/c", "start sleep 10")
+		exec <- true
+	}()
+
+	for {
+		top := make(chan string)
+		var out string
+		go func() {
+			out, _ := dockerCmd(c, "top", "test")
+			top <- out
+		}()
+
+		select {
+		case <-time.After(time.Second * 5):
+			c.Error("timed out waiting for top while exec is exiting")
+		case out = <-top:
+			break
+		}
+
+		if strings.Count(out, "busybox.exe") == 2 && !strings.Contains(out, "cmd.exe") {
+			// The initial exec process (cmd.exe) has exited, and both sleeps are currently running
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	inspect := make(chan bool)
+	go func() {
+		dockerCmd(c, "inspect", "test")
+		inspect <- true
+	}()
+
+	select {
+	case <-time.After(time.Second * 5):
+		c.Error("timed out waiting for inspect while exec is exiting")
+	case <-inspect:
+		break
+	}
+
+	// Ensure the background sleep is still running
+	out, _ := dockerCmd(c, "top", "test")
+	c.Assert(strings.Count(out, "busybox.exe"), checker.Equals, 2)
+
+	// The exec should exit when the background sleep exits
+	select {
+	case <-time.After(time.Second * 15):
+		c.Error("timed out waiting for async exec to exit")
+	case <-exec:
+		// Ensure the background sleep has actually exited
+		out, _ := dockerCmd(c, "top", "test")
+		c.Assert(strings.Count(out, "busybox.exe"), checker.Equals, 1)
+		break
+	}
 }

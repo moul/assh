@@ -1,8 +1,17 @@
 ---
 title: "events"
 description: "The events command description and usage"
-keywords: ["events, container, report"]
+keywords: "events, container, report"
 ---
+
+<!-- This file is maintained within the docker/docker Github
+     repository at https://github.com/docker/docker/. Make all
+     pull requests against that repo. If you see this file in
+     another repository, consider it read-only there, as it will
+     periodically be overwritten by the definitive file. Pull
+     requests which include edits to this file in other repositories
+     will be rejected.
+-->
 
 # events
 
@@ -13,7 +22,7 @@ Get real time events from the server
 
 Options:
   -f, --filter value   Filter output based on conditions provided (default [])
-      --format string  Format the output using the given go template
+      --format string  Format the output using the given Go template
       --help           Print usage
       --since string   Show all events created since timestamp
       --until string   Stream events until this timestamp

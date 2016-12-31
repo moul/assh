@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/pkg/integration"
 	"github.com/docker/docker/pkg/integration/checker"
 	"github.com/go-check/check"
 )
@@ -69,7 +70,7 @@ func (s *DockerTrustSuite) TestPullWhenCertExpired(c *check.C) {
 	// Certificates have 10 years of expiration
 	elevenYearsFromNow := time.Now().Add(time.Hour * 24 * 365 * 11)
 
-	runAtDifferentDate(elevenYearsFromNow, func() {
+	integration.RunAtDifferentDate(elevenYearsFromNow, func() {
 		// Try pull
 		pullCmd := exec.Command(dockerBinary, "pull", repoName)
 		s.trustedCmd(pullCmd)
@@ -79,7 +80,7 @@ func (s *DockerTrustSuite) TestPullWhenCertExpired(c *check.C) {
 		c.Assert(string(out), checker.Contains, "could not validate the path to a trusted root", check.Commentf(out))
 	})
 
-	runAtDifferentDate(elevenYearsFromNow, func() {
+	integration.RunAtDifferentDate(elevenYearsFromNow, func() {
 		// Try pull
 		pullCmd := exec.Command(dockerBinary, "pull", "--disable-content-trust", repoName)
 		s.trustedCmd(pullCmd)
@@ -135,14 +136,14 @@ func (s *DockerTrustSuite) TestTrustedPullFromBadTrustServer(c *check.C) {
 	c.Assert(err, check.IsNil, check.Commentf(out))
 	c.Assert(string(out), checker.Contains, "Signing and pushing trust metadata", check.Commentf(out))
 
-	// Now, try pulling with the original client from this new trust server. This should fall back to cached metadata.
+	// Now, try pulling with the original client from this new trust server. This should fail because the new root is invalid.
 	pullCmd = exec.Command(dockerBinary, "pull", repoName)
 	s.trustedCmd(pullCmd)
 	out, _, err = runCommandWithOutput(pullCmd)
-	if err != nil {
-		c.Fatalf("Error falling back to cached trust data: %s\n%s", err, out)
+	if err == nil {
+		c.Fatalf("Continuing with cached data even though it's an invalid root rotation: %s\n%s", err, out)
 	}
-	if !strings.Contains(string(out), "Error while downloading remote metadata, using cached timestamp") {
+	if !strings.Contains(out, "could not rotate trust to a new trusted root") {
 		c.Fatalf("Missing expected output on trusted pull:\n%s", out)
 	}
 }
@@ -166,7 +167,7 @@ func (s *DockerTrustSuite) TestTrustedPullWithExpiredSnapshot(c *check.C) {
 	// Snapshots last for three years. This should be expired
 	fourYearsLater := time.Now().Add(time.Hour * 24 * 365 * 4)
 
-	runAtDifferentDate(fourYearsLater, func() {
+	integration.RunAtDifferentDate(fourYearsLater, func() {
 		// Try pull
 		pullCmd := exec.Command(dockerBinary, "pull", repoName)
 		s.trustedCmd(pullCmd)

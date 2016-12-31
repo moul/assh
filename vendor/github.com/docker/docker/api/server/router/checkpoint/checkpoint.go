@@ -26,3 +26,11 @@ func NewRouter(b Backend, decoder httputils.ContainerDecoder) router.Router {
 func (r *checkpointRouter) Routes() []router.Route {
 	return r.routes
 }
+
+func (r *checkpointRouter) initRoutes() {
+	r.routes = []router.Route{
+		router.Experimental(router.NewGetRoute("/containers/{name:.*}/checkpoints", r.getContainerCheckpoints)),
+		router.Experimental(router.NewPostRoute("/containers/{name:.*}/checkpoints", r.postContainerCheckpoint)),
+		router.Experimental(router.NewDeleteRoute("/containers/{name}/checkpoints/{checkpoint}", r.deleteContainerCheckpoint)),
+	}
+}

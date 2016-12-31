@@ -195,10 +195,7 @@ func saveMappings(root string, mappings map[string]image.ID) error {
 		return err
 	}
 	defer f.Close()
-	if err := json.NewEncoder(f).Encode(mappings); err != nil {
-		return err
-	}
-	return nil
+	return json.NewEncoder(f).Encode(mappings)
 }
 
 func migrateImages(root string, ls graphIDRegistrar, is image.Store, ms metadata.Store, mappings map[string]image.ID) error {
@@ -331,7 +328,7 @@ func migrateRefs(root, driverName string, rs refAdder, mappings map[string]image
 					continue
 				}
 				if dgst, err := digest.ParseDigest(tag); err == nil {
-					canonical, err := reference.WithDigest(ref, dgst)
+					canonical, err := reference.WithDigest(reference.TrimNamed(ref), dgst)
 					if err != nil {
 						logrus.Errorf("migrate tags: invalid digest %q, %q", dgst, err)
 						continue
