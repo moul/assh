@@ -4,9 +4,9 @@ GODIR ?=	github.com/moul/advanced-ssh-config
 PKG_BASE_DIR ?=	./pkg
 CONVEY_PORT ?=	9042
 SOURCES :=	$(shell find . -type f -name "*.go")
-GOLIST :=	$(shell go list ./...)
-COMMANDS :=	$(shell go list ./... | grep -v /vendor/ | grep /cmd/)
-PACKAGES :=	$(shell go list ./... | grep -v /vendor/ | grep -v /cmd/)
+GOLIST :=	$(shell go list ./cmd/... ./pkg/...)
+COMMANDS :=	$(shell go list ./cmd/...)
+PACKAGES :=	$(shell go list ./pkg/...)
 REL_COMMANDS := $(subst $(GODIR),./,$(COMMANDS))
 REL_PACKAGES := $(subst $(GODIR),./,$(PACKAGES))
 GOENV ?=	GO15VENDOREXPERIMENT=1
