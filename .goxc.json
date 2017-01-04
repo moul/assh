@@ -22,6 +22,6 @@
     "BuildConstraints": "darwin,!386 linux windows freebsd,!arm",
     "ResourcesExclude": "*.go .goxc-temp",
     "MainDirsExclude": "vendor,Godeps,testdata",
-    "PackageVersion": "2.5.0",
+    "PackageVersion": "2.5.0+dev",
     "ConfigVersion": "0.9"
 }

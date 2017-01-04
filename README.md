@@ -687,6 +687,12 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
+
 ### v2.5.0 (2017-01-04)
 
 * Support multiple string arguments of the same type on `assh wrapper ssh` ([#185](https://github.com/moul/advanced-ssh-config/issues/185))
