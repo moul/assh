@@ -485,7 +485,7 @@ USAGE:
    assh [global options] command [command options] [arguments...]
 
 VERSION:
-   2.4.1 (HEAD)
+   2.5.0 (HEAD)
 
 AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
@@ -687,7 +687,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ## Changelog
 
-### master (unreleased)
+### v2.5.0 (2017-01-04)
 
 * Support multiple string arguments of the same type on `assh wrapper ssh` ([#185](https://github.com/moul/advanced-ssh-config/issues/185))
 * Remove the `NoControlMasterMkdir` option, and add the `ControlMasterMkdir` option instead ([#173](https://github.com/moul/advanced-ssh-config/issues/173))
@@ -702,7 +702,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Add `assh config {build,json} --expand` option
 * Round the hook's `ConnectionDuration` variable value
 
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.1...master)
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.1...v2.5.0)
 
 ### v2.4.1 (2016-07-19)
 
