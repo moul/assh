@@ -689,7 +689,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
-* No entry
+* Support `ConnectTimeout` ([#132](https://github.com/moul/advanced-ssh-config/issues/132))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
