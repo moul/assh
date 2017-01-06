@@ -282,7 +282,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	defer beforeConnectDrivers.Close()
 
 	Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port))
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port), time.Duration(host.ConnectTimeout) * time.Second)
 	if err != nil {
 		// OnConnectError hook
 		connectHookArgs.Error = err
