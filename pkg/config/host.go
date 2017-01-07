@@ -1290,6 +1290,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.UpdateHostKeys != "" {
 			fmt.Fprintf(w, "  UpdateHostKeys %s\n", h.UpdateHostKeys)
 		}
+		if h.UseKeychain != "" {
+			fmt.Fprintf(w, "  UseKeychain %s\n", h.UseKeychain)
+		}
 		if h.UsePrivilegedPort != "" {
 			fmt.Fprintf(w, "  UsePrivilegedPort %s\n", h.UsePrivilegedPort)
 		}
