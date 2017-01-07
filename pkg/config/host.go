@@ -98,6 +98,7 @@ type Host struct {
 	Tunnel                           string                    `yaml:"tunnel,omitempty,flow" json:"Tunnel,omitempty"`
 	TunnelDevice                     string                    `yaml:"tunneldevice,omitempty,flow" json:"TunnelDevice,omitempty"`
 	UpdateHostKeys                   string                    `yaml:"updatehostkeys,omitempty,flow" json:"UpdateHostKeys,omitempty"`
+	UseKeychain                      string                    `yaml:"usekeychain,omitempty,flow" json:"UseKeychain,omitempty"`
 	UsePrivilegedPort                string                    `yaml:"useprivilegedport,omitempty,flow" json:"UsePrivilegedPort,omitempty"`
 	User                             string                    `yaml:"user,omitempty,flow" json:"User,omitempty"`
 	UserKnownHostsFile               composeyaml.Stringorslice `yaml:"userknownhostsfile,omitempty,flow" json:"UserKnownHostsFile,omitempty"`
@@ -445,6 +446,9 @@ func (h *Host) Options() OptionsList {
 	}
 	if h.UpdateHostKeys != "" {
 		options = append(options, Option{Name: "UpdateHostKeys", Value: h.UpdateHostKeys})
+	}
+	if h.UseKeychain != "" {
+		options = append(options, Option{Name: "UseKeychain", Value: h.UseKeychain})
 	}
 	if h.UsePrivilegedPort != "" {
 		options = append(options, Option{Name: "UsePrivilegedPort", Value: h.UsePrivilegedPort})
@@ -922,6 +926,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.UpdateHostKeys = defaults.UpdateHostKeys
 	}
 	h.UpdateHostKeys = utils.ExpandField(h.UpdateHostKeys)
+
+	if h.UseKeychain == "" {
+		h.UseKeychain = defaults.UseKeychain
+	}
+	h.UseKeychain = utils.ExpandField(h.UseKeychain)
 
 	if h.UsePrivilegedPort == "" {
 		h.UsePrivilegedPort = defaults.UsePrivilegedPort
