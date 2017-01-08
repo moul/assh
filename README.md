@@ -689,7 +689,8 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ### master (unreleased)
 
-* Support `ConnectTimeout` ([#132](https://github.com/moul/advanced-ssh-config/issues/132))
+* Support `UseKeychain` option ([#189](https://github.com/moul/advanced-ssh-config/pull/189)) ([@ocean90](https://github.com/ocean90))
+* Support `ConnectTimeout` option ([#132](https://github.com/moul/advanced-ssh-config/issues/132))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
