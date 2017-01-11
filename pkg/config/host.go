@@ -241,13 +241,13 @@ func (h *Host) Options() OptionsList {
 		options = append(options, Option{Name: "Compression", Value: h.Compression})
 	}
 	if h.CompressionLevel != 0 {
-		options = append(options, Option{Name: "CompressionLevel", Value: string(h.CompressionLevel)})
+		options = append(options, Option{Name: "CompressionLevel", Value: fmt.Sprintf("%d", h.CompressionLevel)})
 	}
 	if h.ConnectionAttempts != "" {
 		options = append(options, Option{Name: "ConnectionAttempts", Value: h.ConnectionAttempts})
 	}
 	if h.ConnectTimeout != 0 {
-		options = append(options, Option{Name: "ConnectTimeout", Value: string(h.ConnectTimeout)})
+		options = append(options, Option{Name: "ConnectTimeout", Value: fmt.Sprintf("%d", h.ConnectTimeout)})
 	}
 	if h.ControlMaster != "" {
 		options = append(options, Option{Name: "ControlMaster", Value: h.ControlMaster})
@@ -280,7 +280,7 @@ func (h *Host) Options() OptionsList {
 		options = append(options, Option{Name: "ForwardX11", Value: h.ForwardX11})
 	}
 	if h.ForwardX11Timeout != 0 {
-		options = append(options, Option{Name: "ForwardX11Timeout", Value: string(h.ForwardX11Timeout)})
+		options = append(options, Option{Name: "ForwardX11Timeout", Value: fmt.Sprintf("%d", h.ForwardX11Timeout)})
 	}
 	if h.ForwardX11Trusted != "" {
 		options = append(options, Option{Name: "ForwardX11Trusted", Value: h.ForwardX11Trusted})
@@ -421,10 +421,10 @@ func (h *Host) Options() OptionsList {
 		options = append(options, Option{Name: "SendEnv", Value: entry})
 	}
 	if h.ServerAliveCountMax != 0 {
-		options = append(options, Option{Name: "ServerAliveCountMax", Value: string(h.ServerAliveCountMax)})
+		options = append(options, Option{Name: "ServerAliveCountMax", Value: fmt.Sprintf("%d", h.ServerAliveCountMax)})
 	}
 	if h.ServerAliveInterval != 0 {
-		options = append(options, Option{Name: "ServerAliveInterval", Value: string(h.ServerAliveInterval)})
+		options = append(options, Option{Name: "ServerAliveInterval", Value: fmt.Sprintf("%d", h.ServerAliveInterval)})
 	}
 	if h.StreamLocalBindMask != "" {
 		options = append(options, Option{Name: "StreamLocalBindMask", Value: h.StreamLocalBindMask})
