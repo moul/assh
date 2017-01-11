@@ -7,8 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/docker/docker/pkg/integration"
-	"github.com/docker/docker/pkg/integration/checker"
+	"github.com/docker/docker/integration-cli/checker"
+	"github.com/docker/docker/integration-cli/request"
+	"github.com/docker/docker/pkg/testutil"
 	"github.com/go-check/check"
 )
 
@@ -31,11 +32,11 @@ RUN find /tmp/`
 	c.Assert(err, checker.IsNil)
 	defer server.Close()
 
-	res, body, err := sockRequestRaw("POST", "/build?dockerfile=baz&remote="+server.URL()+"/testD", nil, "application/json")
+	res, body, err := request.SockRequestRaw("POST", "/build?dockerfile=baz&remote="+server.URL()+"/testD", nil, "application/json", daemonHost())
 	c.Assert(err, checker.IsNil)
 	c.Assert(res.StatusCode, checker.Equals, http.StatusOK)
 
-	buf, err := integration.ReadBody(body)
+	buf, err := testutil.ReadBody(body)
 	c.Assert(err, checker.IsNil)
 
 	// Make sure Dockerfile exists.
@@ -72,7 +73,7 @@ func (s *DockerSuite) TestBuildAPIRemoteTarballContext(c *check.C) {
 
 	defer server.Close()
 
-	res, b, err := sockRequestRaw("POST", "/build?remote="+server.URL()+"/testT.tar", nil, "application/tar")
+	res, b, err := request.SockRequestRaw("POST", "/build?remote="+server.URL()+"/testT.tar", nil, "application/tar", daemonHost())
 	c.Assert(err, checker.IsNil)
 	c.Assert(res.StatusCode, checker.Equals, http.StatusOK)
 	b.Close()
@@ -121,12 +122,12 @@ RUN echo 'right'
 
 	defer server.Close()
 	url := "/build?dockerfile=custom&remote=" + server.URL() + "/testT.tar"
-	res, body, err := sockRequestRaw("POST", url, nil, "application/tar")
+	res, body, err := request.SockRequestRaw("POST", url, nil, "application/tar", daemonHost())
 	c.Assert(err, checker.IsNil)
 	c.Assert(res.StatusCode, checker.Equals, http.StatusOK)
 
 	defer body.Close()
-	content, err := integration.ReadBody(body)
+	content, err := testutil.ReadBody(body)
 	c.Assert(err, checker.IsNil)
 
 	// Build used the wrong dockerfile.
@@ -141,11 +142,11 @@ RUN echo from dockerfile`,
 	c.Assert(err, checker.IsNil)
 	defer git.Close()
 
-	res, body, err := sockRequestRaw("POST", "/build?remote="+git.RepoURL, nil, "application/json")
+	res, body, err := request.SockRequestRaw("POST", "/build?remote="+git.RepoURL, nil, "application/json", daemonHost())
 	c.Assert(err, checker.IsNil)
 	c.Assert(res.StatusCode, checker.Equals, http.StatusOK)
 
-	buf, err := integration.ReadBody(body)
+	buf, err := testutil.ReadBody(body)
 	c.Assert(err, checker.IsNil)
 
 	out := string(buf)
@@ -163,11 +164,11 @@ RUN echo from Dockerfile`,
 	defer git.Close()
 
 	// Make sure it tries to 'dockerfile' query param value
-	res, body, err := sockRequestRaw("POST", "/build?dockerfile=baz&remote="+git.RepoURL, nil, "application/json")
+	res, body, err := request.SockRequestRaw("POST", "/build?dockerfile=baz&remote="+git.RepoURL, nil, "application/json", daemonHost())
 	c.Assert(err, checker.IsNil)
 	c.Assert(res.StatusCode, checker.Equals, http.StatusOK)
 
-	buf, err := integration.ReadBody(body)
+	buf, err := testutil.ReadBody(body)
 	c.Assert(err, checker.IsNil)
 
 	out := string(buf)
@@ -186,11 +187,11 @@ RUN echo from dockerfile`,
 	defer git.Close()
 
 	// Make sure it tries to 'dockerfile' query param value
-	res, body, err := sockRequestRaw("POST", "/build?remote="+git.RepoURL, nil, "application/json")
+	res, body, err := request.SockRequestRaw("POST", "/build?remote="+git.RepoURL, nil, "application/json", daemonHost())
 	c.Assert(err, checker.IsNil)
 	c.Assert(res.StatusCode, checker.Equals, http.StatusOK)
 
-	buf, err := integration.ReadBody(body)
+	buf, err := testutil.ReadBody(body)
 	c.Assert(err, checker.IsNil)
 
 	out := string(buf)
@@ -233,11 +234,11 @@ func (s *DockerSuite) TestBuildAPIUnnormalizedTarPaths(c *check.C) {
 		// failed to close tar archive
 		c.Assert(tw.Close(), checker.IsNil)
 
-		res, body, err := sockRequestRaw("POST", "/build", buffer, "application/x-tar")
+		res, body, err := request.SockRequestRaw("POST", "/build", buffer, "application/x-tar", daemonHost())
 		c.Assert(err, checker.IsNil)
 		c.Assert(res.StatusCode, checker.Equals, http.StatusOK)
 
-		out, err := integration.ReadBody(body)
+		out, err := testutil.ReadBody(body)
 		c.Assert(err, checker.IsNil)
 		lines := strings.Split(string(out), "\n")
 		c.Assert(len(lines), checker.GreaterThan, 1)
