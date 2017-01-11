@@ -1323,40 +1323,41 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 
 		// assh fields
 		if h.HostName != "" {
-			fmt.Fprintf(w, "  # HostName: %s\n", h.HostName)
+			fmt.Fprint(w, stringComment("HostName", h.HostName))
 		}
 		if BoolVal(h.ControlMasterMkdir) {
-			fmt.Fprintf(w, "  # ControlMasterMkdir: true\n")
+			fmt.Fprint(w, "  # ControlMasterMkdir: true\n")
 		}
 		if len(h.Inherits) > 0 {
-			fmt.Fprintf(w, "  # Inherits: [%s]\n", strings.Join(h.Inherits, ", "))
+			fmt.Fprint(w, sliceComment("Inherits", h.Inherits))
 		}
 		if len(h.Gateways) > 0 {
-			fmt.Fprintf(w, "  # Gateways: [%s]\n", strings.Join(h.Gateways, ", "))
+			fmt.Fprint(w, sliceComment("Gateways", h.Gateways))
 		}
 		if len(h.Aliases) > 0 {
 			if aliasIdx == 0 {
-				fmt.Fprintf(w, "  # Aliases: [%s]\n", strings.Join(h.Aliases, ", "))
+				fmt.Fprint(w, sliceComment("Aliases", h.Aliases))
 			} else {
-				fmt.Fprintf(w, "  # AliasOf: %s\n", h.Name())
+				fmt.Fprint(w, stringComment("AliasOf", h.Name()))
 			}
 		}
 		if h.Hooks.Length() > 0 {
-			fmt.Fprintf(w, "  # Hooks: [%s]\n", h.Hooks.String())
+			fmt.Fprint(w, stringComment("Hooks", h.Hooks.String()))
 		}
 		if len(h.knownHosts) > 0 {
 			if aliasIdx == 0 {
-				fmt.Fprintf(w, "  # KnownHosts: [%s]\n", strings.Join(h.knownHosts, ", "))
+				fmt.Fprint(w, sliceComment("KnownHosts", h.knownHosts))
 			} else {
-				fmt.Fprintf(w, "  # KnownHostOf: %s\n", h.Name())
+				fmt.Fprint(w, stringComment("KnownHostOf", h.Name()))
 			}
 		}
 
 		if len(h.ResolveNameservers) > 0 {
-			fmt.Fprintf(w, "  # ResolveNameservers: [%s]\n", strings.Join(h.ResolveNameservers, ", "))
+			fmt.Fprint(w, sliceComment("ResolveNameservers", h.ResolveNameservers))
 		}
 		if h.ResolveCommand != "" {
-			fmt.Fprintf(w, "  # ResolveCommand: %s\n", h.ResolveCommand)
+
+			fmt.Fprint(w, stringComment("ResolveCommand", h.ResolveCommand))
 		}
 
 		aliasIdx++
