@@ -18,11 +18,11 @@ import (
 	"time"
 
 	"github.com/docker/docker/builder/dockerfile/command"
+	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/docker/docker/pkg/integration"
-	"github.com/docker/docker/pkg/integration/checker"
-	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/stringutils"
+	"github.com/docker/docker/pkg/testutil"
+	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/go-check/check"
 )
 
@@ -2086,7 +2086,7 @@ func (s *DockerSuite) TestBuildContextCleanup(c *check.C) {
 	if err != nil {
 		c.Fatalf("failed to list contents of tmp dir: %s", err)
 	}
-	if err = integration.CompareDirectoryEntries(entries, entriesFinal); err != nil {
+	if err = testutil.CompareDirectoryEntries(entries, entriesFinal); err != nil {
 		c.Fatalf("context should have been deleted, but wasn't")
 	}
 
@@ -2111,7 +2111,7 @@ func (s *DockerSuite) TestBuildContextCleanupFailedBuild(c *check.C) {
 	if err != nil {
 		c.Fatalf("failed to list contents of tmp dir: %s", err)
 	}
-	if err = integration.CompareDirectoryEntries(entries, entriesFinal); err != nil {
+	if err = testutil.CompareDirectoryEntries(entries, entriesFinal); err != nil {
 		c.Fatalf("context should have been deleted, but wasn't")
 	}
 
@@ -5342,7 +5342,7 @@ func (s *DockerSuite) TestBuildContainerWithCgroupParent(c *check.C) {
 	if err != nil {
 		c.Fatalf("failed to read '/proc/self/cgroup - %v", err)
 	}
-	selfCgroupPaths := integration.ParseCgroupPaths(string(data))
+	selfCgroupPaths := testutil.ParseCgroupPaths(string(data))
 	_, found := selfCgroupPaths["memory"]
 	if !found {
 		c.Fatalf("unable to find self memory cgroup path. CgroupsPath: %v", selfCgroupPaths)
@@ -5433,7 +5433,7 @@ func (s *DockerTrustSuite) TestTrustedBuild(c *check.C) {
 	name := "testtrustedbuild"
 
 	buildCmd := buildImageCmd(name, dockerFile, true)
-	s.trustedCmd(buildCmd)
+	trustedExecCmd(buildCmd)
 	out, _, err := runCommandWithOutput(buildCmd)
 	if err != nil {
 		c.Fatalf("Error running trusted build: %s\n%s", err, out)
@@ -5464,7 +5464,7 @@ func (s *DockerTrustSuite) TestTrustedBuildUntrustedTag(c *check.C) {
 	name := "testtrustedbuilduntrustedtag"
 
 	buildCmd := buildImageCmd(name, dockerFile, true)
-	s.trustedCmd(buildCmd)
+	trustedExecCmd(buildCmd)
 	out, _, err := runCommandWithOutput(buildCmd)
 	if err == nil {
 		c.Fatalf("Expected error on trusted build with untrusted tag: %s\n%s", err, out)
@@ -5527,10 +5527,7 @@ func (s *DockerTrustSuite) TestTrustedBuildTagFromReleasesRole(c *check.C) {
 	otherTag := fmt.Sprintf("%s:other", repoName)
 	dockerCmd(c, "tag", "busybox", otherTag)
 
-	pushCmd := exec.Command(dockerBinary, "push", otherTag)
-	s.trustedCmd(pushCmd)
-	out, _, err := runCommandWithOutput(pushCmd)
-	c.Assert(err, check.IsNil, check.Commentf("Trusted push failed: %s", out))
+	icmd.RunCmd(icmd.Command(dockerBinary, "push", otherTag), trustedCmd).Assert(c, icmd.Success)
 	s.assertTargetInRoles(c, repoName, "other", "targets/releases")
 	s.assertTargetNotInRoles(c, repoName, "other", "targets")
 
@@ -5545,8 +5542,8 @@ func (s *DockerTrustSuite) TestTrustedBuildTagFromReleasesRole(c *check.C) {
 	name := "testtrustedbuildreleasesrole"
 
 	buildCmd := buildImageCmd(name, dockerFile, true)
-	s.trustedCmd(buildCmd)
-	out, _, err = runCommandWithOutput(buildCmd)
+	trustedExecCmd(buildCmd)
+	out, _, err := runCommandWithOutput(buildCmd)
 	c.Assert(err, check.IsNil, check.Commentf("Trusted build failed: %s", out))
 	c.Assert(out, checker.Contains, fmt.Sprintf("FROM %s@sha", repoName))
 }
@@ -5566,10 +5563,7 @@ func (s *DockerTrustSuite) TestTrustedBuildTagIgnoresOtherDelegationRoles(c *che
 	otherTag := fmt.Sprintf("%s:other", repoName)
 	dockerCmd(c, "tag", "busybox", otherTag)
 
-	pushCmd := exec.Command(dockerBinary, "push", otherTag)
-	s.trustedCmd(pushCmd)
-	out, _, err := runCommandWithOutput(pushCmd)
-	c.Assert(err, check.IsNil, check.Commentf("Trusted push failed: %s", out))
+	icmd.RunCmd(icmd.Command(dockerBinary, "push", otherTag), trustedCmd).Assert(c, icmd.Success)
 	s.assertTargetInRoles(c, repoName, "other", "targets/other")
 	s.assertTargetNotInRoles(c, repoName, "other", "targets")
 
@@ -5584,8 +5578,8 @@ func (s *DockerTrustSuite) TestTrustedBuildTagIgnoresOtherDelegationRoles(c *che
 	name := "testtrustedbuildotherrole"
 
 	buildCmd := buildImageCmd(name, dockerFile, true)
-	s.trustedCmd(buildCmd)
-	out, _, err = runCommandWithOutput(buildCmd)
+	trustedExecCmd(buildCmd)
+	out, _, err := runCommandWithOutput(buildCmd)
 	c.Assert(err, check.NotNil, check.Commentf("Trusted build expected to fail: %s", out))
 }
 
@@ -6580,7 +6574,7 @@ func (s *DockerSuite) TestBuildLabelOverwrite(c *check.C) {
 }
 
 func (s *DockerRegistryAuthHtpasswdSuite) TestBuildFromAuthenticatedRegistry(c *check.C) {
-	dockerCmd(c, "login", "-u", s.reg.username, "-p", s.reg.password, privateRegistryURL)
+	dockerCmd(c, "login", "-u", s.reg.Username(), "-p", s.reg.Password(), privateRegistryURL)
 
 	baseImage := privateRegistryURL + "/baseimage"
 
@@ -6625,7 +6619,7 @@ func (s *DockerRegistryAuthHtpasswdSuite) TestBuildWithExternalAuth(c *check.C) 
 	err = ioutil.WriteFile(configPath, []byte(externalAuthConfig), 0644)
 	c.Assert(err, checker.IsNil)
 
-	dockerCmd(c, "--config", tmp, "login", "-u", s.reg.username, "-p", s.reg.password, privateRegistryURL)
+	dockerCmd(c, "--config", tmp, "login", "-u", s.reg.Username(), "-p", s.reg.Password(), privateRegistryURL)
 
 	b, err := ioutil.ReadFile(configPath)
 	c.Assert(err, checker.IsNil)
@@ -7360,8 +7354,6 @@ func (s *DockerSuite) TestBuildWindowsEnvCaseInsensitive(c *check.C) {
 
 // Test case for 29667
 func (s *DockerSuite) TestBuildWorkdirImageCmd(c *check.C) {
-	testRequires(c, DaemonIsLinux)
-
 	image := "testworkdirimagecmd"
 	dockerfile := `
 FROM busybox
@@ -7371,7 +7363,13 @@ WORKDIR /foo/bar
 	c.Assert(err, checker.IsNil, check.Commentf("Output: %s", out))
 
 	out, _ = dockerCmd(c, "inspect", "--format", "{{ json .Config.Cmd }}", image)
-	c.Assert(strings.TrimSpace(out), checker.Equals, `["sh"]`)
+
+	// The Windows busybox image has a blank `cmd`
+	lookingFor := `["sh"]`
+	if daemonPlatform == "windows" {
+		lookingFor = "null"
+	}
+	c.Assert(strings.TrimSpace(out), checker.Equals, lookingFor)
 
 	image = "testworkdirlabelimagecmd"
 	dockerfile = `
@@ -7383,17 +7381,21 @@ LABEL a=b
 	c.Assert(err, checker.IsNil, check.Commentf("Output: %s", out))
 
 	out, _ = dockerCmd(c, "inspect", "--format", "{{ json .Config.Cmd }}", image)
-	c.Assert(strings.TrimSpace(out), checker.Equals, `["sh"]`)
+	c.Assert(strings.TrimSpace(out), checker.Equals, lookingFor)
 }
 
-// Test case for 28902/28090
+// Test case for 28902/28909
 func (s *DockerSuite) TestBuildWorkdirCmd(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 
 	dockerFile := `
-                FROM golang:1.7-alpine
+                FROM busybox
                 WORKDIR /
                 `
-	_, err := buildImage("testbuildworkdircmd", dockerFile, false)
+	_, err := buildImage("testbuildworkdircmd", dockerFile, true)
 	c.Assert(err, checker.IsNil)
+
+	_, out, err := buildImageWithOut("testbuildworkdircmd", dockerFile, true)
+	c.Assert(err, checker.IsNil)
+	c.Assert(strings.Count(out, "Using cache"), checker.Equals, 1)
 }

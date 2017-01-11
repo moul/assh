@@ -1,0 +1,10 @@
+before_install:
+  - ./install-godeps.sh
+
+script:
+  - make travis
+
+language: go
+
+go:
+  - 1.7.1
