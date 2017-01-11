@@ -692,6 +692,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Support `UseKeychain` option ([#189](https://github.com/moul/advanced-ssh-config/pull/189)) ([@ocean90](https://github.com/ocean90))
 * Support `ConnectTimeout` option ([#132](https://github.com/moul/advanced-ssh-config/issues/132))
 * `.ssh/config`: Wrap long comments to avoid syntax errors ([#191](https://github.com/moul/advanced-ssh-config/issues/191))
+* Fix integers output in `assh config list` ([#181](https://github.com/moul/advanced-ssh-config/issues/181))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
