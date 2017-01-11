@@ -93,6 +93,11 @@ var Commands = []cli.Command{
 				Action: cmdList,
 			},
 			{
+				Name:   "graphviz",
+				Usage:  "Generate a Graphviz graph of the hosts",
+				Action: cmdGraphviz,
+			},
+			{
 				Name:   "search",
 				Usage:  "Search entries by given search text",
 				Action: cmdSearch,
