@@ -29,7 +29,7 @@
 
 ## Overview
 
-A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includes**, **dynamic hostnames** to **SSH**.
+A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includes**, **dynamic hostnames**, **graphviz**, **json output**, **yaml configuration** to **SSH**.
 
 [lib-ssh](https://www.libssh.org) wraps `assh` as a [ProxyCommand](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat); it means that it works seamlessly with:
 
@@ -52,6 +52,8 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includ
 * **inheritance**: make hosts inherits from host hosts or templates
 * **variable expansion**: resolve variables from the environment
 * **smart proxycommand**: RAW tcp connection when possible with `netcat` and `socat` as default fallbacks
+* **JSON output**
+* **[Graphviz](http://www.graphviz.org/)**: graphviz reprensentation of the hosts
 
 ### Using Gateway from command line
 
@@ -564,7 +566,17 @@ Listing entries
         ControlPersist: yes
         Port: 22
         User: bob
+        ```
+
+##### `assh config graphviz`
+
+Generate a [graphviz](http://www.graphviz.org/) graph of the hosts
+
+```console
+$ assh config graphviz | dot -Tpng > assh-hosts.png
 ```
+
+![](https://github.com/moul/advanced-ssh-config/raw/master/resources/graphviz.png)
 
 ##### `assh config search <keyword>`
 
@@ -693,6 +705,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Support `ConnectTimeout` option ([#132](https://github.com/moul/advanced-ssh-config/issues/132))
 * `.ssh/config`: Wrap long comments to avoid syntax errors ([#191](https://github.com/moul/advanced-ssh-config/issues/191))
 * Fix integers output in `assh config list` ([#181](https://github.com/moul/advanced-ssh-config/issues/181))
+* Initial graphviz support ([#32](https://github.com/moul/advanced-ssh-config/issues/32))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
