@@ -1,6 +1,8 @@
 package configviz
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 	"testing"
 
@@ -28,23 +30,32 @@ func TestGraph(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		graph, err := Graph(conf)
+		So(err, ShouldBeNil)
+		fmt.Println(graph)
+
 		expected := `digraph G {
-	fff->eee[ color=red, label=1 ];
-	aaa->bbb[ color=red, label=1 ];
-	bbb->ccc[ color=red, label=1 ];
-	bbb->aaa[ color=red, label=2 ];
-	ccc->eee[ color=red, label=1 ];
-	aaa [ color=blue ];
-	bbb [ color=blue ];
-	ccc [ color=blue ];
-	ddd [ color=blue ];
-	eee [ color=blue ];
-	fff [ color=blue ];
-	ggg [ color=blue ];
+	"fff"->"eee"[ color=red, label=1 ];
+	"aaa"->"bbb"[ color=red, label=1 ];
+	"bbb"->"ccc"[ color=red, label=1 ];
+	"bbb"->"aaa"[ color=red, label=2 ];
+	"ccc"->"eee"[ color=red, label=1 ];
+	"aaa" [ color=blue ];
+	"bbb" [ color=blue ];
+	"ccc" [ color=blue ];
+	"ddd" [ color=blue ];
+	"eee" [ color=blue ];
+	"fff" [ color=blue ];
+	"ggg" [ color=blue ];
 
 }
 `
-		So(err, ShouldBeNil)
-		So(graph, ShouldEqual, expected)
+
+		So(sortedOutput(graph), ShouldEqual, sortedOutput(expected))
 	})
+}
+
+func sortedOutput(input string) string {
+	lines := strings.Split(input, "\n")
+	sort.Strings(lines)
+	return strings.Join(lines, "\n")
 }
