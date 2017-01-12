@@ -566,7 +566,7 @@ Listing entries
         ControlPersist: yes
         Port: 22
         User: bob
-        ```
+```
 
 ##### `assh config graphviz`
 
