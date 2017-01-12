@@ -52,7 +52,6 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/docker/distribution/digest"
 	distreference "github.com/docker/distribution/reference"
 	apierrors "github.com/docker/docker/api/errors"
 	apitypes "github.com/docker/docker/api/types"
@@ -73,6 +72,7 @@ import (
 	"github.com/docker/swarmkit/manager/encryption"
 	swarmnode "github.com/docker/swarmkit/node"
 	"github.com/docker/swarmkit/protobuf/ptypes"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
@@ -320,6 +320,7 @@ func (c *Cluster) Init(req types.InitRequest) (string, error) {
 		LocalAddr:       localAddr,
 		ListenAddr:      net.JoinHostPort(listenHost, listenPort),
 		AdvertiseAddr:   net.JoinHostPort(advertiseHost, advertisePort),
+		availability:    req.Availability,
 	})
 	if err != nil {
 		return "", err
@@ -389,6 +390,7 @@ func (c *Cluster) Join(req types.JoinRequest) error {
 		AdvertiseAddr: advertiseAddr,
 		joinAddr:      req.RemoteAddrs[0],
 		joinToken:     req.JoinToken,
+		availability:  req.Availability,
 	})
 	if err != nil {
 		return err
@@ -832,7 +834,7 @@ func (c *Cluster) GetServices(options apitypes.ServiceListOptions) ([]types.Serv
 // TODO(nishanttotla): After the packages converge, the function must
 // convert distreference.Named -> distreference.Canonical, and the logic simplified.
 func (c *Cluster) imageWithDigestString(ctx context.Context, image string, authConfig *apitypes.AuthConfig) (string, error) {
-	if _, err := digest.ParseDigest(image); err == nil {
+	if _, err := digest.Parse(image); err == nil {
 		return "", errors.New("image reference is an image ID")
 	}
 	ref, err := distreference.ParseNamed(image)
@@ -1072,10 +1074,8 @@ func (c *Cluster) RemoveService(input string) error {
 		return err
 	}
 
-	if _, err := state.controlClient.RemoveService(ctx, &swarmapi.RemoveServiceRequest{ServiceID: service.ID}); err != nil {
-		return err
-	}
-	return nil
+	_, err = state.controlClient.RemoveService(ctx, &swarmapi.RemoveServiceRequest{ServiceID: service.ID})
+	return err
 }
 
 // ServiceLogs collects service logs and writes them back to `config.OutStream`
@@ -1268,10 +1268,8 @@ func (c *Cluster) RemoveNode(input string, force bool) error {
 		return err
 	}
 
-	if _, err := state.controlClient.RemoveNode(ctx, &swarmapi.RemoveNodeRequest{NodeID: node.ID, Force: force}); err != nil {
-		return err
-	}
-	return nil
+	_, err = state.controlClient.RemoveNode(ctx, &swarmapi.RemoveNodeRequest{NodeID: node.ID, Force: force})
+	return err
 }
 
 // GetTasks returns a list of tasks matching the filter options.
@@ -1594,10 +1592,8 @@ func (c *Cluster) RemoveNetwork(input string) error {
 		return err
 	}
 
-	if _, err := state.controlClient.RemoveNetwork(ctx, &swarmapi.RemoveNetworkRequest{NetworkID: network.ID}); err != nil {
-		return err
-	}
-	return nil
+	_, err = state.controlClient.RemoveNetwork(ctx, &swarmapi.RemoveNetworkRequest{NetworkID: network.ID})
+	return err
 }
 
 func (c *Cluster) populateNetworkID(ctx context.Context, client swarmapi.ControlClient, s *types.ServiceSpec) error {

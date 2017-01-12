@@ -147,3 +147,36 @@ read the [`dockerd`](dockerd.md) reference page.
 | [service rm](service_rm.md) | Remove a service from the swarm                |
 | [service scale](service_scale.md) | Set the number of replicas for the desired state of the service |
 | [service update](service_update.md)  | Update the attributes of a service    |
+
+### Swarm secret commands
+
+| Command | Description                                                        |
+|:--------|:-------------------------------------------------------------------|
+| [secret create](secret_create.md) | Create a secret from a file or STDIN as content |
+| [secret inspect](service_inspect.md) | Inspect the specified secret          |
+| [secret ls](secret_ls.md) | List secrets in the swarm                        |
+| [secret rm](secret_rm.md) | Remove the specified secrets from the swarm      |
+
+### Swarm stack commands
+
+| Command | Description                                                        |
+|:--------|:-------------------------------------------------------------------|
+| [stack deploy](stack_deploy.md) | Deploy a new stack or update an existing stack |
+| [stack ls](stack_ls.md) | List stacks in the swarm                           |
+| [stack ps](stack_ps.md) | List the tasks in the stack                        |
+| [stack rm](stack_rm.md) | Remove the stack from the swarm                    |
+| [stack services](stack_services.md) | List the services in the stack         |
+
+### Plugin commands
+
+| Command | Description                                                        |
+|:--------|:-------------------------------------------------------------------|
+| [plugin create](plugin_create.md) | Create a plugin from a rootfs and configuration |
+| [plugin disable](plugin_disable.md) | Disable a plugin                       |
+| [plugin enbale](plugin_enable.md)  | Enable a plugin                         |
+| [plugin inspect](plugin_inspect.md) | Display detailed information on a plugin |
+| [plugin install](plugin_install.md) | Install a plugin                       |
+| [plugin ls](plugin_ls.md) | List plugins                                     |
+| [plugin push](plugin_push.md) | Push a plugin to a registry                  |
+| [plugin rm](plugin_rm.md) | Remove a plugin                                  |
+| [plugin set](plugin_set.md)  | Change settings for a plugin                  |

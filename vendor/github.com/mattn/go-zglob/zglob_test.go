@@ -21,7 +21,7 @@ type testZGlob struct {
 	err      error
 }
 
-var testZGlobs = []testZGlob{
+var testGlobs = []testZGlob{
 	{`fo*`, []string{`foo`}, nil},
 	{`foo`, []string{`foo`}, nil},
 	{`foo/*`, []string{`foo/bar`, `foo/baz`}, nil},
@@ -56,7 +56,7 @@ func setup(t *testing.T) string {
 	return tmpdir
 }
 
-func TestZGlob(t *testing.T) {
+func TestGlob(t *testing.T) {
 	tmpdir := setup(t)
 	defer os.RemoveAll(tmpdir)
 
@@ -71,7 +71,11 @@ func TestZGlob(t *testing.T) {
 	defer os.Chdir(curdir)
 
 	tmpdir = "."
-	for _, test := range testZGlobs {
+	for _, test := range testGlobs {
+		expected := make([]string, len(test.expected))
+		for i, e := range test.expected {
+			expected[i] = e
+		}
 		got, err := Glob(test.pattern)
 		if err != nil {
 			if test.err != err {
@@ -79,13 +83,13 @@ func TestZGlob(t *testing.T) {
 			}
 			continue
 		}
-		if !check(test.expected, got) {
-			t.Errorf(`zglob failed: pattern %q: expected %v but got %v`, test.pattern, test.expected, got)
+		if !check(expected, got) {
+			t.Errorf(`zglob failed: pattern %q(%q): expected %v but got %v`, test.pattern, tmpdir, expected, got)
 		}
 	}
 }
 
-func TestZGlobAbs(t *testing.T) {
+func TestGlobAbs(t *testing.T) {
 	tmpdir := setup(t)
 	defer os.RemoveAll(tmpdir)
 
@@ -99,20 +103,36 @@ func TestZGlobAbs(t *testing.T) {
 	}
 	defer os.Chdir(curdir)
 
-	for _, test := range testZGlobs {
-		test.pattern = filepath.ToSlash(filepath.Join(tmpdir, test.pattern))
-		for i, expected := range test.expected {
-			test.expected[i] = filepath.ToSlash(filepath.Join(tmpdir, expected))
+	for _, test := range testGlobs {
+		pattern := filepath.ToSlash(filepath.Join(tmpdir, test.pattern))
+		expected := make([]string, len(test.expected))
+		for i, e := range test.expected {
+			expected[i] = filepath.ToSlash(filepath.Join(tmpdir, e))
 		}
-		got, err := Glob(test.pattern)
+		got, err := Glob(pattern)
 		if err != nil {
 			if test.err != err {
 				t.Error(err)
 			}
 			continue
 		}
-		if !check(test.expected, got) {
-			t.Errorf(`zglob failed: pattern %q: expected %v but got %v`, test.pattern, test.expected, got)
+		if !check(expected, got) {
+			t.Errorf(`zglob failed: pattern %q(%q): expected %v but got %v`, pattern, tmpdir, expected, got)
+		}
+	}
+}
+
+func TestMatch(t *testing.T) {
+	for _, test := range testGlobs {
+		for _, f := range test.expected {
+			got, err := Match(test.pattern, f)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+			if !got {
+				t.Errorf("%q should match with %q", f, test.pattern)
+			}
 		}
 	}
 }

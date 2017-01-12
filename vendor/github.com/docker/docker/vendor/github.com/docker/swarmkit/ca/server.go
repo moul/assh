@@ -211,6 +211,15 @@ func (s *Server) IssueNodeCertificate(ctx context.Context, request *api.IssueNod
 		blacklistedCerts = clusters[0].BlacklistedCertificates
 	}
 
+	// Renewing the cert with a local (unix socket) is always valid.
+	localNodeInfo := ctx.Value(LocalRequestKey)
+	if localNodeInfo != nil {
+		nodeInfo, ok := localNodeInfo.(RemoteNodeInfo)
+		if ok && nodeInfo.NodeID != "" {
+			return s.issueRenewCertificate(ctx, nodeInfo.NodeID, request.CSR)
+		}
+	}
+
 	// If the remote node is a worker (either forwarded by a manager, or calling directly),
 	// issue a renew worker certificate entry with the correct ID
 	nodeID, err := AuthorizeForwardedRoleAndOrg(ctx, []string{WorkerRole}, []string{ManagerRole}, s.securityConfig.ClientTLSCreds.Organization(), blacklistedCerts)
@@ -250,7 +259,8 @@ func (s *Server) IssueNodeCertificate(ctx context.Context, request *api.IssueNod
 		// Create a new node
 		err := s.store.Update(func(tx store.Tx) error {
 			node := &api.Node{
-				ID: nodeID,
+				Role: role,
+				ID:   nodeID,
 				Certificate: api.Certificate{
 					CSR:  request.CSR,
 					CN:   nodeID,
@@ -260,7 +270,7 @@ func (s *Server) IssueNodeCertificate(ctx context.Context, request *api.IssueNod
 					},
 				},
 				Spec: api.NodeSpec{
-					Role:         role,
+					DesiredRole:  role,
 					Membership:   api.NodeMembershipAccepted,
 					Availability: request.Availability,
 				},
@@ -318,7 +328,7 @@ func (s *Server) issueRenewCertificate(ctx context.Context, nodeID string, csr [
 		cert = api.Certificate{
 			CSR:  csr,
 			CN:   node.ID,
-			Role: node.Spec.Role,
+			Role: node.Role,
 			Status: api.IssuanceStatus{
 				State: api.IssuanceStateRenew,
 			},
