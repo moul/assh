@@ -25,7 +25,8 @@
 7. [Changelog](#changelog)
 8. [Alternative version](#alternative-version)
 9. [Troubleshooting](#troubleshooting)
-10. [License](#license)
+10. [3rd Party Integration](#3rd-party-integration)
+11. [License](#license)
 
 ## Overview
 
@@ -38,6 +39,8 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includ
 * [rsync](http://linuxcommand.org/man_pages/rsync1.html)
 * [git](https://www.kernel.org/pub/software/scm/git/docs/)
 * Desktop applications depending on `lib-ssh` or `ssh` (i.e., [Tower](http://www.git-tower.com), [Atom.io](https://atom.io), [SSH Tunnel Manager](http://projects.tynsoe.org/fr/stm/))
+
+For specific examples, see [3rd Party Integration](#3rd-party-integration)
 
 ## Features
 
@@ -876,6 +879,16 @@ defaults:
 ```
 
 `%C` is a unique identifier based on a hash of the tuple of (local host, remote user, hostname, port).
+
+## 3rd Party Integration
+
+### Ansible
+
+In your ansible.cfg under ssh_connection, make sure you have the following, changing the path to your assh:
+```
+[ssh_connection]
+ansible_ssh_executable = '/usr/local/bin/assh wrapper ssh'
+```
 
 ## License
 
