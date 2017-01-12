@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,8 +15,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/integration-cli/daemon"
-	"github.com/docker/docker/pkg/integration/checker"
 	"github.com/go-check/check"
 )
 
@@ -1316,4 +1317,15 @@ func (s *DockerSwarmSuite) TestAPISwarmUnlockNotLocked(c *check.C) {
 	err := d.Unlock(swarm.UnlockRequest{UnlockKey: "wrong-key"})
 	c.Assert(err, checker.NotNil)
 	c.Assert(err.Error(), checker.Contains, "swarm is not locked")
+}
+
+// #29885
+func (s *DockerSwarmSuite) TestAPISwarmErrorHandling(c *check.C) {
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", defaultSwarmPort))
+	c.Assert(err, checker.IsNil)
+	defer ln.Close()
+	d := s.AddDaemon(c, false, false)
+	err = d.Init(swarm.InitRequest{})
+	c.Assert(err, checker.NotNil)
+	c.Assert(err.Error(), checker.Contains, "address already in use")
 }

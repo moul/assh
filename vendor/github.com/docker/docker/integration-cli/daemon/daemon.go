@@ -2,15 +2,11 @@ package daemon
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,12 +15,13 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/integration-cli/checker"
+	"github.com/docker/docker/integration-cli/request"
 	"github.com/docker/docker/opts"
-	"github.com/docker/docker/pkg/integration"
-	"github.com/docker/docker/pkg/integration/checker"
-	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/docker/docker/pkg/stringid"
+	"github.com/docker/docker/pkg/testutil"
+	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
 	"github.com/go-check/check"
@@ -543,7 +540,7 @@ func (d *Daemon) queryRootDir() (string, error) {
 	}
 	var b []byte
 	var i Info
-	b, err = integration.ReadBody(body)
+	b, err = testutil.ReadBody(body)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		// read the docker root dir
 		if err = json.Unmarshal(b, &i); err == nil {
@@ -570,7 +567,7 @@ func (d *Daemon) WaitRun(contID string) error {
 
 // GetBaseDeviceSize returns the base device size of the daemon
 func (d *Daemon) GetBaseDeviceSize(c *check.C) int64 {
-	infoCmdOutput, _, err := integration.RunCommandPipelineWithOutput(
+	infoCmdOutput, _, err := testutil.RunCommandPipelineWithOutput(
 		exec.Command(d.dockerBinary, "-H", d.Sock(), "info"),
 		exec.Command("grep", "Base Device Size"),
 	)
@@ -617,14 +614,14 @@ func (d *Daemon) SockRequest(method, endpoint string, data interface{}) (int, []
 	if err != nil {
 		return -1, nil, err
 	}
-	b, err := integration.ReadBody(body)
+	b, err := testutil.ReadBody(body)
 	return res.StatusCode, b, err
 }
 
 // SockRequestRaw executes a socket request on a daemon and returns an http
 // response and a reader for the output data.
 func (d *Daemon) SockRequestRaw(method, endpoint string, data io.Reader, ct string) (*http.Response, io.ReadCloser, error) {
-	return SockRequestRawToDaemon(method, endpoint, data, ct, d.Sock())
+	return request.SockRequestRaw(method, endpoint, data, ct, d.Sock())
 }
 
 // LogFileName returns the path the daemon's log file
@@ -714,7 +711,7 @@ func (d *Daemon) ReloadConfig() error {
 	errCh := make(chan error)
 	started := make(chan struct{})
 	go func() {
-		_, body, err := SockRequestRawToDaemon("GET", "/events", nil, "", d.Sock())
+		_, body, err := request.SockRequestRaw("GET", "/events", nil, "", d.Sock())
 		close(started)
 		if err != nil {
 			errCh <- err
@@ -789,96 +786,6 @@ func WaitInspectWithArgs(dockerBinary, name, expr, expected string, timeout time
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil
-}
-
-// SockRequestRawToDaemon creates an http request against the specified daemon socket
-// FIXME(vdemeester) attach this to daemon ?
-func SockRequestRawToDaemon(method, endpoint string, data io.Reader, ct, daemon string) (*http.Response, io.ReadCloser, error) {
-	req, client, err := newRequestClient(method, endpoint, data, ct, daemon)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		client.Close()
-		return nil, nil, err
-	}
-	body := ioutils.NewReadCloserWrapper(resp.Body, func() error {
-		defer resp.Body.Close()
-		return client.Close()
-	})
-
-	return resp, body, nil
-}
-
-func getTLSConfig() (*tls.Config, error) {
-	dockerCertPath := os.Getenv("DOCKER_CERT_PATH")
-
-	if dockerCertPath == "" {
-		return nil, errors.New("DOCKER_TLS_VERIFY specified, but no DOCKER_CERT_PATH environment variable")
-	}
-
-	option := &tlsconfig.Options{
-		CAFile:   filepath.Join(dockerCertPath, "ca.pem"),
-		CertFile: filepath.Join(dockerCertPath, "cert.pem"),
-		KeyFile:  filepath.Join(dockerCertPath, "key.pem"),
-	}
-	tlsConfig, err := tlsconfig.Client(*option)
-	if err != nil {
-		return nil, err
-	}
-
-	return tlsConfig, nil
-}
-
-// SockConn opens a connection on the specified socket
-func SockConn(timeout time.Duration, daemon string) (net.Conn, error) {
-	daemonURL, err := url.Parse(daemon)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not parse url %q", daemon)
-	}
-
-	var c net.Conn
-	switch daemonURL.Scheme {
-	case "npipe":
-		return npipeDial(daemonURL.Path, timeout)
-	case "unix":
-		return net.DialTimeout(daemonURL.Scheme, daemonURL.Path, timeout)
-	case "tcp":
-		if os.Getenv("DOCKER_TLS_VERIFY") != "" {
-			// Setup the socket TLS configuration.
-			tlsConfig, err := getTLSConfig()
-			if err != nil {
-				return nil, err
-			}
-			dialer := &net.Dialer{Timeout: timeout}
-			return tls.DialWithDialer(dialer, daemonURL.Scheme, daemonURL.Host, tlsConfig)
-		}
-		return net.DialTimeout(daemonURL.Scheme, daemonURL.Host, timeout)
-	default:
-		return c, errors.Errorf("unknown scheme %v (%s)", daemonURL.Scheme, daemon)
-	}
-}
-
-func newRequestClient(method, endpoint string, data io.Reader, ct, daemon string) (*http.Request, *httputil.ClientConn, error) {
-	c, err := SockConn(time.Duration(10*time.Second), daemon)
-	if err != nil {
-		return nil, nil, errors.Errorf("could not dial docker daemon: %v", err)
-	}
-
-	client := httputil.NewClientConn(c, nil)
-
-	req, err := http.NewRequest(method, endpoint, data)
-	if err != nil {
-		client.Close()
-		return nil, nil, errors.Errorf("could not create new request: %v", err)
-	}
-
-	if ct != "" {
-		req.Header.Set("Content-Type", ct)
-	}
-	return req, client, nil
 }
 
 // BuildImageCmdWithHost create a build command with the specified arguments.

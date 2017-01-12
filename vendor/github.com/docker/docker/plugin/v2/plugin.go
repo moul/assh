@@ -5,10 +5,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/distribution/digest"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/docker/pkg/plugins"
+	"github.com/opencontainers/go-digest"
 )
 
 // Plugin represents an individual plugin.
@@ -233,12 +233,12 @@ func (p *Plugin) AddRefCount(count int) {
 // Acquire increments the plugin's reference count
 // This should be followed up by `Release()` when the plugin is no longer in use.
 func (p *Plugin) Acquire() {
-	p.AddRefCount(plugingetter.ACQUIRE)
+	p.AddRefCount(plugingetter.Acquire)
 }
 
 // Release decrements the plugin's reference count
 // This should only be called when the plugin is no longer in use, e.g. with
-// via `Acquire()` or getter.Get("name", "type", plugingetter.ACQUIRE)
+// via `Acquire()` or getter.Get("name", "type", plugingetter.Acquire)
 func (p *Plugin) Release() {
-	p.AddRefCount(plugingetter.RELEASE)
+	p.AddRefCount(plugingetter.Release)
 }

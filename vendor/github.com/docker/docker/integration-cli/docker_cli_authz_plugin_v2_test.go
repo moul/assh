@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/integration-cli/daemon"
-	"github.com/docker/docker/pkg/integration/checker"
 	"github.com/go-check/check"
 )
 
 var (
-	authzPluginName            = "tonistiigi/authz-no-volume-plugin"
+	authzPluginName            = "riyaz/authz-no-volume-plugin"
 	authzPluginTag             = "latest"
 	authzPluginNameWithTag     = authzPluginName + ":" + authzPluginTag
-	authzPluginBadManifestName = "tonistiigi/authz-plugin-bad-manifest"
+	authzPluginBadManifestName = "riyaz/authz-plugin-bad-manifest"
 	nonexistentAuthzPluginName = "riyaz/nonexistent-authz-plugin"
 )
 

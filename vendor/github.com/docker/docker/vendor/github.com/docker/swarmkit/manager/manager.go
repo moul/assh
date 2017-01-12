@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/docker/go-events"
 	"github.com/docker/swarmkit/api"
 	"github.com/docker/swarmkit/ca"
+	"github.com/docker/swarmkit/connectionbroker"
 	"github.com/docker/swarmkit/log"
 	"github.com/docker/swarmkit/manager/allocator"
 	"github.com/docker/swarmkit/manager/controlapi"
@@ -38,6 +40,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -45,7 +48,7 @@ const (
 	defaultTaskHistoryRetentionLimit = 5
 )
 
-// RemoteAddrs provides an listening address and an optional advertise address
+// RemoteAddrs provides a listening address and an optional advertise address
 // for serving the remote API.
 type RemoteAddrs struct {
 	// Address to bind
@@ -125,6 +128,7 @@ type Manager struct {
 	localserver            *grpc.Server
 	raftNode               *raft.Node
 	dekRotator             *RaftDEKManager
+	roleManager            *roleManager
 
 	cancelFunc context.CancelFunc
 
@@ -270,6 +274,12 @@ func New(config *Config) (*Manager, error) {
 	return m, nil
 }
 
+// RemovedFromRaft returns a channel that's closed if the manager is removed
+// from the raft cluster. This should be used to trigger a manager shutdown.
+func (m *Manager) RemovedFromRaft() <-chan struct{} {
+	return m.raftNode.RemovedFromRaft
+}
+
 // Addr returns tcp address on which remote api listens.
 func (m *Manager) Addr() string {
 	return m.config.RemoteAPI.ListenAddr
@@ -328,23 +338,46 @@ func (m *Manager) Run(parent context.Context) error {
 	authenticatedHealthAPI := api.NewAuthenticatedWrapperHealthServer(healthServer, authorize)
 	authenticatedRaftMembershipAPI := api.NewAuthenticatedWrapperRaftMembershipServer(m.raftNode, authorize)
 
-	proxyDispatcherAPI := api.NewRaftProxyDispatcherServer(authenticatedDispatcherAPI, m.raftNode, ca.WithMetadataForwardTLSInfo)
-	proxyCAAPI := api.NewRaftProxyCAServer(authenticatedCAAPI, m.raftNode, ca.WithMetadataForwardTLSInfo)
-	proxyNodeCAAPI := api.NewRaftProxyNodeCAServer(authenticatedNodeCAAPI, m.raftNode, ca.WithMetadataForwardTLSInfo)
-	proxyRaftMembershipAPI := api.NewRaftProxyRaftMembershipServer(authenticatedRaftMembershipAPI, m.raftNode, ca.WithMetadataForwardTLSInfo)
-	proxyResourceAPI := api.NewRaftProxyResourceAllocatorServer(authenticatedResourceAPI, m.raftNode, ca.WithMetadataForwardTLSInfo)
-	proxyLogBrokerAPI := api.NewRaftProxyLogBrokerServer(authenticatedLogBrokerAPI, m.raftNode, ca.WithMetadataForwardTLSInfo)
+	proxyDispatcherAPI := api.NewRaftProxyDispatcherServer(authenticatedDispatcherAPI, m.raftNode, nil, ca.WithMetadataForwardTLSInfo)
+	proxyCAAPI := api.NewRaftProxyCAServer(authenticatedCAAPI, m.raftNode, nil, ca.WithMetadataForwardTLSInfo)
+	proxyNodeCAAPI := api.NewRaftProxyNodeCAServer(authenticatedNodeCAAPI, m.raftNode, nil, ca.WithMetadataForwardTLSInfo)
+	proxyRaftMembershipAPI := api.NewRaftProxyRaftMembershipServer(authenticatedRaftMembershipAPI, m.raftNode, nil, ca.WithMetadataForwardTLSInfo)
+	proxyResourceAPI := api.NewRaftProxyResourceAllocatorServer(authenticatedResourceAPI, m.raftNode, nil, ca.WithMetadataForwardTLSInfo)
+	proxyLogBrokerAPI := api.NewRaftProxyLogBrokerServer(authenticatedLogBrokerAPI, m.raftNode, nil, ca.WithMetadataForwardTLSInfo)
 
-	// localProxyControlAPI is a special kind of proxy. It is only wired up
-	// to receive requests from a trusted local socket, and these requests
-	// don't use TLS, therefore the requests it handles locally should
-	// bypass authorization. When it proxies, it sends them as requests from
-	// this manager rather than forwarded requests (it has no TLS
-	// information to put in the metadata map).
+	// The following local proxies are only wired up to receive requests
+	// from a trusted local socket, and these requests don't use TLS,
+	// therefore the requests they handle locally should bypass
+	// authorization. When requests are proxied from these servers, they
+	// are sent as requests from this manager rather than forwarded
+	// requests (it has no TLS information to put in the metadata map).
 	forwardAsOwnRequest := func(ctx context.Context) (context.Context, error) { return ctx, nil }
-	localProxyControlAPI := api.NewRaftProxyControlServer(baseControlAPI, m.raftNode, forwardAsOwnRequest)
-	localProxyLogsAPI := api.NewRaftProxyLogsServer(m.logbroker, m.raftNode, forwardAsOwnRequest)
-	localCAAPI := api.NewRaftProxyCAServer(m.caserver, m.raftNode, forwardAsOwnRequest)
+	handleRequestLocally := func(ctx context.Context) (context.Context, error) {
+		var remoteAddr string
+		if m.config.RemoteAPI.AdvertiseAddr != "" {
+			remoteAddr = m.config.RemoteAPI.AdvertiseAddr
+		} else {
+			remoteAddr = m.config.RemoteAPI.ListenAddr
+		}
+
+		creds := m.config.SecurityConfig.ClientTLSCreds
+
+		nodeInfo := ca.RemoteNodeInfo{
+			Roles:        []string{creds.Role()},
+			Organization: creds.Organization(),
+			NodeID:       creds.NodeID(),
+			RemoteAddr:   remoteAddr,
+		}
+
+		return context.WithValue(ctx, ca.LocalRequestKey, nodeInfo), nil
+	}
+	localProxyControlAPI := api.NewRaftProxyControlServer(baseControlAPI, m.raftNode, handleRequestLocally, forwardAsOwnRequest)
+	localProxyLogsAPI := api.NewRaftProxyLogsServer(m.logbroker, m.raftNode, handleRequestLocally, forwardAsOwnRequest)
+	localProxyDispatcherAPI := api.NewRaftProxyDispatcherServer(m.dispatcher, m.raftNode, handleRequestLocally, forwardAsOwnRequest)
+	localProxyCAAPI := api.NewRaftProxyCAServer(m.caserver, m.raftNode, handleRequestLocally, forwardAsOwnRequest)
+	localProxyNodeCAAPI := api.NewRaftProxyNodeCAServer(m.caserver, m.raftNode, handleRequestLocally, forwardAsOwnRequest)
+	localProxyResourceAPI := api.NewRaftProxyResourceAllocatorServer(baseResourceAPI, m.raftNode, handleRequestLocally, forwardAsOwnRequest)
+	localProxyLogBrokerAPI := api.NewRaftProxyLogBrokerServer(m.logbroker, m.raftNode, handleRequestLocally, forwardAsOwnRequest)
 
 	// Everything registered on m.server should be an authenticated
 	// wrapper, or a proxy wrapping an authenticated wrapper!
@@ -362,7 +395,11 @@ func (m *Manager) Run(parent context.Context) error {
 	api.RegisterControlServer(m.localserver, localProxyControlAPI)
 	api.RegisterLogsServer(m.localserver, localProxyLogsAPI)
 	api.RegisterHealthServer(m.localserver, localHealthServer)
-	api.RegisterCAServer(m.localserver, localCAAPI)
+	api.RegisterDispatcherServer(m.localserver, localProxyDispatcherAPI)
+	api.RegisterCAServer(m.localserver, localProxyCAAPI)
+	api.RegisterNodeCAServer(m.localserver, localProxyNodeCAAPI)
+	api.RegisterResourceAllocatorServer(m.localserver, localProxyResourceAPI)
+	api.RegisterLogBrokerServer(m.localserver, localProxyLogBrokerAPI)
 
 	healthServer.SetServingStatus("Raft", api.HealthCheckResponse_NOT_SERVING)
 	localHealthServer.SetServingStatus("ControlAPI", api.HealthCheckResponse_NOT_SERVING)
@@ -388,39 +425,26 @@ func (m *Manager) Run(parent context.Context) error {
 
 	close(m.started)
 
-	errCh := make(chan error, 1)
 	go func() {
 		err := m.raftNode.Run(ctx)
 		if err != nil {
-			errCh <- err
 			log.G(ctx).WithError(err).Error("raft node stopped")
-			m.Stop(ctx)
+			m.Stop(ctx, false)
 		}
 	}()
 
-	returnErr := func(err error) error {
-		select {
-		case runErr := <-errCh:
-			if runErr == raft.ErrMemberRemoved {
-				return runErr
-			}
-		default:
-		}
-		return err
-	}
-
 	if err := raft.WaitForLeader(ctx, m.raftNode); err != nil {
-		return returnErr(err)
+		return err
 	}
 
 	c, err := raft.WaitForCluster(ctx, m.raftNode)
 	if err != nil {
-		return returnErr(err)
+		return err
 	}
 	raftConfig := c.Spec.Raft
 
 	if err := m.watchForKEKChanges(ctx); err != nil {
-		return returnErr(err)
+		return err
 	}
 
 	if int(raftConfig.ElectionTick) != m.raftNode.Config.ElectionTick {
@@ -438,16 +462,17 @@ func (m *Manager) Run(parent context.Context) error {
 		return nil
 	}
 	m.mu.Unlock()
-	m.Stop(ctx)
+	m.Stop(ctx, false)
 
-	return returnErr(err)
+	return err
 }
 
 const stopTimeout = 8 * time.Second
 
 // Stop stops the manager. It immediately closes all open connections and
-// active RPCs as well as stopping the scheduler.
-func (m *Manager) Stop(ctx context.Context) {
+// active RPCs as well as stopping the scheduler. If clearData is set, the
+// raft logs, snapshots, and keys will be erased.
+func (m *Manager) Stop(ctx context.Context, clearData bool) {
 	log.G(ctx).Info("Stopping manager")
 	// It's not safe to start shutting down while the manager is still
 	// starting up.
@@ -472,6 +497,8 @@ func (m *Manager) Stop(ctx context.Context) {
 		close(localSrvDone)
 	}()
 
+	m.raftNode.Cancel()
+
 	m.dispatcher.Stop()
 	m.logbroker.Stop()
 	m.caserver.Stop()
@@ -494,10 +521,16 @@ func (m *Manager) Stop(ctx context.Context) {
 	if m.scheduler != nil {
 		m.scheduler.Stop()
 	}
+	if m.roleManager != nil {
+		m.roleManager.Stop()
+	}
 	if m.keyManager != nil {
 		m.keyManager.Stop()
 	}
 
+	if clearData {
+		m.raftNode.ClearData()
+	}
 	m.cancelFunc()
 	<-m.raftNode.Done()
 
@@ -527,9 +560,6 @@ func (m *Manager) updateKEK(ctx context.Context, cluster *api.Cluster) error {
 		"node.role": ca.ManagerRole,
 	})
 
-	// we are our own peer from which we get certs - try to connect over the local socket
-	r := remotes.NewRemotes(api.Peer{Addr: m.Addr(), NodeID: nodeID})
-
 	kekData := ca.KEKData{Version: cluster.Meta.Version.Index}
 	for _, encryptionKey := range cluster.UnlockKeys {
 		if encryptionKey.Subsystem == ca.ManagerRole {
@@ -549,8 +579,27 @@ func (m *Manager) updateKEK(ctx context.Context, cluster *api.Cluster) error {
 		// a best effort attempt to update the TLS certificate - if it fails, it'll be updated the next time it renews;
 		// don't wait because it might take a bit
 		go func() {
-			if err := ca.RenewTLSConfigNow(ctx, securityConfig, r); err != nil {
-				logger.WithError(err).Errorf("failed to download new TLS certificate after locking the cluster")
+			insecureCreds := credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})
+
+			conn, err := grpc.Dial(
+				m.config.ControlAPI,
+				grpc.WithTransportCredentials(insecureCreds),
+				grpc.WithDialer(
+					func(addr string, timeout time.Duration) (net.Conn, error) {
+						return xnet.DialTimeoutLocal(addr, timeout)
+					}),
+			)
+			if err != nil {
+				logger.WithError(err).Error("failed to connect to local manager socket after locking the cluster")
+				return
+			}
+
+			defer conn.Close()
+
+			connBroker := connectionbroker.New(remotes.NewRemotes())
+			connBroker.SetLocalConn(conn)
+			if err := ca.RenewTLSConfigNow(ctx, securityConfig, connBroker); err != nil {
+				logger.WithError(err).Error("failed to download new TLS certificate after locking the cluster")
 			}
 		}()
 	}
@@ -778,6 +827,7 @@ func (m *Manager) becomeLeader(ctx context.Context) {
 	m.taskReaper = taskreaper.New(s)
 	m.scheduler = scheduler.New(s)
 	m.keyManager = keymanager.New(s, keymanager.DefaultConfig())
+	m.roleManager = newRoleManager(s, m.raftNode)
 
 	// TODO(stevvooe): Allocate a context that can be used to
 	// shutdown underlying manager processes when leadership is
@@ -853,6 +903,9 @@ func (m *Manager) becomeLeader(ctx context.Context) {
 		}
 	}(m.globalOrchestrator)
 
+	go func(roleManager *roleManager) {
+		roleManager.Run()
+	}(m.roleManager)
 }
 
 // becomeFollower shuts down the subsystems that are only run by the leader.
@@ -880,6 +933,9 @@ func (m *Manager) becomeFollower() {
 
 	m.scheduler.Stop()
 	m.scheduler = nil
+
+	m.roleManager.Stop()
+	m.roleManager = nil
 
 	if m.keyManager != nil {
 		m.keyManager.Stop()
@@ -937,7 +993,7 @@ func managerNode(nodeID string, availability api.NodeSpec_Availability) *api.Nod
 			},
 		},
 		Spec: api.NodeSpec{
-			Role:         api.NodeRoleManager,
+			DesiredRole:  api.NodeRoleManager,
 			Membership:   api.NodeMembershipAccepted,
 			Availability: availability,
 		},
