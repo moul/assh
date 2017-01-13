@@ -712,6 +712,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Remove case-sensitivity for `Inherits` and `Gateways` ([#178](https://github.com/moul/advanced-ssh-config/issues/178))
 * Loads hosts from `~/.ssh/assh_known_hosts` file when calling `assh config build`, can be ignored using `--ignore-known-hosts` ([#178](https://github.com/moul/advanced-ssh-config/issues/178))
 * Add `assh config graphviz --show-isolated-hosts` flag
+* Fix nil dereference when calling `assh config serach` without providing needle
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
