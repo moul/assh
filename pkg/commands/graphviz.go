@@ -17,7 +17,10 @@ func cmdGraphviz(c *cli.Context) error {
 		return nil
 	}
 
-	graph, err := configviz.Graph(conf)
+	settings := configviz.GraphSettings{
+		ShowIsolatedHosts: c.Bool("show-isolated-hosts"),
+	}
+	graph, err := configviz.Graph(conf, &settings)
 	if err != nil {
 		Logger.Fatalf("failed to build graph: %v", err)
 		return nil

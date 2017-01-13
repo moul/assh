@@ -11,8 +11,7 @@ import (
 )
 
 func TestGraph(t *testing.T) {
-	Convey("Testing Graph()", t, func() {
-		yamlConfig := `hosts:
+	yamlConfig := `hosts:
   aaa:
     gateways: [bbb, direct]
   bbb:
@@ -25,11 +24,39 @@ func TestGraph(t *testing.T) {
     gateways: [eee, direct]
   ggg:
 `
+
+	Convey("Testing Graph()", t, func() {
 		conf := config.New()
 		err := conf.LoadConfig(strings.NewReader(yamlConfig))
 		So(err, ShouldBeNil)
 
-		graph, err := Graph(conf)
+		graph, err := Graph(conf, &GraphSettings{})
+		So(err, ShouldBeNil)
+		fmt.Println(graph)
+
+		expected := `digraph G {
+	"fff"->"eee"[ color=red, label=1 ];
+	"aaa"->"bbb"[ color=red, label=1 ];
+	"bbb"->"ccc"[ color=red, label=1 ];
+	"bbb"->"aaa"[ color=red, label=2 ];
+	"ccc"->"eee"[ color=red, label=1 ];
+	"aaa" [ color=blue ];
+	"bbb" [ color=blue ];
+	"ccc" [ color=blue ];
+	"eee" [ color=blue ];
+	"fff" [ color=blue ];
+
+}
+`
+		So(sortedOutput(graph), ShouldEqual, sortedOutput(expected))
+	})
+
+	Convey("Testing Graph() with isolated hosts", t, func() {
+		conf := config.New()
+		err := conf.LoadConfig(strings.NewReader(yamlConfig))
+		So(err, ShouldBeNil)
+
+		graph, err := Graph(conf, &GraphSettings{ShowIsolatedHosts: true})
 		So(err, ShouldBeNil)
 		fmt.Println(graph)
 
