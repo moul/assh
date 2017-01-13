@@ -73,6 +73,10 @@ var Commands = []cli.Command{
 						Name:  "expand, e",
 						Usage: "Expand all fields",
 					},
+					cli.BoolFlag{
+						Name:  "ignore-known-hosts",
+						Usage: "Ignore known-hosts file",
+					},
 				},
 				Action: cmdBuild,
 			},
