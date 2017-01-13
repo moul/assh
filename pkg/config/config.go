@@ -364,6 +364,7 @@ func (c *Config) applyMissingNames() {
 		}
 		host.pattern = key
 		host.name = key // should be removed
+		host.prepare()
 	}
 	for key, template := range c.Templates {
 		if template == nil {
@@ -373,6 +374,7 @@ func (c *Config) applyMissingNames() {
 		template.pattern = key
 		template.name = key // should be removed
 		template.isTemplate = true
+		template.prepare()
 	}
 	c.Defaults.isDefault = true
 }

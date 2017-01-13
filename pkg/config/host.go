@@ -494,6 +494,16 @@ func (h *Host) Options() OptionsList {
 	return options
 }
 
+// minimal host preparation after loading
+func (h *Host) prepare() {
+	for key, name := range h.Inherits {
+		h.Inherits[key] = strings.ToLower(name)
+	}
+	for key, name := range h.Gateways {
+		h.Gateways[key] = strings.ToLower(name)
+	}
+}
+
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults
 func (h *Host) ApplyDefaults(defaults *Host) {
 	// ssh-config fields
