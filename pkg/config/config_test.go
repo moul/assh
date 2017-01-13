@@ -18,7 +18,7 @@ hosts:
   aaa:
     HostName: 1.2.3.4
 
-  bbb:
+  BBB:
     Port: ${ENV_VAR_PORT}
     HostName: $ENV_VAR_HOSTNAME
     User: user-$ENV_VAR_USER-user
@@ -35,20 +35,20 @@ hosts:
   eee:
     Inherits:
     - aaa
-    - bbb
+    - BBB
     - aaa
     ControlMasterMkdir: true
 
-  fff:
+  FFF:
     Inherits:
-    - bbb
+    - BBB
     - eee
     - "*.ddd"
 
   ggg:
     Gateways:
     - direct
-    - fff
+    - FFF
 
   hhh:
     Gateways:
@@ -124,7 +124,7 @@ func TestNew(t *testing.T) {
 
 func dummyConfig() *Config {
 	config := New()
-	config.Hosts["toto"] = &Host{
+	config.Hosts["toto"] = &Host{ // TOTO in yaml becomes toto
 		HostName: "1.2.3.4",
 	}
 	config.Hosts["titi"] = &Host{
@@ -142,11 +142,11 @@ func dummyConfig() *Config {
 	}
 	config.Hosts["tutu"] = &Host{
 		Gateways: []string{"titi", "direct", "1.2.3.4"},
-		Inherits: []string{"toto", "tutu", "*.ddd"},
+		Inherits: []string{"TOTO", "tutu", "*.ddd"},
 	}
 	config.Hosts["empty"] = &Host{}
 	config.Hosts["tata"] = &Host{
-		Inherits: []string{"tutu", "titi", "toto", "tutu"},
+		Inherits: []string{"tutu", "titi", "TOTO", "tutu"},
 	}
 	config.Hosts["*.ddd"] = &Host{
 		HostName:               "1.3.5.7",
