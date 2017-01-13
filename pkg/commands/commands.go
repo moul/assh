@@ -100,6 +100,12 @@ var Commands = []cli.Command{
 				Name:   "graphviz",
 				Usage:  "Generate a Graphviz graph of the hosts",
 				Action: cmdGraphviz,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "show-isolated-hosts",
+						Usage: "Show isolated hosts",
+					},
+				},
 			},
 			{
 				Name:   "search",
