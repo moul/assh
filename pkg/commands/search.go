@@ -16,6 +16,10 @@ func cmdSearch(c *cli.Context) error {
 		return nil
 	}
 
+	if len(c.Args()) != 1 {
+		Logger.Fatalf("assh config search requires 1 argument. See 'assh config search --help'.")
+	}
+
 	needle := c.Args()[0]
 
 	found := []*config.Host{}
