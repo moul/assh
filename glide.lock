@@ -1,6 +1,8 @@
 hash: 8281cf015a53a23b35321e80207da975eb4cdec6fdcbd479691d0a45d86e39b7
-updated: 2017-01-12T00:53:20.223766621+01:00
+updated: 2017-01-15T11:13:04.746141574+01:00
 imports:
+- name: github.com/aokoli/goutils
+  version: 9c37978a95bd5c709a15883b6242714ea6709e64
 - name: github.com/awalterschulze/gographviz
   version: 224d2284f4a707f4897baa9103580b7657c898fd
   subpackages:
@@ -14,7 +16,7 @@ imports:
 - name: github.com/deckarep/gosx-notifier
   version: 9daaf8a4715ebe4daf300036644762fe27d3aded
 - name: github.com/docker/docker
-  version: acaf3cf870ff6a88df5c480682046e4106e31da5
+  version: 24c4226dc7675e114463654f138e00a229b73a02
   subpackages:
   - api/types/strslice
 - name: github.com/docker/go-units
@@ -41,12 +43,16 @@ imports:
   version: 0de36badf60155d5953373ed432982b20c62fb91
 - name: github.com/jtolds/gls
   version: 8ddce2a84170772b95dd5d576c48d517b22cac63
+- name: github.com/Masterminds/sprig
+  version: 69011c0cd9b4d2e0733c4d9e2c8e2a5a0d0a2f2f
 - name: github.com/mattn/go-zglob
   version: 1783ae1a9f7ff3a79240e8c249d8b575d70a6528
   subpackages:
   - fastwalk
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
+- name: github.com/satori/go.uuid
+  version: b061729afc07e77a8aa4fad0a2fd840958f1942a
 - name: github.com/shirou/gopsutil
   version: f8c7af556592720f3dfc7098ca55953261c0f02a
   subpackages:
@@ -76,7 +82,7 @@ imports:
 - name: github.com/urfave/cli
   version: 11c134509d89c2018675f369955218a180dc7428
 - name: golang.org/x/crypto
-  version: 7c6cc321c680f03b9ef0764448e780704f486b51
+  version: 2f8be38b9a7533b8763d48273737ff6e90428a96
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net

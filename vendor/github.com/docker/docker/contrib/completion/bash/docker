@@ -2963,6 +2963,10 @@ _docker_swarm_join() {
 			fi
 			return
 			;;
+		--availability)
+			COMPREPLY=( $( compgen -W "active drain pause" -- "$cur" ) )
+			return
+			;;
 		--token)
 			return
 			;;
@@ -2970,7 +2974,7 @@ _docker_swarm_join() {
 
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--advertise-addr --help --listen-addr --token" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "--advertise-addr --availability --help --listen-addr --token" -- "$cur" ) )
 			;;
 		*:)
 			COMPREPLY=( $( compgen -W "2377" -- "${cur##*:}" ) )
@@ -3282,7 +3286,7 @@ _docker_plugin_install() {
 
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--alias --disable --grant-all-permissions --help" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "--alias --disable --disable-content-trust=false --grant-all-permissions --help" -- "$cur" ) )
 			;;
 	esac
 }
@@ -3962,11 +3966,30 @@ _docker() {
 	local previous_extglob_setting=$(shopt -p extglob)
 	shopt -s extglob
 
-	local commands=(
-		attach
-		build
-		commit
+	local management_commands=(
 		container
+		image
+		network
+		node
+		plugin
+		secret
+		service
+		stack
+		system
+		volume
+	)
+
+	local top_level_commands=(
+		build
+		login
+		logout
+		run
+		search
+		version
+	)
+
+	local legacy_commands=(
+		commit
 		cp
 		create
 		diff
@@ -3974,20 +3997,14 @@ _docker() {
 		exec
 		export
 		history
-		image
 		images
 		import
 		info
 		inspect
 		kill
 		load
-		login
-		logout
 		logs
-		network
-		node
 		pause
-		plugin
 		port
 		ps
 		pull
@@ -3996,29 +4013,23 @@ _docker() {
 		restart
 		rm
 		rmi
-		run
 		save
-		search
-		secret
-		service
-		stack
 		start
 		stats
 		stop
 		swarm
-		system
 		tag
 		top
 		unpause
 		update
-		version
-		volume
 		wait
 	)
 
 	local experimental_commands=(
 		deploy
 	)
+
+	local commands=(${management_commands[*]} ${top_level_commands[*]} ${DOCKER_HIDE_LEGACY_COMMANDS:+${legacy_commands[*]}})
 
 	# These options are valid as global options for all client commands
 	# and valid as command options for `docker daemon`
