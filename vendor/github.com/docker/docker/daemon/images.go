@@ -210,7 +210,6 @@ func (daemon *Daemon) Images(imageFilters filters.Args, all bool, withExtraAttrs
 			rootFS := *img.RootFS
 			rootFS.DiffIDs = nil
 
-			newImage.Size = 0
 			newImage.SharedSize = 0
 			for _, id := range img.RootFS.DiffIDs {
 				rootFS.Append(id)
@@ -223,8 +222,6 @@ func (daemon *Daemon) Images(imageFilters filters.Args, all bool, withExtraAttrs
 
 				if layerRefs[chid] > 1 {
 					newImage.SharedSize += diffSize
-				} else {
-					newImage.Size += diffSize
 				}
 			}
 		}
@@ -318,13 +315,13 @@ func (daemon *Daemon) SquashImage(id, parent string) (string, error) {
 	return string(newImgID), nil
 }
 
-func newImage(image *image.Image, virtualSize int64) *types.ImageSummary {
+func newImage(image *image.Image, size int64) *types.ImageSummary {
 	newImage := new(types.ImageSummary)
 	newImage.ParentID = image.Parent.String()
 	newImage.ID = image.ID().String()
 	newImage.Created = image.Created.Unix()
-	newImage.Size = -1
-	newImage.VirtualSize = virtualSize
+	newImage.Size = size
+	newImage.VirtualSize = size
 	newImage.SharedSize = -1
 	newImage.Containers = -1
 	if image.Config != nil {
