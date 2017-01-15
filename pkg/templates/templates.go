@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 	"text/template"
+
+	"github.com/Masterminds/sprig"
 )
 
 var funcMap = template.FuncMap{
@@ -15,14 +17,16 @@ var funcMap = template.FuncMap{
 		a, _ := json.MarshalIndent(v, "", "  ")
 		return string(a)
 	},
-	// yaml
-	// xml
-	// toml
-	"split": strings.Split,
 	"join":  strings.Join,
 	"title": strings.Title,
 	"lower": strings.ToLower,
 	"upper": strings.ToUpper,
+}
+
+func init() {
+	for k, v := range sprig.TxtFuncMap() {
+		funcMap[k] = v
+	}
 }
 
 // New creates a new template with funcMap and parses the given format.
