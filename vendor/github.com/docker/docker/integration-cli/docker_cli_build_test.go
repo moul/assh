@@ -4644,23 +4644,20 @@ func (s *DockerSuite) TestBuildStderr(c *check.C) {
 	// This test just makes sure that no non-error output goes
 	// to stderr
 	name := "testbuildstderr"
-	_, _, stderr, err := buildImageWithStdoutStderr(name,
+	_, stdout, stderr, err := buildImageWithStdoutStderr(name,
 		"FROM busybox\nRUN echo one", true)
 	if err != nil {
 		c.Fatal(err)
 	}
 
-	if runtime.GOOS == "windows" &&
-		daemonPlatform != "windows" {
-		// Windows to non-Windows should have a security warning
-		if !strings.Contains(stderr, "SECURITY WARNING:") {
-			c.Fatalf("Stderr contains unexpected output: %q", stderr)
-		}
-	} else {
-		// Other platform combinations should have no stderr written too
-		if stderr != "" {
-			c.Fatalf("Stderr should have been empty, instead it's: %q", stderr)
-		}
+	// Windows to non-Windows should have a security warning
+	if runtime.GOOS == "windows" && daemonPlatform != "windows" && !strings.Contains(stdout, "SECURITY WARNING:") {
+		c.Fatalf("Stdout contains unexpected output: %q", stdout)
+	}
+
+	// Stderr should always be empty
+	if stderr != "" {
+		c.Fatalf("Stderr should have been empty, instead it's: %q", stderr)
 	}
 }
 
@@ -7037,17 +7034,6 @@ func (s *DockerSuite) TestBuildCmdShellArgsEscaped(c *check.C) {
 	}
 }
 
-func (s *DockerSuite) TestContinueCharSpace(c *check.C) {
-	// Test to make sure that we don't treat a \ as a continuation
-	// character IF there are spaces (or tabs) after it on the same line
-	name := "testbuildcont"
-	_, err := buildImage(name, "FROM busybox\nRUN echo hi \\\t\nbye", true)
-	c.Assert(err, check.NotNil, check.Commentf("Build 1 should fail - didn't"))
-
-	_, err = buildImage(name, "FROM busybox\nRUN echo hi \\ \nbye", true)
-	c.Assert(err, check.NotNil, check.Commentf("Build 2 should fail - didn't"))
-}
-
 // Test case for #24912.
 func (s *DockerSuite) TestBuildStepsWithProgress(c *check.C) {
 	name := "testbuildstepswithprogress"
@@ -7398,4 +7384,56 @@ func (s *DockerSuite) TestBuildWorkdirCmd(c *check.C) {
 	_, out, err := buildImageWithOut("testbuildworkdircmd", dockerFile, true)
 	c.Assert(err, checker.IsNil)
 	c.Assert(strings.Count(out, "Using cache"), checker.Equals, 1)
+}
+
+func (s *DockerSuite) TestBuildLineErrorOnBuild(c *check.C) {
+	name := "test_build_line_error_onbuild"
+
+	_, err := buildImage(name,
+		`FROM busybox
+  ONBUILD
+  `, true)
+	c.Assert(err.Error(), checker.Contains, "Dockerfile parse error line 2: ONBUILD requires at least one argument")
+}
+
+func (s *DockerSuite) TestBuildLineErrorUknownInstruction(c *check.C) {
+	name := "test_build_line_error_unknown_instruction"
+
+	_, err := buildImage(name,
+		`FROM busybox
+  RUN echo hello world
+  NOINSTRUCTION echo ba
+  RUN echo hello
+  ERROR
+  `, true)
+	c.Assert(err.Error(), checker.Contains, "Dockerfile parse error line 3: Unknown instruction: NOINSTRUCTION")
+}
+
+func (s *DockerSuite) TestBuildLineErrorWithEmptyLines(c *check.C) {
+	name := "test_build_line_error_with_empty_lines"
+
+	_, err := buildImage(name,
+		`
+  FROM busybox
+
+  RUN echo hello world
+
+  NOINSTRUCTION echo ba
+
+  CMD ["/bin/init"]
+  `, true)
+	c.Assert(err.Error(), checker.Contains, "Dockerfile parse error line 6: Unknown instruction: NOINSTRUCTION")
+}
+
+func (s *DockerSuite) TestBuildLineErrorWithComments(c *check.C) {
+	name := "test_build_line_error_with_comments"
+
+	_, err := buildImage(name,
+		`FROM busybox
+  # This will print hello world
+  # and then ba
+  RUN echo hello world
+  RUM echo ba
+  `, true)
+	c.Assert(err.Error(), checker.Contains, "Dockerfile parse error line 5: Unknown instruction: RUM")
 }
