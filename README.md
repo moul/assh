@@ -713,6 +713,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Loads hosts from `~/.ssh/assh_known_hosts` file when calling `assh config build`, can be ignored using `--ignore-known-hosts` ([#178](https://github.com/moul/advanced-ssh-config/issues/178))
 * Add `assh config graphviz --show-isolated-hosts` flag
 * Fix nil dereference when calling `assh config serach` without providing needle
+* Add [sprig](https://github.com/Masterminds/sprig) helpers to the template engine ([#206](https://github.com/moul/advanced-ssh-config/issues/206))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
