@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli"
 	"golang.org/x/crypto/ssh/terminal"
@@ -24,10 +23,12 @@ func cmdList(c *cli.Context) error {
 	greenColorize := func(input string) string { return input }
 	redColorize := func(input string) string { return input }
 	yellowColorize := func(input string) string { return input }
+	cyanColorize := func(input string) string { return input }
 	if terminal.IsTerminal(int(os.Stdout.Fd())) {
 		greenColorize = ansi.ColorFunc("green+b+h")
 		redColorize = ansi.ColorFunc("red")
 		yellowColorize = ansi.ColorFunc("yellow")
+		cyanColorize = ansi.ColorFunc("cyan")
 	}
 
 	fmt.Printf("Listing entries\n\n")
@@ -41,19 +42,32 @@ func cmdList(c *cli.Context) error {
 		}
 	}
 
+	generalOptions := conf.Defaults.Options()
+
 	for _, host := range conf.Hosts.SortedList() {
 		options := host.Options()
 		options.Remove("User")
 		options.Remove("Port")
 		host.ApplyDefaults(&conf.Defaults)
 		fmt.Printf("    %s -> %s\n", greenColorize(host.Name()), host.Prototype())
-		if len(options) > 0 {
-			fmt.Printf("        %s %s\n", yellowColorize("[custom options]"), strings.Join(options.ToStringList(), " "))
+
+		for _, opt := range options {
+			defaultValue := generalOptions.Get(opt.Name)
+			switch {
+			case defaultValue == "":
+				fmt.Printf("        %s %s %s\n", yellowColorize(opt.Name), opt.Value, yellowColorize("[custom option]"))
+				break
+			case defaultValue == opt.Value:
+				fmt.Printf("        %s: %s\n", redColorize(opt.Name), opt.Value)
+				break
+			default:
+				fmt.Printf("        %s %s %s\n", cyanColorize(opt.Name), opt.Value, cyanColorize("[override]"))
+				break
+			}
 		}
 		fmt.Println()
 	}
 
-	generalOptions := conf.Defaults.Options()
 	if len(generalOptions) > 0 {
 		fmt.Println(greenColorize("    (*) General options:"))
 		for _, opt := range conf.Defaults.Options() {
