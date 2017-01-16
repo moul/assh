@@ -15,6 +15,16 @@ func (o *Option) String() string {
 	return fmt.Sprintf("%s=%s", o.Name, o.Value)
 }
 
+// Get returns the option value matching the name or "" if the key is not found
+func (ol *OptionsList) Get(name string) string {
+	for _, opt := range *ol {
+		if opt.Name == name {
+			return opt.Value
+		}
+	}
+	return ""
+}
+
 // ToStringList returns a list of string with the following format: `key=value`
 func (ol *OptionsList) ToStringList() []string {
 	list := []string{}
