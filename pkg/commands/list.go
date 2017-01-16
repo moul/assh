@@ -32,6 +32,15 @@ func cmdList(c *cli.Context) error {
 
 	fmt.Printf("Listing entries\n\n")
 
+	if c.Bool("expand") {
+		for name := range conf.Hosts {
+			conf.Hosts[name], err = conf.GetHost(name)
+			if err != nil {
+				Logger.Fatalf("Error while trying to expand hosts: %v", err)
+			}
+		}
+	}
+
 	for _, host := range conf.Hosts.SortedList() {
 		options := host.Options()
 		options.Remove("User")
