@@ -95,6 +95,12 @@ var Commands = []cli.Command{
 				Name:   "list",
 				Usage:  "List all hosts from assh config",
 				Action: cmdList,
+				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "expand, e",
+						Usage: "Expand all fields",
+					},
+				},
 			},
 			{
 				Name:   "graphviz",

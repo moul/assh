@@ -531,7 +531,8 @@ $ assh config list
 Listing entries
 
     *.scw -> root@[hostname_not_specified]:22
-        [custom options] StrictHostKeyChecking=no UserKnownHostsFile=/dev/null
+        StrictHostKeyChecking=no [custom options]
+        UserKnownHostsFile=/dev/null [custom options]
 
     *.shortcut1 -> bob@[hostname_not_specified]:22
 
@@ -556,10 +557,11 @@ Listing entries
     my-env-host -> user-moul@[hostname_not_specified]:22
 
     schoolgw -> bob@gw.school.com:22
-        [custom options] ForwardX11=no
+        ForwardX11=no [custom options]
 
     schooltemplate -> student@[hostname_not_specified]:22
-        [custom options] ForwardX11=yes IdentityFile=~/.ssh/school-rsa
+        ForwardX11=yes [custom options]
+        IdentityFile=~/.ssh/school-rsa [custom options]
 
     vm-*.school.com -> bob@[hostname_not_specified]:22
 
@@ -714,6 +716,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Add `assh config graphviz --show-isolated-hosts` flag
 * Fix nil dereference when calling `assh config serach` without providing needle
 * Add [sprig](https://github.com/Masterminds/sprig) helpers to the template engine ([#206](https://github.com/moul/advanced-ssh-config/issues/206))
+* Improve readability of `assh config list` ([#203](https://github.com/moul/advanced-ssh-config/issues/203))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
