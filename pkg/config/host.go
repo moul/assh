@@ -14,6 +14,7 @@ import (
 // Host defines the configuration flags of a host
 type Host struct {
 	// ssh-config fields
+	AddKeysToAgent                   string                    `yaml:"addkeystoagent,omitempty,flow" json:"AddKeysToAgent,omitempty"`
 	AddressFamily                    string                    `yaml:"addressfamily,omitempty,flow" json:"AddressFamily,omitempty"`
 	AskPassGUI                       string                    `yaml:"askpassgui,omitempty,flow" json:"AskPassGUI,omitempty"`
 	BatchMode                        string                    `yaml:"batchmode,omitempty,flow" json:"BatchMode,omitempty"`
@@ -195,6 +196,9 @@ func (h *Host) Options() OptionsList {
 	options := make(OptionsList, 0)
 
 	// ssh-config fields
+	if h.AddKeysToAgent != "" {
+		options = append(options, Option{Name: "AddKeysToAgent", Value: h.AddKeysToAgent})
+	}
 	if h.AddressFamily != "" {
 		options = append(options, Option{Name: "AddressFamily", Value: h.AddressFamily})
 	}
@@ -507,6 +511,11 @@ func (h *Host) prepare() {
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults
 func (h *Host) ApplyDefaults(defaults *Host) {
 	// ssh-config fields
+	if h.AddKeysToAgent == "" {
+		h.AddKeysToAgent = defaults.AddKeysToAgent
+	}
+	h.AddKeysToAgent = utils.ExpandField(h.AddKeysToAgent)
+
 	if h.AddressFamily == "" {
 		h.AddressFamily = defaults.AddressFamily
 	}
@@ -1048,6 +1057,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		fmt.Fprintf(w, "Host %s\n", alias)
 
 		// ssh-config fields
+		if h.AddKeysToAgent != "" {
+			fmt.Fprintf(w, "  AddKeysToAgent %s\n", h.AddKeysToAgent)
+		}
 		if h.AddressFamily != "" {
 			fmt.Fprintf(w, "  AddressFamily %s\n", h.AddressFamily)
 		}
