@@ -1,12 +1,6 @@
 package logger
 
-import (
-	"os"
-	"strings"
-
-	"github.com/Sirupsen/logrus"
-	"github.com/shirou/gopsutil/process"
-)
+import "github.com/Sirupsen/logrus"
 
 var Logger = logrus.New()
 
@@ -34,24 +28,4 @@ func SetupLogging(options LoggerOptions) {
 	}
 
 	LoggerSetLevel(level)
-}
-
-func GetLoggingLevelByInspectingParent() (logrus.Level, error) {
-	ppid := os.Getppid()
-	process, err := process.NewProcess(int32(ppid))
-	if err != nil {
-		return logrus.WarnLevel, err
-	}
-
-	cmdline, err := process.Cmdline()
-	if err != nil {
-		return logrus.WarnLevel, err
-	}
-
-	if strings.Contains(cmdline, "-vv") {
-		return logrus.DebugLevel, nil
-	} else if strings.Contains(cmdline, "-v") {
-		return logrus.InfoLevel, nil
-	}
-	return logrus.WarnLevel, nil
 }
