@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/shirou/gopsutil/cpu"
@@ -79,7 +80,34 @@ func (p *Process) Name() (string, error) {
 	return common.IntToString(k.Proc.P_comm[:]), nil
 }
 func (p *Process) Exe() (string, error) {
-	return "", common.ErrNotImplementedError
+	lsof_bin, err := exec.LookPath("lsof")
+	if err != nil {
+		return "", err
+	}
+
+	awk_bin, err := exec.LookPath("awk")
+	if err != nil {
+		return "", err
+	}
+
+	sed_bin, err := exec.LookPath("sed")
+	if err != nil {
+		return "", err
+	}
+
+	lsof := exec.Command(lsof_bin, "-p", strconv.Itoa(int(p.Pid)), "-Fn")
+	awk := exec.Command(awk_bin, "NR==3{print}")
+	sed := exec.Command(sed_bin, "s/n\\//\\//")
+
+	output, _, err := common.Pipeline(lsof, awk, sed)
+
+	if err != nil {
+		return "", err
+	}
+
+	ret := strings.TrimSpace(string(output))
+
+	return ret, nil
 }
 
 // Cmdline returns the command line arguments of the process as a string with
@@ -105,7 +133,34 @@ func (p *Process) CmdlineSlice() ([]string, error) {
 	return r[0], err
 }
 func (p *Process) CreateTime() (int64, error) {
-	return 0, common.ErrNotImplementedError
+	r, err := callPs("etime", p.Pid, false)
+	if err != nil {
+		return 0, err
+	}
+
+	elapsedSegments := strings.Split(strings.Replace(r[0][0], "-", ":", 1), ":")
+	var elapsedDurations []time.Duration
+	for i := len(elapsedSegments) - 1; i >= 0; i-- {
+		p, err := strconv.ParseInt(elapsedSegments[i], 10, 0)
+		if err != nil {
+			return 0, err
+		}
+		elapsedDurations = append(elapsedDurations, time.Duration(p))
+	}
+
+	var elapsed time.Duration = time.Duration(elapsedDurations[0]) * time.Second
+	if len(elapsedDurations) > 1 {
+		elapsed += time.Duration(elapsedDurations[1]) * time.Minute
+	}
+	if len(elapsedDurations) > 2 {
+		elapsed += time.Duration(elapsedDurations[2]) * time.Hour
+	}
+	if len(elapsedDurations) > 3 {
+		elapsed += time.Duration(elapsedDurations[3]) * time.Hour * 24
+	}
+
+	start := time.Now().Add(-elapsed)
+	return start.Unix() * 1000, nil
 }
 func (p *Process) Cwd() (string, error) {
 	return "", common.ErrNotImplementedError

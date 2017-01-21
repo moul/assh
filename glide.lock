@@ -1,10 +1,10 @@
-hash: 8281cf015a53a23b35321e80207da975eb4cdec6fdcbd479691d0a45d86e39b7
-updated: 2017-01-15T11:13:04.746141574+01:00
+hash: aec675fc4428e70de14f6436b259ae34adf78b246d8dd326116fc94ec135015c
+updated: 2017-01-21T19:18:10.141435731+01:00
 imports:
 - name: github.com/aokoli/goutils
   version: 9c37978a95bd5c709a15883b6242714ea6709e64
 - name: github.com/awalterschulze/gographviz
-  version: 224d2284f4a707f4897baa9103580b7657c898fd
+  version: 057e6a5e9343c1e85264a73798ca7c7a197c8b69
   subpackages:
   - ast
   - errors
@@ -16,13 +16,13 @@ imports:
 - name: github.com/deckarep/gosx-notifier
   version: 9daaf8a4715ebe4daf300036644762fe27d3aded
 - name: github.com/docker/docker
-  version: 24c4226dc7675e114463654f138e00a229b73a02
+  version: 7a97705b52e7f5c65d31870579cb1dcc09506d89
   subpackages:
   - api/types/strslice
 - name: github.com/docker/go-units
   version: e30f1e79f3cd72542f2026ceec18d3bd67ab859c
 - name: github.com/docker/libcompose
-  version: 7c59e343cd9d1f3f5577b5bfb71f6486beb4c006
+  version: f12d14623f73a0ca0d7fc37253a99165ae48d39f
   subpackages:
   - yaml
 - name: github.com/dustin/go-humanize
@@ -30,31 +30,25 @@ imports:
 - name: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
 - name: github.com/go-ole/go-ole
-  version: 572eabb84c424e76a0d39d31510dd7dfd62f70b2
+  version: 5e9c030faf78847db7aa77e3661b9cc449de29b7
   subpackages:
   - oleutil
-- name: github.com/gopherjs/gopherjs
-  version: 19e100e9652485a76176bc5fd2669f57d3a2743c
-  subpackages:
-  - js
 - name: github.com/guelfey/go.dbus
   version: f6a3a2366cc39b8479cadc499d3c735fb10fbdda
 - name: github.com/haklop/gnotifier
   version: 0de36badf60155d5953373ed432982b20c62fb91
-- name: github.com/jtolds/gls
-  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
 - name: github.com/Masterminds/sprig
   version: 69011c0cd9b4d2e0733c4d9e2c8e2a5a0d0a2f2f
 - name: github.com/mattn/go-zglob
-  version: 1783ae1a9f7ff3a79240e8c249d8b575d70a6528
+  version: 7a58d52636c9498e9d6b41a3a19e9891388c559b
   subpackages:
   - fastwalk
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
 - name: github.com/satori/go.uuid
-  version: b061729afc07e77a8aa4fad0a2fd840958f1942a
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/shirou/gopsutil
-  version: f8c7af556592720f3dfc7098ca55953261c0f02a
+  version: 1123132e5ad392485dbd16e0f09a0db8c963a2ab
   subpackages:
   - cpu
   - host
@@ -63,36 +57,42 @@ imports:
   - net
   - process
 - name: github.com/shirou/w32
-  version: 3c9377fc6748f222729a8270fe2775d149a249ad
+  version: bb4de0191aa41b5507caa14b0650cdbddcd9280b
 - name: github.com/Sirupsen/logrus
-  version: cd7d1bbe41066b6c1f19780f895901052150a575
+  version: 61e43dc76f7ee59a82bdf3d71033dc12bea4c77d
+- name: github.com/StackExchange/wmi
+  version: e54cbda6595d7293a7a468ccf9525f6bc8887f99
+- name: github.com/urfave/cli
+  version: f1be59ff3d239f0942b201619030d302bce912cc
+- name: golang.org/x/crypto
+  version: b8a2a83acfe6e6770b75de42d5ff4c67596675c0
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/net
+  version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
+  subpackages:
+  - context
+- name: golang.org/x/sys
+  version: d75a52659825e75fff6158388dddc6a5b04f9ba5
+  subpackages:
+  - unix
+- name: gopkg.in/yaml.v2
+  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
+testImports:
+- name: github.com/gopherjs/gopherjs
+  version: e768d48ae19f4fd2452fe7cd6b3409d9cb7dc296
+  subpackages:
+  - js
+- name: github.com/jtolds/gls
+  version: bb0351aa7eb6f322f32667d51375f26a2bca6628
 - name: github.com/smartystreets/assertions
-  version: 40711f7748186bbf9c99977cd89f21ce1a229447
+  version: 26acb9229f421449ac63d014995b282d59261a8b
   subpackages:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: cc5d85f4f15bd2163abf0fe6e6753356dde72aa2
+  version: 3bd662eac601ad6436e64776af2e112069eb2edc
   subpackages:
   - convey
   - convey/gotest
   - convey/reporting
-- name: github.com/StackExchange/wmi
-  version: f3e2bae1e0cb5aef83e319133eabfee30013a4a5
-- name: github.com/urfave/cli
-  version: 11c134509d89c2018675f369955218a180dc7428
-- name: golang.org/x/crypto
-  version: 2f8be38b9a7533b8763d48273737ff6e90428a96
-  subpackages:
-  - ssh/terminal
-- name: golang.org/x/net
-  version: cb0ed7acc4f717d79a358093419e5a7da09b8b45
-  subpackages:
-  - context
-- name: golang.org/x/sys
-  version: f64b50fbea64174967a8882830d621a18ee1548e
-  subpackages:
-  - unix
-- name: gopkg.in/yaml.v2
-  version: 7ad95dd0798a40da1ccdff6dff35fd177b5edf40
-testImports: []

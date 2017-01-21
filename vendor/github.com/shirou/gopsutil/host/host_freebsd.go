@@ -15,6 +15,7 @@ import (
 	"unsafe"
 
 	"github.com/shirou/gopsutil/internal/common"
+	"github.com/shirou/gopsutil/process"
 )
 
 const (
@@ -39,7 +40,9 @@ func Info() (*InfoStat, error) {
 		ret.Platform = platform
 		ret.PlatformFamily = family
 		ret.PlatformVersion = version
+		ret.KernelVersion = version
 	}
+
 	system, role, err := Virtualization()
 	if err == nil {
 		ret.VirtualizationSystem = system
@@ -52,10 +55,23 @@ func Info() (*InfoStat, error) {
 		ret.Uptime = uptime(boot)
 	}
 
+	procs, err := process.Pids()
+	if err == nil {
+		ret.Procs = uint64(len(procs))
+	}
+
+	values, err := common.DoSysctrl("kern.hostuuid")
+	if err == nil && len(values) == 1 && values[0] != "" {
+		ret.HostID = values[0]
+	}
+
 	return ret, nil
 }
 
 func BootTime() (uint64, error) {
+	if cachedBootTime != 0 {
+		return cachedBootTime, nil
+	}
 	values, err := common.DoSysctrl("kern.boottime")
 	if err != nil {
 		return 0, err
@@ -67,6 +83,7 @@ func BootTime() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	cachedBootTime = boottime
 
 	return boottime, nil
 }
@@ -136,12 +153,12 @@ func PlatformInformation() (string, string, string, error) {
 		return "", "", "", err
 	}
 
-	out, err := exec.Command(uname, "-s").Output()
+	out, err := invoke.Command(uname, "-s")
 	if err == nil {
 		platform = strings.ToLower(strings.TrimSpace(string(out)))
 	}
 
-	out, err = exec.Command(uname, "-r").Output()
+	out, err = invoke.Command(uname, "-r")
 	if err == nil {
 		version = strings.ToLower(strings.TrimSpace(string(out)))
 	}

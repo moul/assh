@@ -214,6 +214,33 @@ func TestEasyFsm2(t *testing.T) {
 }`)
 }
 
+func TestSubSubGraph(t *testing.T) {
+	anal(t, `
+	digraph G {
+    Ga->Gb;
+    sA->sB;
+    ssA->ssB;
+    
+     subgraph clusterone {
+        fillcolor=red;
+        style=filled;
+        sA;
+        sB;
+        
+        subgraph clustertwo {
+            fillcolor=blue;
+            style=filled;
+            ssA;
+        	ssB;
+       }
+    }
+    
+    Ga;
+    Gb;
+}
+`)
+}
+
 func TestEmptyAttrList(t *testing.T) {
 	anal(t, `digraph g { edge [ ] }`)
 }

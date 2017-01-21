@@ -24,7 +24,7 @@ import (
 // traverseLink is a sentinel error for fastWalk, similar to filepath.SkipDir.
 var traverseLink = errors.New("traverse symlink, assuming target is a directory")
 
-// fastWalk walks the file tree rooted at root, calling walkFn for
+// FastWalk walks the file tree rooted at root, calling walkFn for
 // each file or directory in the tree, including root.
 //
 // If fastWalk returns filepath.SkipDir, the directory is skipped.

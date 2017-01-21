@@ -479,11 +479,11 @@ func (c *funcContext) translateExpr(expr ast.Expr) *expression {
 			case e.Low == nil && e.High == nil:
 				return c.translateExpr(e.X)
 			case e.Low == nil:
-				return c.formatExpr("%e.substring(0, %f)", e.X, e.High)
+				return c.formatExpr("$substring(%e, 0, %f)", e.X, e.High)
 			case e.High == nil:
-				return c.formatExpr("%e.substring(%f)", e.X, e.Low)
+				return c.formatExpr("$substring(%e, %f)", e.X, e.Low)
 			default:
-				return c.formatExpr("%e.substring(%f, %f)", e.X, e.Low, e.High)
+				return c.formatExpr("$substring(%e, %f, %f)", e.X, e.Low, e.High)
 			}
 		}
 		slice := c.translateConversionToSlice(e.X, exprType)
@@ -566,8 +566,6 @@ func (c *funcContext) translateExpr(expr ast.Expr) *expression {
 						return c.formatExpr("debugger")
 					case "InternalObject":
 						return c.translateExpr(e.Args[0])
-					case "MakeFunc":
-						return c.formatExpr("(function() { return $externalize(%e(this, new ($sliceType($jsObjectPtr))($global.Array.prototype.slice.call(arguments, []))), $emptyInterface); })", e.Args[0])
 					}
 				}
 				return c.translateCall(e, sig, c.translateExpr(f))
@@ -591,10 +589,10 @@ func (c *funcContext) translateExpr(expr ast.Expr) *expression {
 			switch sel.Kind() {
 			case types.MethodVal:
 				recv := c.makeReceiver(f)
-
-				if typesutil.IsJsPackage(sel.Obj().Pkg()) {
+				declaredFuncRecv := sel.Obj().(*types.Func).Type().(*types.Signature).Recv().Type()
+				if typesutil.IsJsObject(declaredFuncRecv) {
 					globalRef := func(id string) string {
-						if recv.String() == "$global" && id[0] == '$' {
+						if recv.String() == "$global" && id[0] == '$' && len(id) > 1 {
 							return id
 						}
 						return recv.String() + "." + id
@@ -1068,11 +1066,14 @@ func (c *funcContext) translateConversion(expr ast.Expr, desiredType types.Type)
 		}
 
 	case *types.Pointer:
-		if s, isStruct := t.Elem().Underlying().(*types.Struct); isStruct {
+		switch u := t.Elem().Underlying().(type) {
+		case *types.Array:
+			return c.translateExpr(expr)
+		case *types.Struct:
 			if c.p.Pkg.Path() == "syscall" && types.Identical(exprType, types.Typ[types.UnsafePointer]) {
 				array := c.newVariable("_array")
 				target := c.newVariable("_struct")
-				return c.formatExpr("(%s = %e, %s = %e, %s, %s)", array, expr, target, c.zeroValue(t.Elem()), c.loadStruct(array, target, s), target)
+				return c.formatExpr("(%s = %e, %s = %e, %s, %s)", array, expr, target, c.zeroValue(t.Elem()), c.loadStruct(array, target, u), target)
 			}
 			return c.formatExpr("$pointerOfStructConversion(%e, %s)", expr, c.typeName(t))
 		}

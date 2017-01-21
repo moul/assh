@@ -15,6 +15,7 @@ import (
 	"unsafe"
 
 	"github.com/shirou/gopsutil/internal/common"
+	"github.com/shirou/gopsutil/process"
 )
 
 // from utmpx.h
@@ -31,12 +32,14 @@ func Info() (*InfoStat, error) {
 		ret.Hostname = hostname
 	}
 
-	platform, family, version, err := PlatformInformation()
+	platform, family, pver, version, err := PlatformInformation()
 	if err == nil {
 		ret.Platform = platform
 		ret.PlatformFamily = family
-		ret.PlatformVersion = version
+		ret.PlatformVersion = pver
+		ret.KernelVersion = version
 	}
+
 	system, role, err := Virtualization()
 	if err == nil {
 		ret.VirtualizationSystem = system
@@ -49,10 +52,23 @@ func Info() (*InfoStat, error) {
 		ret.Uptime = uptime(boot)
 	}
 
+	procs, err := process.Pids()
+	if err == nil {
+		ret.Procs = uint64(len(procs))
+	}
+
+	values, err := common.DoSysctrl("kern.uuid")
+	if err == nil && len(values) == 1 && values[0] != "" {
+		ret.HostID = values[0]
+	}
+
 	return ret, nil
 }
 
 func BootTime() (uint64, error) {
+	if cachedBootTime != 0 {
+		return cachedBootTime, nil
+	}
 	values, err := common.DoSysctrl("kern.boottime")
 	if err != nil {
 		return 0, err
@@ -63,8 +79,9 @@ func BootTime() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	cachedBootTime = uint64(boottime)
 
-	return uint64(boottime), nil
+	return cachedBootTime, nil
 }
 
 func uptime(boot uint64) uint64 {
@@ -122,26 +139,37 @@ func Users() ([]UserStat, error) {
 
 }
 
-func PlatformInformation() (string, string, string, error) {
+func PlatformInformation() (string, string, string, string, error) {
 	platform := ""
 	family := ""
 	version := ""
+	pver := ""
 
+	sw_vers, err := exec.LookPath("sw_vers")
+	if err != nil {
+		return "", "", "", "", err
+	}
 	uname, err := exec.LookPath("uname")
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", "", err
 	}
-	out, err := exec.Command(uname, "-s").Output()
+
+	out, err := invoke.Command(uname, "-s")
 	if err == nil {
 		platform = strings.ToLower(strings.TrimSpace(string(out)))
 	}
 
-	out, err = exec.Command(uname, "-r").Output()
+	out, err = invoke.Command(sw_vers, "-productVersion")
+	if err == nil {
+		pver = strings.ToLower(strings.TrimSpace(string(out)))
+	}
+
+	out, err = invoke.Command(uname, "-r")
 	if err == nil {
 		version = strings.ToLower(strings.TrimSpace(string(out)))
 	}
 
-	return platform, family, version, nil
+	return platform, family, pver, version, nil
 }
 
 func Virtualization() (string, string, error) {

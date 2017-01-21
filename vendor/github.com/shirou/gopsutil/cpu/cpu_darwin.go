@@ -36,7 +36,7 @@ func Info() ([]InfoStat, error) {
 	if err != nil {
 		return ret, err
 	}
-	out, err := exec.Command(sysctl, "machdep.cpu").Output()
+	out, err := invoke.Command(sysctl, "machdep.cpu")
 	if err != nil {
 		return ret, err
 	}
@@ -90,17 +90,17 @@ func Info() ([]InfoStat, error) {
 
 	// Use the rated frequency of the CPU. This is a static value and does not
 	// account for low power or Turbo Boost modes.
-	out, err = exec.Command(sysctl, "hw.cpufrequency").Output()
+	out, err = invoke.Command(sysctl, "hw.cpufrequency")
 	if err != nil {
 		return ret, err
 	}
 
 	values := strings.Fields(string(out))
-	mhz, err := strconv.ParseFloat(values[1], 64)
+	hz, err := strconv.ParseFloat(values[1], 64)
 	if err != nil {
 		return ret, err
 	}
-	c.Mhz = mhz / 1000000.0
+	c.Mhz = hz / 1000000.0
 
 	return append(ret, c), nil
 }

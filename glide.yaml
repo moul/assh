@@ -1,67 +1,30 @@
 package: github.com/moul/advanced-ssh-config
 import:
+- package: github.com/Masterminds/sprig
 - package: github.com/Sirupsen/logrus
-  version: cd7d1bbe41066b6c1f19780f895901052150a575
-- package: github.com/StackExchange/wmi
-  version: f3e2bae1e0cb5aef83e319133eabfee30013a4a5
+- package: github.com/awalterschulze/gographviz
 - package: github.com/bugsnag/osext
-  version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
-- package: github.com/urfave/cli
-  version: 11c134509d89c2018675f369955218a180dc7428
-- package: github.com/flynn/go-shlex
-  version: 3f9db97f856818214da2e1057f8ad84803971cff
-- package: github.com/go-ole/go-ole
-  version: 572eabb84c424e76a0d39d31510dd7dfd62f70b2
-  subpackages:
-  - oleutil
-- package: github.com/gopherjs/gopherjs
-  version: 19e100e9652485a76176bc5fd2669f57d3a2743c
-  subpackages:
-  - js
-- package: github.com/jtolds/gls
-  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
-- package: github.com/shirou/gopsutil
-  version: f8c7af556592720f3dfc7098ca55953261c0f02a
-  subpackages:
-  - cpu
-  - host
-  - internal/common
-  - mem
-  - net
-  - process
-- package: github.com/shirou/w32
-  version: 3c9377fc6748f222729a8270fe2775d149a249ad
-- package: github.com/smartystreets/assertions
-  version: 40711f7748186bbf9c99977cd89f21ce1a229447
-  subpackages:
-  - internal/go-render/render
-  - internal/oglematchers
-- package: github.com/smartystreets/goconvey
-  version: cc5d85f4f15bd2163abf0fe6e6753356dde72aa2
-  subpackages:
-  - convey
-  - convey/gotest
-  - convey/reporting
-- package: golang.org/x/net
-  version: cb0ed7acc4f717d79a358093419e5a7da09b8b45
-  subpackages:
-  - context
-- package: golang.org/x/sys
-  version: f64b50fbea64174967a8882830d621a18ee1548e
-  subpackages:
-  - unix
-- package: gopkg.in/yaml.v2
-  version: 7ad95dd0798a40da1ccdff6dff35fd177b5edf40
-- package: github.com/mgutz/ansi
-- package: golang.org/x/crypto
-  subpackages:
-  - ssh/terminal
-- package: github.com/mattn/go-zglob
 - package: github.com/docker/go-units
-- package: github.com/deckarep/gosx-notifier
-- package: github.com/haklop/gnotifier
-- package: github.com/guelfey/go.dbus
-- package: github.com/dustin/go-humanize
 - package: github.com/docker/libcompose
   subpackages:
   - yaml
+- package: github.com/dustin/go-humanize
+- package: github.com/flynn/go-shlex
+- package: github.com/haklop/gnotifier
+- package: github.com/mattn/go-zglob
+- package: github.com/mgutz/ansi
+- package: github.com/shirou/gopsutil
+  subpackages:
+  - process
+- package: github.com/urfave/cli
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh/terminal
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: gopkg.in/yaml.v2
+testImport:
+- package: github.com/smartystreets/goconvey
+  subpackages:
+  - convey
