@@ -8,9 +8,11 @@ import (
 	"go/scanner"
 	"go/token"
 	"go/types"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,6 +20,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/gopherjs/gopherjs/compiler"
+	"github.com/gopherjs/gopherjs/compiler/natives"
 	"github.com/kardianos/osext"
 	"github.com/neelance/sourcemap"
 )
@@ -76,6 +79,11 @@ func importWithSrcDir(path string, srcDir string, mode build.ImportMode, install
 		return nil, err
 	}
 
+	// TODO: Resolve issue #415 and remove this temporary workaround.
+	if strings.HasSuffix(pkg.ImportPath, "/vendor/github.com/gopherjs/gopherjs/js") {
+		return nil, fmt.Errorf("vendoring github.com/gopherjs/gopherjs/js package is not supported, see https://github.com/gopherjs/gopherjs/issues/415")
+	}
+
 	switch path {
 	case "runtime":
 		pkg.GoFiles = []string{"error.go"}
@@ -118,8 +126,8 @@ func importWithSrcDir(path string, srcDir string, mode build.ImportMode, install
 
 // ImportDir is like Import but processes the Go package found in the named
 // directory.
-func ImportDir(dir string, mode build.ImportMode) (*PackageData, error) {
-	pkg, err := build.ImportDir(dir, mode)
+func ImportDir(dir string, mode build.ImportMode, installSuffix string, buildTags []string) (*PackageData, error) {
+	pkg, err := NewBuildContext(installSuffix, buildTags).ImportDir(dir, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +140,18 @@ func ImportDir(dir string, mode build.ImportMode) (*PackageData, error) {
 	return &PackageData{Package: pkg, JSFiles: jsFiles}, nil
 }
 
-// parse parses and returns all .go files of given pkg.
+// parseAndAugment parses and returns all .go files of given pkg.
 // Standard Go library packages are augmented with files in compiler/natives folder.
-// isTest is true when package is being built for running tests.
-func parse(pkg *build.Package, isTest bool, fileSet *token.FileSet) ([]*ast.File, error) {
+// If isTest is true and pkg.ImportPath has no _test suffix, package is built for running internal tests.
+// If isTest is true and pkg.ImportPath has _test suffix, package is built for running external tests.
+//
+// The native packages are augmented by the contents of natives.FS in the following way.
+// The file names do not matter except the usual `_test` suffix. The files for
+// native overrides get added to the package (even if they have the same name
+// as an existing file from the standard library). For all identifiers that exist
+// in the original AND the overrides, the original identifier in the AST gets
+// replaced by `_`. New identifiers that don't exist in original package get added.
+func parseAndAugment(pkg *build.Package, isTest bool, fileSet *token.FileSet) ([]*ast.File, error) {
 	var files []*ast.File
 	replacedDeclNames := make(map[string]bool)
 	funcName := func(d *ast.FuncDecl) string {
@@ -153,7 +169,48 @@ func parse(pkg *build.Package, isTest bool, fileSet *token.FileSet) ([]*ast.File
 	if isXTest {
 		importPath = importPath[:len(importPath)-5]
 	}
-	if nativesPkg, err := Import("github.com/gopherjs/gopherjs/compiler/natives/"+importPath, 0, "", nil); err == nil {
+
+	nativesContext := &build.Context{
+		GOROOT:   "/",
+		GOOS:     build.Default.GOOS,
+		GOARCH:   "js",
+		Compiler: "gc",
+		JoinPath: path.Join,
+		SplitPathList: func(list string) []string {
+			if list == "" {
+				return nil
+			}
+			return strings.Split(list, "/")
+		},
+		IsAbsPath: path.IsAbs,
+		IsDir: func(name string) bool {
+			dir, err := natives.FS.Open(name)
+			if err != nil {
+				return false
+			}
+			defer dir.Close()
+			info, err := dir.Stat()
+			if err != nil {
+				return false
+			}
+			return info.IsDir()
+		},
+		HasSubdir: func(root, name string) (rel string, ok bool) {
+			panic("not implemented")
+		},
+		ReadDir: func(name string) (fi []os.FileInfo, err error) {
+			dir, err := natives.FS.Open(name)
+			if err != nil {
+				return nil, err
+			}
+			defer dir.Close()
+			return dir.Readdir(0)
+		},
+		OpenFile: func(name string) (r io.ReadCloser, err error) {
+			return natives.FS.Open(name)
+		},
+	}
+	if nativesPkg, err := nativesContext.Import(importPath, "", 0); err == nil {
 		names := nativesPkg.GoFiles
 		if isTest {
 			names = append(names, nativesPkg.TestGoFiles...)
@@ -162,10 +219,16 @@ func parse(pkg *build.Package, isTest bool, fileSet *token.FileSet) ([]*ast.File
 			names = nativesPkg.XTestGoFiles
 		}
 		for _, name := range names {
-			file, err := parser.ParseFile(fileSet, filepath.Join(nativesPkg.Dir, name), nil, parser.ParseComments)
+			fullPath := path.Join(nativesPkg.Dir, name)
+			r, err := nativesContext.OpenFile(fullPath)
 			if err != nil {
 				panic(err)
 			}
+			file, err := parser.ParseFile(fileSet, fullPath, r, parser.ParseComments)
+			if err != nil {
+				panic(err)
+			}
+			r.Close()
 			for _, decl := range file.Decls {
 				switch d := decl.(type) {
 				case *ast.FuncDecl:
@@ -264,15 +327,16 @@ func parse(pkg *build.Package, isTest bool, fileSet *token.FileSet) ([]*ast.File
 }
 
 type Options struct {
-	GOROOT        string
-	GOPATH        string
-	Verbose       bool
-	Quiet         bool
-	Watch         bool
-	CreateMapFile bool
-	Minify        bool
-	Color         bool
-	BuildTags     []string
+	GOROOT         string
+	GOPATH         string
+	Verbose        bool
+	Quiet          bool
+	Watch          bool
+	CreateMapFile  bool
+	MapToLocalDisk bool
+	Minify         bool
+	Color          bool
+	BuildTags      []string
 }
 
 func (o *Options) PrintError(format string, a ...interface{}) {
@@ -455,7 +519,7 @@ func (s *Session) BuildPackage(pkg *PackageData) (*compiler.Archive, error) {
 			if importedPkgPath == "unsafe" || ignored {
 				continue
 			}
-			pkg, _, err := s.buildImportPathWithSrcDir(importedPkgPath, "")
+			pkg, _, err := s.buildImportPathWithSrcDir(importedPkgPath, pkg.Dir)
 			if err != nil {
 				return nil, err
 			}
@@ -500,7 +564,7 @@ func (s *Session) BuildPackage(pkg *PackageData) (*compiler.Archive, error) {
 	}
 
 	fileSet := token.NewFileSet()
-	files, err := parse(pkg.Package, pkg.IsTest, fileSet)
+	files, err := parseAndAugment(pkg.Package, pkg.IsTest, fileSet)
 	if err != nil {
 		return nil, err
 	}
@@ -598,7 +662,7 @@ func (s *Session) WriteCommandPackage(archive *compiler.Archive, pkgObj string) 
 			fmt.Fprintf(codeFile, "//# sourceMappingURL=%s.map\n", filepath.Base(pkgObj))
 		}()
 
-		sourceMapFilter.MappingCallback = NewMappingCallback(m, s.options.GOROOT, s.options.GOPATH)
+		sourceMapFilter.MappingCallback = NewMappingCallback(m, s.options.GOROOT, s.options.GOPATH, s.options.MapToLocalDisk)
 	}
 
 	deps, err := compiler.ImportDependencies(archive, func(path string) (*compiler.Archive, error) {
@@ -614,14 +678,18 @@ func (s *Session) WriteCommandPackage(archive *compiler.Archive, pkgObj string) 
 	return compiler.WriteProgramCode(deps, sourceMapFilter)
 }
 
-func NewMappingCallback(m *sourcemap.Map, goroot, gopath string) func(generatedLine, generatedColumn int, originalPos token.Position) {
+func NewMappingCallback(m *sourcemap.Map, goroot, gopath string, localMap bool) func(generatedLine, generatedColumn int, originalPos token.Position) {
 	return func(generatedLine, generatedColumn int, originalPos token.Position) {
 		if !originalPos.IsValid() {
 			m.AddMapping(&sourcemap.Mapping{GeneratedLine: generatedLine, GeneratedColumn: generatedColumn})
 			return
 		}
+
 		file := originalPos.Filename
+
 		switch hasGopathPrefix, prefixLen := hasGopathPrefix(file, gopath); {
+		case localMap:
+			// no-op:  keep file as-is
 		case hasGopathPrefix:
 			file = filepath.ToSlash(file[prefixLen+4:])
 		case strings.HasPrefix(file, goroot):
@@ -629,6 +697,7 @@ func NewMappingCallback(m *sourcemap.Map, goroot, gopath string) func(generatedL
 		default:
 			file = filepath.Base(file)
 		}
+
 		m.AddMapping(&sourcemap.Mapping{GeneratedLine: generatedLine, GeneratedColumn: generatedColumn, OriginalFile: file, OriginalLine: originalPos.Line, OriginalColumn: originalPos.Column})
 	}
 }

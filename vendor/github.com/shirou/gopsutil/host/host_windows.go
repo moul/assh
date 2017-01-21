@@ -50,15 +50,13 @@ func Info() (*InfoStat, error) {
 	boot, err := BootTime()
 	if err == nil {
 		ret.BootTime = boot
-		ret.Uptime = uptime(boot)
+		ret.Uptime, _ = Uptime()
 	}
 
 	procs, err := process.Pids()
-	if err != nil {
-		return ret, err
+	if err == nil {
+		ret.Procs = uint64(len(procs))
 	}
-
-	ret.Procs = uint64(len(procs))
 
 	return ret, nil
 }
@@ -76,7 +74,7 @@ func GetOSInfo() (Win32_OperatingSystem, error) {
 	return dst[0], nil
 }
 
-func BootTime() (uint64, error) {
+func Uptime() (uint64, error) {
 	if osInfo == nil {
 		_, err := GetOSInfo()
 		if err != nil {
@@ -88,16 +86,20 @@ func BootTime() (uint64, error) {
 	return uint64(now.Sub(t).Seconds()), nil
 }
 
-func uptime(boot uint64) uint64 {
-	return uint64(time.Now().Unix()) - boot
+func bootTime(up uint64) uint64 {
+	return uint64(time.Now().Unix()) - up
 }
 
-func Uptime() (uint64, error) {
-	boot, err := BootTime()
+func BootTime() (uint64, error) {
+	if cachedBootTime != 0 {
+		return cachedBootTime, nil
+	}
+	up, err := Uptime()
 	if err != nil {
 		return 0, err
 	}
-	return uptime(boot), nil
+	cachedBootTime = bootTime(up)
+	return cachedBootTime, nil
 }
 
 func PlatformInformation() (platform string, family string, version string, err error) {

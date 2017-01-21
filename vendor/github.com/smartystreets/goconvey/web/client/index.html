@@ -60,7 +60,7 @@
 				<hr class="clear">
 
 
-				<div class="expandable settings">
+				<div class="expandable settings settings-general">
 					<div class="container">
 						<div class="setting">
 							<div class="setting-meta">
@@ -90,8 +90,9 @@
 							</div>
 							<div class="setting-val">
 								<ol class="enum" id="show-debug-output">
-									<li data-show-debug-output="show">Show</li>
-									<li data-show-debug-output="hide">Hide</li>
+									<li data-show-debug-output="show">All</li>
+									<li data-show-debug-output="fail">Failed</li>
+									<li data-show-debug-output="hide">None</li>
 								</ol>
 							</div>
 						</div>
@@ -117,6 +118,34 @@
 							<div class="summary">{{overall.status.text|upcase}}<br>{{overall.passed}}/{{overall.assertions}} pass<br>{{overall.failures}} fail, {{overall.skipped}} skip</div>
 						</div>
 					</script>
+				</div>
+
+				<div class="expandable settings settings-notification">
+					<div class="container">
+						<div class="setting">
+							<div class="setting-meta">
+								Notifications
+							</div>
+							<div class="setting-val">
+								<ol class="enum" id="notification">
+									<li data-notification="true">On</li>
+									<li data-notification="false">Off</li>
+								</ol>
+							</div>
+						</div>
+						<div class="setting">
+							<div class="setting-meta">
+								Level
+							</div>
+							<div class="setting-val">
+								<ol class="enum" id="notification-level">
+									<li data-notification-level=".*">Always</li>
+									<li data-notification-level="fail|panic">Fail or Panic</li>
+									<li data-notification-level="ok">Success Only</li>
+								</ol>
+							</div>
+						</div>
+					</div>
 				</div>
 
 

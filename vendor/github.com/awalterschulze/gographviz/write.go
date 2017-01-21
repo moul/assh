@@ -48,7 +48,13 @@ func (this *writer) newSubGraph(name string) *ast.SubGraph {
 	s.StmtList = appendAttrs(s.StmtList, sub.Attrs)
 	children := this.Relations.SortedChildren(name)
 	for _, child := range children {
-		s.StmtList = append(s.StmtList, this.newNodeStmt(child))
+		if this.IsNode(child) {
+			s.StmtList = append(s.StmtList, this.newNodeStmt(child))
+		} else if this.IsSubGraph(child) {
+			s.StmtList = append(s.StmtList, this.newSubGraph(child))
+		} else {
+			panic(fmt.Sprintf("%v is not a node or a subgraph", child))
+		}
 	}
 	return s
 }
@@ -111,7 +117,9 @@ func (this *writer) Write() *ast.Graph {
 	subGraphs := this.SubGraphs.Sorted()
 	for _, s := range subGraphs {
 		if _, ok := this.writtenLocations[s.Name]; !ok {
-			t.StmtList = append(t.StmtList, this.newSubGraph(s.Name))
+			if _, ok := this.Relations.ParentToChildren[this.Name][s.Name]; ok {
+				t.StmtList = append(t.StmtList, this.newSubGraph(s.Name))
+			}
 		}
 	}
 

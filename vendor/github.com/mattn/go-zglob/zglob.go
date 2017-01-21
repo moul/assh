@@ -7,12 +7,14 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/mattn/go-zglob/fastwalk"
 )
 
 var (
 	envre = regexp.MustCompile(`^(\$[a-zA-Z][a-zA-Z0-9_]+|\$\([a-zA-Z][a-zA-Z0-9_]+\))$`)
+	mu    sync.Mutex
 )
 
 type zenv struct {
@@ -142,7 +144,9 @@ func Glob(pattern string) ([]string, error) {
 			if relative && filepath.IsAbs(path) {
 				path = path[len(zenv.root)+1:]
 			}
+			mu.Lock()
 			matches = append(matches, path)
+			mu.Unlock()
 		}
 		return nil
 	})

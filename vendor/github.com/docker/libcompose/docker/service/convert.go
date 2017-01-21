@@ -193,6 +193,7 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		CpusetCpus:       c.CPUSet,
 		Ulimits:          ulimits,
 		Devices:          deviceMappings,
+		OomKillDisable:   &c.OomKillDisable,
 	}
 
 	networkMode := c.NetworkMode

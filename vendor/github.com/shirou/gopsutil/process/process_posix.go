@@ -1,4 +1,4 @@
-// +build linux freebsd darwin
+// +build linux freebsd openbsd darwin
 
 package process
 
@@ -6,9 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/shirou/gopsutil/internal/common"
 )
 
 // POSIX
@@ -29,15 +32,22 @@ func getTerminalMap() (map[uint64]string, error) {
 		}
 	}
 
+	var ptsnames []string
 	ptsd, err := os.Open("/dev/pts")
 	if err != nil {
-		return nil, err
+		ptsnames, _ = filepath.Glob("/dev/ttyp*")
+		if ptsnames == nil {
+			return nil, err
+		}
 	}
-	defer ptsd.Close()
-
-	ptsnames, err := ptsd.Readdirnames(-1)
-	for _, ptsname := range ptsnames {
-		termfiles = append(termfiles, "/dev/pts/"+ptsname)
+	if ptsnames == nil {
+		defer ptsd.Close()
+		ptsnames, err = ptsd.Readdirnames(-1)
+		for _, ptsname := range ptsnames {
+			termfiles = append(termfiles, "/dev/pts/"+ptsname)
+		}
+	} else {
+		termfiles = ptsnames
 	}
 
 	for _, name := range termfiles {
@@ -72,7 +82,10 @@ func (p *Process) SendSignal(sig syscall.Signal) error {
 	}
 	cmd := exec.Command(kill, "-s", sigAsStr, strconv.Itoa(int(p.Pid)))
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	err = common.WaitTimeout(cmd, common.Timeout)
 	if err != nil {
 		return err
 	}

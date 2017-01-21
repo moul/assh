@@ -2,7 +2,18 @@ package host
 
 import (
 	"encoding/json"
+
+	"github.com/shirou/gopsutil/internal/common"
 )
+
+var (
+	invoke         common.Invoker
+	cachedBootTime = uint64(0)
+)
+
+func init() {
+	invoke = common.Invoke{}
+}
 
 // A HostInfoStat describes the host status.
 // This is not in the psutil but it useful.
@@ -13,11 +24,12 @@ type InfoStat struct {
 	Procs                uint64 `json:"procs"`           // number of processes
 	OS                   string `json:"os"`              // ex: freebsd, linux
 	Platform             string `json:"platform"`        // ex: ubuntu, linuxmint
-	PlatformFamily       string `json:"platformFamily"` // ex: debian, rhel
-	PlatformVersion      string `json:"platformVersion"`
+	PlatformFamily       string `json:"platformFamily"`  // ex: debian, rhel
+	PlatformVersion      string `json:"platformVersion"` // version of the complete OS
+	KernelVersion        string `json:"kernelVersion"`   // version of the OS kernel (if available)
 	VirtualizationSystem string `json:"virtualizationSystem"`
 	VirtualizationRole   string `json:"virtualizationRole"` // guest or host
-
+	HostID               string `json:"hostid"`             // ex: uuid
 }
 
 type UserStat struct {

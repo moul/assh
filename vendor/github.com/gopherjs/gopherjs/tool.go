@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/build"
+	"go/doc"
 	"go/parser"
 	"go/scanner"
 	"go/token"
@@ -18,11 +20,14 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
 	"text/template"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	gbuild "github.com/gopherjs/gopherjs/build"
 	"github.com/gopherjs/gopherjs/compiler"
@@ -70,6 +75,9 @@ func main() {
 	tags := pflag.String("tags", "", "a list of build tags to consider satisfied during the build")
 	flagTags := pflag.Lookup("tags")
 
+	pflag.BoolVar(&options.MapToLocalDisk, "localmap", false, "use local paths for sourcemap")
+	flagLocalMap := pflag.Lookup("localmap")
+
 	cmdBuild := &cobra.Command{
 		Use:   "build [packages]",
 		Short: "compile packages and dependencies",
@@ -81,6 +89,7 @@ func main() {
 	cmdBuild.Flags().AddFlag(flagMinify)
 	cmdBuild.Flags().AddFlag(flagColor)
 	cmdBuild.Flags().AddFlag(flagTags)
+	cmdBuild.Flags().AddFlag(flagLocalMap)
 	cmdBuild.Run = func(cmd *cobra.Command, args []string) {
 		options.BuildTags = strings.Fields(*tags)
 		for {
@@ -157,6 +166,7 @@ func main() {
 	cmdInstall.Flags().AddFlag(flagMinify)
 	cmdInstall.Flags().AddFlag(flagColor)
 	cmdInstall.Flags().AddFlag(flagTags)
+	cmdInstall.Flags().AddFlag(flagLocalMap)
 	cmdInstall.Run = func(cmd *cobra.Command, args []string) {
 		options.BuildTags = strings.Fields(*tags)
 		for {
@@ -219,6 +229,25 @@ func main() {
 		}
 	}
 
+	cmdDoc := &cobra.Command{
+		Use:   "doc [arguments]",
+		Short: "display documentation for the requested, package, method or symbol",
+	}
+	cmdDoc.Run = func(cmd *cobra.Command, args []string) {
+		exitCode := handleError(func() error {
+			goDoc := exec.Command("go", append([]string{"doc"}, args...)...)
+			goDoc.Stdout = os.Stdout
+			goDoc.Stderr = os.Stderr
+			goDoc.Env = append(os.Environ(), "GOARCH=js")
+			if err := goDoc.Run(); err != nil {
+				return err
+			}
+			return nil
+		}, options, nil)
+
+		os.Exit(exitCode)
+	}
+
 	cmdGet := &cobra.Command{
 		Use:   "get [packages]",
 		Short: "download and install packages and dependencies",
@@ -229,6 +258,7 @@ func main() {
 	cmdGet.Flags().AddFlag(flagMinify)
 	cmdGet.Flags().AddFlag(flagColor)
 	cmdGet.Flags().AddFlag(flagTags)
+	cmdGet.Flags().AddFlag(flagLocalMap)
 	cmdGet.Run = cmdInstall.Run
 
 	cmdRun := &cobra.Command{
@@ -283,13 +313,16 @@ func main() {
 	outputFilename := cmdTest.Flags().StringP("output", "o", "", "Compile the test binary to the named file. The test still runs (unless -c is specified).")
 	cmdTest.Flags().AddFlag(flagMinify)
 	cmdTest.Flags().AddFlag(flagColor)
+	cmdTest.Flags().AddFlag(flagTags)
+	cmdTest.Flags().AddFlag(flagLocalMap)
 	cmdTest.Run = func(cmd *cobra.Command, args []string) {
+		options.BuildTags = strings.Fields(*tags)
 		os.Exit(handleError(func() error {
 			pkgs := make([]*gbuild.PackageData, len(args))
 			for i, pkgPath := range args {
 				pkgPath = filepath.ToSlash(pkgPath)
 				var err error
-				pkgs[i], err = gbuild.Import(pkgPath, 0, "", nil)
+				pkgs[i], err = gbuild.Import(pkgPath, 0, "", options.BuildTags)
 				if err != nil {
 					return err
 				}
@@ -306,12 +339,12 @@ func main() {
 					if err != nil {
 						return err
 					}
-					if pkg, err = gbuild.Import(pkgPath, 0, "", nil); err != nil {
+					if pkg, err = gbuild.Import(pkgPath, 0, "", options.BuildTags); err != nil {
 						return err
 					}
 				}
 				if pkg == nil {
-					if pkg, err = gbuild.ImportDir(currentDirectory, 0); err != nil {
+					if pkg, err = gbuild.ImportDir(currentDirectory, 0, "", options.BuildTags); err != nil {
 						return err
 					}
 					pkg.ImportPath = "_" + currentDirectory
@@ -325,24 +358,26 @@ func main() {
 					fmt.Printf("?   \t%s\t[no test files]\n", pkg.ImportPath)
 					continue
 				}
-
 				s := gbuild.NewSession(options)
+
 				tests := &testFuncs{Package: pkg.Package}
 				collectTests := func(testPkg *gbuild.PackageData, testPkgName string, needVar *bool) error {
-					archive, err := s.BuildPackage(testPkg)
+					if testPkgName == "_test" {
+						for _, file := range pkg.TestGoFiles {
+							if err := tests.load(filepath.Join(pkg.Package.Dir, file), testPkgName, &tests.ImportTest, &tests.NeedTest); err != nil {
+								return err
+							}
+						}
+					} else {
+						for _, file := range pkg.XTestGoFiles {
+							if err := tests.load(filepath.Join(pkg.Package.Dir, file), "_xtest", &tests.ImportXtest, &tests.NeedXtest); err != nil {
+								return err
+							}
+						}
+					}
+					_, err := s.BuildPackage(testPkg)
 					if err != nil {
 						return err
-					}
-
-					for _, decl := range archive.Declarations {
-						if strings.HasPrefix(decl.FullName, testPkg.ImportPath+".Test") {
-							tests.Tests = append(tests.Tests, testFunc{Package: testPkgName, Name: decl.FullName[len(testPkg.ImportPath)+1:]})
-							*needVar = true
-						}
-						if strings.HasPrefix(decl.FullName, testPkg.ImportPath+".Benchmark") {
-							tests.Benchmarks = append(tests.Benchmarks, testFunc{Package: testPkgName, Name: decl.FullName[len(testPkg.ImportPath)+1:]})
-							*needVar = true
-						}
 					}
 					return nil
 				}
@@ -457,33 +492,6 @@ func main() {
 		}, options, nil))
 	}
 
-	cmdTool := &cobra.Command{
-		Use:   "tool [command] [args...]",
-		Short: "run specified go tool",
-	}
-	cmdTool.Flags().BoolP("e", "e", false, "")
-	cmdTool.Flags().BoolP("l", "l", false, "")
-	cmdTool.Flags().StringP("o", "o", "", "")
-	cmdTool.Flags().StringP("D", "D", "", "")
-	cmdTool.Flags().StringP("I", "I", "", "")
-	cmdTool.Run = func(cmd *cobra.Command, args []string) {
-		os.Exit(handleError(func() error {
-			if len(args) == 2 {
-				switch args[0][1] {
-				case 'g':
-					basename := filepath.Base(args[1])
-					s := gbuild.NewSession(options)
-					if err := s.BuildFiles([]string{args[1]}, basename[:len(basename)-3]+".js", currentDirectory); err != nil {
-						return err
-					}
-					return nil
-				}
-			}
-			cmdTool.Help()
-			return nil
-		}, options, nil))
-	}
-
 	cmdServe := &cobra.Command{
 		Use:   "serve [root]",
 		Short: "compile on-the-fly and serve",
@@ -493,6 +501,7 @@ func main() {
 	cmdServe.Flags().AddFlag(flagMinify)
 	cmdServe.Flags().AddFlag(flagColor)
 	cmdServe.Flags().AddFlag(flagTags)
+	cmdServe.Flags().AddFlag(flagLocalMap)
 	var addr string
 	cmdServe.Flags().StringVarP(&addr, "http", "", ":8080", "HTTP bind address to serve")
 	cmdServe.Run = func(cmd *cobra.Command, args []string) {
@@ -501,8 +510,8 @@ func main() {
 		var root string
 
 		if len(args) > 1 {
-			cmdServe.Help()
-			return
+			cmdServe.HelpFunc()(cmd, args)
+			os.Exit(1)
 		}
 
 		if len(args) == 1 {
@@ -529,12 +538,28 @@ func main() {
 		fmt.Fprintln(os.Stderr, http.Serve(tcpKeepAliveListener{ln.(*net.TCPListener)}, sourceFiles))
 	}
 
+	cmdVersion := &cobra.Command{
+		Use:   "version",
+		Short: "print GopherJS compiler version",
+	}
+	cmdVersion.Run = func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			cmdServe.HelpFunc()(cmd, args)
+			os.Exit(1)
+		}
+
+		fmt.Printf("GopherJS %s\n", compiler.Version)
+	}
+
 	rootCmd := &cobra.Command{
 		Use:  "gopherjs",
 		Long: "GopherJS is a tool for compiling Go source code to JavaScript.",
 	}
-	rootCmd.AddCommand(cmdBuild, cmdGet, cmdInstall, cmdRun, cmdTest, cmdTool, cmdServe)
-	rootCmd.Execute()
+	rootCmd.AddCommand(cmdBuild, cmdGet, cmdInstall, cmdRun, cmdTest, cmdServe, cmdVersion, cmdDoc)
+	err := rootCmd.Execute()
+	if err != nil {
+		os.Exit(2)
+	}
 }
 
 // tcpKeepAliveListener sets TCP keep-alive timeouts on accepted
@@ -594,7 +619,7 @@ func (fs serveCommandFileSystem) Open(requestName string) (http.File, error) {
 
 				sourceMapFilter := &compiler.SourceMapFilter{Writer: buf}
 				m := &sourcemap.Map{File: base + ".js"}
-				sourceMapFilter.MappingCallback = gbuild.NewMappingCallback(m, fs.options.GOROOT, fs.options.GOPATH)
+				sourceMapFilter.MappingCallback = gbuild.NewMappingCallback(m, fs.options.GOROOT, fs.options.GOPATH, fs.options.MapToLocalDisk)
 
 				deps, err := compiler.ImportDependencies(archive, s.BuildImportPath)
 				if err != nil {
@@ -640,7 +665,7 @@ func (fs serveCommandFileSystem) Open(requestName string) (http.File, error) {
 
 	if isIndex {
 		// If there was no index.html file in any dirs, supply our own.
-		return newFakeFile("index.html", []byte(`<html><head><meta charset="utf-8"><script src="`+base+`.js"></script></head></html>`)), nil
+		return newFakeFile("index.html", []byte(`<html><head><meta charset="utf-8"><script src="`+base+`.js"></script></head><body></body></html>`)), nil
 	}
 
 	return nil, os.ErrNotExist
@@ -770,32 +795,130 @@ func runNode(script string, args []string, dir string, quiet bool) error {
 }
 
 type testFuncs struct {
-	Tests      []testFunc
-	Benchmarks []testFunc
-	Examples   []testFunc
-	Package    *build.Package
-	NeedTest   bool
-	NeedXtest  bool
+	Tests       []testFunc
+	Benchmarks  []testFunc
+	Examples    []testFunc
+	TestMain    *testFunc
+	Package     *build.Package
+	ImportTest  bool
+	NeedTest    bool
+	ImportXtest bool
+	NeedXtest   bool
 }
 
 type testFunc struct {
-	Package string // imported package name (_test or _xtest)
-	Name    string // function name
-	Output  string // output, for examples
+	Package   string // imported package name (_test or _xtest)
+	Name      string // function name
+	Output    string // output, for examples
+	Unordered bool   // output is allowed to be unordered.
+}
+
+var testFileSet = token.NewFileSet()
+
+func (t *testFuncs) load(filename, pkg string, doImport, seen *bool) error {
+	f, err := parser.ParseFile(testFileSet, filename, nil, parser.ParseComments)
+	if err != nil {
+		return err
+	}
+	for _, d := range f.Decls {
+		n, ok := d.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		if n.Recv != nil {
+			continue
+		}
+		name := n.Name.String()
+		switch {
+		case isTestMain(n):
+			if t.TestMain != nil {
+				return errors.New("multiple definitions of TestMain")
+			}
+			t.TestMain = &testFunc{pkg, name, "", false}
+			*doImport, *seen = true, true
+		case isTest(name, "Test"):
+			t.Tests = append(t.Tests, testFunc{pkg, name, "", false})
+			*doImport, *seen = true, true
+		case isTest(name, "Benchmark"):
+			t.Benchmarks = append(t.Benchmarks, testFunc{pkg, name, "", false})
+			*doImport, *seen = true, true
+		}
+	}
+	ex := doc.Examples(f)
+	sort.Sort(byOrder(ex))
+	for _, e := range ex {
+		*doImport = true // import test file whether executed or not
+		if e.Output == "" && !e.EmptyOutput {
+			// Don't run examples with no output.
+			continue
+		}
+		t.Examples = append(t.Examples, testFunc{pkg, "Example" + e.Name, e.Output, e.Unordered})
+		*seen = true
+	}
+
+	return nil
+}
+
+type byOrder []*doc.Example
+
+func (x byOrder) Len() int           { return len(x) }
+func (x byOrder) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x byOrder) Less(i, j int) bool { return x[i].Order < x[j].Order }
+
+// isTestMain tells whether fn is a TestMain(m *testing.M) function.
+func isTestMain(fn *ast.FuncDecl) bool {
+	if fn.Name.String() != "TestMain" ||
+		fn.Type.Results != nil && len(fn.Type.Results.List) > 0 ||
+		fn.Type.Params == nil ||
+		len(fn.Type.Params.List) != 1 ||
+		len(fn.Type.Params.List[0].Names) > 1 {
+		return false
+	}
+	ptr, ok := fn.Type.Params.List[0].Type.(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+	// We can't easily check that the type is *testing.M
+	// because we don't know how testing has been imported,
+	// but at least check that it's *M or *something.M.
+	if name, ok := ptr.X.(*ast.Ident); ok && name.Name == "M" {
+		return true
+	}
+	if sel, ok := ptr.X.(*ast.SelectorExpr); ok && sel.Sel.Name == "M" {
+		return true
+	}
+	return false
+}
+
+// isTest tells whether name looks like a test (or benchmark, according to prefix).
+// It is a Test (say) if there is a character after Test that is not a lower-case letter.
+// We don't want TesticularCancer.
+func isTest(name, prefix string) bool {
+	if !strings.HasPrefix(name, prefix) {
+		return false
+	}
+	if len(name) == len(prefix) { // "Test" is ok
+		return true
+	}
+	rune, _ := utf8.DecodeRuneInString(name[len(prefix):])
+	return !unicode.IsLower(rune)
 }
 
 var testmainTmpl = template.Must(template.New("main").Parse(`
 package main
 
 import (
+{{if not .TestMain}}
+	"os"
+{{end}}
 	"regexp"
 	"testing"
 
-{{if .NeedTest}}
-	_test {{.Package.ImportPath | printf "%q"}}
+{{if .ImportTest}}
+	{{if .NeedTest}}_test{{else}}_{{end}} {{.Package.ImportPath | printf "%q"}}
 {{end}}
-{{if .NeedXtest}}
-	_xtest {{.Package.ImportPath | printf "%s_test" | printf "%q"}}
+{{if .ImportXtest}}
+	{{if .NeedXtest}}_xtest{{else}}_{{end}} {{.Package.ImportPath | printf "%s_test" | printf "%q"}}
 {{end}}
 )
 
@@ -813,7 +936,7 @@ var benchmarks = []testing.InternalBenchmark{
 
 var examples = []testing.InternalExample{
 {{range .Examples}}
-	{"{{.Name}}", {{.Package}}.{{.Name}}, {{.Output | printf "%q"}}},
+	{"{{.Name}}", {{.Package}}.{{.Name}}, {{.Output | printf "%q"}}, {{.Unordered}}},
 {{end}}
 }
 
@@ -832,7 +955,12 @@ func matchString(pat, str string) (result bool, err error) {
 }
 
 func main() {
-	testing.Main(matchString, tests, benchmarks, examples)
+	m := testing.MainStart(matchString, tests, benchmarks, examples)
+{{with .TestMain}}
+	{{.Package}}.{{.Name}}(m)
+{{else}}
+	os.Exit(m.Run())
+{{end}}
 }
 
 `))

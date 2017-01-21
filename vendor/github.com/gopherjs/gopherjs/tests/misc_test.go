@@ -535,3 +535,64 @@ func TestTrivialSwitch(t *testing.T) {
 	}
 	t.Fail()
 }
+
+func TestTupleFnReturnImplicitCast(t *testing.T) {
+	var ycalled int = 0
+	x := func(fn func() (int, error)) (interface{}, error) {
+		return fn()
+	}
+	y, _ := x(func() (int, error) {
+		ycalled++
+		return 14, nil
+	})
+	if y != 14 || ycalled != 1 {
+		t.Fail()
+	}
+}
+
+var tuple2called = 0
+
+func tuple1() (interface{}, error) {
+	return tuple2()
+}
+func tuple2() (int, error) {
+	tuple2called++
+	return 14, nil
+}
+func TestTupleReturnImplicitCast(t *testing.T) {
+	x, _ := tuple1()
+	if x != 14 || tuple2called != 1 {
+		t.Fail()
+	}
+}
+
+func TestDeferNamedTupleReturnImplicitCast(t *testing.T) {
+	var ycalled int = 0
+	var zcalled int = 0
+	z := func() {
+		zcalled++
+	}
+	x := func(fn func() (int, error)) (i interface{}, e error) {
+		defer z()
+		i, e = fn()
+		return
+	}
+	y, _ := x(func() (int, error) {
+		ycalled++
+		return 14, nil
+	})
+	if y != 14 || ycalled != 1 || zcalled != 1 {
+		t.Fail()
+	}
+}
+
+func TestSliceOfString(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil || !strings.Contains(err.(error).Error(), "slice bounds out of range") {
+			t.Fail()
+		}
+	}()
+
+	str := "foo"
+	print(str[0:10])
+}

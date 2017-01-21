@@ -309,10 +309,9 @@ func (c *funcContext) translateStmt(stmt ast.Stmt, label *types.Label) {
 			results = c.resultNames
 		}
 		rVal := c.translateResults(results)
-		if c.Flattened[s] {
-			resumeCase := c.caseCounter
-			c.caseCounter++
-			c.Printf("/* */ $s = %[1]d; case %[1]d:", resumeCase)
+		if len(c.Flattened) != 0 {
+			c.Printf("$s = -1; return%s;", rVal)
+			return
 		}
 		c.Printf("return%s;", rVal)
 
@@ -748,7 +747,26 @@ func (c *funcContext) translateResults(results []ast.Expr) string {
 		return " " + v.String()
 	default:
 		if len(results) == 1 {
-			return " " + c.translateExpr(results[0]).String()
+			resultTuple := c.p.TypeOf(results[0]).(*types.Tuple)
+
+			if resultTuple.Len() != tuple.Len() {
+				panic("invalid tuple return assignment")
+			}
+
+			resultExpr := c.translateExpr(results[0]).String()
+
+			if types.Identical(resultTuple, tuple) {
+				return " " + resultExpr
+			}
+
+			tmpVar := c.newVariable("_returncast")
+			c.Printf("%s = %s;", tmpVar, resultExpr)
+
+			// Not all the return types matched, map everything out for implicit casting
+			results = make([]ast.Expr, resultTuple.Len())
+			for i := range results {
+				results[i] = c.newIdent(fmt.Sprintf("%s[%d]", tmpVar, i), resultTuple.At(i).Type())
+			}
 		}
 		values := make([]string, tuple.Len())
 		for i := range values {
