@@ -102,7 +102,10 @@ func TestHost_Prototype(t *testing.T) {
 		}
 
 		host := NewHost("abc")
-		So(host.Prototype(), ShouldEqual, fmt.Sprintf("%s@[hostname_not_specified]:22", currentUser.Username))
+		So(host.Prototype(), ShouldEqual, fmt.Sprintf("%s@abc:22", currentUser.Username))
+
+		host = NewHost("abc-*")
+		So(host.Prototype(), ShouldEqual, fmt.Sprintf("%s@[dynamic]:22", currentUser.Username))
 
 		host = NewHost("abc")
 		host.User = "toto"
