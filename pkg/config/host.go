@@ -156,7 +156,11 @@ func (h *Host) Prototype() string {
 
 	hostname := h.HostName
 	if hostname == "" {
-		hostname = "[hostname_not_specified]"
+		if isDynamicHostname(h.name) {
+			hostname = "[dynamic]"
+		} else {
+			hostname = h.name
+		}
 	}
 
 	port := h.Port
