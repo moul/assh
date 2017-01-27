@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+func isDynamicHostname(hostname string) bool {
+	return strings.Contains(hostname, `*`) ||
+		strings.Contains(hostname, `[`) ||
+		strings.Contains(hostname, `]`)
+}
+
 // BoolVal returns a boolean matching a configuration string
 func BoolVal(input string) bool {
 	input = strings.ToLower(input)

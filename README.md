@@ -719,6 +719,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Improve readability of `assh config list` ([#203](https://github.com/moul/advanced-ssh-config/issues/203))
 * Add support for the `AddKeysToAgent` key ([#210](https://github.com/moul/advanced-ssh-config/pull/210)) ([@bachya](https://github.com/bachya))
 * OpenBSD support ([#182](https://github.com/moul/advanced-ssh-config/issues/182))
+* Improve hostname output in `assh config list` ([#204](https://github.com/moul/advanced-ssh-config/issues/204))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
