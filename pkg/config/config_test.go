@@ -1564,3 +1564,26 @@ Host *
 		So(output, ShouldEqual, expected)
 	})
 }
+
+func TestConfig_ValidateSummary(t *testing.T) {
+	Convey("Testing Config.ValidateSummary", t, FailureContinues, func() {
+		// no error
+		config := New()
+		config.Hosts["toto"] = &Host{name: "toto"}
+		err := config.ValidateSummary()
+		So(err, ShouldBeNil)
+
+		// one error
+		config.Hosts["toto"].ControlMaster = "invalid data"
+		err = config.ValidateSummary()
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldEqual, `"toto": invalid value for 'ControlMaster': "invalid data"`)
+
+		// multiple errors
+		config.Hosts["toto"].AddressFamily = "invalid data"
+		config.Hosts["tata"] = &Host{name: "tata"}
+		config.Hosts["tata"].AddressFamily = "invalid data"
+		errs := config.Validate()
+		So(len(errs), ShouldEqual, 3)
+	})
+}

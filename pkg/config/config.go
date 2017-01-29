@@ -388,6 +388,12 @@ func (c *Config) SaveSSHConfig() error {
 	if err != nil {
 		return err
 	}
+
+	// validate hosts
+	if err := c.ValidateSummary(); err != nil {
+		return err
+	}
+
 	file, err := os.Create(filepath)
 	if err != nil {
 		return err
@@ -484,6 +490,31 @@ func (c *Config) sortedNames() []string {
 	return names
 }
 
+// Validate checks for values errors
+func (c *Config) Validate() []error {
+	errs := []error{}
+	for _, host := range c.Hosts {
+		errs = append(errs, host.Validate()...)
+	}
+	return errs
+}
+
+// ValidateSummary summaries Validate() errors slice
+func (c *Config) ValidateSummary() error {
+	switch errs := c.Validate(); len(errs) {
+	case 0:
+		return nil
+	case 1:
+		return errs[0]
+	default:
+		errsStrings := []string{}
+		for _, err := range errs {
+			errsStrings = append(errsStrings, fmt.Sprintf("- %s", err.Error()))
+		}
+		return fmt.Errorf("multiple errors:\n%s", strings.Join(errsStrings, "\n"))
+	}
+}
+
 // WriteSSHConfigTo returns a .ssh/config valid file containing assh configuration
 func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 	header := strings.TrimSpace(`
@@ -505,7 +536,9 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 		if err != nil {
 			return err
 		}
-		computedHost.WriteSSHConfigTo(w)
+		if err = computedHost.WriteSSHConfigTo(w); err != nil {
+			return err
+		}
 		fmt.Fprintln(w)
 	}
 

@@ -14,7 +14,7 @@ func isDynamicHostname(hostname string) bool {
 
 // BoolVal returns a boolean matching a configuration string
 func BoolVal(input string) bool {
-	input = strings.ToLower(input)
+	input = cleanupValue(input)
 	trueValues := []string{"yes", "ok", "true", "1", "enabled"}
 	for _, val := range trueValues {
 		if val == input {
@@ -22,6 +22,10 @@ func BoolVal(input string) bool {
 		}
 	}
 	return false
+}
+
+func cleanupValue(input string) string {
+	return strings.TrimSpace(strings.ToLower(input))
 }
 
 // stringComment splits comment strings into <1024 char lines
