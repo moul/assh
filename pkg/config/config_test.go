@@ -24,6 +24,7 @@ hosts:
     User: user-$ENV_VAR_USER-user
     LocalCommand: ${ENV_VAR_LOCALCOMMAND:-hello}
     IdentityFile: ${NON_EXISTING_ENV_VAR}
+    Comment: Hello World !
 
   ccc:
     HostName: 5.6.7.8
@@ -38,12 +39,19 @@ hosts:
     - BBB
     - aaa
     ControlMasterMkdir: true
+    Comment:
+    - AAA
+    - BBB
 
   FFF:
     Inherits:
     - BBB
     - eee
     - "*.ddd"
+    Comment: >
+      First line
+      Second line
+      Third line
 
   ggg:
     Gateways:
@@ -133,12 +141,15 @@ func dummyConfig() *Config {
 		User:               "moul",
 		ProxyCommand:       "nc -v 4242",
 		ControlMasterMkdir: "true",
+		Comment:            []string{"Hello World"},
 	}
 	config.Hosts["tonton"] = &Host{
 		ResolveNameservers: []string{"a.com", "1.2.3.4"},
+		Comment:            []string{"AAA", "BBB"},
 	}
 	config.Hosts["toutou"] = &Host{
 		ResolveCommand: "dig -t %h",
+		Comment:        []string{"First line Second line Third line\n"},
 	}
 	config.Hosts["tutu"] = &Host{
 		Gateways: []string{"titi", "direct", "1.2.3.4"},
@@ -405,12 +416,19 @@ func TestConfig_JsonString(t *testing.T) {
       "User": "moul",
       "HostName": "tata",
       "ProxyCommand": "nc -v 4242",
-      "ControlMasterMkdir": "true"
+      "ControlMasterMkdir": "true",
+      "Comment": [
+        "Hello World"
+      ]
     },
     "tonton": {
       "ResolveNameservers": [
         "a.com",
         "1.2.3.4"
+      ],
+      "Comment": [
+        "AAA",
+        "BBB"
       ]
     },
     "toto": {
@@ -423,7 +441,10 @@ func TestConfig_JsonString(t *testing.T) {
       "User": "toto2"
     },
     "toutou": {
-      "ResolveCommand": "dig -t %h"
+      "ResolveCommand": "dig -t %h",
+      "Comment": [
+        "First line Second line Third line\n"
+      ]
     },
     "tutu": {
       "Inherits": [
@@ -611,7 +632,10 @@ func TestConfig_JsonString(t *testing.T) {
       "LocalCommand": "${ENV_VAR_LOCALCOMMAND:-hello}",
       "Port": "${ENV_VAR_PORT}",
       "User": "user-$ENV_VAR_USER-user",
-      "HostName": "$ENV_VAR_HOSTNAME"
+      "HostName": "$ENV_VAR_HOSTNAME",
+      "Comment": [
+        "Hello World !"
+      ]
     },
     "ccc": {
       "Port": "24",
@@ -624,13 +648,20 @@ func TestConfig_JsonString(t *testing.T) {
         "bbb",
         "aaa"
       ],
-      "ControlMasterMkdir": "true"
+      "ControlMasterMkdir": "true",
+      "Comment": [
+        "AAA",
+        "BBB"
+      ]
     },
     "fff": {
       "Inherits": [
         "bbb",
         "eee",
         "*.ddd"
+      ],
+      "Comment": [
+        "First line Second line Third line\n"
       ]
     },
     "ggg": {
@@ -1245,7 +1276,7 @@ func TestConfig_GetHostSafe(t *testing.T) {
 func TestConfig_String(t *testing.T) {
 	Convey("Testing Config.String", t, func() {
 		config := dummyConfig()
-		So(config.String(), ShouldEqual, `{"hosts":{"*.ddd":{"PasswordAuthentication":"yes","HostName":"1.3.5.7"},"empty":{},"nnn":{"Port":"26","Inherits":["mmm"]},"ooo1":{"Port":"23","Aliases":["ooo11","ooo12"]},"ooo2":{"Port":"24","Aliases":["ooo21","ooo22"]},"tata":{"Inherits":["tutu","titi","toto","tutu"]},"titi":{"Port":"23","User":"moul","HostName":"tata","ProxyCommand":"nc -v 4242","ControlMasterMkdir":"true"},"tonton":{"ResolveNameservers":["a.com","1.2.3.4"]},"toto":{"HostName":"1.2.3.4"},"toto[1-5]toto":{"User":"toto1"},"toto[7-9]toto":{"User":"toto2"},"toutou":{"ResolveCommand":"dig -t %h"},"tutu":{"Inherits":["toto","tutu","*.ddd"],"Gateways":["titi","direct","1.2.3.4"]},"zzz":{"AddressFamily":"any","AskPassGUI":"yes","BatchMode":"no","CanonicalDomains":"42.am","CanonicalizeFallbackLocal":"no","CanonicalizeHostname":"yes","CanonicalizeMaxDots":"1","CanonicalizePermittedCNAMEs":"*.a.example.com:*.b.example.com:*.c.example.com","ChallengeResponseAuthentication":"yes","CheckHostIP":"yes","Cipher":"blowfish","Ciphers":["aes128-ctr,aes192-ctr","aes256-ctr"],"ClearAllForwardings":"yes","Compression":"yes","CompressionLevel":6,"ConnectionAttempts":"1","ConnectTimeout":10,"ControlMaster":"yes","ControlPath":"/tmp/%L-%l-%n-%p-%u-%r-%C-%h","ControlPersist":"yes","DynamicForward":["0.0.0.0:4242","0.0.0.0:4343"],"EnableSSHKeysign":"yes","EscapeChar":"~","ExitOnForwardFailure":"yes","FingerprintHash":"sha256","ForwardAgent":"yes","ForwardX11":"yes","ForwardX11Timeout":42,"ForwardX11Trusted":"yes","GatewayPorts":"yes","GlobalKnownHostsFile":["/etc/ssh/ssh_known_hosts","/tmp/ssh_known_hosts"],"GSSAPIAuthentication":"no","GSSAPIClientIdentity":"moul","GSSAPIDelegateCredentials":"no","GSSAPIKeyExchange":"no","GSSAPIRenewalForcesRekey":"no","GSSAPIServerIdentity":"gssapi.example.com","GSSAPITrustDns":"no","HashKnownHosts":"no","HostbasedAuthentication":"no","HostbasedKeyTypes":"*","HostKeyAlgorithms":"ecdsa-sha2-nistp256-cert-v01@openssh.com","HostKeyAlias":"z","IdentitiesOnly":"yes","IdentityFile":["~/.ssh/identity","~/.ssh/identity2"],"IgnoreUnknown":"testtest","IPQoS":["lowdelay","highdelay"],"KbdInteractiveAuthentication":"yes","KbdInteractiveDevices":["bsdauth","test"],"KexAlgorithms":["curve25519-sha256@libssh.org","test"],"KeychainIntegration":"yes","LocalCommand":"echo %h \u003e /tmp/logs","LocalForward":["0.0.0.0:1234","0.0.0.0:1235"],"LogLevel":"DEBUG3","MACs":["umac-64-etm@openssh.com,umac-128-etm@openssh.com","test"],"Match":"all","NoHostAuthenticationForLocalhost":"yes","NumberOfPasswordPrompts":"3","PasswordAuthentication":"yes","PermitLocalCommand":"yes","PKCS11Provider":"/a/b/c/pkcs11.so","Port":"22","PreferredAuthentications":"gssapi-with-mic,hostbased,publickey","Protocol":["2","3"],"ProxyUseFdpass":"no","PubkeyAuthentication":"yes","RekeyLimit":"default none","RemoteForward":["0.0.0.0:1234","0.0.0.0:1255"],"RequestTTY":"yes","RevokedHostKeys":"/a/revoked-keys","RhostsRSAAuthentication":"no","RSAAuthentication":"yes","SendEnv":["CUSTOM_*,TEST","TEST2"],"ServerAliveCountMax":3,"StreamLocalBindMask":"0177","StreamLocalBindUnlink":"no","StrictHostKeyChecking":"ask","TCPKeepAlive":"yes","Tunnel":"yes","TunnelDevice":"any:any","UpdateHostKeys":"ask","UseKeychain":"no","UsePrivilegedPort":"no","User":"moul","UserKnownHostsFile":["~/.ssh/known_hosts ~/.ssh/known_hosts2","/tmp/known_hosts"],"VerifyHostKeyDNS":"no","VisualHostKey":"yes","XAuthLocation":"xauth","HostName":"zzz.com","ProxyCommand":"nc %h %p"}},"templates":{"mmm":{"Port":"25","User":"mmmm","HostName":"5.5.5.5","Inherits":["tata"]}},"defaults":{"Port":"22","User":"root"},"asshknownhostfile":"~/.ssh/assh_known_hosts"}`)
+		So(config.String(), ShouldEqual, `{"hosts":{"*.ddd":{"PasswordAuthentication":"yes","HostName":"1.3.5.7"},"empty":{},"nnn":{"Port":"26","Inherits":["mmm"]},"ooo1":{"Port":"23","Aliases":["ooo11","ooo12"]},"ooo2":{"Port":"24","Aliases":["ooo21","ooo22"]},"tata":{"Inherits":["tutu","titi","toto","tutu"]},"titi":{"Port":"23","User":"moul","HostName":"tata","ProxyCommand":"nc -v 4242","ControlMasterMkdir":"true","Comment":["Hello World"]},"tonton":{"ResolveNameservers":["a.com","1.2.3.4"],"Comment":["AAA","BBB"]},"toto":{"HostName":"1.2.3.4"},"toto[1-5]toto":{"User":"toto1"},"toto[7-9]toto":{"User":"toto2"},"toutou":{"ResolveCommand":"dig -t %h","Comment":["First line Second line Third line\n"]},"tutu":{"Inherits":["toto","tutu","*.ddd"],"Gateways":["titi","direct","1.2.3.4"]},"zzz":{"AddressFamily":"any","AskPassGUI":"yes","BatchMode":"no","CanonicalDomains":"42.am","CanonicalizeFallbackLocal":"no","CanonicalizeHostname":"yes","CanonicalizeMaxDots":"1","CanonicalizePermittedCNAMEs":"*.a.example.com:*.b.example.com:*.c.example.com","ChallengeResponseAuthentication":"yes","CheckHostIP":"yes","Cipher":"blowfish","Ciphers":["aes128-ctr,aes192-ctr","aes256-ctr"],"ClearAllForwardings":"yes","Compression":"yes","CompressionLevel":6,"ConnectionAttempts":"1","ConnectTimeout":10,"ControlMaster":"yes","ControlPath":"/tmp/%L-%l-%n-%p-%u-%r-%C-%h","ControlPersist":"yes","DynamicForward":["0.0.0.0:4242","0.0.0.0:4343"],"EnableSSHKeysign":"yes","EscapeChar":"~","ExitOnForwardFailure":"yes","FingerprintHash":"sha256","ForwardAgent":"yes","ForwardX11":"yes","ForwardX11Timeout":42,"ForwardX11Trusted":"yes","GatewayPorts":"yes","GlobalKnownHostsFile":["/etc/ssh/ssh_known_hosts","/tmp/ssh_known_hosts"],"GSSAPIAuthentication":"no","GSSAPIClientIdentity":"moul","GSSAPIDelegateCredentials":"no","GSSAPIKeyExchange":"no","GSSAPIRenewalForcesRekey":"no","GSSAPIServerIdentity":"gssapi.example.com","GSSAPITrustDns":"no","HashKnownHosts":"no","HostbasedAuthentication":"no","HostbasedKeyTypes":"*","HostKeyAlgorithms":"ecdsa-sha2-nistp256-cert-v01@openssh.com","HostKeyAlias":"z","IdentitiesOnly":"yes","IdentityFile":["~/.ssh/identity","~/.ssh/identity2"],"IgnoreUnknown":"testtest","IPQoS":["lowdelay","highdelay"],"KbdInteractiveAuthentication":"yes","KbdInteractiveDevices":["bsdauth","test"],"KexAlgorithms":["curve25519-sha256@libssh.org","test"],"KeychainIntegration":"yes","LocalCommand":"echo %h \u003e /tmp/logs","LocalForward":["0.0.0.0:1234","0.0.0.0:1235"],"LogLevel":"DEBUG3","MACs":["umac-64-etm@openssh.com,umac-128-etm@openssh.com","test"],"Match":"all","NoHostAuthenticationForLocalhost":"yes","NumberOfPasswordPrompts":"3","PasswordAuthentication":"yes","PermitLocalCommand":"yes","PKCS11Provider":"/a/b/c/pkcs11.so","Port":"22","PreferredAuthentications":"gssapi-with-mic,hostbased,publickey","Protocol":["2","3"],"ProxyUseFdpass":"no","PubkeyAuthentication":"yes","RekeyLimit":"default none","RemoteForward":["0.0.0.0:1234","0.0.0.0:1255"],"RequestTTY":"yes","RevokedHostKeys":"/a/revoked-keys","RhostsRSAAuthentication":"no","RSAAuthentication":"yes","SendEnv":["CUSTOM_*,TEST","TEST2"],"ServerAliveCountMax":3,"StreamLocalBindMask":"0177","StreamLocalBindUnlink":"no","StrictHostKeyChecking":"ask","TCPKeepAlive":"yes","Tunnel":"yes","TunnelDevice":"any:any","UpdateHostKeys":"ask","UseKeychain":"no","UsePrivilegedPort":"no","User":"moul","UserKnownHostsFile":["~/.ssh/known_hosts ~/.ssh/known_hosts2","/tmp/known_hosts"],"VerifyHostKeyDNS":"no","VisualHostKey":"yes","XAuthLocation":"xauth","HostName":"zzz.com","ProxyCommand":"nc %h %p"}},"templates":{"mmm":{"Port":"25","User":"mmmm","HostName":"5.5.5.5","Inherits":["tata"]}},"defaults":{"Port":"22","User":"root"},"asshknownhostfile":"~/.ssh/assh_known_hosts"}`)
 	})
 }
 
@@ -1283,6 +1314,7 @@ Host nnn
   # ControlMasterMkdir: true
   # Inherits: [mmm]
   # Gateways: [titi, direct, 1.2.3.4]
+  # Comment: [Hello World]
 
 Host ooo1
   Port 23
@@ -1317,6 +1349,7 @@ Host tata
   # ControlMasterMkdir: true
   # Inherits: [tutu, titi, toto, tutu]
   # Gateways: [titi, direct, 1.2.3.4]
+  # Comment: [Hello World]
 
 Host titi
   Port 23
@@ -1324,8 +1357,10 @@ Host titi
   # ProxyCommand nc -v 4242
   # HostName: tata
   # ControlMasterMkdir: true
+  # Comment: [Hello World]
 
 Host tonton
+  # Comment: [AAA, BBB]
   # ResolveNameservers: [a.com, 1.2.3.4]
 
 Host toto
@@ -1352,6 +1387,7 @@ Host toto7toto
   # KnownHostOf: toto[7-9]toto
 
 Host toutou
+  # Comment: [First line Second line Third line]
   # ResolveCommand: dig -t %h
 
 Host tutu
