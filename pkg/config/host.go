@@ -119,6 +119,7 @@ type Host struct {
 	ControlMasterMkdir string                    `yaml:"controlmastermkdir,omitempty,flow" json:"ControlMasterMkdir,omitempty"`
 	Aliases            composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
 	Hooks              *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
+	Comment            composeyaml.Stringorslice `yaml:"comment,omitempty,flow" json:"Comment,omitempty"`
 
 	// private assh fields
 	knownHosts []string
@@ -488,6 +489,7 @@ func (h *Host) Options() OptionsList {
 	//ResolveCommand
 	//ControlMasterMkdir
 	//Aliases
+	//Comment
 	//Hooks
 
 	// private assh fields
@@ -1016,6 +1018,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.Aliases = defaults.Aliases
 	}
 
+	if len(h.Comment) == 0 {
+		h.Comment = defaults.Comment
+	}
+
 	if h.Hooks == nil {
 		h.Hooks = defaults.Hooks
 		if h.Hooks == nil {
@@ -1359,6 +1365,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		}
 		if len(h.Gateways) > 0 {
 			fmt.Fprint(w, sliceComment("Gateways", h.Gateways))
+		}
+		if len(h.Comment) > 0 {
+			fmt.Fprint(w, sliceComment("Comment", h.Comment))
 		}
 		if len(h.Aliases) > 0 {
 			if aliasIdx == 0 {

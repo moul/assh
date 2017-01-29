@@ -45,13 +45,20 @@ func sliceComment(name string, slice []string) string {
 	bundles = append(bundles, []string{})
 
 	for _, item := range slice {
-		if curLen+len(item) >= maxLength {
-			bundleIdx++
-			bundles = append(bundles, []string{})
-			curLen = 0
+		for _, line := range strings.Split(item, "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+
+			if curLen+len(line) >= maxLength {
+				bundleIdx++
+				bundles = append(bundles, []string{})
+				curLen = 0
+			}
+			bundles[bundleIdx] = append(bundles[bundleIdx], line)
+			curLen += len(line) + 2
 		}
-		bundles[bundleIdx] = append(bundles[bundleIdx], item)
-		curLen += len(item) + 2
 	}
 
 	ret := []string{}
