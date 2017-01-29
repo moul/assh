@@ -138,6 +138,27 @@ func NewHost(name string) *Host {
 	}
 }
 
+// Validate checks for values errors
+func (h *Host) Validate() []error {
+	errs := []error{}
+
+	switch cleanupValue(h.AddressFamily) {
+	case "", "any", "inet", "inet4", "inet6":
+		break
+	default:
+		errs = append(errs, fmt.Errorf("%q: invalid value for 'AddressFamily': %q", h.name, h.ControlMaster))
+	}
+
+	switch cleanupValue(h.ControlMaster) {
+	case "", "yes", "no", "ask", "auto", "autoask":
+		break
+	default:
+		errs = append(errs, fmt.Errorf("%q: invalid value for 'ControlMaster': %q", h.name, h.ControlMaster))
+	}
+
+	return errs
+}
+
 // String returns the JSON output
 func (h *Host) String() string {
 	s, _ := json.Marshal(h)

@@ -137,6 +137,27 @@ func TestHost_Matches(t *testing.T) {
 	})
 }
 
+func TestHost_Validate(t *testing.T) {
+	Convey("Testing Host.Validate()", t, FailureContinues, func() {
+		host := NewHost("abc")
+
+		errs := host.Validate()
+		So(len(errs), ShouldEqual, 0)
+
+		for _, value := range []string{"yes", "no", "ask", "auto", "autoask", "", "Yes", "YES", "yEs", " yes "} {
+			host.ControlMaster = value
+			errs = host.Validate()
+			So(len(errs), ShouldEqual, 0)
+		}
+
+		for _, value := range []string{"blah blah", "invalid"} {
+			host.ControlMaster = value
+			errs = host.Validate()
+			So(len(errs), ShouldEqual, 1)
+		}
+	})
+}
+
 func TestHost_Options(t *testing.T) {
 	Convey("Testing Host.Options()", t, func() {
 		host := NewHost("abc")
