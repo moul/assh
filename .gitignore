@@ -1,5 +1,6 @@
 contrib/docker/entrypoint
 /advanced-ssh-config
+/webapp
 /assh
 /cmd/assh/assh
 profile.out
