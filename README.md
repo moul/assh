@@ -739,6 +739,10 @@ Host *
   ProxyCommand assh connect --port=%p %h
 ```
 
+---
+
+* [Apiary Documentation](http://docs.assh.apiary.io/)
+
 ## Changelog
 
 ### master (unreleased)
