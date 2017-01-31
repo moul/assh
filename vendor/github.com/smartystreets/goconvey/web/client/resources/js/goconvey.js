@@ -846,10 +846,6 @@ function process(data, status, jqxhr)
 			icon: $('.favicon').attr('href')
 		});
 
-                convey.notif.onclick = function() { 
-                  window.focus(); 
-                };
-
 		convey.notifTimer = setTimeout(function() { convey.notif.close(); }, 5000);
 	}
 
@@ -1344,7 +1340,7 @@ function customMarkupPipes()
 		if (num < 0)
 			return "0";
 		else if (num <= 5)
-			return "5";	// Still shows low coverage
+			return "5px";	// Still shows low coverage
 		else if (num > 100)
 			str = "100";
 		return str;

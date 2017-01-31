@@ -1296,11 +1296,11 @@ func (s *DockerSuite) TestRunDNSOptions(c *check.C) {
 		c.Fatalf("expected 'search mydomain nameserver 127.0.0.1 options ndots:9', but says: %q", actual)
 	}
 
-	out, stderr, _ = dockerCmdWithStdoutStderr(c, "run", "--dns=127.0.0.1", "--dns-search=.", "--dns-opt=ndots:3", "busybox", "cat", "/etc/resolv.conf")
+	out, _ = dockerCmd(c, "run", "--dns=1.1.1.1", "--dns-search=.", "--dns-opt=ndots:3", "busybox", "cat", "/etc/resolv.conf")
 
 	actual = strings.Replace(strings.Trim(strings.Trim(out, "\r\n"), " "), "\n", " ", -1)
-	if actual != "nameserver 127.0.0.1 options ndots:3" {
-		c.Fatalf("expected 'nameserver 127.0.0.1 options ndots:3', but says: %q", actual)
+	if actual != "nameserver 1.1.1.1 options ndots:3" {
+		c.Fatalf("expected 'nameserver 1.1.1.1 options ndots:3', but says: %q", actual)
 	}
 }
 
@@ -1376,7 +1376,6 @@ func (s *DockerSuite) TestRunDNSOptionsBasedOnHostResolvConf(c *check.C) {
 		c.Fatalf("/etc/resolv.conf does not exist")
 	}
 
-	hostNameservers = resolvconf.GetNameservers(resolvConf, types.IP)
 	hostSearch = resolvconf.GetSearchDomains(resolvConf)
 
 	out, _ = dockerCmd(c, "run", "busybox", "cat", "/etc/resolv.conf")
@@ -1465,10 +1464,7 @@ func (s *DockerSuite) TestRunResolvconfUpdate(c *check.C) {
 	dockerCmd(c, "start", "first")
 
 	// check for update in container
-	containerResolv, err := readContainerFile(containerID1, "resolv.conf")
-	if err != nil {
-		c.Fatal(err)
-	}
+	containerResolv := readContainerFile(c, containerID1, "resolv.conf")
 	if !bytes.Equal(containerResolv, bytesResolvConf) {
 		c.Fatalf("Restarted container does not have updated resolv.conf; expected %q, got %q", tmpResolvConf, string(containerResolv))
 	}
@@ -1491,11 +1487,7 @@ func (s *DockerSuite) TestRunResolvconfUpdate(c *check.C) {
 	dockerCmd(c, "start", "second")
 
 	// check for update in container
-	containerResolv, err = readContainerFile(containerID2, "resolv.conf")
-	if err != nil {
-		c.Fatal(err)
-	}
-
+	containerResolv = readContainerFile(c, containerID2, "resolv.conf")
 	if bytes.Equal(containerResolv, resolvConfSystem) {
 		c.Fatalf("Container's resolv.conf should not have been updated with host resolv.conf: %q", string(containerResolv))
 	}
@@ -1510,11 +1502,7 @@ func (s *DockerSuite) TestRunResolvconfUpdate(c *check.C) {
 	}
 
 	// check for update in container
-	containerResolv, err = readContainerFile(runningContainerID, "resolv.conf")
-	if err != nil {
-		c.Fatal(err)
-	}
-
+	containerResolv = readContainerFile(c, runningContainerID, "resolv.conf")
 	if bytes.Equal(containerResolv, bytesResolvConf) {
 		c.Fatalf("Running container should not have updated resolv.conf; expected %q, got %q", string(resolvConfSystem), string(containerResolv))
 	}
@@ -1524,10 +1512,7 @@ func (s *DockerSuite) TestRunResolvconfUpdate(c *check.C) {
 	dockerCmd(c, "restart", runningContainerID)
 
 	// check for update in container
-	containerResolv, err = readContainerFile(runningContainerID, "resolv.conf")
-	if err != nil {
-		c.Fatal(err)
-	}
+	containerResolv = readContainerFile(c, runningContainerID, "resolv.conf")
 	if !bytes.Equal(containerResolv, bytesResolvConf) {
 		c.Fatalf("Restarted container should have updated resolv.conf; expected %q, got %q", string(bytesResolvConf), string(containerResolv))
 	}
@@ -1546,11 +1531,7 @@ func (s *DockerSuite) TestRunResolvconfUpdate(c *check.C) {
 
 	// our first exited container ID should have been updated, but with default DNS
 	// after the cleanup of resolv.conf found only a localhost nameserver:
-	containerResolv, err = readContainerFile(containerID1, "resolv.conf")
-	if err != nil {
-		c.Fatal(err)
-	}
-
+	containerResolv = readContainerFile(c, containerID1, "resolv.conf")
 	expected := "\nnameserver 8.8.8.8\nnameserver 8.8.4.4\n"
 	if !bytes.Equal(containerResolv, []byte(expected)) {
 		c.Fatalf("Container does not have cleaned/replaced DNS in resolv.conf; expected %q, got %q", expected, string(containerResolv))
@@ -1583,10 +1564,7 @@ func (s *DockerSuite) TestRunResolvconfUpdate(c *check.C) {
 	dockerCmd(c, "start", "third")
 
 	// check for update in container
-	containerResolv, err = readContainerFile(containerID3, "resolv.conf")
-	if err != nil {
-		c.Fatal(err)
-	}
+	containerResolv = readContainerFile(c, containerID3, "resolv.conf")
 	if !bytes.Equal(containerResolv, bytesResolvConf) {
 		c.Fatalf("Stopped container does not have updated resolv.conf; expected\n%q\n got\n%q", tmpResolvConf, string(containerResolv))
 	}
@@ -2841,11 +2819,7 @@ func (s *DockerSuite) TestRunContainerWithRmFlagExitCodeNotEqualToZero(c *check.
 		c.Fatal("Expected docker run to fail", out, err)
 	}
 
-	out, err = getAllContainers()
-	if err != nil {
-		c.Fatal(out, err)
-	}
-
+	out = getAllContainers(c)
 	if out != "" {
 		c.Fatal("Expected not to have containers", out)
 	}
@@ -2858,11 +2832,7 @@ func (s *DockerSuite) TestRunContainerWithRmFlagCannotStartContainer(c *check.C)
 		c.Fatal("Expected docker run to fail", out, err)
 	}
 
-	out, err = getAllContainers()
-	if err != nil {
-		c.Fatal(out, err)
-	}
-
+	out = getAllContainers(c)
 	if out != "" {
 		c.Fatal("Expected not to have containers", out)
 	}
@@ -3863,8 +3833,8 @@ func (s *DockerSuite) TestRunInvalidReference(c *check.C) {
 		c.Fatalf("expected non-zero exist code; received %d", exit)
 	}
 
-	if !strings.Contains(out, "Error parsing reference") {
-		c.Fatalf(`Expected "Error parsing reference" in output; got: %s`, out)
+	if !strings.Contains(out, "invalid reference format") {
+		c.Fatalf(`Expected "invalid reference format" in output; got: %s`, out)
 	}
 }
 

@@ -15,7 +15,7 @@ func TestShouldHappenBefore(t *testing.T) {
 	fail(t, so(time.Now(), ShouldHappenBefore, 0), shouldUseTimes)
 
 	fail(t, so(january3, ShouldHappenBefore, january1), fmt.Sprintf("Expected '%s' to happen before '%s' (it happened '48h0m0s' after)!", pretty(january3), pretty(january1)))
-	fail(t, so(january3, ShouldHappenBefore, january3), fmt.Sprintf("Expected '%s' to happen before '%s' (it happened '0s' after)!", pretty(january3), pretty(january3)))
+	fail(t, so(january3, ShouldHappenBefore, january3), fmt.Sprintf("Expected '%s' to happen before '%s' (it happened '0' after)!", pretty(january3), pretty(january3)))
 	pass(t, so(january1, ShouldHappenBefore, january3))
 }
 
@@ -41,7 +41,7 @@ func TestShouldHappenAfter(t *testing.T) {
 	fail(t, so(time.Now(), ShouldHappenAfter, 0), shouldUseTimes)
 
 	fail(t, so(january1, ShouldHappenAfter, january2), fmt.Sprintf("Expected '%s' to happen after '%s' (it happened '24h0m0s' before)!", pretty(january1), pretty(january2)))
-	fail(t, so(january1, ShouldHappenAfter, january1), fmt.Sprintf("Expected '%s' to happen after '%s' (it happened '0s' before)!", pretty(january1), pretty(january1)))
+	fail(t, so(january1, ShouldHappenAfter, january1), fmt.Sprintf("Expected '%s' to happen after '%s' (it happened '0' before)!", pretty(january1), pretty(january1)))
 	pass(t, so(january3, ShouldHappenAfter, january1))
 }
 
@@ -68,9 +68,9 @@ func TestShouldHappenBetween(t *testing.T) {
 	fail(t, so(time.Now(), ShouldHappenBetween, time.Now(), 9), shouldUseTimes)
 
 	fail(t, so(january1, ShouldHappenBetween, january2, january4), fmt.Sprintf("Expected '%s' to happen between '%s' and '%s' (it happened '24h0m0s' outside threshold)!", pretty(january1), pretty(january2), pretty(january4)))
-	fail(t, so(january2, ShouldHappenBetween, january2, january4), fmt.Sprintf("Expected '%s' to happen between '%s' and '%s' (it happened '0s' outside threshold)!", pretty(january2), pretty(january2), pretty(january4)))
+	fail(t, so(january2, ShouldHappenBetween, january2, january4), fmt.Sprintf("Expected '%s' to happen between '%s' and '%s' (it happened '0' outside threshold)!", pretty(january2), pretty(january2), pretty(january4)))
 	pass(t, so(january3, ShouldHappenBetween, january2, january4))
-	fail(t, so(january4, ShouldHappenBetween, january2, january4), fmt.Sprintf("Expected '%s' to happen between '%s' and '%s' (it happened '0s' outside threshold)!", pretty(january4), pretty(january2), pretty(january4)))
+	fail(t, so(january4, ShouldHappenBetween, january2, january4), fmt.Sprintf("Expected '%s' to happen between '%s' and '%s' (it happened '0' outside threshold)!", pretty(january4), pretty(january2), pretty(january4)))
 	fail(t, so(january5, ShouldHappenBetween, january2, january4), fmt.Sprintf("Expected '%s' to happen between '%s' and '%s' (it happened '24h0m0s' outside threshold)!", pretty(january5), pretty(january2), pretty(january4)))
 }
 

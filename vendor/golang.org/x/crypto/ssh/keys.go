@@ -10,13 +10,10 @@ import (
 	"crypto/dsa"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/md5"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/asn1"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -128,7 +125,7 @@ func ParseKnownHosts(in []byte) (marker string, hosts []string, pubKey PublicKey
 			continue
 		}
 
-		// Strip out the beginning of the known_host key.
+		// Strip out the begining of the known_host key.
 		// This is either an optional marker or a (set of) hostname(s).
 		keyFields := bytes.Fields(in)
 		if len(keyFields) < 3 || len(keyFields) > 5 {
@@ -284,12 +281,6 @@ type PublicKey interface {
 	Verify(data []byte, sig *Signature) error
 }
 
-// CryptoPublicKey, if implemented by a PublicKey,
-// returns the underlying crypto.PublicKey form of the key.
-type CryptoPublicKey interface {
-	CryptoPublicKey() crypto.PublicKey
-}
-
 // A Signer can create signatures that verify against a public key.
 type Signer interface {
 	// PublicKey returns an associated PublicKey instance.
@@ -355,10 +346,6 @@ func (r *rsaPublicKey) Verify(data []byte, sig *Signature) error {
 	h.Write(data)
 	digest := h.Sum(nil)
 	return rsa.VerifyPKCS1v15((*rsa.PublicKey)(r), crypto.SHA1, digest, sig.Blob)
-}
-
-func (r *rsaPublicKey) CryptoPublicKey() crypto.PublicKey {
-	return (*rsa.PublicKey)(r)
 }
 
 type dsaPublicKey dsa.PublicKey
@@ -427,10 +414,6 @@ func (k *dsaPublicKey) Verify(data []byte, sig *Signature) error {
 		return nil
 	}
 	return errors.New("ssh: signature did not verify")
-}
-
-func (k *dsaPublicKey) CryptoPublicKey() crypto.PublicKey {
-	return (*dsa.PublicKey)(k)
 }
 
 type dsaPrivateKey struct {
@@ -526,10 +509,6 @@ func (key ed25519PublicKey) Verify(b []byte, sig *Signature) error {
 	return nil
 }
 
-func (k ed25519PublicKey) CryptoPublicKey() crypto.PublicKey {
-	return ed25519.PublicKey(k)
-}
-
 func supportedEllipticCurve(curve elliptic.Curve) bool {
 	return curve == elliptic.P256() || curve == elliptic.P384() || curve == elliptic.P521()
 }
@@ -623,10 +602,6 @@ func (key *ecdsaPublicKey) Verify(data []byte, sig *Signature) error {
 		return nil
 	}
 	return errors.New("ssh: signature did not verify")
-}
-
-func (k *ecdsaPublicKey) CryptoPublicKey() crypto.PublicKey {
-	return (*ecdsa.PublicKey)(k)
 }
 
 // NewSignerFromKey takes an *rsa.PrivateKey, *dsa.PrivateKey,
@@ -725,8 +700,8 @@ func (s *wrappedSigner) Sign(rand io.Reader, data []byte) (*Signature, error) {
 }
 
 // NewPublicKey takes an *rsa.PublicKey, *dsa.PublicKey, *ecdsa.PublicKey,
-// or ed25519.PublicKey returns a corresponding PublicKey instance.
-// ECDSA keys must use P-256, P-384 or P-521.
+// ed25519.PublicKey, or any other crypto.Signer and returns a corresponding
+// Signer instance. ECDSA keys must use P-256, P-384 or P-521.
 func NewPublicKey(key interface{}) (PublicKey, error) {
 	switch key := key.(type) {
 	case *rsa.PublicKey:
@@ -756,24 +731,12 @@ func ParsePrivateKey(pemBytes []byte) (Signer, error) {
 	return NewSignerFromKey(key)
 }
 
-// encryptedBlock tells whether a private key is
-// encrypted by examining its Proc-Type header
-// for a mention of ENCRYPTED
-// according to RFC 1421 Section 4.6.1.1.
-func encryptedBlock(block *pem.Block) bool {
-	return strings.Contains(block.Headers["Proc-Type"], "ENCRYPTED")
-}
-
 // ParseRawPrivateKey returns a private key from a PEM encoded private key. It
 // supports RSA (PKCS#1), DSA (OpenSSL), and ECDSA private keys.
 func ParseRawPrivateKey(pemBytes []byte) (interface{}, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
 		return nil, errors.New("ssh: no key found")
-	}
-
-	if encryptedBlock(block) {
-		return nil, errors.New("ssh: cannot decode encrypted private keys")
 	}
 
 	switch block.Type {
@@ -798,8 +761,8 @@ func ParseDSAPrivateKey(der []byte) (*dsa.PrivateKey, error) {
 		P       *big.Int
 		Q       *big.Int
 		G       *big.Int
-		Pub     *big.Int
 		Priv    *big.Int
+		Pub     *big.Int
 	}
 	rest, err := asn1.Unmarshal(der, &k)
 	if err != nil {
@@ -816,9 +779,9 @@ func ParseDSAPrivateKey(der []byte) (*dsa.PrivateKey, error) {
 				Q: k.Q,
 				G: k.G,
 			},
-			Y: k.Pub,
+			Y: k.Priv,
 		},
-		X: k.Priv,
+		X: k.Pub,
 	}, nil
 }
 
@@ -880,26 +843,4 @@ func parseOpenSSHPrivateKey(key []byte) (*ed25519.PrivateKey, error) {
 	pk := ed25519.PrivateKey(make([]byte, ed25519.PrivateKeySize))
 	copy(pk, pk1.Priv)
 	return &pk, nil
-}
-
-// FingerprintLegacyMD5 returns the user presentation of the key's
-// fingerprint as described by RFC 4716 section 4.
-func FingerprintLegacyMD5(pubKey PublicKey) string {
-	md5sum := md5.Sum(pubKey.Marshal())
-	hexarray := make([]string, len(md5sum))
-	for i, c := range md5sum {
-		hexarray[i] = hex.EncodeToString([]byte{c})
-	}
-	return strings.Join(hexarray, ":")
-}
-
-// FingerprintSHA256 returns the user presentation of the key's
-// fingerprint as unpadded base64 encoded sha256 hash.
-// This format was introduced from OpenSSH 6.8.
-// https://www.openssh.com/txt/release-6.8
-// https://tools.ietf.org/html/rfc4648#section-3.2 (unpadded base64 encoding)
-func FingerprintSHA256(pubKey PublicKey) string {
-	sha256sum := sha256.Sum256(pubKey.Marshal())
-	hash := base64.RawStdEncoding.EncodeToString(sha256sum[:])
-	return "SHA256:" + hash
 }
