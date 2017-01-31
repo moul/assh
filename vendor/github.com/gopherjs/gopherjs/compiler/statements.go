@@ -309,9 +309,10 @@ func (c *funcContext) translateStmt(stmt ast.Stmt, label *types.Label) {
 			results = c.resultNames
 		}
 		rVal := c.translateResults(results)
-		if len(c.Flattened) != 0 {
-			c.Printf("$s = -1; return%s;", rVal)
-			return
+		if c.Flattened[s] {
+			resumeCase := c.caseCounter
+			c.caseCounter++
+			c.Printf("/* */ $s = %[1]d; case %[1]d:", resumeCase)
 		}
 		c.Printf("return%s;", rVal)
 

@@ -135,11 +135,11 @@ func (n *Node) RemoteAPIAddr() (string, error) {
 	n.RLock()
 	defer n.RUnlock()
 	if n.manager == nil {
-		return "", errors.Errorf("node is not manager")
+		return "", errors.New("manager is not running")
 	}
 	addr := n.manager.Addr()
 	if addr == "" {
-		return "", errors.Errorf("manager addr is not set")
+		return "", errors.New("manager addr is not set")
 	}
 	return addr, nil
 }
@@ -184,6 +184,21 @@ func New(c *Config) (*Node, error) {
 	n.roleCond = sync.NewCond(n.RLocker())
 	n.connCond = sync.NewCond(n.RLocker())
 	return n, nil
+}
+
+// BindRemote starts a listener that exposes the remote API.
+func (n *Node) BindRemote(ctx context.Context, listenAddr string, advertiseAddr string) error {
+	n.RLock()
+	defer n.RUnlock()
+
+	if n.manager == nil {
+		return errors.New("manager is not running")
+	}
+
+	return n.manager.BindRemote(ctx, manager.RemoteAddrs{
+		ListenAddr:    listenAddr,
+		AdvertiseAddr: advertiseAddr,
+	})
 }
 
 // Start starts a node instance.
@@ -514,6 +529,20 @@ func (n *Node) Agent() *agent.Agent {
 	return n.agent
 }
 
+// IsStateDirty returns true if any objects have been added to raft which make
+// the state "dirty". Currently, the existence of any object other than the
+// default cluster or the local node implies a dirty state.
+func (n *Node) IsStateDirty() (bool, error) {
+	n.RLock()
+	defer n.RUnlock()
+
+	if n.manager == nil {
+		return false, errors.New("node is not a manager")
+	}
+
+	return n.manager.IsStateDirty()
+}
+
 // Remotes returns a list of known peers known to node.
 func (n *Node) Remotes() []api.Peer {
 	weights := n.remotes.Weights()
@@ -670,13 +699,18 @@ func (n *Node) waitRole(ctx context.Context, role string) error {
 }
 
 func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig, ready chan struct{}, workerRole <-chan struct{}) error {
-	remoteAddr, _ := n.remotes.Select(n.NodeID())
-	m, err := manager.New(&manager.Config{
-		ForceNewCluster: n.config.ForceNewCluster,
-		RemoteAPI: manager.RemoteAddrs{
+	var remoteAPI *manager.RemoteAddrs
+	if n.config.ListenRemoteAPI != "" {
+		remoteAPI = &manager.RemoteAddrs{
 			ListenAddr:    n.config.ListenRemoteAPI,
 			AdvertiseAddr: n.config.AdvertiseRemoteAPI,
-		},
+		}
+	}
+
+	remoteAddr, _ := n.remotes.Select(n.NodeID())
+	m, err := manager.New(&manager.Config{
+		ForceNewCluster:  n.config.ForceNewCluster,
+		RemoteAPI:        remoteAPI,
 		ControlAPI:       n.config.ListenControlAPI,
 		SecurityConfig:   securityConfig,
 		ExternalCAs:      n.config.ExternalCAs,

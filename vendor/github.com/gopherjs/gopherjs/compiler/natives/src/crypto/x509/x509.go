@@ -4,9 +4,8 @@ package x509
 
 import "os"
 
-func loadSystemRoots() (*CertPool, error) {
+func initSystemRoots() {
 	// no system roots
-	return NewCertPool(), nil
 }
 
 func execSecurityRoots() (*CertPool, error) {

@@ -536,7 +536,7 @@ type ed25519CertMsg struct {
 	Constraints []byte `ssh:"rest"`
 }
 
-// Add adds a private key to the agent. If a certificate is given,
+// Insert adds a private key to the agent. If a certificate is given,
 // that certificate is added instead as public key.
 func (c *client) Add(key AddedKey) error {
 	var constraints []byte
@@ -580,28 +580,25 @@ func (c *client) insertCert(s interface{}, cert *ssh.Certificate, comment string
 		})
 	case *dsa.PrivateKey:
 		req = ssh.Marshal(dsaCertMsg{
-			Type:        cert.Type(),
-			CertBytes:   cert.Marshal(),
-			X:           k.X,
-			Comments:    comment,
-			Constraints: constraints,
+			Type:      cert.Type(),
+			CertBytes: cert.Marshal(),
+			X:         k.X,
+			Comments:  comment,
 		})
 	case *ecdsa.PrivateKey:
 		req = ssh.Marshal(ecdsaCertMsg{
-			Type:        cert.Type(),
-			CertBytes:   cert.Marshal(),
-			D:           k.D,
-			Comments:    comment,
-			Constraints: constraints,
+			Type:      cert.Type(),
+			CertBytes: cert.Marshal(),
+			D:         k.D,
+			Comments:  comment,
 		})
-	case *ed25519.PrivateKey:
+	case ed25519.PrivateKey:
 		req = ssh.Marshal(ed25519CertMsg{
-			Type:        cert.Type(),
-			CertBytes:   cert.Marshal(),
-			Pub:         []byte(*k)[32:],
-			Priv:        []byte(*k),
-			Comments:    comment,
-			Constraints: constraints,
+			Type:      cert.Type(),
+			CertBytes: cert.Marshal(),
+			Pub:       []byte(k)[32:],
+			Priv:      []byte(k),
+			Comments:  comment,
 		})
 	default:
 		return fmt.Errorf("agent: unsupported key type %T", s)

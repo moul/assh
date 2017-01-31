@@ -16,7 +16,6 @@ import (
 	"log"
 	"math/big"
 
-	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -176,15 +175,6 @@ func parseRSAKey(req []byte) (*AddedKey, error) {
 	return &AddedKey{PrivateKey: priv, Comment: k.Comments}, nil
 }
 
-func parseEd25519Key(req []byte) (*AddedKey, error) {
-	var k ed25519KeyMsg
-	if err := ssh.Unmarshal(req, &k); err != nil {
-		return nil, err
-	}
-	priv := ed25519.PrivateKey(k.Priv)
-	return &AddedKey{PrivateKey: &priv, Comment: k.Comments}, nil
-}
-
 func parseDSAKey(req []byte) (*AddedKey, error) {
 	var k dsaKeyMsg
 	if err := ssh.Unmarshal(req, &k); err != nil {
@@ -229,23 +219,6 @@ func unmarshalECDSA(curveName string, keyBytes []byte, privScalar *big.Int) (pri
 	return priv, nil
 }
 
-func parseEd25519Cert(req []byte) (*AddedKey, error) {
-	var k ed25519CertMsg
-	if err := ssh.Unmarshal(req, &k); err != nil {
-		return nil, err
-	}
-	pubKey, err := ssh.ParsePublicKey(k.CertBytes)
-	if err != nil {
-		return nil, err
-	}
-	priv := ed25519.PrivateKey(k.Priv)
-	cert, ok := pubKey.(*ssh.Certificate)
-	if !ok {
-		return nil, errors.New("agent: bad ED25519 certificate")
-	}
-	return &AddedKey{PrivateKey: &priv, Certificate: cert, Comment: k.Comments}, nil
-}
-
 func parseECDSAKey(req []byte) (*AddedKey, error) {
 	var k ecdsaKeyMsg
 	if err := ssh.Unmarshal(req, &k); err != nil {
@@ -257,7 +230,7 @@ func parseECDSAKey(req []byte) (*AddedKey, error) {
 		return nil, err
 	}
 
-	return &AddedKey{PrivateKey: priv, Comment: k.Comments}, nil
+	return &AddedKey{PrivateKey: &priv, Comment: k.Comments}, nil
 }
 
 func parseRSACert(req []byte) (*AddedKey, error) {
@@ -393,17 +366,13 @@ func (s *server) insertIdentity(req []byte) error {
 	case ssh.KeyAlgoDSA:
 		addedKey, err = parseDSAKey(req)
 	case ssh.KeyAlgoECDSA256, ssh.KeyAlgoECDSA384, ssh.KeyAlgoECDSA521:
-		addedKey, err = parseECDSAKey(req)
-	case ssh.KeyAlgoED25519:
-		addedKey, err = parseEd25519Key(req)
+		addedKey, err = parseECDSACert(req)
 	case ssh.CertAlgoRSAv01:
 		addedKey, err = parseRSACert(req)
 	case ssh.CertAlgoDSAv01:
 		addedKey, err = parseDSACert(req)
 	case ssh.CertAlgoECDSA256v01, ssh.CertAlgoECDSA384v01, ssh.CertAlgoECDSA521v01:
 		addedKey, err = parseECDSACert(req)
-	case ssh.CertAlgoED25519v01:
-		addedKey, err = parseEd25519Cert(req)
 	default:
 		return fmt.Errorf("agent: not implemented: %q", record.Type)
 	}

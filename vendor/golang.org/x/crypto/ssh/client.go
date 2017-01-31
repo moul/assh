@@ -97,11 +97,13 @@ func (c *connection) clientHandshake(dialAddress string, config *ClientConfig) e
 	c.transport = newClientTransport(
 		newTransport(c.sshConn.conn, config.Rand, true /* is client */),
 		c.clientVersion, c.serverVersion, config, dialAddress, c.sshConn.RemoteAddr())
-	if err := c.transport.waitSession(); err != nil {
+	if err := c.transport.requestInitialKeyChange(); err != nil {
 		return err
 	}
 
+	// We just did the key change, so the session ID is established.
 	c.sessionID = c.transport.getSessionID()
+
 	return c.clientAuthenticate(config)
 }
 
