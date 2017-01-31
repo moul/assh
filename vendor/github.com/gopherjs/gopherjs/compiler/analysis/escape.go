@@ -6,7 +6,7 @@ import (
 	"go/types"
 )
 
-func EscapingObjects(n ast.Node, info *types.Info) []*types.Var {
+func EscapingObjects(n ast.Node, info *types.Info) map[*types.Var]bool {
 	v := escapeAnalysis{
 		info:         info,
 		escaping:     make(map[*types.Var]bool),
@@ -14,11 +14,7 @@ func EscapingObjects(n ast.Node, info *types.Info) []*types.Var {
 		bottomScopes: make(map[*types.Scope]bool),
 	}
 	ast.Walk(&v, n)
-	var list []*types.Var
-	for obj := range v.escaping {
-		list = append(list, obj)
-	}
-	return list
+	return v.escaping
 }
 
 type escapeAnalysis struct {

@@ -167,9 +167,6 @@ func Match(pattern, name string) (matched bool, err error) {
 	if name == "." || len(name) <= len(zenv.root) {
 		return false, nil
 	}
-	if zenv.dre.MatchString(name + "/") {
-		return true, nil
-	}
 
 	if zenv.fre.MatchString(name) {
 		return true, nil
