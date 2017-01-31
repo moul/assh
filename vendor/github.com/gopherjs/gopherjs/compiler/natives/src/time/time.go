@@ -4,6 +4,7 @@ package time
 
 import (
 	"runtime"
+	"strings"
 
 	"github.com/gopherjs/gopherjs/js"
 )
@@ -28,8 +29,8 @@ type runtimeTimer struct {
 func initLocal() {
 	d := js.Global.Get("Date").New()
 	s := d.String()
-	i := indexByte(s, '(')
-	j := indexByte(s, ')')
+	i := strings.IndexByte(s, '(')
+	j := strings.IndexByte(s, ')')
 	if i == -1 || j == -1 {
 		localLoc.name = "UTC"
 		return
@@ -93,9 +94,4 @@ func initTestingZone() {
 	}
 	z.name = "Local"
 	localLoc = *z
-}
-
-// indexByte is copied from strings package to avoid importing it (since the real time package doesn't).
-func indexByte(s string, c byte) int {
-	return js.InternalObject(s).Call("indexOf", js.Global.Get("String").Call("fromCharCode", c)).Int()
 }

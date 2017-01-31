@@ -1,4 +1,4 @@
-BINARIES ?=	assh
+BINARIES ?=	assh webapp
 GODIR ?=	github.com/moul/advanced-ssh-config
 
 PKG_BASE_DIR ?=	./pkg

@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -122,21 +121,4 @@ func TestSelect(t *testing.T) {
 	}()
 	<-c
 	checkI(t, 3)
-}
-
-func TestCloseAfterReceiving(t *testing.T) {
-	ch := make(chan struct{})
-	go func() {
-		<-ch
-		close(ch)
-	}()
-	ch <- struct{}{}
-}
-
-func TestDeferWithBlocking(t *testing.T) {
-	ch := make(chan struct{})
-	go func() { ch <- struct{}{} }()
-	defer func() { <-ch }()
-	fmt.Print("")
-	return
 }

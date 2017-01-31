@@ -1,5 +1,5 @@
 hash: aec675fc4428e70de14f6436b259ae34adf78b246d8dd326116fc94ec135015c
-updated: 2017-01-21T19:18:10.141435731+01:00
+updated: 2017-01-31T21:32:37.474174642+01:00
 imports:
 - name: github.com/aokoli/goutils
   version: 9c37978a95bd5c709a15883b6242714ea6709e64
@@ -16,11 +16,11 @@ imports:
 - name: github.com/deckarep/gosx-notifier
   version: 9daaf8a4715ebe4daf300036644762fe27d3aded
 - name: github.com/docker/docker
-  version: 7a97705b52e7f5c65d31870579cb1dcc09506d89
+  version: 0fbff69ab0f65dec966b8b5d814b9df59f7185da
   subpackages:
   - api/types/strslice
 - name: github.com/docker/go-units
-  version: e30f1e79f3cd72542f2026ceec18d3bd67ab859c
+  version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
 - name: github.com/docker/libcompose
   version: f12d14623f73a0ca0d7fc37253a99165ae48d39f
   subpackages:
@@ -29,18 +29,31 @@ imports:
   version: 7a41df006ff9af79a29f0ffa9c5f21fbe6314a2d
 - name: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
+- name: github.com/gin-gonic/gin
+  version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
+  subpackages:
+  - binding
+  - render
 - name: github.com/go-ole/go-ole
   version: 5e9c030faf78847db7aa77e3661b9cc449de29b7
   subpackages:
   - oleutil
+- name: github.com/golang/protobuf
+  version: 8ee79997227bf9b34611aee7946ae64735e6fd93
+  subpackages:
+  - proto
 - name: github.com/guelfey/go.dbus
   version: f6a3a2366cc39b8479cadc499d3c735fb10fbdda
 - name: github.com/haklop/gnotifier
   version: 0de36badf60155d5953373ed432982b20c62fb91
+- name: github.com/manucorporat/sse
+  version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
 - name: github.com/Masterminds/sprig
-  version: 69011c0cd9b4d2e0733c4d9e2c8e2a5a0d0a2f2f
+  version: c974324bb59b465f00b128a055656d44f60e4ffc
+- name: github.com/mattn/go-isatty
+  version: 30a891c33c7cde7b02a981314b4228ec99380cca
 - name: github.com/mattn/go-zglob
-  version: 7a58d52636c9498e9d6b41a3a19e9891388c559b
+  version: 95345c4e1c0ebc9d16a3284177f09360f4d20fab
   subpackages:
   - fastwalk
 - name: github.com/mgutz/ansi
@@ -48,7 +61,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/shirou/gopsutil
-  version: 1123132e5ad392485dbd16e0f09a0db8c963a2ab
+  version: 70a1b78fe69202d93d6718fc9e3a4d6f81edfd58
   subpackages:
   - cpu
   - host
@@ -63,9 +76,9 @@ imports:
 - name: github.com/StackExchange/wmi
   version: e54cbda6595d7293a7a468ccf9525f6bc8887f99
 - name: github.com/urfave/cli
-  version: f1be59ff3d239f0942b201619030d302bce912cc
+  version: 347a9884a87374d000eec7e6445a34487c1f4a2b
 - name: golang.org/x/crypto
-  version: b8a2a83acfe6e6770b75de42d5ff4c67596675c0
+  version: 5bcd134fee4dd1475da17714aac19c0aa0142e2f
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -76,22 +89,24 @@ imports:
   version: d75a52659825e75fff6158388dddc6a5b04f9ba5
   subpackages:
   - unix
+- name: gopkg.in/go-playground/validator.v8
+  version: 5f57d2222ad794d0dffb07e664ea05e2ee07d60c
 - name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
+  version: 4c78c975fe7c825c6d1466c42be594d1d6f3aba6
 testImports:
 - name: github.com/gopherjs/gopherjs
-  version: e768d48ae19f4fd2452fe7cd6b3409d9cb7dc296
+  version: 78919e0ff9540aec8ec7ddf27fbf607ae41abc2f
   subpackages:
   - js
 - name: github.com/jtolds/gls
-  version: bb0351aa7eb6f322f32667d51375f26a2bca6628
+  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
 - name: github.com/smartystreets/assertions
-  version: 26acb9229f421449ac63d014995b282d59261a8b
+  version: 40711f7748186bbf9c99977cd89f21ce1a229447
   subpackages:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: 3bd662eac601ad6436e64776af2e112069eb2edc
+  version: c53abc99456fa3402dd33c15ee51c3e545e04a3f
   subpackages:
   - convey
   - convey/gotest

@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -31,10 +30,6 @@ func YieldFileSystemItems(root string, excludedDirs []string) chan *FileSystemIt
 	go func() {
 		filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return filepath.SkipDir
-			}
-
-			if info.IsDir() && strings.HasPrefix(info.Name(), ".") {
 				return filepath.SkipDir
 			}
 

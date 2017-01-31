@@ -9,7 +9,3 @@ import (
 func TestMultiWriter_WriteStringSingleAlloc(t *testing.T) {
 	t.Skip()
 }
-
-func TestMultiReaderFlatten(t *testing.T) {
-	t.Skip()
-}
