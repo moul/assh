@@ -722,6 +722,7 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 * Improve hostname output in `assh config list` ([#204](https://github.com/moul/advanced-ssh-config/issues/204))
 * Support for inline comments ([#34](https://github.com/moul/advanced-ssh-config/issues/34))
 * Initial support of values validation to avoid writing invalid .ssh/config file ([#92](https://github.com/moul/advanced-ssh-config/issues/92))
+* Alpha version of the webapp ([#69](https://github.com/moul/advanced-ssh-config/issues/69))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...master)
 
