@@ -1,4 +1,7 @@
 // +build !openbsd
+// +build !freebsd
+// +build !netbsd
+// +build !windows
 
 package hooks
 

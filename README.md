@@ -747,7 +747,7 @@ Host *
 
 ### master (unreleased)
 
-* No entry
+* Fix NetBSD, FreeBSD and Windows builds ([#182](https://github.com/moul/advanced-ssh-config/issues/182))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.6.0...master)
 
