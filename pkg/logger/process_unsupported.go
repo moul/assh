@@ -1,4 +1,4 @@
-// +build openbsd
+// +build openbsd netbsd freebsd
 
 package logger
 
