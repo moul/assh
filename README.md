@@ -745,6 +745,12 @@ Host *
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.6.0...master)
+
 ### v2.6.0 (2017-02-03)
 
 * Support `UseKeychain` option ([#189](https://github.com/moul/advanced-ssh-config/pull/189)) ([@ocean90](https://github.com/ocean90))
