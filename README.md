@@ -56,6 +56,7 @@ For specific examples, see [3rd Party Integration](#3rd-party-integration)
 * **inheritance**: make hosts inherits from host hosts or templates
 * **variable expansion**: resolve variables from the environment
 * **smart proxycommand**: RAW tcp connection when possible with `netcat` and `socat` as default fallbacks
+* **rate limit**: configure a per-host or global rate-limiting
 * **JSON output**
 * **[Graphviz](http://www.graphviz.org/)**: graphviz reprensentation of the hosts
 
@@ -404,6 +405,7 @@ hosts:
     Port: 24
     Hostname: dolphin
     Aliases: ecco
+    RateLimit: 10M # 10Mbytes/second rate limiting
 
   schooltemplate:
     User: student
@@ -748,6 +750,7 @@ Host *
 ### master (unreleased)
 
 * Fix NetBSD, FreeBSD and Windows builds ([#182](https://github.com/moul/advanced-ssh-config/issues/182))
+* Add RateLimit support ([#65](https://github.com/moul/advanced-ssh-config/issues/65))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.6.0...master)
 
