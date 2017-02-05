@@ -168,9 +168,8 @@ func (c *Container) Kill(ctx context.Context, signal string) error {
 }
 
 // IsRunning returns the running state of the container.
-// FIXME(vdemeester): remove the nil error here
-func (c *Container) IsRunning(ctx context.Context) (bool, error) {
-	return c.container.State.Running, nil
+func (c *Container) IsRunning(ctx context.Context) bool {
+	return c.container.State.Running
 }
 
 // Run creates, start and attach to the container based on the image name,
@@ -292,16 +291,6 @@ func (c *Container) Start(ctx context.Context) error {
 	return nil
 }
 
-// ID returns the container Id.
-func (c *Container) ID() (string, error) {
-	return c.container.ID, nil
-}
-
-// Name returns the container name.
-func (c *Container) Name() string {
-	return c.container.Name
-}
-
 // Restart restarts the container if existing, does nothing otherwise.
 func (c *Container) Restart(ctx context.Context, timeout int) error {
 	timeoutDuration := time.Duration(timeout) * time.Second
@@ -353,6 +342,21 @@ func (c *Container) Port(ctx context.Context, port string) (string, error) {
 // Networks returns the containers network
 func (c *Container) Networks() (map[string]*network.EndpointSettings, error) {
 	return c.container.NetworkSettings.Networks, nil
+}
+
+// ID returns the container Id.
+func (c *Container) ID() string {
+	return c.container.ID
+}
+
+// ShortID return the container Id in its short form
+func (c *Container) ShortID() string {
+	return c.container.ID[:12]
+}
+
+// Name returns the container name.
+func (c *Container) Name() string {
+	return c.container.Name
 }
 
 // Image returns the container image. Depending on the engine version its either

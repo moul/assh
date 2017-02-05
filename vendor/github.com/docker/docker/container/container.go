@@ -37,6 +37,7 @@ import (
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/docker/volume"
 	"github.com/docker/go-connections/nat"
+	"github.com/docker/go-units"
 	"github.com/docker/libnetwork"
 	"github.com/docker/libnetwork/netlabel"
 	"github.com/docker/libnetwork/options"
@@ -221,12 +222,6 @@ func (container *Container) SetupWorkingDirectory(rootUID, rootGID int) error {
 
 	container.Config.WorkingDir = filepath.Clean(container.Config.WorkingDir)
 
-	// If can't mount container FS at this point (e.g. Hyper-V Containers on
-	// Windows) bail out now with no action.
-	if !container.canMountFS() {
-		return nil
-	}
-
 	pth, err := container.GetResourcePath(container.Config.WorkingDir)
 	if err != nil {
 		return err
@@ -316,7 +311,7 @@ func (container *Container) CheckpointDir() string {
 // StartLogger starts a new logger driver for the container.
 func (container *Container) StartLogger() (logger.Logger, error) {
 	cfg := container.HostConfig.LogConfig
-	c, err := logger.GetLogDriver(cfg.Type)
+	initDriver, err := logger.GetLogDriver(cfg.Type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get logging factory: %v", err)
 	}
@@ -341,7 +336,23 @@ func (container *Container) StartLogger() (logger.Logger, error) {
 			return nil, err
 		}
 	}
-	return c(info)
+
+	l, err := initDriver(info)
+	if err != nil {
+		return nil, err
+	}
+
+	if containertypes.LogMode(cfg.Config["mode"]) == containertypes.LogModeNonBlock {
+		bufferSize := int64(-1)
+		if s, exists := cfg.Config["max-buffer-size"]; exists {
+			bufferSize, err = units.RAMInBytes(s)
+			if err != nil {
+				return nil, err
+			}
+		}
+		l = logger.NewRingLogger(l, info, bufferSize)
+	}
+	return l, nil
 }
 
 // GetProcessLabel returns the process label for the container.
@@ -363,19 +374,6 @@ func (container *Container) GetMountLabel() string {
 // GetExecIDs returns the list of exec commands running on the container.
 func (container *Container) GetExecIDs() []string {
 	return container.ExecCommands.List()
-}
-
-// Attach connects to the container's stdio to the client streams
-func (container *Container) Attach(cfg *stream.AttachConfig) chan error {
-	ctx := container.InitAttachContext()
-
-	cfg.TTY = container.Config.Tty
-	if !container.Config.OpenStdin {
-		cfg.Stdin = nil
-	}
-	cfg.CloseStdin = cfg.Stdin != nil && container.Config.StdinOnce
-
-	return container.StreamConfig.Attach(ctx, cfg)
 }
 
 // ShouldRestart decides whether the daemon should restart the container or not.
