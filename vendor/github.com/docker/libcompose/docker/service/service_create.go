@@ -155,11 +155,7 @@ func addIpc(config *containertypes.HostConfig, service project.Service, containe
 		return nil, fmt.Errorf("Failed to find container for IPC %v", ipc)
 	}
 
-	id, err := containers[0].ID()
-	if err != nil {
-		return nil, err
-	}
-
+	id := containers[0].ID()
 	config.IpcMode = containertypes.IpcMode("container:" + id)
 	return config, nil
 }
@@ -169,11 +165,7 @@ func addNetNs(config *containertypes.HostConfig, service project.Service, contai
 		return nil, fmt.Errorf("Failed to find container for networks ns %v", networkMode)
 	}
 
-	id, err := containers[0].ID()
-	if err != nil {
-		return nil, err
-	}
-
+	id := containers[0].ID()
 	config.NetworkMode = containertypes.NetworkMode("container:" + id)
 	return config, nil
 }

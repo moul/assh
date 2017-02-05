@@ -365,7 +365,7 @@ func TestAnonymous(t *testing.T) {
 			B string `validate:"required" json:"BEE"`
 		}
 		anonymousC struct {
-			c string `validate:"required"`
+			c string `validate:"required" json:"SEE"`
 		}
 	}
 
@@ -381,7 +381,7 @@ func TestAnonymous(t *testing.T) {
 			B: "",
 		},
 		anonymousC: struct {
-			c string `validate:"required"`
+			c string `validate:"required" json:"SEE"`
 		}{
 			c: "",
 		},
@@ -398,48 +398,12 @@ func TestAnonymous(t *testing.T) {
 	Equal(t, errs["Test.AnonymousB.B"].Name, "BEE")
 
 	s := struct {
-		c string `validate:"required"`
+		c string `validate:"required" json:"SEE"`
 	}{
 		c: "",
 	}
 
 	err = v2.Struct(s)
-	Equal(t, err, nil)
-}
-
-func TestAnonymousSameStructDifferentTags(t *testing.T) {
-
-	v2 := New(&Config{TagName: "validate", FieldNameTag: "json"})
-
-	type Test struct {
-		A interface{}
-	}
-
-	tst := &Test{
-		A: struct {
-			A string `validate:"required"`
-		}{
-			A: "",
-		},
-	}
-
-	err := v2.Struct(tst)
-	NotEqual(t, err, nil)
-
-	errs := err.(ValidationErrors)
-
-	Equal(t, len(errs), 1)
-	AssertError(t, errs, "Test.A.A", "A", "required")
-
-	tst = &Test{
-		A: struct {
-			A string `validate:"omitempty,required"`
-		}{
-			A: "",
-		},
-	}
-
-	err = v2.Struct(tst)
 	Equal(t, err, nil)
 }
 
@@ -612,7 +576,6 @@ func TestAliasTags(t *testing.T) {
 
 	validate.RegisterAliasValidation("req", "required,dive,iscolor")
 	arr := []string{"val1", "#fff", "#000"}
-
 	errs = validate.Field(arr, "req")
 	NotEqual(t, errs, nil)
 	AssertError(t, errs, "[0]", "[0]", "iscolor")
@@ -723,7 +686,7 @@ func TestStructPartial(t *testing.T) {
 	errs = validate.StructPartial(tPartial, p2...)
 	Equal(t, errs, nil)
 
-	// this isn't really a robust test, but is ment to illustrate the ANON CASE below
+	// this isnt really a robust test, but is ment to illustrate the ANON CASE below
 	errs = validate.StructPartial(tPartial.SubSlice[0], p3...)
 	Equal(t, errs, nil)
 
@@ -1770,7 +1733,7 @@ func TestMACValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "mac")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d mac failed Error: %s", i, errs)
 			}
@@ -1792,7 +1755,6 @@ func TestIPValidation(t *testing.T) {
 		param    string
 		expected bool
 	}{
-		{"", false},
 		{"10.0.0.1", true},
 		{"172.16.0.1", true},
 		{"192.168.0.1", true},
@@ -1809,7 +1771,7 @@ func TestIPValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "ip")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d ip failed Error: %s", i, errs)
 			}
@@ -1847,7 +1809,7 @@ func TestIPv6Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "ipv6")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d ipv6 failed Error: %s", i, errs)
 			}
@@ -1885,7 +1847,7 @@ func TestIPv4Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "ipv4")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d ipv4 failed Error: %s", i, errs)
 			}
@@ -1926,7 +1888,7 @@ func TestCIDRValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "cidr")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d cidr failed Error: %s", i, errs)
 			}
@@ -1967,7 +1929,7 @@ func TestCIDRv6Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "cidrv6")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d cidrv6 failed Error: %s", i, errs)
 			}
@@ -2008,7 +1970,7 @@ func TestCIDRv4Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "cidrv4")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d cidrv4 failed Error: %s", i, errs)
 			}
@@ -2019,326 +1981,6 @@ func TestCIDRv4Validation(t *testing.T) {
 				val := errs.(ValidationErrors)[""]
 				if val.Tag != "cidrv4" {
 					t.Fatalf("Index: %d cidrv4 failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestTCPAddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{":80", false},
-		{"127.0.0.1:80", true},
-		{"[::1]:80", true},
-		{"256.0.0.0:1", false},
-		{"[::1]", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "tcp_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d tcp_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Fatalf("Index: %d tcp_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "tcp_addr" {
-					t.Fatalf("Index: %d tcp_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestTCP6AddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{":80", false},
-		{"127.0.0.1:80", false},
-		{"[::1]:80", true},
-		{"256.0.0.0:1", false},
-		{"[::1]", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "tcp6_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d tcp6_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Fatalf("Index: %d tcp6_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "tcp6_addr" {
-					t.Fatalf("Index: %d tcp6_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestTCP4AddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{":80", false},
-		{"127.0.0.1:80", true},
-		{"[::1]:80", false}, // https://github.com/golang/go/issues/14037
-		{"256.0.0.0:1", false},
-		{"[::1]", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "tcp4_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d tcp4_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Log(test.param, IsEqual(errs, nil))
-				t.Fatalf("Index: %d tcp4_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "tcp4_addr" {
-					t.Fatalf("Index: %d tcp4_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestUDPAddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{":80", false},
-		{"127.0.0.1:80", true},
-		{"[::1]:80", true},
-		{"256.0.0.0:1", false},
-		{"[::1]", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "udp_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d udp_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Fatalf("Index: %d udp_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "udp_addr" {
-					t.Fatalf("Index: %d udp_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestUDP6AddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{":80", false},
-		{"127.0.0.1:80", false},
-		{"[::1]:80", true},
-		{"256.0.0.0:1", false},
-		{"[::1]", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "udp6_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d udp6_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Fatalf("Index: %d udp6_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "udp6_addr" {
-					t.Fatalf("Index: %d udp6_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestUDP4AddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{":80", false},
-		{"127.0.0.1:80", true},
-		{"[::1]:80", false}, // https://github.com/golang/go/issues/14037
-		{"256.0.0.0:1", false},
-		{"[::1]", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "udp4_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d udp4_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Log(test.param, IsEqual(errs, nil))
-				t.Fatalf("Index: %d udp4_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "udp4_addr" {
-					t.Fatalf("Index: %d udp4_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestIPAddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{"127.0.0.1", true},
-		{"127.0.0.1:80", false},
-		{"::1", true},
-		{"256.0.0.0", false},
-		{"localhost", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "ip_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d ip_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Fatalf("Index: %d ip_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "ip_addr" {
-					t.Fatalf("Index: %d ip_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestIP6AddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{"127.0.0.1", false}, // https://github.com/golang/go/issues/14037
-		{"127.0.0.1:80", false},
-		{"::1", true},
-		{"0:0:0:0:0:0:0:1", true},
-		{"256.0.0.0", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "ip6_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d ip6_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Fatalf("Index: %d ip6_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "ip6_addr" {
-					t.Fatalf("Index: %d ip6_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestIP4AddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", false},
-		{"127.0.0.1", true},
-		{"127.0.0.1:80", false},
-		{"::1", false}, // https://github.com/golang/go/issues/14037
-		{"256.0.0.0", false},
-		{"localhost", false},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "ip4_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d ip4_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Log(test.param, IsEqual(errs, nil))
-				t.Fatalf("Index: %d ip4_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "ip4_addr" {
-					t.Fatalf("Index: %d ip4_addr failed Error: %s", i, errs)
-				}
-			}
-		}
-	}
-}
-
-func TestUnixAddrValidation(t *testing.T) {
-	tests := []struct {
-		param    string
-		expected bool
-	}{
-		{"", true},
-		{"v.sock", true},
-	}
-
-	for i, test := range tests {
-		errs := validate.Field(test.param, "unix_addr")
-		if test.expected {
-			if !IsEqual(errs, nil) {
-				t.Fatalf("Index: %d unix_addr failed Error: %s", i, errs)
-			}
-		} else {
-			if IsEqual(errs, nil) {
-				t.Log(test.param, IsEqual(errs, nil))
-				t.Fatalf("Index: %d unix_addr failed Error: %s", i, errs)
-			} else {
-				val := errs.(ValidationErrors)[""]
-				if val.Tag != "unix_addr" {
-					t.Fatalf("Index: %d unix_addr failed Error: %s", i, errs)
 				}
 			}
 		}
@@ -2404,9 +2046,6 @@ func TestSliceMapArrayChanFuncPtrInterfaceRequiredValidation(t *testing.T) {
 	Equal(t, errs, nil)
 
 	errs = validate.Field(iface, "")
-	Equal(t, errs, nil)
-
-	errs = validate.FieldWithValue(nil, iface, "")
 	Equal(t, errs, nil)
 
 	var f func(string)
@@ -3058,7 +2697,7 @@ func TestSSNValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "ssn")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d SSN failed Error: %s", i, errs)
 			}
@@ -3092,7 +2731,7 @@ func TestLongitudeValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "longitude")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d Longitude failed Error: %s", i, errs)
 			}
@@ -3126,7 +2765,7 @@ func TestLatitudeValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "latitude")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d Latitude failed Error: %s", i, errs)
 			}
@@ -3166,7 +2805,7 @@ func TestDataURIValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "datauri")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d DataURI failed Error: %s", i, errs)
 			}
@@ -3204,7 +2843,7 @@ func TestMultibyteValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "multibyte")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d Multibyte failed Error: %s", i, errs)
 			}
@@ -3243,7 +2882,7 @@ func TestPrintableASCIIValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "printascii")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d Printable ASCII failed Error: %s", i, errs)
 			}
@@ -3281,7 +2920,7 @@ func TestASCIIValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "ascii")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d ASCII failed Error: %s", i, errs)
 			}
@@ -3316,7 +2955,7 @@ func TestUUID5Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "uuid5")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d UUID5 failed Error: %s", i, errs)
 			}
@@ -3350,7 +2989,7 @@ func TestUUID4Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "uuid4")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d UUID4 failed Error: %s", i, errs)
 			}
@@ -3383,7 +3022,7 @@ func TestUUID3Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "uuid3")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d UUID3 failed Error: %s", i, errs)
 			}
@@ -3419,7 +3058,7 @@ func TestUUIDValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "uuid")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d UUID failed Error: %s", i, errs)
 			}
@@ -3457,7 +3096,7 @@ func TestISBNValidation(t *testing.T) {
 
 		errs := validate.Field(test.param, "isbn")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d ISBN failed Error: %s", i, errs)
 			}
@@ -3494,7 +3133,7 @@ func TestISBN13Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "isbn13")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d ISBN13 failed Error: %s", i, errs)
 			}
@@ -3532,7 +3171,7 @@ func TestISBN10Validation(t *testing.T) {
 
 		errs := validate.Field(test.param, "isbn10")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d ISBN10 failed Error: %s", i, errs)
 			}
@@ -5017,7 +4656,6 @@ func TestUrl(t *testing.T) {
 		{"rtmp://foobar.com", true},
 		{"http://www.foo_bar.com/", true},
 		{"http://localhost:3000/", true},
-		{"http://foobar.com/#baz", true},
 		{"http://foobar.com#baz=qux", true},
 		{"http://foobar.com/t$-_.+!*\\'(),", true},
 		{"http://www.foobar.com/~foobar", true},
@@ -5033,7 +4671,7 @@ func TestUrl(t *testing.T) {
 
 		errs := validate.Field(test.param, "url")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d URL failed Error: %s", i, errs)
 			}
@@ -5097,7 +4735,7 @@ func TestUri(t *testing.T) {
 
 		errs := validate.Field(test.param, "uri")
 
-		if test.expected {
+		if test.expected == true {
 			if !IsEqual(errs, nil) {
 				t.Fatalf("Index: %d URI failed Error: %s", i, errs)
 			}
@@ -5321,26 +4959,6 @@ func TestEmail(t *testing.T) {
 	errs := validate.Field(s, "email")
 	Equal(t, errs, nil)
 
-	s = "Dörte@Sörensen.example.com"
-	errs = validate.Field(s, "email")
-	Equal(t, errs, nil)
-
-	s = "θσερ@εχαμπλε.ψομ"
-	errs = validate.Field(s, "email")
-	Equal(t, errs, nil)
-
-	s = "юзер@екзампл.ком"
-	errs = validate.Field(s, "email")
-	Equal(t, errs, nil)
-
-	s = "उपयोगकर्ता@उदाहरण.कॉम"
-	errs = validate.Field(s, "email")
-	Equal(t, errs, nil)
-
-	s = "用户@例子.广告"
-	errs = validate.Field(s, "email")
-	Equal(t, errs, nil)
-
 	s = ""
 	errs = validate.Field(s, "email")
 	NotEqual(t, errs, nil)
@@ -5521,16 +5139,6 @@ func TestAlpha(t *testing.T) {
 	errs := validate.Field(s, "alpha")
 	Equal(t, errs, nil)
 
-	s = "abc®"
-	errs = validate.Field(s, "alpha")
-	NotEqual(t, errs, nil)
-	AssertError(t, errs, "", "", "alpha")
-
-	s = "abc÷"
-	errs = validate.Field(s, "alpha")
-	NotEqual(t, errs, nil)
-	AssertError(t, errs, "", "", "alpha")
-
 	s = "abc1"
 	errs = validate.Field(s, "alpha")
 	NotEqual(t, errs, nil)
@@ -5539,7 +5147,6 @@ func TestAlpha(t *testing.T) {
 	errs = validate.Field(1, "alpha")
 	NotEqual(t, errs, nil)
 	AssertError(t, errs, "", "", "alpha")
-
 }
 
 func TestStructStringValidation(t *testing.T) {
@@ -5825,76 +5432,4 @@ func TestCustomFieldName(t *testing.T) {
 	Equal(t, errs["A.C"].Name, "C")
 	Equal(t, errs["A.D"].Name, "D")
 	Equal(t, errs["A.E"].Name, "E")
-}
-
-func TestMutipleRecursiveExtractStructCache(t *testing.T) {
-
-	type Recursive struct {
-		Field *string `validate:"exists,required,len=5,ne=string"`
-	}
-
-	var test Recursive
-
-	current := reflect.ValueOf(test)
-	name := "Recursive"
-	proceed := make(chan struct{})
-
-	sc := validate.extractStructCache(current, name)
-	ptr := fmt.Sprintf("%p", sc)
-
-	for i := 0; i < 100; i++ {
-
-		go func() {
-			<-proceed
-			sc := validate.extractStructCache(current, name)
-			Equal(t, ptr, fmt.Sprintf("%p", sc))
-		}()
-	}
-
-	close(proceed)
-}
-
-// Thanks @robbrockbank, see https://github.com/go-playground/validator/issues/249
-func TestPointerAndOmitEmpty(t *testing.T) {
-
-	type Test struct {
-		MyInt *int `validate:"omitempty,gte=2,lte=255"`
-	}
-
-	val1 := 0
-	val2 := 256
-
-	t1 := Test{MyInt: &val1} // This should fail validation on gte because value is 0
-	t2 := Test{MyInt: &val2} // This should fail validate on lte because value is 256
-	t3 := Test{MyInt: nil}   // This should succeed validation because pointer is nil
-
-	errs := validate.Struct(t1)
-	NotEqual(t, errs, nil)
-	AssertError(t, errs, "Test.MyInt", "MyInt", "gte")
-
-	errs = validate.Struct(t2)
-	NotEqual(t, errs, nil)
-	AssertError(t, errs, "Test.MyInt", "MyInt", "lte")
-
-	errs = validate.Struct(t3)
-	Equal(t, errs, nil)
-
-	type TestIface struct {
-		MyInt interface{} `validate:"omitempty,gte=2,lte=255"`
-	}
-
-	ti1 := TestIface{MyInt: &val1} // This should fail validation on gte because value is 0
-	ti2 := TestIface{MyInt: &val2} // This should fail validate on lte because value is 256
-	ti3 := TestIface{MyInt: nil}   // This should succeed validation because pointer is nil
-
-	errs = validate.Struct(ti1)
-	NotEqual(t, errs, nil)
-	AssertError(t, errs, "TestIface.MyInt", "MyInt", "gte")
-
-	errs = validate.Struct(ti2)
-	NotEqual(t, errs, nil)
-	AssertError(t, errs, "TestIface.MyInt", "MyInt", "lte")
-
-	errs = validate.Struct(ti3)
-	Equal(t, errs, nil)
 }

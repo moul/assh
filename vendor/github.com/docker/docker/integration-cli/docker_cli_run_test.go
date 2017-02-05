@@ -1717,7 +1717,7 @@ func (s *DockerSuite) TestRunWorkdirExistsAndIsFile(c *check.C) {
 	expected := "not a directory"
 	if testEnv.DaemonPlatform() == "windows" {
 		existingFile = `\windows\system32\ntdll.dll`
-		expected = `Cannot mkdir: \windows\system32\ntdll.dll is not a directory.`
+		expected = `The directory name is invalid.`
 	}
 
 	out, exitCode, err := dockerCmdWithError("run", "-w", existingFile, "busybox")
@@ -4414,4 +4414,28 @@ func (s *DockerSuite) TestRunHostnameInHostMode(c *check.C) {
 	expectedOutput := "foobar\nfoobar"
 	out, _ := dockerCmd(c, "run", "--net=host", "--hostname=foobar", "busybox", "sh", "-c", `echo $HOSTNAME && hostname`)
 	c.Assert(strings.TrimSpace(out), checker.Equals, expectedOutput)
+}
+
+func (s *DockerSuite) TestRunAddDeviceCgroupRule(c *check.C) {
+	testRequires(c, DaemonIsLinux)
+
+	deviceRule := "c 7:128 rwm"
+
+	out, _ := dockerCmd(c, "run", "--rm", "busybox", "cat", "/sys/fs/cgroup/devices/devices.list")
+	if strings.Contains(out, deviceRule) {
+		c.Fatalf("%s shouldn't been in the device.list", deviceRule)
+	}
+
+	out, _ = dockerCmd(c, "run", "--rm", fmt.Sprintf("--device-cgroup-rule=%s", deviceRule), "busybox", "grep", deviceRule, "/sys/fs/cgroup/devices/devices.list")
+	c.Assert(strings.TrimSpace(out), checker.Equals, deviceRule)
+}
+
+// Verifies that running as local system is operating correctly on Windows
+func (s *DockerSuite) TestWindowsRunAsSystem(c *check.C) {
+	testRequires(c, DaemonIsWindows)
+	if testEnv.DaemonKernelVersionNumeric() < 15000 {
+		c.Skip("Requires build 15000 or later")
+	}
+	out, _ := dockerCmd(c, "run", "--net=none", `--user=nt authority\system`, "--hostname=XYZZY", minimalBaseImage(), "cmd", "/c", `@echo %USERNAME%`)
+	c.Assert(strings.TrimSpace(out), checker.Equals, "XYZZY$")
 }

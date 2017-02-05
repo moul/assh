@@ -62,7 +62,7 @@ import (
 // It is incremented whenever an incompatibility between the generated code and
 // proto package is introduced; the generated code references
 // a constant, proto.ProtoPackageIsVersionN (where N is generatedCodeVersion).
-const generatedCodeVersion = 2
+const generatedCodeVersion = 1
 
 // A Plugin provides functionality to add to the output during Go code generation,
 // such as to produce RPC stubs.
@@ -264,36 +264,6 @@ type FileDescriptor struct {
 // PackageName is the package name we'll use in the generated code to refer to this file.
 func (d *FileDescriptor) PackageName() string { return uniquePackageOf(d.FileDescriptorProto) }
 
-// VarName is the variable name we'll use in the generated code to refer
-// to the compressed bytes of this descriptor. It is not exported, so
-// it is only valid inside the generated package.
-func (d *FileDescriptor) VarName() string { return fmt.Sprintf("fileDescriptor%d", d.index) }
-
-// goPackageOption interprets the file's go_package option.
-// If there is no go_package, it returns ("", "", false).
-// If there's a simple name, it returns ("", pkg, true).
-// If the option implies an import path, it returns (impPath, pkg, true).
-func (d *FileDescriptor) goPackageOption() (impPath, pkg string, ok bool) {
-	pkg = d.GetOptions().GetGoPackage()
-	if pkg == "" {
-		return
-	}
-	ok = true
-	// The presence of a slash implies there's an import path.
-	slash := strings.LastIndex(pkg, "/")
-	if slash < 0 {
-		return
-	}
-	impPath, pkg = pkg, pkg[slash+1:]
-	// A semicolon-delimited suffix overrides the package name.
-	sc := strings.IndexByte(impPath, ';')
-	if sc < 0 {
-		return
-	}
-	impPath, pkg = impPath[:sc], impPath[sc+1:]
-	return
-}
-
 // goPackageName returns the Go package name to use in the
 // generated Go file.  The result explicit reports whether the name
 // came from an option go_package statement.  If explicit is false,
@@ -301,8 +271,10 @@ func (d *FileDescriptor) goPackageOption() (impPath, pkg string, ok bool) {
 // or the input file name.
 func (d *FileDescriptor) goPackageName() (name string, explicit bool) {
 	// Does the file have a "go_package" option?
-	if _, pkg, ok := d.goPackageOption(); ok {
-		return pkg, true
+	if opts := d.Options; opts != nil {
+		if pkg := opts.GetGoPackage(); pkg != "" {
+			return pkg, true
+		}
 	}
 
 	// Does the file have a package clause?
@@ -311,26 +283,6 @@ func (d *FileDescriptor) goPackageName() (name string, explicit bool) {
 	}
 	// Use the file base name.
 	return baseName(d.GetName()), false
-}
-
-// goFileName returns the output name for the generated Go file.
-func (d *FileDescriptor) goFileName() string {
-	name := *d.Name
-	if ext := path.Ext(name); ext == ".proto" || ext == ".protodevel" {
-		name = name[:len(name)-len(ext)]
-	}
-	name += ".pb.go"
-
-	// Does the file have a "go_package" option?
-	// If it does, it may override the filename.
-	if impPath, _, ok := d.goPackageOption(); ok && impPath != "" {
-		// Replace the existing dirname with the declared import path.
-		_, name = path.Split(name)
-		name = path.Join(impPath, name)
-		return name
-	}
-
-	return name
 }
 
 func (d *FileDescriptor) addExport(obj Object, sym symbol) {
@@ -368,6 +320,8 @@ func (ms *messageSymbol) GenerateAlias(g *Generator, pkg string) {
 	if ms.hasExtensions {
 		g.P("func (*", ms.sym, ") ExtensionRangeArray() []", g.Pkg["proto"], ".ExtensionRange ",
 			"{ return (*", remoteSym, ")(nil).ExtensionRangeArray() }")
+		g.P("func (m *", ms.sym, ") ExtensionMap() map[int32]", g.Pkg["proto"], ".Extension ",
+			"{ return (*", remoteSym, ")(m).ExtensionMap() }")
 		if ms.isMessageSet {
 			g.P("func (m *", ms.sym, ") Marshal() ([]byte, error) ",
 				"{ return (*", remoteSym, ")(m).Marshal() }")
@@ -558,7 +512,7 @@ type Generator struct {
 	Param             map[string]string // Command-line parameters.
 	PackageImportPath string            // Go import path of the package we're generating code for
 	ImportPrefix      string            // String to prefix to imported package file names.
-	ImportMap         map[string]string // Mapping from .proto file name to import path
+	ImportMap         map[string]string // Mapping from import name to generated name
 
 	Pkg map[string]string // The names under which we import support packages
 
@@ -626,6 +580,7 @@ func (g *Generator) CommandLineParameters(parameter string) {
 			}
 		}
 	}
+
 	if pluginList != "" {
 		// Amend the set of plugins.
 		enabled := make(map[string]bool)
@@ -805,9 +760,9 @@ AllFiles:
 // and FileDescriptorProtos into file-referenced objects within the Generator.
 // It also creates the list of files to generate and so should be called before GenerateAllFiles.
 func (g *Generator) WrapTypes() {
-	g.allFiles = make([]*FileDescriptor, 0, len(g.Request.ProtoFile))
+	g.allFiles = make([]*FileDescriptor, len(g.Request.ProtoFile))
 	g.allFilesByName = make(map[string]*FileDescriptor, len(g.allFiles))
-	for _, f := range g.Request.ProtoFile {
+	for i, f := range g.Request.ProtoFile {
 		// We must wrap the descriptors before we wrap the enums
 		descs := wrapDescriptors(f)
 		g.buildNestedDescriptors(descs)
@@ -823,22 +778,22 @@ func (g *Generator) WrapTypes() {
 			proto3:              fileIsProto3(f),
 		}
 		extractComments(fd)
-		g.allFiles = append(g.allFiles, fd)
+		g.allFiles[i] = fd
 		g.allFilesByName[f.GetName()] = fd
 	}
 	for _, fd := range g.allFiles {
 		fd.imp = wrapImported(fd.FileDescriptorProto, g)
 	}
 
-	g.genFiles = make([]*FileDescriptor, 0, len(g.Request.FileToGenerate))
-	for _, fileName := range g.Request.FileToGenerate {
-		fd := g.allFilesByName[fileName]
-		if fd == nil {
+	g.genFiles = make([]*FileDescriptor, len(g.Request.FileToGenerate))
+	for i, fileName := range g.Request.FileToGenerate {
+		g.genFiles[i] = g.allFilesByName[fileName]
+		if g.genFiles[i] == nil {
 			g.Fail("could not find file named", fileName)
 		}
-		fd.index = len(g.genFiles)
-		g.genFiles = append(g.genFiles, fd)
+		g.genFiles[i].index = i
 	}
+	g.Response.File = make([]*plugin.CodeGeneratorResponse_File, len(g.genFiles))
 }
 
 // Scan the descriptors in this file.  For each one, build the slice of nested descriptors
@@ -902,8 +857,9 @@ func newDescriptor(desc *descriptor.DescriptorProto, parent *Descriptor, file *d
 		}
 	}
 
-	for _, field := range desc.Extension {
-		d.ext = append(d.ext, &ExtensionDescriptor{common{file}, field, d})
+	d.ext = make([]*ExtensionDescriptor, len(desc.Extension))
+	for i, field := range desc.Extension {
+		d.ext[i] = &ExtensionDescriptor{common{file}, field, d}
 	}
 
 	return d
@@ -962,9 +918,9 @@ func wrapEnumDescriptors(file *descriptor.FileDescriptorProto, descs []*Descript
 
 // Return a slice of all the top-level ExtensionDescriptors defined within this file.
 func wrapExtensions(file *descriptor.FileDescriptorProto) []*ExtensionDescriptor {
-	var sl []*ExtensionDescriptor
-	for _, field := range file.Extension {
-		sl = append(sl, &ExtensionDescriptor{common{file}, field, nil})
+	sl := make([]*ExtensionDescriptor, len(file.Extension))
+	for i, field := range file.Extension {
+		sl[i] = &ExtensionDescriptor{common{file}, field, nil}
 	}
 	return sl
 }
@@ -1133,6 +1089,7 @@ func (g *Generator) GenerateAllFiles() {
 	for _, file := range g.genFiles {
 		genFileMap[file] = true
 	}
+	i := 0
 	for _, file := range g.allFiles {
 		g.Reset()
 		g.writeOutput = genFileMap[file]
@@ -1140,10 +1097,10 @@ func (g *Generator) GenerateAllFiles() {
 		if !g.writeOutput {
 			continue
 		}
-		g.Response.File = append(g.Response.File, &plugin.CodeGeneratorResponse_File{
-			Name:    proto.String(file.goFileName()),
-			Content: proto.String(g.String()),
-		})
+		g.Response.File[i] = new(plugin.CodeGeneratorResponse_File)
+		g.Response.File[i].Name = proto.String(goFileName(*file.Name))
+		g.Response.File[i].Content = proto.String(g.String())
+		i++
 	}
 }
 
@@ -1175,11 +1132,10 @@ func (g *Generator) generate(file *FileDescriptor) {
 		// For one file in the package, assert version compatibility.
 		g.P("// This is a compile-time assertion to ensure that this generated file")
 		g.P("// is compatible with the proto package it is being compiled against.")
-		g.P("// A compilation error at this line likely means your copy of the")
-		g.P("// proto package needs to be updated.")
-		g.P("const _ = ", g.Pkg["proto"], ".ProtoPackageIsVersion", generatedCodeVersion, " // please upgrade the proto package")
+		g.P("const _ = ", g.Pkg["proto"], ".ProtoPackageIsVersion", generatedCodeVersion)
 		g.P()
 	}
+
 	for _, td := range g.file.imp {
 		g.generateImported(td)
 	}
@@ -1329,7 +1285,7 @@ func (g *Generator) generateImports() {
 		if fd.PackageName() == g.packageName {
 			continue
 		}
-		filename := fd.goFileName()
+		filename := goFileName(s)
 		// By default, import path is the dirname of the Go filename.
 		importPath := path.Dir(filename)
 		if substitution, ok := g.ImportMap[s]; ok {
@@ -1469,10 +1425,7 @@ func (g *Generator) generateEnum(enum *EnumDescriptor) {
 		indexes = append([]string{strconv.Itoa(m.index)}, indexes...)
 	}
 	indexes = append(indexes, strconv.Itoa(enum.index))
-	g.P("func (", ccTypeName, ") EnumDescriptor() ([]byte, []int) { return ", g.file.VarName(), ", []int{", strings.Join(indexes, ", "), "} }")
-	if enum.file.GetPackage() == "google.protobuf" && enum.GetName() == "NullValue" {
-		g.P("func (", ccTypeName, `) XXX_WellKnownType() string { return "`, enum.GetName(), `" }`)
-	}
+	g.P("func (", ccTypeName, ") EnumDescriptor() ([]byte, []int) { return fileDescriptor", g.file.index, ", []int{", strings.Join(indexes, ", "), "} }")
 
 	g.P()
 }
@@ -1549,11 +1502,7 @@ func (g *Generator) goTag(message *Descriptor, field *descriptor.FieldDescriptor
 		enum += CamelCaseSlice(obj.TypeName())
 	}
 	packed := ""
-	if (field.Options != nil && field.Options.GetPacked()) ||
-		// Per https://developers.google.com/protocol-buffers/docs/proto3#simple:
-		// "In proto3, repeated fields of scalar numeric types use packed encoding by default."
-		(message.proto3() && (field.Options == nil || field.Options.Packed == nil) &&
-			isRepeated(field) && isScalar(field)) {
+	if field.Options != nil && field.Options.GetPacked() {
 		packed = ",packed"
 	}
 	fieldName := field.GetName()
@@ -1567,11 +1516,6 @@ func (g *Generator) goTag(message *Descriptor, field *descriptor.FieldDescriptor
 		if i := strings.LastIndex(name, "."); i >= 0 {
 			name = name[i+1:]
 		}
-	}
-	if json := field.GetJsonName(); json != "" && json != name {
-		// TODO: escaping might be needed, in which case
-		// perhaps this should be in its own "json" tag.
-		name += ",json=" + json
 	}
 	name = ",name=" + name
 	if message.proto3() {
@@ -1691,8 +1635,7 @@ func (g *Generator) RecordTypeUse(t string) {
 }
 
 // Method names that may be generated.  Fields with these names get an
-// underscore appended. Any change to this set is a potential incompatible
-// API change because it changes generated field names.
+// underscore appended.
 var methodNames = [...]string{
 	"Reset",
 	"String",
@@ -1702,28 +1645,6 @@ var methodNames = [...]string{
 	"ExtensionRangeArray",
 	"ExtensionMap",
 	"Descriptor",
-}
-
-// Names of messages in the `google.protobuf` package for which
-// we will generate XXX_WellKnownType methods.
-var wellKnownTypes = map[string]bool{
-	"Any":       true,
-	"Duration":  true,
-	"Empty":     true,
-	"Struct":    true,
-	"Timestamp": true,
-
-	"Value":       true,
-	"ListValue":   true,
-	"DoubleValue": true,
-	"FloatValue":  true,
-	"Int64Value":  true,
-	"UInt64Value": true,
-	"Int32Value":  true,
-	"UInt32Value": true,
-	"BoolValue":   true,
-	"StringValue": true,
-	"BytesValue":  true,
 }
 
 // Generate the type and default constant definitions for this Descriptor.
@@ -1877,7 +1798,7 @@ func (g *Generator) generateMessage(message *Descriptor) {
 		g.RecordTypeUse(field.GetTypeName())
 	}
 	if len(message.ExtensionRange) > 0 {
-		g.P(g.Pkg["proto"], ".XXX_InternalExtensions `json:\"-\"`")
+		g.P("XXX_extensions\t\tmap[int32]", g.Pkg["proto"], ".Extension `json:\"-\"`")
 	}
 	if !message.proto3() {
 		g.P("XXX_unrecognized\t[]byte `json:\"-\"`")
@@ -1906,15 +1827,13 @@ func (g *Generator) generateMessage(message *Descriptor) {
 	g.P("func (m *", ccTypeName, ") Reset() { *m = ", ccTypeName, "{} }")
 	g.P("func (m *", ccTypeName, ") String() string { return ", g.Pkg["proto"], ".CompactTextString(m) }")
 	g.P("func (*", ccTypeName, ") ProtoMessage() {}")
-	var indexes []string
-	for m := message; m != nil; m = m.parent {
-		indexes = append([]string{strconv.Itoa(m.index)}, indexes...)
-	}
-	g.P("func (*", ccTypeName, ") Descriptor() ([]byte, []int) { return ", g.file.VarName(), ", []int{", strings.Join(indexes, ", "), "} }")
-	// TODO: Revisit the decision to use a XXX_WellKnownType method
-	// if we change proto.MessageName to work with multiple equivalents.
-	if message.file.GetPackage() == "google.protobuf" && wellKnownTypes[message.GetName()] {
-		g.P("func (*", ccTypeName, `) XXX_WellKnownType() string { return "`, message.GetName(), `" }`)
+	if !message.group {
+		var indexes []string
+		for m := message; m != nil; m = m.parent {
+			// XXX: skip groups?
+			indexes = append([]string{strconv.Itoa(m.index)}, indexes...)
+		}
+		g.P("func (*", ccTypeName, ") Descriptor() ([]byte, []int) { return fileDescriptor", g.file.index, ", []int{", strings.Join(indexes, ", "), "} }")
 	}
 
 	// Extension support methods
@@ -1927,22 +1846,22 @@ func (g *Generator) generateMessage(message *Descriptor) {
 			g.P()
 			g.P("func (m *", ccTypeName, ") Marshal() ([]byte, error) {")
 			g.In()
-			g.P("return ", g.Pkg["proto"], ".MarshalMessageSet(&m.XXX_InternalExtensions)")
+			g.P("return ", g.Pkg["proto"], ".MarshalMessageSet(m.ExtensionMap())")
 			g.Out()
 			g.P("}")
 			g.P("func (m *", ccTypeName, ") Unmarshal(buf []byte) error {")
 			g.In()
-			g.P("return ", g.Pkg["proto"], ".UnmarshalMessageSet(buf, &m.XXX_InternalExtensions)")
+			g.P("return ", g.Pkg["proto"], ".UnmarshalMessageSet(buf, m.ExtensionMap())")
 			g.Out()
 			g.P("}")
 			g.P("func (m *", ccTypeName, ") MarshalJSON() ([]byte, error) {")
 			g.In()
-			g.P("return ", g.Pkg["proto"], ".MarshalMessageSetJSON(&m.XXX_InternalExtensions)")
+			g.P("return ", g.Pkg["proto"], ".MarshalMessageSetJSON(m.XXX_extensions)")
 			g.Out()
 			g.P("}")
 			g.P("func (m *", ccTypeName, ") UnmarshalJSON(buf []byte) error {")
 			g.In()
-			g.P("return ", g.Pkg["proto"], ".UnmarshalMessageSetJSON(buf, &m.XXX_InternalExtensions)")
+			g.P("return ", g.Pkg["proto"], ".UnmarshalMessageSetJSON(buf, m.XXX_extensions)")
 			g.Out()
 			g.P("}")
 			g.P("// ensure ", ccTypeName, " satisfies proto.Marshaler and proto.Unmarshaler")
@@ -1962,6 +1881,16 @@ func (g *Generator) generateMessage(message *Descriptor) {
 		g.P("func (*", ccTypeName, ") ExtensionRangeArray() []", g.Pkg["proto"], ".ExtensionRange {")
 		g.In()
 		g.P("return extRange_", ccTypeName)
+		g.Out()
+		g.P("}")
+		g.P("func (m *", ccTypeName, ") ExtensionMap() map[int32]", g.Pkg["proto"], ".Extension {")
+		g.In()
+		g.P("if m.XXX_extensions == nil {")
+		g.In()
+		g.P("m.XXX_extensions = make(map[int32]", g.Pkg["proto"], ".Extension)")
+		g.Out()
+		g.P("}")
+		g.P("return m.XXX_extensions")
 		g.Out()
 		g.P("}")
 	}
@@ -2076,6 +2005,11 @@ func (g *Generator) generateMessage(message *Descriptor) {
 			star = "*"
 		}
 
+		// In proto3, only generate getters for message fields and oneof fields.
+		if message.proto3() && *field.Type != descriptor.FieldDescriptorProto_TYPE_MESSAGE && !oneof {
+			continue
+		}
+
 		// Only export getter symbols for basic types,
 		// and for messages and enums in the same package.
 		// Groups are not exported.
@@ -2134,11 +2068,7 @@ func (g *Generator) generateMessage(message *Descriptor) {
 			continue
 		}
 		if !oneof {
-			if message.proto3() {
-				g.P("if m != nil {")
-			} else {
-				g.P("if m != nil && m." + fname + " != nil {")
-			}
+			g.P("if m != nil && m." + fname + " != nil {")
 			g.In()
 			g.P("return " + star + "m." + fname)
 			g.Out()
@@ -2556,7 +2486,6 @@ func (g *Generator) generateExtension(ext *ExtensionDescriptor) {
 	g.P("Field: ", field.Number, ",")
 	g.P(`Name: "`, extName, `",`)
 	g.P("Tag: ", tag, ",")
-	g.P(`Filename: "`, g.file.GetName(), `",`)
 
 	g.Out()
 	g.P("}")
@@ -2612,10 +2541,7 @@ func (g *Generator) generateFileDescriptor(file *FileDescriptor) {
 	w.Close()
 	b = buf.Bytes()
 
-	v := file.VarName()
-	g.P()
-	g.P("func init() { ", g.Pkg["proto"], ".RegisterFile(", strconv.Quote(*file.Name), ", ", v, ") }")
-	g.P("var ", v, " = []byte{")
+	g.P("var fileDescriptor", file.index, " = []byte{")
 	g.In()
 	g.P("// ", len(b), " bytes of a gzipped FileDescriptorProto")
 	for len(b) > 0 {
@@ -2719,6 +2645,15 @@ func CamelCaseSlice(elem []string) string { return CamelCase(strings.Join(elem, 
 // dottedSlice turns a sliced name into a dotted name.
 func dottedSlice(elem []string) string { return strings.Join(elem, ".") }
 
+// Given a .proto file name, return the output name for the generated Go program.
+func goFileName(name string) string {
+	ext := path.Ext(name)
+	if ext == ".proto" || ext == ".protodevel" {
+		name = name[0 : len(name)-len(ext)]
+	}
+	return name + ".pb.go"
+}
+
 // Is this field optional?
 func isOptional(field *descriptor.FieldDescriptorProto) bool {
 	return field.Label != nil && *field.Label == descriptor.FieldDescriptorProto_LABEL_OPTIONAL
@@ -2732,32 +2667,6 @@ func isRequired(field *descriptor.FieldDescriptorProto) bool {
 // Is this field repeated?
 func isRepeated(field *descriptor.FieldDescriptorProto) bool {
 	return field.Label != nil && *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED
-}
-
-// Is this field a scalar numeric type?
-func isScalar(field *descriptor.FieldDescriptorProto) bool {
-	if field.Type == nil {
-		return false
-	}
-	switch *field.Type {
-	case descriptor.FieldDescriptorProto_TYPE_DOUBLE,
-		descriptor.FieldDescriptorProto_TYPE_FLOAT,
-		descriptor.FieldDescriptorProto_TYPE_INT64,
-		descriptor.FieldDescriptorProto_TYPE_UINT64,
-		descriptor.FieldDescriptorProto_TYPE_INT32,
-		descriptor.FieldDescriptorProto_TYPE_FIXED64,
-		descriptor.FieldDescriptorProto_TYPE_FIXED32,
-		descriptor.FieldDescriptorProto_TYPE_BOOL,
-		descriptor.FieldDescriptorProto_TYPE_UINT32,
-		descriptor.FieldDescriptorProto_TYPE_ENUM,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED32,
-		descriptor.FieldDescriptorProto_TYPE_SFIXED64,
-		descriptor.FieldDescriptorProto_TYPE_SINT32,
-		descriptor.FieldDescriptorProto_TYPE_SINT64:
-		return true
-	default:
-		return false
-	}
 }
 
 // badToUnderscore is the mapping function used to generate Go names from package names,

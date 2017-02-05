@@ -145,6 +145,10 @@ func (pm *Manager) StateChanged(id string, e libcontainerd.StateInfo) error {
 			if err := mount.Unmount(p.PropagatedMount); err != nil {
 				logrus.Warnf("Could not unmount %s: %v", p.PropagatedMount, err)
 			}
+			propRoot := filepath.Join(filepath.Dir(p.Rootfs), "propagated-mount")
+			if err := mount.Unmount(propRoot); err != nil {
+				logrus.Warn("Could not unmount %s: %v", propRoot, err)
+			}
 		}
 
 		if restart {
@@ -193,6 +197,27 @@ func (pm *Manager) reload() error { // todo: restore
 			for _, typ := range p.PluginObj.Config.Interface.Types {
 				if (typ.Capability == "volumedriver" || typ.Capability == "graphdriver") && typ.Prefix == "docker" && strings.HasPrefix(typ.Version, "1.") {
 					if p.PluginObj.Config.PropagatedMount != "" {
+						propRoot := filepath.Join(filepath.Dir(p.Rootfs), "propagated-mount")
+
+						// check if we need to migrate an older propagated mount from before
+						// these mounts were stored outside the plugin rootfs
+						if _, err := os.Stat(propRoot); os.IsNotExist(err) {
+							if _, err := os.Stat(p.PropagatedMount); err == nil {
+								// make sure nothing is mounted here
+								// don't care about errors
+								mount.Unmount(p.PropagatedMount)
+								if err := os.Rename(p.PropagatedMount, propRoot); err != nil {
+									logrus.WithError(err).WithField("dir", propRoot).Error("error migrating propagated mount storage")
+								}
+								if err := os.MkdirAll(p.PropagatedMount, 0755); err != nil {
+									logrus.WithError(err).WithField("dir", p.PropagatedMount).Error("error migrating propagated mount storage")
+								}
+							}
+						}
+
+						if err := os.MkdirAll(propRoot, 0755); err != nil {
+							logrus.Errorf("failed to create PropagatedMount directory at %s: %v", propRoot, err)
+						}
 						// TODO: sanitize PropagatedMount and prevent breakout
 						p.PropagatedMount = filepath.Join(p.Rootfs, p.PluginObj.Config.PropagatedMount)
 						if err := os.MkdirAll(p.PropagatedMount, 0755); err != nil {
@@ -237,7 +262,7 @@ func (pm *Manager) save(p *v2.Plugin) error {
 		return errors.Wrap(err, "failed to marshal plugin json")
 	}
 	if err := ioutils.AtomicWriteFile(filepath.Join(pm.config.Root, p.GetID(), configFileName), pluginJSON, 0600); err != nil {
-		return err
+		return errors.Wrap(err, "failed to write atomically plugin json")
 	}
 	return nil
 }
