@@ -17,14 +17,15 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/net/context"
-
 	humanize "github.com/dustin/go-humanize"
 	shlex "github.com/flynn/go-shlex"
 	"github.com/urfave/cli"
+	"golang.org/x/net/context"
+	"golang.org/x/time/rate"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/ratelimit"
 )
 
 func cmdProxy(c *cli.Context) error {
@@ -282,7 +283,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	defer beforeConnectDrivers.Close()
 
 	Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port), time.Duration(host.ConnectTimeout) * time.Second)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port), time.Duration(host.ConnectTimeout)*time.Second)
 	if err != nil {
 		// OnConnectError hook
 		connectHookArgs.Error = err
@@ -316,8 +317,24 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	ctx = context.WithValue(ctx, "sync", &waitGroup)
 
 	waitGroup.Add(2)
-	c1 := readAndWrite(ctx, conn, os.Stdout)
-	c2 := readAndWrite(ctx, os.Stdin, conn)
+
+	var reader io.Reader
+	var writer io.Writer
+	reader = conn
+	writer = conn
+	if host.RateLimit != "" {
+		bytes, err := humanize.ParseBytes(host.RateLimit)
+		if err != nil {
+			return err
+		}
+		limit := rate.Limit(float64(bytes))
+		limiter := rate.NewLimiter(limit, int(bytes))
+		reader = ratelimit.NewReader(conn, limiter)
+		writer = ratelimit.NewWriter(conn, limiter)
+	}
+
+	c1 := readAndWrite(ctx, reader, os.Stdout)
+	c2 := readAndWrite(ctx, os.Stdin, writer)
 	select {
 	case result = <-c1:
 		stats.WrittenBytes = result.written
