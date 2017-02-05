@@ -120,6 +120,7 @@ type Host struct {
 	Aliases            composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
 	Hooks              *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
 	Comment            composeyaml.Stringorslice `yaml:"comment,omitempty,flow" json:"Comment,omitempty"`
+	RateLimit          string                    `yaml:"ratelimit,omitempty,flow" json:"RateLimit,omitempty"`
 
 	// private assh fields
 	knownHosts []string
@@ -1043,6 +1044,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.Comment = defaults.Comment
 	}
 
+	if len(h.RateLimit) == 0 {
+		h.RateLimit = defaults.RateLimit
+	}
+
 	if h.Hooks == nil {
 		h.Hooks = defaults.Hooks
 		if h.Hooks == nil {
@@ -1412,8 +1417,10 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 			fmt.Fprint(w, sliceComment("ResolveNameservers", h.ResolveNameservers))
 		}
 		if h.ResolveCommand != "" {
-
 			fmt.Fprint(w, stringComment("ResolveCommand", h.ResolveCommand))
+		}
+		if h.RateLimit != "" {
+			fmt.Fprint(w, stringComment("RateLimit", h.RateLimit))
 		}
 
 		aliasIdx++

@@ -13,17 +13,20 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/distribution"
 	progressutils "github.com/docker/docker/distribution/utils"
 	"github.com/docker/docker/distribution/xfer"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/pkg/chrootarchive"
+	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/docker/pkg/pools"
 	"github.com/docker/docker/pkg/progress"
 	"github.com/docker/docker/plugin/v2"
@@ -32,6 +35,11 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
+
+var acceptedPluginFilterTags = map[string]bool{
+	"enabled":    true,
+	"capability": true,
+}
 
 // Disable deactivates a plugin. This means resources (volumes, networks) cant use them.
 func (pm *Manager) Disable(refOrID string, config *types.PluginDisableConfig) error {
@@ -209,6 +217,60 @@ func (pm *Manager) Privileges(ctx context.Context, ref reference.Named, metaHead
 	return computePrivileges(config)
 }
 
+// Upgrade upgrades a plugin
+func (pm *Manager) Upgrade(ctx context.Context, ref reference.Named, name string, metaHeader http.Header, authConfig *types.AuthConfig, privileges types.PluginPrivileges, outStream io.Writer) (err error) {
+	p, err := pm.config.Store.GetV2Plugin(name)
+	if err != nil {
+		return errors.Wrap(err, "plugin must be installed before upgrading")
+	}
+
+	if p.IsEnabled() {
+		return fmt.Errorf("plugin must be disabled before upgrading")
+	}
+
+	pm.muGC.RLock()
+	defer pm.muGC.RUnlock()
+
+	// revalidate because Pull is public
+	nameref, err := reference.ParseNamed(name)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse %q", name)
+	}
+	name = reference.WithDefaultTag(nameref).String()
+
+	tmpRootFSDir, err := ioutil.TempDir(pm.tmpDir(), ".rootfs")
+	defer os.RemoveAll(tmpRootFSDir)
+
+	dm := &downloadManager{
+		tmpDir:    tmpRootFSDir,
+		blobStore: pm.blobStore,
+	}
+
+	pluginPullConfig := &distribution.ImagePullConfig{
+		Config: distribution.Config{
+			MetaHeaders:      metaHeader,
+			AuthConfig:       authConfig,
+			RegistryService:  pm.config.RegistryService,
+			ImageEventLogger: pm.config.LogPluginEvent,
+			ImageStore:       dm,
+		},
+		DownloadManager: dm, // todo: reevaluate if possible to substitute distribution/xfer dependencies instead
+		Schema2Types:    distribution.PluginTypes,
+	}
+
+	err = pm.pull(ctx, ref, pluginPullConfig, outStream)
+	if err != nil {
+		go pm.GC()
+		return err
+	}
+
+	if err := pm.upgradePlugin(p, dm.configDigest, dm.blobs, tmpRootFSDir, &privileges); err != nil {
+		return err
+	}
+	p.PluginObj.PluginReference = ref.String()
+	return nil
+}
+
 // Pull pulls a plugin, check if the correct privileges are provided and install the plugin.
 func (pm *Manager) Pull(ctx context.Context, ref reference.Named, name string, metaHeader http.Header, authConfig *types.AuthConfig, privileges types.PluginPrivileges, outStream io.Writer) (err error) {
 	pm.muGC.RLock()
@@ -251,18 +313,51 @@ func (pm *Manager) Pull(ctx context.Context, ref reference.Named, name string, m
 		return err
 	}
 
-	if _, err := pm.createPlugin(name, dm.configDigest, dm.blobs, tmpRootFSDir, &privileges); err != nil {
+	p, err := pm.createPlugin(name, dm.configDigest, dm.blobs, tmpRootFSDir, &privileges)
+	if err != nil {
 		return err
 	}
+	p.PluginObj.PluginReference = ref.String()
 
 	return nil
 }
 
 // List displays the list of plugins and associated metadata.
-func (pm *Manager) List() ([]types.Plugin, error) {
+func (pm *Manager) List(pluginFilters filters.Args) ([]types.Plugin, error) {
+	if err := pluginFilters.Validate(acceptedPluginFilterTags); err != nil {
+		return nil, err
+	}
+
+	enabledOnly := false
+	disabledOnly := false
+	if pluginFilters.Include("enabled") {
+		if pluginFilters.ExactMatch("enabled", "true") {
+			enabledOnly = true
+		} else if pluginFilters.ExactMatch("enabled", "false") {
+			disabledOnly = true
+		} else {
+			return nil, fmt.Errorf("Invalid filter 'enabled=%s'", pluginFilters.Get("enabled"))
+		}
+	}
+
 	plugins := pm.config.Store.GetAll()
 	out := make([]types.Plugin, 0, len(plugins))
+
+next:
 	for _, p := range plugins {
+		if enabledOnly && !p.PluginObj.Enabled {
+			continue
+		}
+		if disabledOnly && p.PluginObj.Enabled {
+			continue
+		}
+		if pluginFilters.Include("capability") {
+			for _, f := range p.GetTypes() {
+				if !pluginFilters.Match("capability", f.Capability) {
+					continue next
+				}
+			}
+		}
 		out = append(out, p.PluginObj)
 	}
 	return out, nil
@@ -504,10 +599,50 @@ func (pm *Manager) Remove(name string, config *types.PluginRmConfig) error {
 	id := p.GetID()
 	pm.config.Store.Remove(p)
 	pluginDir := filepath.Join(pm.config.Root, id)
+	if err := recursiveUnmount(pm.config.Root); err != nil {
+		logrus.WithField("dir", pm.config.Root).WithField("id", id).Warn(err)
+	}
 	if err := os.RemoveAll(pluginDir); err != nil {
 		logrus.Warnf("unable to remove %q from plugin remove: %v", pluginDir, err)
 	}
 	pm.config.LogPluginEvent(id, name, "remove")
+	return nil
+}
+
+func getMounts(root string) ([]string, error) {
+	infos, err := mount.GetMounts()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read mount table while performing recursive unmount")
+	}
+
+	var mounts []string
+	for _, m := range infos {
+		if strings.HasPrefix(m.Mountpoint, root) {
+			mounts = append(mounts, m.Mountpoint)
+		}
+	}
+
+	return mounts, nil
+}
+
+func recursiveUnmount(root string) error {
+	mounts, err := getMounts(root)
+	if err != nil {
+		return err
+	}
+
+	// sort in reverse-lexicographic order so the root mount will always be last
+	sort.Sort(sort.Reverse(sort.StringSlice(mounts)))
+
+	for i, m := range mounts {
+		if err := mount.Unmount(m); err != nil {
+			if i == len(mounts)-1 {
+				return errors.Wrapf(err, "error performing recursive unmount on %s", root)
+			}
+			logrus.WithError(err).WithField("mountpoint", m).Warn("could not unmount")
+		}
+	}
+
 	return nil
 }
 
@@ -536,7 +671,8 @@ func (pm *Manager) CreateFromContext(ctx context.Context, tarCtx io.ReadCloser, 
 	if _, ok := ref.(reference.Canonical); ok {
 		return errors.Errorf("canonical references are not permitted")
 	}
-	name := reference.WithDefaultTag(ref).String()
+	taggedRef := reference.WithDefaultTag(ref)
+	name := taggedRef.String()
 
 	if err := pm.config.Store.validateName(name); err != nil { // fast check, real check is in createPlugin()
 		return err
@@ -618,6 +754,7 @@ func (pm *Manager) CreateFromContext(ctx context.Context, tarCtx io.ReadCloser, 
 	if err != nil {
 		return err
 	}
+	p.PluginObj.PluginReference = taggedRef.String()
 
 	pm.config.LogPluginEvent(p.PluginObj.ID, name, "create")
 
