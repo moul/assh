@@ -26,7 +26,7 @@ Options:
       --dns list                         Set custom DNS servers (default [])
       --dns-option list                  Set DNS options (default [])
       --dns-search list                  Set custom DNS search domains (default [])
-      --endpoint-mode string             Endpoint mode (vip or dnsrr)
+      --endpoint-mode string             Endpoint mode (vip or dnsrr) (default "vip")
   -e, --env list                         Set environment variables (default [])
       --env-file list                    Read in a file of environment variables (default [])
       --group list                       Set one or more supplementary user groups for the container (default [])
@@ -39,7 +39,7 @@ Options:
       --hostname string                  Container hostname
   -l, --label list                       Service labels (default [])
       --limit-cpu decimal                Limit CPUs (default 0.000)
-      --limit-memory bytes               Limit Memory (default 0 B)
+      --limit-memory bytes               Limit Memory
       --log-driver string                Logging driver for service
       --log-opt list                     Logging driver options (default [])
       --mode string                      Service mode (replicated or global) (default "replicated")
@@ -48,9 +48,10 @@ Options:
       --network list                     Network attachments (default [])
       --no-healthcheck                   Disable any container-specified HEALTHCHECK
   -p, --publish port                     Publish a port as a node port
+      --read-only                        Mount the container's root filesystem as read only
       --replicas uint                    Number of tasks
       --reserve-cpu decimal              Reserve CPUs (default 0.000)
-      --reserve-memory bytes             Reserve Memory (default 0 B)
+      --reserve-memory bytes             Reserve Memory
       --restart-condition string         Restart when condition is met (none, on-failure, or any)
       --restart-delay duration           Delay between restart attempts (ns|us|ms|s|m|h)
       --restart-max-attempts uint        Maximum number of restarts before giving up
@@ -506,7 +507,7 @@ $ docker service create --name dns-cache -p 53:53/udp dns-cache
 ### Create services using templates
 
 You can use templates for some flags of `service create`, using the syntax
-provided by the Go's [text/template](http://golange.org/pkg/text/template/) package.
+provided by the Go's [text/template](http://golang.org/pkg/text/template/) package.
 
 The supported flags are the following :
 

@@ -3,6 +3,7 @@
 package daemon
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -255,7 +256,10 @@ func (daemon *Daemon) adaptContainerSettings(hostConfig *containertypes.HostConf
 		hostConfig.MemorySwap = hostConfig.Memory * 2
 	}
 	if hostConfig.ShmSize == 0 {
-		hostConfig.ShmSize = container.DefaultSHMSize
+		hostConfig.ShmSize = defaultShmSize
+		if daemon.configStore != nil {
+			hostConfig.ShmSize = int64(daemon.configStore.ShmSize)
+		}
 	}
 	var err error
 	opts, err := daemon.generateSecurityOpt(hostConfig.IpcMode, hostConfig.PidMode, hostConfig.Privileged)
@@ -575,6 +579,10 @@ func (daemon *Daemon) platformReload(config *Config) map[string]string {
 		daemon.configStore.DefaultRuntime = config.DefaultRuntime
 	}
 
+	if config.IsValueSet("default-shm-size") {
+		daemon.configStore.ShmSize = config.ShmSize
+	}
+
 	// Update attributes
 	var runtimeList bytes.Buffer
 	for name, rt := range daemon.configStore.Runtimes {
@@ -585,8 +593,9 @@ func (daemon *Daemon) platformReload(config *Config) map[string]string {
 	}
 
 	return map[string]string{
-		"runtimes":        runtimeList.String(),
-		"default-runtime": daemon.configStore.DefaultRuntime,
+		"runtimes":         runtimeList.String(),
+		"default-runtime":  daemon.configStore.DefaultRuntime,
+		"default-shm-size": fmt.Sprintf("%d", daemon.configStore.ShmSize),
 	}
 }
 
@@ -647,11 +656,56 @@ func configureMaxThreads(config *Config) error {
 	return nil
 }
 
+func overlaySupportsSelinux() (bool, error) {
+	f, err := os.Open("/proc/kallsyms")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	defer f.Close()
+
+	var symAddr, symType, symName, text string
+
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		if err := s.Err(); err != nil {
+			return false, err
+		}
+
+		text = s.Text()
+		if _, err := fmt.Sscanf(text, "%s %s %s", &symAddr, &symType, &symName); err != nil {
+			return false, fmt.Errorf("Scanning '%s' failed: %s", text, err)
+		}
+
+		// Check for presence of symbol security_inode_copy_up.
+		if symName == "security_inode_copy_up" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // configureKernelSecuritySupport configures and validates security support for the kernel
 func configureKernelSecuritySupport(config *Config, driverName string) error {
 	if config.EnableSelinuxSupport {
 		if !selinuxEnabled() {
 			logrus.Warn("Docker could not enable SELinux on the host system")
+			return nil
+		}
+
+		if driverName == "overlay" || driverName == "overlay2" {
+			// If driver is overlay or overlay2, make sure kernel
+			// supports selinux with overlay.
+			supported, err := overlaySupportsSelinux()
+			if err != nil {
+				return err
+			}
+
+			if !supported {
+				logrus.Warnf("SELinux is not supported with the %s graph driver on this kernel", driverName)
+			}
 		}
 	} else {
 		selinuxSetDisabled()

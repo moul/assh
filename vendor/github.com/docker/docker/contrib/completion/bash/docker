@@ -712,16 +712,18 @@ __docker_complete_log_drivers() {
 }
 
 __docker_complete_log_options() {
-	# see docs/reference/logging/index.md
-	local awslogs_options="awslogs-region awslogs-group awslogs-stream awslogs-create-group"
-	local fluentd_options="env fluentd-address fluentd-async-connect fluentd-buffer-limit fluentd-retry-wait fluentd-max-retries labels tag"
-	local gcplogs_options="env gcp-log-cmd gcp-project labels"
-	local gelf_options="env gelf-address gelf-compression-level gelf-compression-type labels tag"
-	local journald_options="env labels tag"
-	local json_file_options="env labels max-file max-size"
-	local logentries_options="logentries-token"
-	local syslog_options="env labels syslog-address syslog-facility syslog-format syslog-tls-ca-cert syslog-tls-cert syslog-tls-key syslog-tls-skip-verify tag"
-	local splunk_options="env labels splunk-caname splunk-capath splunk-format splunk-gzip splunk-gzip-level splunk-index splunk-insecureskipverify splunk-source splunk-sourcetype splunk-token splunk-url splunk-verify-connection tag"
+	# see repository docker/docker.github.io/engine/admin/logging/
+	local common_options="max-buffer-size mode"
+
+	local awslogs_options="$common_options awslogs-region awslogs-group awslogs-stream awslogs-create-group"
+	local fluentd_options="$common_options env fluentd-address fluentd-async-connect fluentd-buffer-limit fluentd-retry-wait fluentd-max-retries labels tag"
+	local gcplogs_options="$common_options env gcp-log-cmd gcp-project labels"
+	local gelf_options="$common_options env gelf-address gelf-compression-level gelf-compression-type labels tag"
+	local journald_options="$common_options env labels tag"
+	local json_file_options="$common_options env labels max-file max-size"
+	local logentries_options="$common_options logentries-token"
+	local syslog_options="$common_options env labels syslog-address syslog-facility syslog-format syslog-tls-ca-cert syslog-tls-cert syslog-tls-key syslog-tls-skip-verify tag"
+	local splunk_options="$common_options env labels splunk-caname splunk-capath splunk-format splunk-gzip splunk-gzip-level splunk-index splunk-insecureskipverify splunk-source splunk-sourcetype splunk-token splunk-url splunk-verify-connection tag"
 
 	local all_options="$fluentd_options $gcplogs_options $gelf_options $journald_options $logentries_options $json_file_options $syslog_options $splunk_options"
 
@@ -782,6 +784,10 @@ __docker_complete_log_driver_options() {
 			;;
 		gelf-compression-type)
 			COMPREPLY=( $( compgen -W "gzip none zlib" -- "${cur##*=}" ) )
+			return
+			;;
+		mode)
+			COMPREPLY=( $( compgen -W "blocking nonblocking" -- "${cur##*=}" ) )
 			return
 			;;
 		syslog-address)
@@ -936,6 +942,94 @@ _docker_build() {
 }
 
 
+_docker_checkpoint() {
+	local subcommands="
+		create
+		ls
+		rm
+	"
+	local aliases="
+		list
+		remove
+	"
+	__docker_subcommands "$subcommands $aliases" && return
+
+	case "$cur" in
+		-*)
+			COMPREPLY=( $( compgen -W "--help" -- "$cur" ) )
+			;;
+		*)
+			COMPREPLY=( $( compgen -W "$subcommands" -- "$cur" ) )
+			;;
+	esac
+}
+
+_docker_checkpoint_create() {
+	case "$prev" in
+		--checkpoint-dir)
+			_filedir -d
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			COMPREPLY=( $( compgen -W "--checkpoint-dir --help --leave-running" -- "$cur" ) )
+			;;
+		*)
+			local counter=$(__docker_pos_first_nonflag '--checkpoint-dir')
+			if [ $cword -eq $counter ]; then
+				__docker_complete_containers_running
+			fi
+			;;
+	esac
+}
+
+_docker_checkpoint_ls() {
+	case "$prev" in
+		--checkpoint-dir)
+			_filedir -d
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			COMPREPLY=( $( compgen -W "--checkpoint-dir --help" -- "$cur" ) )
+			;;
+		*)
+			local counter=$(__docker_pos_first_nonflag '--checkpoint-dir')
+			if [ $cword -eq $counter ]; then
+				__docker_complete_containers_all
+			fi
+			;;
+	esac
+}
+
+_docker_checkpoint_rm() {
+	case "$prev" in
+		--checkpoint-dir)
+			_filedir -d
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			COMPREPLY=( $( compgen -W "--checkpoint-dir --help" -- "$cur" ) )
+			;;
+		*)
+			local counter=$(__docker_pos_first_nonflag '--checkpoint-dir')
+			if [ $cword -eq $counter ]; then
+				__docker_complete_containers_all
+			elif [ $cword -eq $(($counter + 1)) ]; then
+				COMPREPLY=( $( compgen -W "$(__docker_q checkpoint ls "$prev" | sed 1d)" -- "$cur" ) )
+			fi
+			;;
+	esac
+}
+
+
 _docker_container() {
 	local subcommands="
 		attach
@@ -1070,7 +1164,7 @@ _docker_container_cp() {
 }
 
 _docker_container_create() {
-	_docker_container_run
+	_docker_container_run_and_create
 }
 
 _docker_container_diff() {
@@ -1340,6 +1434,12 @@ _docker_container_rm() {
 }
 
 _docker_container_run() {
+	_docker_container_run_and_create
+}
+
+# _docker_container_run_and_create is the combined completion for `_docker_container_run`
+# and `_docker_container_create`
+_docker_container_run_and_create() {
 	local options_with_args="
 		--add-host
 		--attach -a
@@ -1358,6 +1458,7 @@ _docker_container_run() {
 		--cpuset-mems
 		--cpu-shares -c
 		--device
+		--device-cgroup-rule
 		--device-read-bps
 		--device-read-iops
 		--device-write-bps
@@ -1643,9 +1744,25 @@ _docker_container_run() {
 _docker_container_start() {
 	__docker_complete_detach-keys && return
 
+	case "$prev" in
+		--checkpoint)
+			if [ __docker_is_experimental ] ; then
+				return
+			fi
+			;;
+		--checkpoint-dir)
+			if [ __docker_is_experimental ] ; then
+				_filedir -d
+				return
+			fi
+			;;
+	esac
+
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--attach -a --detach-keys --help --interactive -i" -- "$cur" ) )
+			local options="--attach -a --detach-keys --help --interactive -i"
+			__docker_is_experimental && options+=" --checkpoint --checkpoint-dir"
+			COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
 			;;
 		*)
 			__docker_complete_containers_stopped
@@ -1777,7 +1894,7 @@ _docker_cp() {
 }
 
 _docker_create() {
-	_docker_container_run
+	_docker_container_create
 }
 
 _docker_daemon() {
@@ -1812,6 +1929,7 @@ _docker_daemon() {
 		--containerd
 		--default-gateway
 		--default-gateway-v6
+		--default-shm-size
 		--default-ulimit
 		--dns
 		--dns-search
@@ -2677,7 +2795,7 @@ _docker_service() {
 }
 
 _docker_service_create() {
-	_docker_service_update
+	_docker_service_update_and_create
 }
 
 _docker_service_inspect() {
@@ -2811,6 +2929,12 @@ _docker_service_ps() {
 }
 
 _docker_service_update() {
+	_docker_service_update_and_create
+}
+
+# _docker_service_update_and_create is the combined completion for `docker service create`
+# and `docker service update`
+_docker_service_update_and_create() {
 	local $subcommand="${words[$subcommand_pos]}"
 
 	local options_with_args="
@@ -2851,6 +2975,7 @@ _docker_service_update() {
 
 	local boolean_options="
 		--help
+		--read-only
 		--tty -t
 		--with-registry-auth
 	"
@@ -4171,6 +4296,7 @@ _docker() {
 	)
 
 	local experimental_commands=(
+		checkpoint
 		deploy
 	)
 

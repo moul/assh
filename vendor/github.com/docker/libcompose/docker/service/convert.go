@@ -217,10 +217,7 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 				}
 				if len(containers) != 0 {
 					container := containers[0]
-					containerID, err := container.ID()
-					if err != nil {
-						return nil, nil, err
-					}
+					containerID := container.ID()
 					networkMode = "container:" + containerID
 				}
 				// FIXME(vdemeester) log/warn in case of len(containers) == 0

@@ -2,6 +2,8 @@
 title: "Dockerfile reference"
 description: "Dockerfiles use a simple DSL which allows you to automate the steps you would normally manually take to create an image."
 keywords: "builder, docker, Dockerfile, automation, image creation"
+redirect_from:
+- /reference/builder/
 ---
 
 <!-- This file is maintained within the docker/docker Github
@@ -709,7 +711,7 @@ it instead, as it enables setting any metadata you require, and can be viewed
 easily, for example with `docker inspect`. To set a label corresponding to the
 `MAINTAINER` field you could use:
 
-    LABEL maintainer "SvenDowideit@home.org.au"
+    LABEL maintainer="SvenDowideit@home.org.au"
 
 This will then be visible from `docker inspect` with the other labels.
 
@@ -1267,19 +1269,6 @@ For example:
 
 The output of the final `pwd` command in this `Dockerfile` would be
 `/path/$DIRNAME`
-
-On Windows, `WORKDIR` behaves differently depending on whether using Windows
-Server containers or Hyper-V containers. For Hyper-V containers, the engine
-is, for architectural reasons, unable to create the directory if it does not
-previously exist. For Windows Server containers, the directory is created
-if it does not exist. Hence, for consistency between Windows Server and 
-Hyper-V containers, it is strongly recommended to include an explicit instruction
-to create the directory in the Dockerfile. For example:
-
-    # escape=`
-    FROM microsoft/nanoserver
-    RUN mkdir c:\myapp
-    WORKDIR c:\myapp
 
 ## ARG
 

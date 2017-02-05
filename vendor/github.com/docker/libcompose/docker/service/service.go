@@ -215,8 +215,7 @@ func (s *Service) constructContainers(ctx context.Context, count int) ([]*contai
 			return nil, err
 		}
 
-		// FIXME(vdemeester) use property/method instead
-		id, _ := c.ID()
+		id := c.ID()
 		logrus.Debugf("Created container %s: %v", id, c.Name())
 
 		result = append(result, c)
@@ -363,8 +362,7 @@ func (s *Service) connectContainerToNetworks(ctx context.Context, c *container.C
 				// FIXME(vdemeester) implement alias checking (to not disconnect/reconnect for nothing)
 				aliasPresent := false
 				for _, alias := range existingNetwork.Aliases {
-					// FIXME(vdemeester) use shortID instead of ID
-					ID, _ := c.ID()
+					ID := c.ShortID()
 					if alias == ID {
 						aliasPresent = true
 					}
@@ -386,7 +384,7 @@ func (s *Service) connectContainerToNetworks(ctx context.Context, c *container.C
 
 // NetworkDisconnect disconnects the container from the specified network
 func (s *Service) NetworkDisconnect(ctx context.Context, c *container.Container, net *yaml.Network, oneOff bool) error {
-	containerID, _ := c.ID()
+	containerID := c.ID()
 	client := s.clientFactory.Create(s)
 	return client.NetworkDisconnect(ctx, net.RealName, containerID, true)
 }
@@ -394,7 +392,7 @@ func (s *Service) NetworkDisconnect(ctx context.Context, c *container.Container,
 // NetworkConnect connects the container to the specified network
 // FIXME(vdemeester) will be refactor with Container refactoring
 func (s *Service) NetworkConnect(ctx context.Context, c *container.Container, net *yaml.Network, oneOff bool) error {
-	containerID, _ := c.ID()
+	containerID := c.ID()
 	client := s.clientFactory.Create(s)
 	internalLinks, err := s.getLinks()
 	if err != nil {
@@ -452,7 +450,7 @@ func (s *Service) recreateIfNeeded(ctx context.Context, c *container.Container, 
 
 func (s *Service) recreate(ctx context.Context, c *container.Container) (*container.Container, error) {
 	name := c.Name()
-	id, _ := c.ID()
+	id := c.ID()
 	newName := fmt.Sprintf("%s_%s", name, id[:12])
 	logrus.Debugf("Renaming %s => %s", name, newName)
 	if err := c.Rename(ctx, newName); err != nil {
@@ -464,7 +462,7 @@ func (s *Service) recreate(ctx context.Context, c *container.Container) (*contai
 	if err != nil {
 		return nil, err
 	}
-	newID, _ := newContainer.ID()
+	newID := newContainer.ID()
 	logrus.Debugf("Created replacement container %s", newID)
 	if err := c.Remove(ctx, false); err != nil {
 		logrus.Errorf("Failed to remove old container %s", c.Name())
@@ -549,7 +547,7 @@ func (s *Service) Kill(ctx context.Context, signal string) error {
 // Delete implements Service.Delete. It removes any containers related to the service.
 func (s *Service) Delete(ctx context.Context, options options.Delete) error {
 	return s.collectContainersAndDo(ctx, func(c *container.Container) error {
-		running, _ := c.IsRunning(ctx)
+		running := c.IsRunning(ctx)
 		if !running || options.RemoveRunning {
 			return c.Remove(ctx, options.RemoveVolume)
 		}

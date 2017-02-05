@@ -1,5 +1,5 @@
 hash: aec675fc4428e70de14f6436b259ae34adf78b246d8dd326116fc94ec135015c
-updated: 2017-01-31T21:32:37.474174642+01:00
+updated: 2017-02-05T20:34:13.322747593+01:00
 imports:
 - name: github.com/aokoli/goutils
   version: 9c37978a95bd5c709a15883b6242714ea6709e64
@@ -16,13 +16,13 @@ imports:
 - name: github.com/deckarep/gosx-notifier
   version: 9daaf8a4715ebe4daf300036644762fe27d3aded
 - name: github.com/docker/docker
-  version: 0fbff69ab0f65dec966b8b5d814b9df59f7185da
+  version: 4af2555a353a8f407c49adb57877ead436af04be
   subpackages:
   - api/types/strslice
 - name: github.com/docker/go-units
   version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
 - name: github.com/docker/libcompose
-  version: f12d14623f73a0ca0d7fc37253a99165ae48d39f
+  version: 5cba1677dc9906646fc639c21a098ed960033d2d
   subpackages:
   - yaml
 - name: github.com/dustin/go-humanize
@@ -39,7 +39,7 @@ imports:
   subpackages:
   - oleutil
 - name: github.com/golang/protobuf
-  version: 8ee79997227bf9b34611aee7946ae64735e6fd93
+  version: 2402d76f3d41f928c7902a765dfc872356dd3aad
   subpackages:
   - proto
 - name: github.com/guelfey/go.dbus
@@ -61,7 +61,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/shirou/gopsutil
-  version: 70a1b78fe69202d93d6718fc9e3a4d6f81edfd58
+  version: 32b6636de04b303274daac3ca2b10d3b0e4afc35
   subpackages:
   - cpu
   - host
@@ -72,7 +72,7 @@ imports:
 - name: github.com/shirou/w32
   version: bb4de0191aa41b5507caa14b0650cdbddcd9280b
 - name: github.com/Sirupsen/logrus
-  version: 61e43dc76f7ee59a82bdf3d71033dc12bea4c77d
+  version: cd7d1bbe41066b6c1f19780f895901052150a575
 - name: github.com/StackExchange/wmi
   version: e54cbda6595d7293a7a468ccf9525f6bc8887f99
 - name: github.com/urfave/cli
@@ -82,20 +82,24 @@ imports:
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
-  version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
+  version: f315505cf3349909cdf013ea56690da34e96a451
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: d75a52659825e75fff6158388dddc6a5b04f9ba5
+  version: d4feaf1a7e61e1d9e79e6c4e76c6349e9cab0a03
   subpackages:
   - unix
+- name: golang.org/x/time
+  version: f51c12702a4d776e4c1fa9b0fabab841babae631
+  subpackages:
+  - rate
 - name: gopkg.in/go-playground/validator.v8
-  version: 5f57d2222ad794d0dffb07e664ea05e2ee07d60c
+  version: c193cecd124b5cc722d7ee5538e945bdb3348435
 - name: gopkg.in/yaml.v2
   version: 4c78c975fe7c825c6d1466c42be594d1d6f3aba6
 testImports:
 - name: github.com/gopherjs/gopherjs
-  version: 78919e0ff9540aec8ec7ddf27fbf607ae41abc2f
+  version: db27c7c470d7404b6b201f82d6fd4821260bd13e
   subpackages:
   - js
 - name: github.com/jtolds/gls
@@ -106,7 +110,7 @@ testImports:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: c53abc99456fa3402dd33c15ee51c3e545e04a3f
+  version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
   subpackages:
   - convey
   - convey/gotest

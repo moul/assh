@@ -206,13 +206,6 @@ type RawSockaddrHCI struct {
 	Channel uint16
 }
 
-type RawSockaddrCAN struct {
-	Family    uint16
-	Pad_cgo_0 [2]byte
-	Ifindex   int32
-	Addr      [8]byte
-}
-
 type RawSockaddr struct {
 	Family uint16
 	Data   [14]int8
@@ -337,7 +330,6 @@ const (
 	SizeofSockaddrLinklayer = 0x14
 	SizeofSockaddrNetlink   = 0xc
 	SizeofSockaddrHCI       = 0x6
-	SizeofSockaddrCAN       = 0x10
 	SizeofLinger            = 0x8
 	SizeofIPMreq            = 0x8
 	SizeofIPMreqn           = 0xc
@@ -603,26 +595,6 @@ const (
 	AT_SYMLINK_FOLLOW   = 0x400
 	AT_SYMLINK_NOFOLLOW = 0x100
 )
-
-type PollFd struct {
-	Fd      int32
-	Events  int16
-	Revents int16
-}
-
-const (
-	POLLIN    = 0x1
-	POLLPRI   = 0x2
-	POLLOUT   = 0x4
-	POLLRDHUP = 0x2000
-	POLLERR   = 0x8
-	POLLHUP   = 0x10
-	POLLNVAL  = 0x20
-)
-
-type Sigset_t struct {
-	X__val [16]uint64
-}
 
 type Termios struct {
 	Iflag     uint32
