@@ -31,7 +31,7 @@
 
 ## Overview
 
-A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **includes**, **dynamic hostnames**, **graphviz**, **json output**, **yaml configuration** to **SSH**.
+A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **dynamic hostnames**, **graphviz**, **json output**, **yaml configuration** to **SSH**.
 
 [lib-ssh](https://www.libssh.org) wraps `assh` as a [ProxyCommand](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat); it means that it works seamlessly with:
 
@@ -50,7 +50,7 @@ For specific examples, see [3rd Party Integration](#3rd-party-integration)
 * **regex** support
 * **aliases** `gate` -> `gate.domain.tld`
 * **gateways** -> transparent ssh connection chaining
-* **includes**: split configuration in multiple files
+* **includes**: split configuration in multiple files, note that OpenSSH as of v7.3 has [native support for this](https://www.openssh.com/txt/release-7.3)
 * **local command execution**: finally the reverse of **RemoteCommand**
 * **templates**: equivalent to host but you can't connect directly to a template, perfect for inheritance
 * **inheritance**: make hosts inherits from host hosts or templates
