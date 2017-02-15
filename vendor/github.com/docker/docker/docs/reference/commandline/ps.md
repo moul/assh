@@ -23,19 +23,22 @@ List containers
 Options:
   -a, --all             Show all containers (default shows just running)
   -f, --filter value    Filter output based on conditions provided (default [])
-                        - exited=<int> an exit code of <int>
-                        - label=<key> or label=<key>=<value>
-                        - status=(created|restarting|removing|running|paused|exited)
-                        - name=<string> a container's name
-                        - id=<ID> a container's ID
-                        - before=(<container-name>|<container-id>)
-                        - since=(<container-name>|<container-id>)
                         - ancestor=(<image-name>[:tag]|<image-id>|<image@digest>)
                           containers created from an image or a descendant.
-                        - publish=(<port>[/<proto>]|<startport-endport>/[<proto>])
+                        - before=(<container-name>|<container-id>)
                         - expose=(<port>[/<proto>]|<startport-endport>/[<proto>])
-                        - is-task=(true|false)
+                        - exited=<int> an exit code of <int>
                         - health=(starting|healthy|unhealthy|none)
+                        - id=<ID> a container's ID
+                        - isolation=(`default`|`process`|`hyperv`) (Windows daemon only)
+                        - is-task=(true|false)
+                        - label=<key> or label=<key>=<value>
+                        - name=<string> a container's name
+                        - network=(<network-id>|<network-name>)
+                        - publish=(<port>[/<proto>]|<startport-endport>/[<proto>])
+                        - since=(<container-name>|<container-id>)
+                        - status=(created|restarting|removing|running|paused|exited) 
+                        - volume=(<volume name>|<mount point destination>)
       --format string   Pretty-print containers using a Go template
       --help            Print usage
   -n, --last int        Show n last created containers (includes all states) (default -1)
@@ -44,6 +47,10 @@ Options:
   -q, --quiet           Only display numeric IDs
   -s, --size            Display total file sizes
 ```
+
+## Examples
+
+### Prevent truncating output
 
 Running `docker ps --no-trunc` showing 2 linked containers.
 
@@ -54,6 +61,8 @@ CONTAINER ID        IMAGE                        COMMAND                CREATED 
 4c01db0b339c        ubuntu:12.04                 bash                   17 seconds ago       Up 16 seconds       3300-3310/tcp       webapp
 d7886598dbe2        crosbymichael/redis:latest   /redis-server --dir    33 minutes ago       Up 33 minutes       6379/tcp            redis,webapp/db
 ```
+
+### Show both running and stopped containers
 
 The `docker ps` command only shows running containers by default. To see all
 containers, use the `-a` (or `--all`) flag:
@@ -66,7 +75,7 @@ $ docker ps -a
 container that exposes TCP ports `100, 101, 102` displays `100-102/tcp` in
 the `PORTS` column.
 
-## Filtering
+### Filtering
 
 The filtering flag (`-f` or `--filter`) format is a `key=value` pair. If there is more
 than one filter, then pass multiple flags (e.g. `--filter "foo=bar" --filter "bif=baz"`)
@@ -88,7 +97,7 @@ The currently supported filters are:
 * publish=(container's published port) - filters published ports by containers
 * expose=(container's exposed port) - filters exposed ports by containers
 
-#### Label
+#### label
 
 The `label` filter matches containers based on the presence of a `label` alone or a `label` and a
 value.
@@ -112,7 +121,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 d85756f57265        busybox             "top"               About a minute ago   Up About a minute                       high_albattani
 ```
 
-#### Name
+#### name
 
 The `name` filter matches on all or part of a container's name.
 
@@ -136,7 +145,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 673394ef1d4c        busybox             "top"               38 minutes ago      Up 38 minutes                           nostalgic_shockley
 ```
 
-#### Exited
+#### exited
 
 The `exited` filter matches containers by exist status code. For example, to
 filter for containers that have exited successfully:
@@ -150,13 +159,14 @@ ea09c3c82f6e        registry:latest   /srv/run.sh            2 weeks ago        
 48ee228c9464        fedora:20         bash                   2 weeks ago         Exited (0) 2 weeks ago                              tender_torvalds
 ```
 
-#### Killed containers
+#### Filter by exit signal
 
 You can use a filter to locate containers that exited with status of `137`
 meaning a `SIGKILL(9)` killed them.
 
-```bash
+```none
 $ docker ps -a --filter 'exited=137'
+
 CONTAINER ID        IMAGE               COMMAND                CREATED             STATUS                       PORTS               NAMES
 b3e1c0ed5bfe        ubuntu:latest       "sleep 1000"           12 seconds ago      Exited (137) 5 seconds ago                       grave_kowalevski
 a2eb5558d669        redis:latest        "/entrypoint.sh redi   2 hours ago         Exited (137) 2 hours ago                         sharp_lalande
@@ -168,7 +178,7 @@ Any of these events result in a `137` status:
 * `docker kill` kills the container
 * Docker daemon restarts which kills all running containers
 
-#### Status
+#### status
 
 The `status` filter matches containers by status. You can filter using
 `created`, `restarting`, `running`, `removing`, `paused`, `exited` and `dead`. For example,
@@ -192,7 +202,7 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 673394ef1d4c        busybox             "top"               About an hour ago   Up About an hour (Paused)                       nostalgic_shockley
 ```
 
-#### Ancestor
+#### ancestor
 
 The `ancestor` filter matches containers based on its image or a descendant of
 it. The filter supports the following image representation:
@@ -245,7 +255,9 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 82a598284012        ubuntu:12.04.5      "top"               3 minutes ago        Up 3 minutes                            sleepy_bose
 ```
 
-#### Before
+#### Create time
+
+##### before
 
 The `before` filter shows only containers created before the container with
 given id or name. For example, having these containers created:
@@ -269,7 +281,7 @@ CONTAINER ID        IMAGE       COMMAND       CREATED              STATUS       
 6e63f6ff38b0        busybox     "top"         About a minute ago   Up About a minute                      distracted_fermat
 ```
 
-#### Since
+##### since
 
 The `since` filter shows only containers created since the container with given
 id or name. For example, with the same containers as in `before` filter:
@@ -282,12 +294,13 @@ CONTAINER ID        IMAGE       COMMAND       CREATED             STATUS        
 4aace5031105        busybox     "top"         10 minutes ago      Up 10 minutes                           focused_hamilton
 ```
 
-#### Volume
+#### volume
 
 The `volume` filter shows only containers that mount a specific volume or have
 a volume mounted in a specific path:
 
-```bash{% raw %}
+```bash
+{% raw %}
 $ docker ps --filter volume=remote-volume --format "table {{.ID}}\t{{.Mounts}}"
 CONTAINER ID        MOUNTS
 9c3527ed70ce        remote-volume
@@ -295,9 +308,10 @@ CONTAINER ID        MOUNTS
 $ docker ps --filter volume=/data --format "table {{.ID}}\t{{.Mounts}}"
 CONTAINER ID        MOUNTS
 9c3527ed70ce        remote-volume
-{% endraw %}```
+{% endraw %}
+```
 
-#### Network
+#### network
 
 The `network` filter shows only containers that are connected to a network with
 a given name or id.
@@ -332,7 +346,7 @@ CONTAINER ID        IMAGE       COMMAND       CREATED             STATUS        
 9d4893ed80fe        ubuntu      "top"         10 minutes ago      Up 10 minutes                           test1
 ```
 
-#### Publish and Expose
+#### publish and expose
 
 The `publish` and `expose` filters show only containers that have published or exposed port with a given port
 number, port range, and/or protocol. The default protocol is `tcp` when not specified.
@@ -370,7 +384,7 @@ $ docker ps --filter publish=80/udp
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 ```
 
-## Formatting
+### Formatting
 
 The formatting option (`--format`) pretty-prints container output using a Go
 template.

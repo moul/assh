@@ -30,6 +30,19 @@ func TestVolumesFromServices(t *testing.T) {
 			},
 			expectedError: false,
 		},
+		{
+			volumeConfigs: map[string]*config.VolumeConfig{
+				"vol1": nil,
+			},
+			services: map[string]*config.ServiceConfig{},
+			expectedVolumes: []*Volume{
+				{
+					name:        "vol1",
+					projectName: "prj",
+				},
+			},
+			expectedError: false,
+		},
 	}
 
 	for index, c := range cases {

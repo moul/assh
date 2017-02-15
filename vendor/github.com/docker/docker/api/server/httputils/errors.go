@@ -28,7 +28,7 @@ type inputValidationError interface {
 	IsValidationError() bool
 }
 
-// GetHTTPErrorStatusCode retrieves status code from error message
+// GetHTTPErrorStatusCode retrieves status code from error message.
 func GetHTTPErrorStatusCode(err error) int {
 	if err == nil {
 		logrus.WithFields(logrus.Fields{"error": err}).Error("unexpected HTTP error handling")
@@ -54,6 +54,7 @@ func GetHTTPErrorStatusCode(err error) int {
 			code    int
 		}{
 			{"not found", http.StatusNotFound},
+			{"cannot find", http.StatusNotFound},
 			{"no such", http.StatusNotFound},
 			{"bad parameter", http.StatusBadRequest},
 			{"no command", http.StatusBadRequest},

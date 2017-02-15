@@ -181,7 +181,11 @@ func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalD
 		return nil
 	}
 
-	container, err := b.docker.ContainerCreate(types.ContainerCreateConfig{Config: b.runConfig})
+	container, err := b.docker.ContainerCreate(types.ContainerCreateConfig{
+		Config: b.runConfig,
+		// Set a log config to override any default value set on the daemon
+		HostConfig: &container.HostConfig{LogConfig: defaultLogConfig},
+	})
 	if err != nil {
 		return err
 	}
@@ -415,6 +419,10 @@ func (b *Builder) processImageFrom(img builder.Image) error {
 	onBuildTriggers := b.runConfig.OnBuild
 	b.runConfig.OnBuild = []string{}
 
+	// Reset stdin settings as all build actions run without stdin
+	b.runConfig.OpenStdin = false
+	b.runConfig.StdinOnce = false
+
 	// parse the ONBUILD triggers by invoking the parser
 	for _, step := range onBuildTriggers {
 		ast, err := parser.Parse(strings.NewReader(step), &b.directive)
@@ -489,6 +497,8 @@ func (b *Builder) create() (string, error) {
 		ShmSize:     b.options.ShmSize,
 		Resources:   resources,
 		NetworkMode: container.NetworkMode(b.options.NetworkMode),
+		// Set a log config to override any default value set on the daemon
+		LogConfig: defaultLogConfig,
 	}
 
 	config := *b.runConfig
