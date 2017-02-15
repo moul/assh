@@ -106,7 +106,7 @@ type ServiceConfig struct {
 	NetworkMode     string `mapstructure:"network_mode"`
 	Networks        map[string]*ServiceNetworkConfig
 	Pid             string
-	Ports           StringOrNumberList
+	Ports           []ServicePortConfig
 	Privileged      bool
 	ReadOnly        bool `mapstructure:"read_only"`
 	Restart         string
@@ -215,6 +215,14 @@ type ServiceNetworkConfig struct {
 	Ipv6Address string `mapstructure:"ipv6_address"`
 }
 
+// ServicePortConfig is the port configuration for a service
+type ServicePortConfig struct {
+	Mode      string
+	Target    uint32
+	Published uint32
+	Protocol  string
+}
+
 // ServiceSecretConfig is the secret configuration for a service
 type ServiceSecretConfig struct {
 	Source string
@@ -238,6 +246,7 @@ type NetworkConfig struct {
 	Ipam       IPAMConfig
 	External   External
 	Internal   bool
+	Attachable bool
 	Labels     MappingWithEquals
 }
 

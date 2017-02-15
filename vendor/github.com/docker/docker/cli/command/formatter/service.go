@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	distreference "github.com/docker/distribution/reference"
+	"github.com/docker/distribution/reference"
 	mounttypes "github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/cli/command/inspect"
@@ -102,7 +102,7 @@ Endpoint Mode:	{{ .EndpointMode }}
 {{- if .Ports }}
 Ports:
 {{- range $port := .Ports }}
- PublishedPort {{ $port.PublishedPort }}
+ PublishedPort = {{ $port.PublishedPort }}
   Protocol = {{ $port.Protocol }}
   TargetPort = {{ $port.TargetPort }}
   PublishMode = {{ $port.PublishMode }}
@@ -409,11 +409,12 @@ func (c *serviceContext) Replicas() string {
 func (c *serviceContext) Image() string {
 	c.AddHeader(imageHeader)
 	image := c.service.Spec.TaskTemplate.ContainerSpec.Image
-	if ref, err := distreference.ParseNamed(image); err == nil {
-		// update image string for display
-		namedTagged, ok := ref.(distreference.NamedTagged)
-		if ok {
-			image = namedTagged.Name() + ":" + namedTagged.Tag()
+	if ref, err := reference.ParseNormalizedNamed(image); err == nil {
+		// update image string for display, (strips any digest)
+		if nt, ok := ref.(reference.NamedTagged); ok {
+			if namedTagged, err := reference.WithTag(reference.TrimNamed(nt), nt.Tag()); err == nil {
+				image = reference.FamiliarString(namedTagged)
+			}
 		}
 	}
 

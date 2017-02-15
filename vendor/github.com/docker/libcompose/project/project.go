@@ -312,7 +312,7 @@ func (p *Project) handleVolumeConfig() {
 				}
 
 				vol, ok := p.VolumeConfigs[volume.Source]
-				if !ok {
+				if !ok || vol == nil {
 					continue
 				}
 

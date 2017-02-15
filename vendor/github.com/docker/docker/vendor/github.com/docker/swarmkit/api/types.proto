@@ -410,7 +410,7 @@ enum TaskState {
 
 // Container specific status.
 message ContainerStatus {
-	string container_id = 1 [(gogoproto.customname) = "ContainerID"];
+	string container_id = 1;
 
 	int32 pid = 2 [(gogoproto.customname) = "PID"];
 	int32 exit_code = 3;
@@ -574,7 +574,7 @@ message IPAMOptions {
 
 // Peer should be used anywhere where we are describing a remote peer.
 message Peer {
-	string node_id = 1 [(gogoproto.customname) = "NodeID"];
+	string node_id = 1;
 	string addr = 2;
 }
 
@@ -709,10 +709,29 @@ message EncryptionConfig {
 	bool auto_lock_managers = 1;
 }
 
+message SpreadOver {
+	string spread_descriptor = 1; // label descriptor, such as engine.labels.az
+	// TODO: support node information beyond engine and node labels
+
+	// TODO: in the future, add a map that provides weights for weighted
+	// spreading.
+}
+
+message PlacementPreference {
+	oneof Preference {
+		SpreadOver spread = 1;
+	}
+}
+
 // Placement specifies task distribution constraints.
 message Placement {
-	// constraints specifies a set of requirements a node should meet for a task.
+	// Constraints specifies a set of requirements a node should meet for a task.
 	repeated string constraints = 1;
+
+	// Preferences provide a way to make the scheduler aware of factors
+	// such as topology. They are provided in order from highest to lowest
+	// precedence.
+	repeated PlacementPreference preferences = 2;
 }
 
 // JoinToken contains the join tokens for workers and managers.
@@ -787,7 +806,7 @@ message EncryptionKey {
 message ManagerStatus {
 	// RaftID specifies the internal ID used by the manager in a raft context, it can never be modified
 	// and is used only for information purposes
-	uint64 raft_id = 1 [(gogoproto.customname) = "RaftID"];
+	uint64 raft_id = 1;
 
 	// Addr is the address advertised to raft.
 	string addr = 2;
@@ -805,7 +824,7 @@ message SecretReference {
 	// SecretID represents the ID of the specific Secret that we're
 	// referencing. This identifier exists so that SecretReferences don't leak
 	// any information about the secret contents.
-	string secret_id = 1 [(gogoproto.customname) = "SecretID"];
+	string secret_id = 1;
 
 	// SecretName is the name of the secret that this references, but this is just provided for
 	// lookup/display purposes.  The secret in the reference will be identified by its ID.

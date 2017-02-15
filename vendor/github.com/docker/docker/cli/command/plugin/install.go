@@ -1,14 +1,12 @@
 package plugin
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
-	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/cli/command/image"
@@ -55,20 +53,6 @@ func newInstallCommand(dockerCli *command.DockerCli) *cobra.Command {
 	return cmd
 }
 
-func getRepoIndexFromUnnormalizedRef(ref reference.Named) (*registrytypes.IndexInfo, error) {
-	named, err := reference.ParseNormalizedNamed(ref.Name())
-	if err != nil {
-		return nil, err
-	}
-
-	repoInfo, err := registry.ParseRepositoryInfo(named)
-	if err != nil {
-		return nil, err
-	}
-
-	return repoInfo.Index, nil
-}
-
 type pluginRegistryService struct {
 	registry.Service
 }
@@ -105,9 +89,10 @@ func buildPullConfig(ctx context.Context, dockerCli *command.DockerCli, opts plu
 
 	_, isCanonical := ref.(reference.Canonical)
 	if command.IsTrusted() && !isCanonical {
+		ref = reference.TagNameOnly(ref)
 		nt, ok := ref.(reference.NamedTagged)
 		if !ok {
-			nt = reference.EnsureTagged(ref)
+			return types.PluginInstallOptions{}, fmt.Errorf("invalid name: %s", ref.String())
 		}
 
 		ctx := context.Background()
@@ -149,7 +134,7 @@ func runInstall(dockerCli *command.DockerCli, opts pluginOptions) error {
 		if _, ok := aref.(reference.Canonical); ok {
 			return fmt.Errorf("invalid name: %s", opts.localName)
 		}
-		localName = reference.FamiliarString(reference.EnsureTagged(aref))
+		localName = reference.FamiliarString(reference.TagNameOnly(aref))
 	}
 
 	ctx := context.Background()
@@ -178,13 +163,6 @@ func acceptPrivileges(dockerCli *command.DockerCli, name string) func(privileges
 		for _, privilege := range privileges {
 			fmt.Fprintf(dockerCli.Out(), " - %s: %v\n", privilege.Name, privilege.Value)
 		}
-
-		fmt.Fprint(dockerCli.Out(), "Do you grant the above permissions? [y/N] ")
-		reader := bufio.NewReader(dockerCli.In())
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			return false, err
-		}
-		return strings.ToLower(string(line)) == "y", nil
+		return command.PromptForConfirmation(dockerCli.In(), dockerCli.Out(), "Do you grant the above permissions?"), nil
 	}
 }
