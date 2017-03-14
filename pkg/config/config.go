@@ -75,6 +75,18 @@ func (c *Config) addKnownHost(target string) {
 	}
 }
 
+// KnownHostsFileExists returns nil if it the file exists and an error if it doesn't
+func (c *Config) KnownHostsFileExists() error {
+	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
 // LoadKnownHosts loads known hosts list from disk
 func (c *Config) LoadKnownHosts() error {
 	path, err := utils.ExpandUser(c.ASSHKnownHostFile)

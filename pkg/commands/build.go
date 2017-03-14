@@ -27,8 +27,10 @@ func cmdBuild(c *cli.Context) error {
 	}
 
 	if !c.Bool("ignore-known-hosts") {
-		if err:= conf.LoadKnownHosts(); err != nil {
-			Logger.Errorf("Failed to load known-hosts file: %v", err)
+		if conf.KnownHostsFileExists() == nil {
+			if err := conf.LoadKnownHosts(); err != nil {
+				Logger.Errorf("Failed to load known-hosts file: %v", err)
+			}
 		}
 	}
 
