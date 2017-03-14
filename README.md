@@ -749,6 +749,7 @@ Host *
 
 ### master (unreleased)
 
+* Fix error message on first config build ([#230](https://github.com/moul/advanced-ssh-config/issues/230))
 * Fix NetBSD, FreeBSD and Windows builds ([#182](https://github.com/moul/advanced-ssh-config/issues/182))
 * Add RateLimit support ([#65](https://github.com/moul/advanced-ssh-config/issues/65))
 
