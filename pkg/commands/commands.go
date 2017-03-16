@@ -111,6 +111,10 @@ var Commands = []cli.Command{
 						Name:  "show-isolated-hosts",
 						Usage: "Show isolated hosts",
 					},
+					cli.BoolFlag{
+						Name:  "no-resolve-wildcard",
+						Usage: "Do not resolve wildcards in Gateways",
+					},
 				},
 			},
 			{
