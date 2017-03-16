@@ -13,6 +13,7 @@ func nodename(input string) string {
 
 type GraphSettings struct {
 	ShowIsolatedHosts bool
+	NoResolveWildcard bool
 }
 
 func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
@@ -34,7 +35,17 @@ func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
 				continue
 			}
 			if _, found := cfg.Hosts[gateway]; !found {
-				continue
+				if settings.NoResolveWildcard {
+					continue
+				} else {
+					gw := cfg.GetGatewaySafe(gateway)
+					if gw == nil {
+						continue
+					}
+					graph.AddEdge(nodename(host.Name()), nodename(gw.RawName()), true, map[string]string{"color": "red", "label": gateway})
+					hostsToShow[nodename(gw.RawName())] = true
+					continue
+				}
 			}
 			idx++
 			hostsToShow[nodename(gateway)] = true
