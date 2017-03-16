@@ -198,6 +198,11 @@ func (h *Host) Name() string {
 	return h.name
 }
 
+// RawName returns the raw name of a host without pattern computing
+func (h *Host) RawName() string {
+	return h.pattern
+}
+
 // Clone returns a copy of an existing Host
 func (h *Host) Clone() *Host {
 	newHost := *h
