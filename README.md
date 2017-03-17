@@ -321,7 +321,10 @@ defaults:
 
 Notify driver uses [Golang's template system](https://golang.org/pkg/text/template/) to open Desktop notifications.
 
-Note: OS X only for now.
+**Mac OS X**: Built-in support
+**Linux**: Depends on [gnotifier](https://github.com/haklop/gnotifier)
+**Windows**: Not supported
+**BSD**: Not supported
 
 Usage: `notify <line:string...>`
 
