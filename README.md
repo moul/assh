@@ -662,6 +662,8 @@ Get the latest version using GO (recommended way):
 go get -u github.com/moul/advanced-ssh-config/cmd/assh
 ```
 
+**note**: tested with Go1.7 or above
+
 ---
 
 Get the latest released version using homebrew (Mac OS X):
