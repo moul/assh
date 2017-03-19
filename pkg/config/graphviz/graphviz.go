@@ -42,7 +42,7 @@ func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
 					if gw == nil {
 						continue
 					}
-					graph.AddEdge(nodename(host.Name()), nodename(gw.RawName()), true, map[string]string{"color": "red", "label": gateway})
+					graph.AddEdge(nodename(host.Name()), nodename(gw.RawName()), true, map[string]string{"color": "red", "label": nodename(gateway)})
 					hostsToShow[nodename(gw.RawName())] = true
 					continue
 				}
