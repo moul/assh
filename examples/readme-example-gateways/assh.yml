@@ -1,0 +1,17 @@
+hosts:
+  hosta:
+    Hostname: 1.2.3.4
+
+  hostb:
+    Hostname: 5.6.7.8
+    Gateways: hosta
+
+  hostc:
+    Hostname: 9.10.11.12
+    Gateways: hostb
+
+  hostd:
+    Hostname: 13.14.15.16
+    Gateways:
+    - direct
+    - hosta
