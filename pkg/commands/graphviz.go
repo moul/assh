@@ -20,6 +20,7 @@ func cmdGraphviz(c *cli.Context) error {
 	settings := configviz.GraphSettings{
 		ShowIsolatedHosts: c.Bool("show-isolated-hosts"),
 		NoResolveWildcard: c.Bool("no-resolve-wildcard"),
+		NoInherits:        c.Bool("no-inheritance-links"),
 	}
 	graph, err := configviz.Graph(conf, &settings)
 	if err != nil {
