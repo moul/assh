@@ -115,6 +115,10 @@ var Commands = []cli.Command{
 						Name:  "no-resolve-wildcard",
 						Usage: "Do not resolve wildcards in Gateways",
 					},
+					cli.BoolFlag{
+						Name:  "no-inheritance-links",
+						Usage: "Do not show inheritance links",
+					},
 				},
 			},
 			{
