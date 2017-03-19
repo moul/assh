@@ -14,6 +14,7 @@ func nodename(input string) string {
 type GraphSettings struct {
 	ShowIsolatedHosts bool
 	NoResolveWildcard bool
+	NoInherits        bool
 }
 
 func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
@@ -37,19 +38,25 @@ func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
 			if _, found := cfg.Hosts[gateway]; !found {
 				if settings.NoResolveWildcard {
 					continue
-				} else {
-					gw := cfg.GetGatewaySafe(gateway)
-					if gw == nil {
-						continue
-					}
-					graph.AddEdge(nodename(host.Name()), nodename(gw.RawName()), true, map[string]string{"color": "red", "label": gateway})
-					hostsToShow[nodename(gw.RawName())] = true
+				}
+				gw := cfg.GetGatewaySafe(gateway)
+				if gw == nil {
 					continue
 				}
+				graph.AddEdge(nodename(host.Name()), nodename(gw.RawName()), true, map[string]string{"color": "red", "label": nodename(gateway)})
+				hostsToShow[nodename(gw.RawName())] = true
+				continue
 			}
 			idx++
 			hostsToShow[nodename(gateway)] = true
 			graph.AddEdge(nodename(host.Name()), nodename(gateway), true, map[string]string{"color": "red", "label": fmt.Sprintf("%d", idx)})
+		}
+
+		if !settings.NoInherits {
+			for _, inherit := range host.Inherits {
+				hostsToShow[nodename(inherit)] = true
+				graph.AddEdge(nodename(host.Name()), nodename(inherit), true, map[string]string{"color": "black", "style": "dashed"})
+			}
 		}
 	}
 

@@ -1,0 +1,9 @@
+hosts:
+  myserver:
+    host: 1.2.3.4
+    gateways: mygateway
+    # configure a custom proxycommand
+    proxycommand: /bin/nc %h %p
+
+  mygateway:
+    host: 5.6.7.8

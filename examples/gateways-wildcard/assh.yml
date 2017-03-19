@@ -1,0 +1,5 @@
+hosts:
+ customer*:
+  hostname: 1.1.1.1
+ tricky:
+  gateways: customerterm
