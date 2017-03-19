@@ -1,0 +1,7 @@
+digraph G {
+	"tricky"->"customer*"[ color=red, label="customerterm" ];
+	"customer*" [ color=blue ];
+	"tricky" [ color=blue ];
+
+}
+

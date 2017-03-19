@@ -37,6 +37,15 @@ test:
 	$(GO) test -v $(PACKAGES) $(COMMANDS)
 
 
+.PHONY: examples
+examples:
+	@for example in $(dir $(wildcard examples/*/assh.yml)); do                \
+	  set -xe;                                                                \
+	  ./assh -c $$example/assh.yml config build > $$example/ssh_config;       \
+	  ./assh -c $$example/assh.yml config graphviz > $$example/graphviz.dot;  \
+	  dot -Tpng $$example/graphviz.dot > $$example/graphviz.png;              \
+	done
+
 .PHONY: install
 install:
 	$(GO) install $(COMMANDS)

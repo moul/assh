@@ -1,0 +1,11 @@
+digraph G {
+	"hostb"->"hosta"[ color=red, label=1 ];
+	"hostc"->"hostb"[ color=red, label=1 ];
+	"hostd"->"hosta"[ color=red, label=1 ];
+	"hosta" [ color=blue ];
+	"hostb" [ color=blue ];
+	"hostc" [ color=blue ];
+	"hostd" [ color=blue ];
+
+}
+
