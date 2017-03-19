@@ -1,0 +1,7 @@
+digraph G {
+	"myserver"->"mygateway"[ color=red, label=1 ];
+	"mygateway" [ color=blue ];
+	"myserver" [ color=blue ];
+
+}
+

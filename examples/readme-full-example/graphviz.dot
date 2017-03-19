@@ -1,0 +1,12 @@
+digraph G {
+	"bart"->"homer"[ color=red, label=1 ];
+	"vm-*.school.com"->"schoolgw"[ color=red, label=1 ];
+	"vm-*.school.com"->"schooltemplate"[ color=black, style=dashed ];
+	"bart" [ color=blue ];
+	"homer" [ color=blue ];
+	"schoolgw" [ color=blue ];
+	"schooltemplate" [ color=blue ];
+	"vm-*.school.com" [ color=blue ];
+
+}
+
