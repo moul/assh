@@ -19,6 +19,11 @@ before_install:
 - go get -u github.com/mattn/goveralls
 - go get golang.org/x/tools/cmd/cover
 
+addons:
+  apt:
+    packages:
+      - graphviz
+
 matrix:
   allow_failures:
 #  - go: 1.5.3
