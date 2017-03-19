@@ -27,5 +27,6 @@ matrix:
 script:
 - make build
 - make test
+- make examples
 - make cover
 - goveralls -service=travis-ci -v -covermode=count -coverprofile=profile.out
