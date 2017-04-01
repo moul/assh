@@ -396,7 +396,7 @@ func (c *Config) SaveSSHConfig() error {
 	if c.sshConfigPath == "" {
 		return fmt.Errorf("no Config.sshConfigPath configured")
 	}
-	filepath, err := utils.ExpandUser(c.sshConfigPath)
+	configPath, err := utils.ExpandUser(c.sshConfigPath)
 	if err != nil {
 		return err
 	}
@@ -406,13 +406,23 @@ func (c *Config) SaveSSHConfig() error {
 		return err
 	}
 
-	file, err := os.Create(filepath)
+	Logger.Debugf("Writing SSH config file to %q", configPath)
+
+	tmpDir := filepath.Dir(configPath)
+	tmpFile, err := ioutil.TempFile(tmpDir, "config")
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	Logger.Debugf("Writing SSH config file to %q", filepath)
-	return c.WriteSSHConfigTo(file)
+	defer os.Remove(tmpFile.Name())
+
+	if err := c.WriteSSHConfigTo(tmpFile); err != nil {
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpFile.Name(), configPath)
 }
 
 // LoadFile loads the content of a configuration file in the Config object
