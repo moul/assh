@@ -27,7 +27,7 @@ docker:
 
 
 $(BINARIES):	$(SOURCES)
-	$(GO) build -o $@ ./cmd/$@
+	$(GO) build -i -v -o $@ ./cmd/$@
 
 
 .PHONY: test
