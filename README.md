@@ -754,6 +754,7 @@ Host *
 
 ### master (unreleased)
 
+* Fix build issue on OSX ([#238](https://github.com/moul/advanced-ssh-config/pull/238) by [@jcftang](https://github.com/jcftang))
 * Rewrite .ssh/config file atomically ([#215](https://github.com/moul/advanced-ssh-config/issues/215))
 * Support inheritance links in Graphviz ([#235](https://github.com/moul/advanced-ssh-config/issues/235))
 * Support wildcards in Graphviz config export ([#228](https://github.com/moul/advanced-ssh-config/issues/228))
