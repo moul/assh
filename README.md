@@ -964,6 +964,11 @@ In your ansible.cfg under ssh_connection, make sure you have the following, chan
 ansible_ssh_executable = '/usr/local/bin/assh wrapper ssh'
 ```
 
+### 3rd Party Projects
+
+* [ansible-dotfiles-assh](https://github.com/wrboyce/ansible-dotfiles-assh): Ansible - Configure SSH with   ASSH
+* [appflow](https://github.com/ttssdev/appflow): Multitenant environment automation
+
 ## License
 
 © 2009-2016 Manfred Touron - MIT License
