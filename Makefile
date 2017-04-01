@@ -27,7 +27,7 @@ docker:
 
 
 $(BINARIES):	$(SOURCES)
-	$(GO) build -i -v -o $@ ./cmd/$@
+	$(GO) build -ldflags=-s -i -v -o $@ ./cmd/$@
 
 
 .PHONY: test
