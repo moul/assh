@@ -112,6 +112,7 @@ type Host struct {
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
+	noAutomaticRewrite bool
 	Inherits           composeyaml.Stringorslice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
 	Gateways           composeyaml.Stringorslice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
 	ResolveNameservers composeyaml.Stringorslice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
@@ -1377,7 +1378,11 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 
 		// ssh-config fields with a different behavior
 		if h.isDefault {
-			fmt.Fprintf(w, "  ProxyCommand %s connect --port=%%p %%h\n", asshBinaryPath)
+			if h.noAutomaticRewrite {
+				fmt.Fprintf(w, "  ProxyCommand %s connect --no-rewrite --port=%%p %%h\n", asshBinaryPath)
+			} else {
+				fmt.Fprintf(w, "  ProxyCommand %s connect --port=%%p %%h\n", asshBinaryPath)
+			}
 		} else {
 			if h.ProxyCommand != "" {
 				fmt.Fprintf(w, "  # ProxyCommand %s\n", h.ProxyCommand)
