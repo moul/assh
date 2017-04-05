@@ -761,6 +761,7 @@ Host *
 * Fix error message on first config build ([#230](https://github.com/moul/advanced-ssh-config/issues/230))
 * Fix NetBSD, FreeBSD and Windows builds ([#182](https://github.com/moul/advanced-ssh-config/issues/182))
 * Add RateLimit support ([#65](https://github.com/moul/advanced-ssh-config/issues/65))
+* Add possibility to disable automatic configuration rewrite ([#239](https://github.com/moul/advanced-ssh-config/issues/239))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.6.0...master)
 
@@ -953,6 +954,18 @@ defaults:
 ```
 
 `%C` is a unique identifier based on a hash of the tuple of (local host, remote user, hostname, port).
+
+#### How to disable the automatic configuration rewrite?
+
+Each time you call `ssh`, `assh` will check if the generated `~/.ssh/config` file is outdated.
+
+By default, it will transparently regenerate the configuration file if needed.
+
+You can disable this behavior by generating the configuration file like this:
+
+```bash
+assh config build --no-automatic-rewrite
+```
 
 ## 3rd Party Integration
 

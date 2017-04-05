@@ -34,6 +34,9 @@ func cmdBuild(c *cli.Context) error {
 		}
 	}
 
+	if c.Bool("no-automatic-rewrite") {
+		conf.DisableAutomaticRewrite()
+	}
 	conf.WriteSSHConfigTo(os.Stdout)
 
 	return nil

@@ -36,6 +36,11 @@ type Config struct {
 	sshConfigPath string
 }
 
+// DisableAutomaticRewrite will configure the ~/.ssh/config file to not automatically rewrite the configuration file
+func (c *Config) DisableAutomaticRewrite() {
+	c.Defaults.noAutomaticRewrite = true
+}
+
 // SetASSHBinaryPath sets the default assh binary path
 // this value may be overwritten in the assh.yml file using the asshbinarypath variable
 func SetASSHBinaryPath(path string) {
