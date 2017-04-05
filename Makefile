@@ -3,7 +3,7 @@ GODIR ?=	github.com/moul/advanced-ssh-config
 
 PKG_BASE_DIR ?=	./pkg
 CONVEY_PORT ?=	9042
-SOURCES :=	$(shell find . -type f -name "*.go")
+SOURCES :=	$(shell find ./cmd/ ./pkg/ -type f -name "*.go") glide.lock
 GOLIST :=	$(shell go list ./cmd/... ./pkg/...)
 COMMANDS :=	$(shell go list ./cmd/...)
 PACKAGES :=	$(shell go list ./pkg/...)

@@ -54,17 +54,22 @@ func cmdProxy(c *cli.Context) error {
 
 	target := c.Args()[0]
 
+	automaticRewrite := !c.Bool("no-rewrite")
 	isOutdated, err := conf.IsConfigOutdated(target)
 	if err != nil {
 		Logger.Warnf("Cannot check if ~/.ssh/config is outdated.")
 	}
 	if isOutdated {
-		Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
-		Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.")
-		Logger.Debugf("Saving SSH config")
-		err = conf.SaveSSHConfig()
-		if err != nil {
-			Logger.Fatalf("Cannot save SSH config file: %v", err)
+		if automaticRewrite {
+			Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
+			Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.")
+			Logger.Debugf("Saving SSH config")
+			err = conf.SaveSSHConfig()
+			if err != nil {
+				Logger.Fatalf("Cannot save SSH config file: %v", err)
+			}
+		} else {
+			Logger.Warnf("The configuration file is outdated; you need to run `assh config build --no-automatic-rewrite > ~/.ssh/config` to stay updated")
 		}
 	}
 

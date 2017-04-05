@@ -21,9 +21,12 @@ var Commands = []cli.Command{
 		Action:      cmdProxy,
 		Hidden:      true,
 		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "no-rewrite",
+				Usage: "Do not automatically rewrite outdated configuration",
+			},
 			cli.IntFlag{
 				Name:  "port, p",
-				Value: 0,
 				Usage: "SSH destination port",
 			},
 			cli.BoolFlag{
@@ -69,6 +72,10 @@ var Commands = []cli.Command{
 				Name:  "build",
 				Usage: "Build .ssh/config",
 				Flags: []cli.Flag{
+					cli.BoolFlag{
+						Name:  "no-automatic-rewrite",
+						Usage: "Disable automatic ~/.ssh/config file regeneration",
+					},
 					cli.BoolFlag{
 						Name:  "expand, e",
 						Usage: "Expand all fields",
