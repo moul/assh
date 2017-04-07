@@ -576,6 +576,8 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 	return nil
 }
 
+func (c *Config) SshConfigPath() string { return c.sshConfigPath }
+
 // New returns an instantiated Config object
 func New() *Config {
 	var config Config
