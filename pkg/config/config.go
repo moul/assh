@@ -21,7 +21,7 @@ import (
 
 var asshBinaryPath = "assh"
 
-const defaultSshConfigPath = "~/.ssh/config"
+const defaultSSHConfigPath = "~/.ssh/config"
 
 // Config contains a list of Hosts sections and a Defaults section representing a configuration file
 type Config struct {
@@ -576,13 +576,16 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 	return nil
 }
 
+// SSHConfigPath returns the ~/.ssh/config file path
+func (c *Config) SSHConfigPath() string { return c.sshConfigPath }
+
 // New returns an instantiated Config object
 func New() *Config {
 	var config Config
 	config.Hosts = make(map[string]*Host)
 	config.Templates = make(map[string]*Host)
 	config.includedFiles = make(map[string]bool)
-	config.sshConfigPath = defaultSshConfigPath
+	config.sshConfigPath = defaultSSHConfigPath
 	config.ASSHKnownHostFile = "~/.ssh/assh_known_hosts"
 	config.ASSHBinaryPath = ""
 	return &config
