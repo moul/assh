@@ -63,10 +63,10 @@ func cmdProxy(c *cli.Context) error {
 		if automaticRewrite {
 			// BeforeConfigWrite
 			type configWriteHookArgs struct {
-				SshConfigPath string
+				SSHConfigPath string
 			}
 			hookArgs := configWriteHookArgs{
-				SshConfigPath: conf.SshConfigPath(),
+				SSHConfigPath: conf.SSHConfigPath(),
 			}
 			Logger.Debugf("Calling BeforeConfigWrite hooks")
 			beforeConfigWriteDrivers, err := conf.Defaults.Hooks.BeforeConfigWrite.InvokeAll(hookArgs)
