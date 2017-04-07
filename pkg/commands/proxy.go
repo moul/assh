@@ -61,6 +61,21 @@ func cmdProxy(c *cli.Context) error {
 	}
 	if isOutdated {
 		if automaticRewrite {
+			// BeforeConfigWrite
+			type configWriteHookArgs struct {
+				SSHConfigPath string
+			}
+			hookArgs := configWriteHookArgs{
+				SSHConfigPath: conf.SSHConfigPath(),
+			}
+			Logger.Debugf("Calling BeforeConfigWrite hooks")
+			beforeConfigWriteDrivers, err := conf.Defaults.Hooks.BeforeConfigWrite.InvokeAll(hookArgs)
+			if err != nil {
+				Logger.Errorf("BeforeConfigWrite hook failed: %v", err)
+			}
+			defer beforeConfigWriteDrivers.Close()
+
+			// Save
 			Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
 			Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.")
 			Logger.Debugf("Saving SSH config")
@@ -68,6 +83,15 @@ func cmdProxy(c *cli.Context) error {
 			if err != nil {
 				Logger.Fatalf("Cannot save SSH config file: %v", err)
 			}
+
+			// AfterConfigWrite
+			Logger.Debugf("Calling AfterConfigWrite hooks")
+			afterConfigWriteDrivers, err := conf.Defaults.Hooks.AfterConfigWrite.InvokeAll(hookArgs)
+			if err != nil {
+				Logger.Errorf("AfterConfigWrite hook failed: %v", err)
+			}
+			defer afterConfigWriteDrivers.Close()
+
 		} else {
 			Logger.Warnf("The configuration file is outdated; you need to run `assh config build --no-automatic-rewrite > ~/.ssh/config` to stay updated")
 		}
