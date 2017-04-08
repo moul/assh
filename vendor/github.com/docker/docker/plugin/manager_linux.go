@@ -5,6 +5,7 @@ package plugin
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -77,7 +78,8 @@ func (pm *Manager) enable(p *v2.Plugin, c *controller, force bool) error {
 }
 
 func (pm *Manager) pluginPostStart(p *v2.Plugin, c *controller) error {
-	client, err := plugins.NewClientWithTimeout("unix://"+filepath.Join(pm.config.ExecRoot, p.GetID(), p.GetSocket()), nil, c.timeoutInSecs)
+	sockAddr := filepath.Join(pm.config.ExecRoot, p.GetID(), p.GetSocket())
+	client, err := plugins.NewClientWithTimeout("unix://"+sockAddr, nil, c.timeoutInSecs)
 	if err != nil {
 		c.restart = false
 		shutdownPlugin(p, c, pm.containerdClient)
@@ -85,6 +87,32 @@ func (pm *Manager) pluginPostStart(p *v2.Plugin, c *controller) error {
 	}
 
 	p.SetPClient(client)
+
+	// Initial sleep before net Dial to allow plugin to listen on socket.
+	time.Sleep(500 * time.Millisecond)
+	maxRetries := 3
+	var retries int
+	for {
+		// net dial into the unix socket to see if someone's listening.
+		conn, err := net.Dial("unix", sockAddr)
+		if err == nil {
+			conn.Close()
+			break
+		}
+
+		time.Sleep(3 * time.Second)
+		retries++
+
+		if retries > maxRetries {
+			logrus.Debugf("error net dialing plugin: %v", err)
+			c.restart = false
+			// While restoring plugins, we need to explicitly set the state to disabled
+			pm.config.Store.SetState(p, false)
+			shutdownPlugin(p, c, pm.containerdClient)
+			return err
+		}
+
+	}
 	pm.config.Store.SetState(p, true)
 	pm.config.Store.CallHandler(p)
 
@@ -182,9 +210,8 @@ func (pm *Manager) upgradePlugin(p *v2.Plugin, configDigest digest.Digest, blobs
 				logrus.WithError(rmErr).WithField("dir", backup).Error("error cleaning up after failed upgrade")
 				return
 			}
-
-			if err := os.Rename(backup, orig); err != nil {
-				err = errors.Wrap(err, "error restoring old plugin root on upgrade failure")
+			if mvErr := os.Rename(backup, orig); mvErr != nil {
+				err = errors.Wrap(mvErr, "error restoring old plugin root on upgrade failure")
 			}
 			if rmErr := os.RemoveAll(tmpRootFSDir); rmErr != nil && !os.IsNotExist(rmErr) {
 				logrus.WithError(rmErr).WithField("plugin", p.Name()).Errorf("error cleaning up plugin upgrade dir: %s", tmpRootFSDir)

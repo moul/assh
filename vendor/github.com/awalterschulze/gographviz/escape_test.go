@@ -45,3 +45,43 @@ func TestEscape(t *testing.T) {
 		t.Fatalf("should be a node")
 	}
 }
+
+func TestClusterSubgraphs(t *testing.T) {
+	g := NewEscape()
+	g.SetName("G")
+	g.SetDir(false)
+	g.AddSubGraph("G", "cluster0", nil)
+	g.AddSubGraph("cluster0", "cluster_1", nil)
+	g.AddSubGraph("cluster0", "cluster_2", nil)
+	g.AddNode("G", "Code deployment", nil)
+	g.AddPortEdge("cluster_2", "", "cluster_1", "", false, nil)
+	s := g.String()
+	graphStr := `graph G {
+	cluster_2--cluster_1;
+	subgraph cluster0 {
+	subgraph cluster_1 {
+
+}
+;
+	subgraph cluster_2 {
+
+}
+;
+
+}
+;
+	"Code deployment";
+
+}`
+	if !strings.HasPrefix(s, graphStr) {
+		t.Fatalf("%s", s)
+	}
+	g2, err := Parse([]byte(s))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s2 := g2.String()
+	if !strings.HasPrefix(s2, graphStr) {
+		t.Fatalf("%s", s2)
+	}
+}

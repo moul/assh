@@ -158,6 +158,7 @@ The currently supported filters are:
 * label (`label=<key>` or `label=<key>=<value>`)
 * before (`<image-name>[:<tag>]`,  `<image id>` or `<image@digest>`) - filter images created before given id or references
 * since (`<image-name>[:<tag>]`,  `<image id>` or `<image@digest>`) - filter images created since given id or references
+* reference (pattern of an image reference) - filter images whose reference matches the specified pattern
 
 #### Show untagged images (dangling)
 
@@ -309,7 +310,6 @@ The following example uses a template without headers and outputs the
 `ID` and `Repository` entries separated by a colon for all images:
 
 ```bash
-{% raw %}
 $ docker images --format "{{.ID}}: {{.Repository}}"
 
 77af4d6b9913: <none>
@@ -321,14 +321,12 @@ b6fa739cedf5: committ
 746b819f315e: postgres
 746b819f315e: postgres
 746b819f315e: postgres
-{% endraw %}
 ```
 
 To list all images with their repository and tag in a table format you
 can use:
 
 ```bash
-{% raw %}
 $ docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
 IMAGE ID            REPOSITORY                TAG
@@ -341,5 +339,4 @@ b6fa739cedf5        committ                   latest
 746b819f315e        postgres                  9.3
 746b819f315e        postgres                  9.3.5
 746b819f315e        postgres                  latest
-{% endraw %}
 ```

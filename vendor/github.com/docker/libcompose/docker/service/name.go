@@ -54,8 +54,8 @@ func NewNamer(ctx context.Context, client client.ContainerAPIClient, project, se
 	}
 
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
-		All:    true,
-		Filter: filter,
+		All:     true,
+		Filters: filter,
 	})
 	if err != nil {
 		return nil, err

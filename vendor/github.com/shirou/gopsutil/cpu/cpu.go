@@ -40,6 +40,7 @@ type InfoStat struct {
 	Mhz        float64  `json:"mhz"`
 	CacheSize  int32    `json:"cacheSize"`
 	Flags      []string `json:"flags"`
+	Microcode  string   `json:"microcode"`
 }
 
 type lastPercent struct {
@@ -129,8 +130,9 @@ func calculateAllBusy(t1, t2 []TimesStat) ([]float64, error) {
 	return ret, nil
 }
 
-//Percent calculates the percentage of cpu used either per CPU or combined.
-//If an interval of 0 is given it will compare the current cpu times against the last call.
+// Percent calculates the percentage of cpu used either per CPU or combined.
+// If an interval of 0 is given it will compare the current cpu times against the last call.
+// Returns one value per cpu, or a single value if percpu is set to false.
 func Percent(interval time.Duration, percpu bool) ([]float64, error) {
 	if interval <= 0 {
 		return percentUsedFromLastCall(percpu)
@@ -170,7 +172,7 @@ func percentUsedFromLastCall(percpu bool) ([]float64, error) {
 	}
 
 	if lastTimes == nil {
-		return nil, fmt.Errorf("Error getting times for cpu percent. LastTimes was nil")
+		return nil, fmt.Errorf("error getting times for cpu percent. lastTimes was nil")
 	}
 	return calculateAllBusy(lastTimes, cpuTimes)
 }

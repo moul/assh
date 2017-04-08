@@ -16,6 +16,7 @@ import (
 	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/docker/pkg/truncindex"
+	"github.com/docker/docker/runconfig"
 	"github.com/docker/go-connections/nat"
 )
 
@@ -52,6 +53,16 @@ func (daemon *Daemon) GetContainer(prefixOrName string) (*container.Container, e
 		return nil, indexError
 	}
 	return daemon.containers.Get(containerID), nil
+}
+
+// checkContainer make sure the specified container validates the specified conditions
+func (daemon *Daemon) checkContainer(container *container.Container, conditions ...func(*container.Container) error) error {
+	for _, condition := range conditions {
+		if err := condition(container); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Exists returns a true if a container of the specified ID or name exists,
@@ -181,7 +192,7 @@ func (daemon *Daemon) generateHostname(id string, config *containertypes.Config)
 func (daemon *Daemon) setSecurityOptions(container *container.Container, hostConfig *containertypes.HostConfig) error {
 	container.Lock()
 	defer container.Unlock()
-	return parseSecurityOpt(container, hostConfig)
+	return daemon.parseSecurityOpt(container, hostConfig)
 }
 
 func (daemon *Daemon) setHostConfig(container *container.Container, hostConfig *containertypes.HostConfig) error {
@@ -199,6 +210,7 @@ func (daemon *Daemon) setHostConfig(container *container.Container, hostConfig *
 		return err
 	}
 
+	runconfig.SetDefaultNetModeIfBlank(hostConfig)
 	container.HostConfig = hostConfig
 	return container.ToDisk()
 }
@@ -243,6 +255,10 @@ func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostCon
 			if config.Healthcheck.Retries < 0 {
 				return nil, fmt.Errorf("Retries in Healthcheck cannot be negative")
 			}
+
+			if config.Healthcheck.StartPeriod < 0 {
+				return nil, fmt.Errorf("StartPeriod in Healthcheck cannot be negative")
+			}
 		}
 	}
 
@@ -252,6 +268,12 @@ func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostCon
 
 	if hostConfig.AutoRemove && !hostConfig.RestartPolicy.IsNone() {
 		return nil, fmt.Errorf("can't create 'AutoRemove' container with restart policy")
+	}
+
+	for _, extraHost := range hostConfig.ExtraHosts {
+		if _, err := opts.ValidateExtraHost(extraHost); err != nil {
+			return nil, err
+		}
 	}
 
 	for port := range hostConfig.PortBindings {

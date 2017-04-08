@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -9,37 +10,37 @@ func TestDiscoveryOpts(t *testing.T) {
 	clusterOpts := map[string]string{"discovery.heartbeat": "10", "discovery.ttl": "5"}
 	heartbeat, ttl, err := discoveryOpts(clusterOpts)
 	if err == nil {
-		t.Fatalf("discovery.ttl < discovery.heartbeat must fail")
+		t.Fatal("discovery.ttl < discovery.heartbeat must fail")
 	}
 
 	clusterOpts = map[string]string{"discovery.heartbeat": "10", "discovery.ttl": "10"}
 	heartbeat, ttl, err = discoveryOpts(clusterOpts)
 	if err == nil {
-		t.Fatalf("discovery.ttl == discovery.heartbeat must fail")
+		t.Fatal("discovery.ttl == discovery.heartbeat must fail")
 	}
 
 	clusterOpts = map[string]string{"discovery.heartbeat": "-10", "discovery.ttl": "10"}
 	heartbeat, ttl, err = discoveryOpts(clusterOpts)
 	if err == nil {
-		t.Fatalf("negative discovery.heartbeat must fail")
+		t.Fatal("negative discovery.heartbeat must fail")
 	}
 
 	clusterOpts = map[string]string{"discovery.heartbeat": "10", "discovery.ttl": "-10"}
 	heartbeat, ttl, err = discoveryOpts(clusterOpts)
 	if err == nil {
-		t.Fatalf("negative discovery.ttl must fail")
+		t.Fatal("negative discovery.ttl must fail")
 	}
 
 	clusterOpts = map[string]string{"discovery.heartbeat": "invalid"}
 	heartbeat, ttl, err = discoveryOpts(clusterOpts)
 	if err == nil {
-		t.Fatalf("invalid discovery.heartbeat must fail")
+		t.Fatal("invalid discovery.heartbeat must fail")
 	}
 
 	clusterOpts = map[string]string{"discovery.ttl": "invalid"}
 	heartbeat, ttl, err = discoveryOpts(clusterOpts)
 	if err == nil {
-		t.Fatalf("invalid discovery.ttl must fail")
+		t.Fatal("invalid discovery.ttl must fail")
 	}
 
 	clusterOpts = map[string]string{"discovery.heartbeat": "10", "discovery.ttl": "20"}
@@ -84,6 +85,13 @@ func TestDiscoveryOpts(t *testing.T) {
 	expected = 30 * time.Second / defaultDiscoveryTTLFactor
 	if heartbeat != expected {
 		t.Fatalf("Heartbeat - Expected : %v, Actual : %v", expected, heartbeat)
+	}
+
+	discaveryTTL := fmt.Sprintf("%d", defaultDiscoveryTTLFactor-1)
+	clusterOpts = map[string]string{"discovery.ttl": discaveryTTL}
+	heartbeat, ttl, err = discoveryOpts(clusterOpts)
+	if err == nil && heartbeat == 0 {
+		t.Fatal("discovery.heartbeat must be positive")
 	}
 
 	clusterOpts = map[string]string{}

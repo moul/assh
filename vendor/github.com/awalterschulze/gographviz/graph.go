@@ -14,6 +14,8 @@
 
 package gographviz
 
+import "strings"
+
 //The analysed representation of the Graph parsed from the DOT format.
 type Graph struct {
 	Attrs     Attrs
@@ -111,4 +113,10 @@ func (this *Graph) IsNode(name string) bool {
 func (this *Graph) IsSubGraph(name string) bool {
 	_, ok := this.SubGraphs.SubGraphs[name]
 	return ok
+}
+
+func (this *Graph) IsClusterSubGraph(name string) bool {
+	isSubGraph := this.IsSubGraph(name)
+	isCluster := strings.HasPrefix(name, "cluster")
+	return isSubGraph && isCluster
 }

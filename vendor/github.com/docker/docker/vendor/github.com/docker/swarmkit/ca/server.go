@@ -1,15 +1,17 @@
 package ca
 
 import (
+	"bytes"
 	"crypto/subtle"
+	"crypto/x509"
 	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/swarmkit/api"
+	"github.com/docker/swarmkit/api/equality"
 	"github.com/docker/swarmkit/identity"
 	"github.com/docker/swarmkit/log"
-	"github.com/docker/swarmkit/manager/state"
 	"github.com/docker/swarmkit/manager/state/store"
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -21,6 +23,13 @@ import (
 const (
 	defaultReconciliationRetryInterval = 10 * time.Second
 )
+
+// APISecurityConfigUpdater knows how to update a SecurityConfig from an api.Cluster object
+type APISecurityConfigUpdater interface {
+	UpdateRootCA(ctx context.Context, cluster *api.Cluster) error
+}
+
+var _ APISecurityConfigUpdater = &Server{}
 
 // Server is the CA and NodeCA API gRPC server.
 // TODO(aaronl): At some point we may want to have separate implementations of
@@ -43,6 +52,17 @@ type Server struct {
 	// started is a channel which gets closed once the server is running
 	// and able to service RPCs.
 	started chan struct{}
+
+	// these are cached values to ensure we only update the security config when
+	// the cluster root CA and external CAs have changed - the cluster object
+	// can change for other reasons, and it would not be necessary to update
+	// the security config as a result
+	lastSeenClusterRootCA *api.RootCA
+	lastSeenExternalCAs   []*api.ExternalCA
+	secConfigMu           sync.Mutex
+
+	// before we update the security config with the new root CA, we need to be able to save the root certs
+	rootPaths CertPaths
 }
 
 // DefaultCAConfig returns the default CA Config, with a default expiration.
@@ -53,13 +73,14 @@ func DefaultCAConfig() api.CAConfig {
 }
 
 // NewServer creates a CA API server.
-func NewServer(store *store.MemoryStore, securityConfig *SecurityConfig) *Server {
+func NewServer(store *store.MemoryStore, securityConfig *SecurityConfig, rootCAPaths CertPaths) *Server {
 	return &Server{
 		store:                       store,
 		securityConfig:              securityConfig,
 		pending:                     make(map[string]*api.Node),
 		started:                     make(chan struct{}),
 		reconciliationRetryInterval: defaultReconciliationRetryInterval,
+		rootPaths:                   rootCAPaths,
 	}
 }
 
@@ -109,9 +130,9 @@ func (s *Server) NodeCertificateStatus(ctx context.Context, request *api.NodeCer
 
 	var node *api.Node
 
-	event := state.EventUpdateNode{
+	event := api.EventUpdateNode{
 		Node:   &api.Node{ID: request.NodeID},
-		Checks: []state.NodeCheckFunc{state.NodeCheckID},
+		Checks: []api.NodeCheckFunc{api.NodeCheckID},
 	}
 
 	// Retrieve the current value of the certificate with this token, and create a watcher
@@ -158,7 +179,7 @@ func (s *Server) NodeCertificateStatus(ctx context.Context, request *api.NodeCer
 		select {
 		case event := <-updates:
 			switch v := event.(type) {
-			case state.EventUpdateNode:
+			case api.EventUpdateNode:
 				// We got an update on the certificate record. If the status is a final state,
 				// return the certificate.
 				if isFinalState(v.Node.Certificate.Status) {
@@ -361,7 +382,7 @@ func (s *Server) GetRootCACertificate(ctx context.Context, request *api.GetRootC
 	})
 
 	return &api.GetRootCACertificateResponse{
-		Certificate: s.securityConfig.RootCA().Cert,
+		Certificate: s.securityConfig.RootCA().Certs,
 	}, nil
 }
 
@@ -392,14 +413,12 @@ func (s *Server) Run(ctx context.Context) error {
 			if len(clusters) != 1 {
 				return errors.New("could not find cluster object")
 			}
-			s.updateCluster(ctx, clusters[0])
-
+			s.UpdateRootCA(ctx, clusters[0]) // call once to ensure that the join tokens are always set
 			nodes, err = store.FindNodes(readTx, store.All)
 			return err
 		},
-		state.EventCreateNode{},
-		state.EventUpdateNode{},
-		state.EventUpdateCluster{},
+		api.EventCreateNode{},
+		api.EventUpdateNode{},
 	)
 
 	// Do this after updateCluster has been called, so isRunning never
@@ -435,18 +454,22 @@ func (s *Server) Run(ctx context.Context) error {
 	// to the cluster
 	for {
 		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		select {
 		case event := <-updates:
 			switch v := event.(type) {
-			case state.EventCreateNode:
+			case api.EventCreateNode:
 				s.evaluateAndSignNodeCert(ctx, v.Node)
-			case state.EventUpdateNode:
+			case api.EventUpdateNode:
 				// If this certificate is already at a final state
 				// no need to evaluate and sign it.
 				if !isFinalState(v.Node.Certificate.Status) {
 					s.evaluateAndSignNodeCert(ctx, v.Node)
 				}
-			case state.EventUpdateCluster:
-				s.updateCluster(ctx, v.Cluster)
 			}
 		case <-ticker.C:
 			for _, node := range s.pending {
@@ -512,67 +535,118 @@ func (s *Server) isRunning() bool {
 	return true
 }
 
-// updateCluster is called when there are cluster changes, and it ensures that the local RootCA is
-// always aware of changes in clusterExpiry and the Root CA key material
-func (s *Server) updateCluster(ctx context.Context, cluster *api.Cluster) {
+// UpdateRootCA is called when there are cluster changes, and it ensures that the local RootCA is
+// always aware of changes in clusterExpiry and the Root CA key material - this can be called by
+// anything to update the root CA material
+func (s *Server) UpdateRootCA(ctx context.Context, cluster *api.Cluster) error {
 	s.mu.Lock()
 	s.joinTokens = cluster.RootCA.JoinTokens.Copy()
 	s.mu.Unlock()
-	var err error
 
-	// If the cluster has a RootCA, let's try to update our SecurityConfig to reflect the latest values
+	s.secConfigMu.Lock()
+	defer s.secConfigMu.Unlock()
 	rCA := cluster.RootCA
-	if len(rCA.CACert) != 0 && len(rCA.CAKey) != 0 {
+	rootCAChanged := len(rCA.CACert) != 0 && !equality.RootCAEqualStable(s.lastSeenClusterRootCA, &cluster.RootCA)
+	externalCAChanged := !equality.ExternalCAsEqualStable(s.lastSeenExternalCAs, cluster.Spec.CAConfig.ExternalCAs)
+	logger := log.G(ctx).WithFields(logrus.Fields{
+		"cluster.id": cluster.ID,
+		"method":     "(*Server).UpdateRootCA",
+	})
+
+	if rootCAChanged {
+		logger.Debug("Updating security config due to change in cluster Root CA")
 		expiry := DefaultNodeCertExpiration
 		if cluster.Spec.CAConfig.NodeCertExpiry != nil {
 			// NodeCertExpiry exists, let's try to parse the duration out of it
 			clusterExpiry, err := gogotypes.DurationFromProto(cluster.Spec.CAConfig.NodeCertExpiry)
 			if err != nil {
-				log.G(ctx).WithFields(logrus.Fields{
-					"cluster.id": cluster.ID,
-					"method":     "(*Server).updateCluster",
-				}).WithError(err).Warn("failed to parse certificate expiration, using default")
+				logger.WithError(err).Warn("failed to parse certificate expiration, using default")
 			} else {
 				// We were able to successfully parse the expiration out of the cluster.
 				expiry = clusterExpiry
 			}
 		} else {
 			// NodeCertExpiry seems to be nil
-			log.G(ctx).WithFields(logrus.Fields{
-				"cluster.id": cluster.ID,
-				"method":     "(*Server).updateCluster",
-			}).WithError(err).Warn("failed to parse certificate expiration, using default")
-
+			logger.Warn("no certificate expiration specified, using default")
 		}
 		// Attempt to update our local RootCA with the new parameters
-		err = s.securityConfig.UpdateRootCA(rCA.CACert, rCA.CAKey, expiry)
+		var intermediates []byte
+		signingCert := rCA.CACert
+		signingKey := rCA.CAKey
+		if rCA.RootRotation != nil {
+			signingCert = rCA.RootRotation.CrossSignedCACert
+			signingKey = rCA.RootRotation.CAKey
+			intermediates = rCA.RootRotation.CrossSignedCACert
+		}
+		if signingKey == nil {
+			signingCert = nil
+		}
+
+		updatedRootCA, err := NewRootCA(rCA.CACert, signingCert, signingKey, expiry, intermediates)
 		if err != nil {
-			log.G(ctx).WithFields(logrus.Fields{
-				"cluster.id": cluster.ID,
-				"method":     "(*Server).updateCluster",
-			}).WithError(err).Error("updating Root CA failed")
-		} else {
-			log.G(ctx).WithFields(logrus.Fields{
-				"cluster.id": cluster.ID,
-				"method":     "(*Server).updateCluster",
-			}).Debugf("Root CA updated successfully")
+			return errors.Wrap(err, "invalid Root CA object in cluster")
 		}
+		if err := SaveRootCA(updatedRootCA, s.rootPaths); err != nil {
+			return errors.Wrap(err, "unable to save new root CA certificates")
+		}
+
+		externalCARootPool := updatedRootCA.Pool
+		if rCA.RootRotation != nil {
+			// the external CA has to trust the new CA cert
+			externalCARootPool = x509.NewCertPool()
+			externalCARootPool.AppendCertsFromPEM(rCA.CACert)
+			externalCARootPool.AppendCertsFromPEM(rCA.RootRotation.CACert)
+		}
+
+		// Attempt to update our local RootCA with the new parameters
+		if err := s.securityConfig.UpdateRootCA(&updatedRootCA, externalCARootPool); err != nil {
+			return errors.Wrap(err, "updating Root CA failed")
+		}
+		// only update the server cache if we've successfully updated the root CA
+		logger.Debug("Root CA updated successfully")
+		s.lastSeenClusterRootCA = cluster.RootCA.Copy()
 	}
 
-	// Update our security config with the list of External CA URLs
-	// from the new cluster state.
-
-	// TODO(aaronl): In the future, this will be abstracted with an
-	// ExternalCA interface that has different implementations for
-	// different CA types. At the moment, only CFSSL is supported.
-	var cfsslURLs []string
-	for _, ca := range cluster.Spec.CAConfig.ExternalCAs {
-		if ca.Protocol == api.ExternalCA_CAProtocolCFSSL {
-			cfsslURLs = append(cfsslURLs, ca.URL)
+	// we want to update if the external CA changed, or if the root CA changed because the root CA could affect what
+	// certificate for external CAs we want to filter by
+	if rootCAChanged || externalCAChanged {
+		logger.Debug("Updating security config due to change in cluster Root CA or cluster spec")
+		wantedExternalCACert := rCA.CACert // we want to only add external CA URLs that use this cert
+		if rCA.RootRotation != nil {
+			// we're rotating to a new root, so we only want external CAs with the new root cert
+			wantedExternalCACert = rCA.RootRotation.CACert
 		}
-	}
+		wantedExternalCACert = NormalizePEMs(wantedExternalCACert)
+		// Update our security config with the list of External CA URLs
+		// from the new cluster state.
 
-	s.securityConfig.externalCA.UpdateURLs(cfsslURLs...)
+		// TODO(aaronl): In the future, this will be abstracted with an
+		// ExternalCA interface that has different implementations for
+		// different CA types. At the moment, only CFSSL is supported.
+		var cfsslURLs []string
+		for i, extCA := range cluster.Spec.CAConfig.ExternalCAs {
+			// We want to support old external CA specifications which did not have a CA cert.  If there is no cert specified,
+			// we assume it's the old cert
+			certForExtCA := extCA.CACert
+			if len(certForExtCA) == 0 {
+				certForExtCA = rCA.CACert
+			}
+			certForExtCA = NormalizePEMs(certForExtCA)
+			if extCA.Protocol != api.ExternalCA_CAProtocolCFSSL {
+				logger.Debugf("skipping external CA %d (url: %s) due to unknown protocol type", i, extCA.URL)
+				continue
+			}
+			if !bytes.Equal(certForExtCA, wantedExternalCACert) {
+				logger.Debugf("skipping external CA %d (url: %s) because it has the wrong CA cert", i, extCA.URL)
+				continue
+			}
+			cfsslURLs = append(cfsslURLs, extCA.URL)
+		}
+
+		s.securityConfig.externalCA.UpdateURLs(cfsslURLs...)
+		s.lastSeenExternalCAs = cluster.Spec.CAConfig.Copy().ExternalCAs
+	}
+	return nil
 }
 
 // evaluateAndSignNodeCert implements the logic of which certificates to sign
@@ -715,7 +789,7 @@ func (s *Server) signNodeCert(ctx context.Context, node *api.Node) error {
 	return nil
 }
 
-// reconcileNodeCertificates is a helper method that calles evaluateAndSignNodeCert on all the
+// reconcileNodeCertificates is a helper method that calls evaluateAndSignNodeCert on all the
 // nodes.
 func (s *Server) reconcileNodeCertificates(ctx context.Context, nodes []*api.Node) error {
 	for _, node := range nodes {

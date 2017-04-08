@@ -3,7 +3,7 @@ package volume
 import (
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/libcompose/config"
 	"github.com/docker/libcompose/test"
 )
@@ -89,7 +89,7 @@ func testExpectedContainsVolume(t *testing.T, index int, expected []*Volume, vol
 type volumeClient struct {
 	test.NopClient
 	expectedName         string
-	expectedVolumeCreate types.VolumeCreateRequest
+	expectedVolumeCreate volume.VolumesCreateBody
 	inspectError         error
 	inspectVolumeDriver  string
 	inspectVolumeOptions map[string]string

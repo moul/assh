@@ -162,6 +162,11 @@ func getBlkioWeightDevices(config containertypes.Resources) ([]specs.WeightDevic
 	return blkioWeightDevices, nil
 }
 
+func (daemon *Daemon) parseSecurityOpt(container *container.Container, hostConfig *containertypes.HostConfig) error {
+	container.NoNewPrivileges = daemon.configStore.NoNewPrivileges
+	return parseSecurityOpt(container, hostConfig)
+}
+
 func parseSecurityOpt(container *container.Container, config *containertypes.HostConfig) error {
 	var (
 		labelOpts []string
@@ -179,7 +184,7 @@ func parseSecurityOpt(container *container.Container, config *containertypes.Hos
 			con = strings.SplitN(opt, "=", 2)
 		} else if strings.Contains(opt, ":") {
 			con = strings.SplitN(opt, ":", 2)
-			logrus.Warn("Security options with `:` as a separator are deprecated and will be completely unsupported in 1.14, use `=` instead.")
+			logrus.Warn("Security options with `:` as a separator are deprecated and will be completely unsupported in 17.04, use `=` instead.")
 		}
 
 		if len(con) != 2 {
@@ -193,6 +198,12 @@ func parseSecurityOpt(container *container.Container, config *containertypes.Hos
 			container.AppArmorProfile = con[1]
 		case "seccomp":
 			container.SeccompProfile = con[1]
+		case "no-new-privileges":
+			noNewPrivileges, err := strconv.ParseBool(con[1])
+			if err != nil {
+				return fmt.Errorf("invalid --security-opt 2: %q", opt)
+			}
+			container.NoNewPrivileges = noNewPrivileges
 		default:
 			return fmt.Errorf("invalid --security-opt 2: %q", opt)
 		}
@@ -263,7 +274,7 @@ func (daemon *Daemon) adaptContainerSettings(hostConfig *containertypes.HostConf
 		}
 	}
 	var err error
-	opts, err := daemon.generateSecurityOpt(hostConfig.IpcMode, hostConfig.PidMode, hostConfig.Privileged)
+	opts, err := daemon.generateSecurityOpt(hostConfig)
 	if err != nil {
 		return err
 	}
@@ -1258,26 +1269,33 @@ func (daemon *Daemon) initCgroupsPath(path string) error {
 	// for the period and runtime as this limits what the children can be set to.
 	daemon.initCgroupsPath(filepath.Dir(path))
 
-	_, root, err := cgroups.FindCgroupMountpointAndRoot("cpu")
+	mnt, root, err := cgroups.FindCgroupMountpointAndRoot("cpu")
 	if err != nil {
 		return err
 	}
-
-	path = filepath.Join(root, path)
-	sysinfo := sysinfo.New(true)
-	if sysinfo.CPURealtimePeriod && daemon.configStore.CPURealtimePeriod != 0 {
-		if err := os.MkdirAll(path, 0755); err != nil && !os.IsExist(err) {
-			return err
-		}
-		if err := ioutil.WriteFile(filepath.Join(path, "cpu.rt_period_us"), []byte(strconv.FormatInt(daemon.configStore.CPURealtimePeriod, 10)), 0700); err != nil {
-			return err
-		}
+	// When docker is run inside docker, the root is based of the host cgroup.
+	// Should this be handled in runc/libcontainer/cgroups ?
+	if strings.HasPrefix(root, "/docker/") {
+		root = "/"
 	}
-	if sysinfo.CPURealtimeRuntime && daemon.configStore.CPURealtimeRuntime != 0 {
+
+	path = filepath.Join(mnt, root, path)
+	sysinfo := sysinfo.New(true)
+	if err := maybeCreateCPURealTimeFile(sysinfo.CPURealtimePeriod, daemon.configStore.CPURealtimePeriod, "cpu.rt_period_us", path); err != nil {
+		return err
+	}
+	if err := maybeCreateCPURealTimeFile(sysinfo.CPURealtimeRuntime, daemon.configStore.CPURealtimeRuntime, "cpu.rt_runtime_us", path); err != nil {
+		return err
+	}
+	return nil
+}
+
+func maybeCreateCPURealTimeFile(sysinfoPresent bool, configValue int64, file string, path string) error {
+	if sysinfoPresent && configValue != 0 {
 		if err := os.MkdirAll(path, 0755); err != nil && !os.IsExist(err) {
 			return err
 		}
-		if err := ioutil.WriteFile(filepath.Join(path, "cpu.rt_runtime_us"), []byte(strconv.FormatInt(daemon.configStore.CPURealtimeRuntime, 10)), 0700); err != nil {
+		if err := ioutil.WriteFile(filepath.Join(path, file), []byte(strconv.FormatInt(configValue, 10)), 0700); err != nil {
 			return err
 		}
 	}

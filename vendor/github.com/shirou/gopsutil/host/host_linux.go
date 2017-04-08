@@ -131,6 +131,7 @@ func Users() ([]UserStat, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	buf, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -452,6 +453,9 @@ func Virtualization() (string, string, error) {
 				role = "host"
 			} else if common.StringsContains(contents, "vboxguest") {
 				system = "vbox"
+				role = "guest"
+			} else if common.StringsContains(contents, "vmware") {
+				system = "vmware"
 				role = "guest"
 			}
 		}

@@ -23,7 +23,7 @@ Display detailed information on one or more services
 Options:
   -f, --format string   Format the output using the given Go template
       --help            Print usage
-      --pretty          Print the information in a human friendly format.
+      --pretty          Print the information in a human friendly format
 ```
 
 ## Description
@@ -153,11 +153,9 @@ service. For example, the following command outputs the number of replicas
 of the "redis" service.
 
 ```bash
-{% raw %}
 $ docker service inspect --format='{{.Spec.Mode.Replicated.Replicas}}' redis
 
 10
-{% endraw %}
 ```
 
 

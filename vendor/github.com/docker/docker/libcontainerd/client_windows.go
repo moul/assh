@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -170,6 +171,7 @@ func (clnt *client) Create(containerID string, checkpoint string, checkpointDir 
 			if n.DNSSearchList != nil {
 				configuration.DNSSearchList = strings.Join(n.DNSSearchList, ",")
 			}
+			configuration.NetworkSharedContainerName = n.NetworkSharedContainerID
 			continue
 		}
 		if c, ok := option.(*CredentialsOption); ok {
@@ -556,8 +558,30 @@ func (clnt *client) Stats(containerID string) (*Stats, error) {
 
 // Restore is the handler for restoring a container
 func (clnt *client) Restore(containerID string, _ StdioCallback, unusedOnWindows ...CreateOption) error {
-	// TODO Windows: Implement this. For now, just tell the backend the container exited.
 	logrus.Debugf("libcontainerd: Restore(%s)", containerID)
+
+	// TODO Windows: On RS1, a re-attach isn't possible.
+	// However, there is a scenario in which there is an issue.
+	// Consider a background container. The daemon dies unexpectedly.
+	// HCS will still have the compute service alive and running.
+	// For consistence, we call in to shoot it regardless if HCS knows about it
+	// We explicitly just log a warning if the terminate fails.
+	// Then we tell the backend the container exited.
+	if hc, err := hcsshim.OpenContainer(containerID); err == nil {
+		const terminateTimeout = time.Minute * 2
+		err := hc.Terminate()
+
+		if hcsshim.IsPending(err) {
+			err = hc.WaitTimeout(terminateTimeout)
+		} else if hcsshim.IsAlreadyStopped(err) {
+			err = nil
+		}
+
+		if err != nil {
+			logrus.Warnf("libcontainerd: failed to terminate %s on restore - %q", containerID, err)
+			return err
+		}
+	}
 	return clnt.backend.StateChanged(containerID, StateInfo{
 		CommonStateInfo: CommonStateInfo{
 			State:    StateExit,

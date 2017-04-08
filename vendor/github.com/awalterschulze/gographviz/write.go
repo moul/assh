@@ -77,6 +77,11 @@ func (this *writer) newNodeStmt(name string) *ast.NodeStmt {
 func (this *writer) newLocation(name string, port string) ast.Location {
 	if this.IsNode(name) {
 		return this.newNodeId(name, port)
+	} else if this.IsClusterSubGraph(name) {
+		if len(port) != 0 {
+			panic(fmt.Sprintf("subgraph cannot have a port: %v", port))
+		}
+		return ast.MakeNodeId(name, port)
 	} else if this.IsSubGraph(name) {
 		if len(port) != 0 {
 			panic(fmt.Sprintf("subgraph cannot have a port: %v", port))

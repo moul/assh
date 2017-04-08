@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/integration-cli/checker"
+	"github.com/docker/docker/integration-cli/cli/build"
 	"github.com/docker/docker/integration-cli/request"
 	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/go-check/check"
@@ -470,7 +471,7 @@ func (s *DockerSuite) TestExecWithImageUser(c *check.C) {
 	// Not applicable on Windows
 	testRequires(c, DaemonIsLinux)
 	name := "testbuilduser"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		RUN echo 'dockerio:x:1001:1001::/bin:/bin/false' >> /etc/passwd
 		USER dockerio`))
 	dockerCmd(c, "run", "-d", "--name", "dockerioexec", name, "top")
@@ -490,12 +491,12 @@ func (s *DockerSuite) TestExecOnReadonlyContainer(c *check.C) {
 func (s *DockerSuite) TestExecUlimits(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testexeculimits"
-	runSleepingContainer(c, "-d", "--ulimit", "nproc=21", "--name", name)
+	runSleepingContainer(c, "-d", "--ulimit", "nofile=511:511", "--name", name)
 	c.Assert(waitRun(name), checker.IsNil)
 
-	out, _, err := dockerCmdWithError("exec", name, "sh", "-c", "ulimit -p")
+	out, _, err := dockerCmdWithError("exec", name, "sh", "-c", "ulimit -n")
 	c.Assert(err, checker.IsNil)
-	c.Assert(strings.TrimSpace(out), checker.Equals, "21")
+	c.Assert(strings.TrimSpace(out), checker.Equals, "511")
 }
 
 // #15750
@@ -541,6 +542,7 @@ func (s *DockerSuite) TestExecWindowsOpenHandles(c *check.C) {
 		exec <- true
 	}()
 
+	count := 0
 	for {
 		top := make(chan string)
 		var out string
@@ -551,7 +553,7 @@ func (s *DockerSuite) TestExecWindowsOpenHandles(c *check.C) {
 
 		select {
 		case <-time.After(time.Second * 5):
-			c.Error("timed out waiting for top while exec is exiting")
+			c.Fatal("timed out waiting for top while exec is exiting")
 		case out = <-top:
 			break
 		}
@@ -559,6 +561,10 @@ func (s *DockerSuite) TestExecWindowsOpenHandles(c *check.C) {
 		if strings.Count(out, "busybox.exe") == 2 && !strings.Contains(out, "cmd.exe") {
 			// The initial exec process (cmd.exe) has exited, and both sleeps are currently running
 			break
+		}
+		count++
+		if count >= 30 {
+			c.Fatal("too many retries")
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -571,7 +577,7 @@ func (s *DockerSuite) TestExecWindowsOpenHandles(c *check.C) {
 
 	select {
 	case <-time.After(time.Second * 5):
-		c.Error("timed out waiting for inspect while exec is exiting")
+		c.Fatal("timed out waiting for inspect while exec is exiting")
 	case <-inspect:
 		break
 	}
@@ -583,7 +589,7 @@ func (s *DockerSuite) TestExecWindowsOpenHandles(c *check.C) {
 	// The exec should exit when the background sleep exits
 	select {
 	case <-time.After(time.Second * 15):
-		c.Error("timed out waiting for async exec to exit")
+		c.Fatal("timed out waiting for async exec to exit")
 	case <-exec:
 		// Ensure the background sleep has actually exited
 		out, _ := dockerCmd(c, "top", "test")

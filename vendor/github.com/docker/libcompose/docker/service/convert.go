@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/net/context"
-
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
@@ -17,7 +15,7 @@ import (
 	composecontainer "github.com/docker/libcompose/docker/container"
 	"github.com/docker/libcompose/project"
 	"github.com/docker/libcompose/utils"
-	// "github.com/docker/libcompose/yaml"
+	"golang.org/x/net/context"
 )
 
 // ConfigWrapper wraps Config, HostConfig and NetworkingConfig for a container.
@@ -184,16 +182,17 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 	memorySwappiness := int64(c.MemSwappiness)
 
 	resources := container.Resources{
-		CgroupParent:     c.CgroupParent,
-		Memory:           int64(c.MemLimit),
-		MemorySwap:       int64(c.MemSwapLimit),
-		MemorySwappiness: &memorySwappiness,
-		CPUShares:        int64(c.CPUShares),
-		CPUQuota:         int64(c.CPUQuota),
-		CpusetCpus:       c.CPUSet,
-		Ulimits:          ulimits,
-		Devices:          deviceMappings,
-		OomKillDisable:   &c.OomKillDisable,
+		CgroupParent:      c.CgroupParent,
+		Memory:            int64(c.MemLimit),
+		MemoryReservation: int64(c.MemReservation),
+		MemorySwap:        int64(c.MemSwapLimit),
+		MemorySwappiness:  &memorySwappiness,
+		CPUShares:         int64(c.CPUShares),
+		CPUQuota:          int64(c.CPUQuota),
+		CpusetCpus:        c.CPUSet,
+		Ulimits:           ulimits,
+		Devices:           deviceMappings,
+		OomKillDisable:    &c.OomKillDisable,
 	}
 
 	networkMode := c.NetworkMode
@@ -305,7 +304,7 @@ func parseDevices(devices []string) ([]container.DeviceMapping, error) {
 	// parse device mappings
 	deviceMappings := []container.DeviceMapping{}
 	for _, device := range devices {
-		v, err := opts.ParseDevice(device)
+		v, err := parseDevice(device)
 		if err != nil {
 			return nil, err
 		}
@@ -317,4 +316,60 @@ func parseDevices(devices []string) ([]container.DeviceMapping, error) {
 	}
 
 	return deviceMappings, nil
+}
+
+// parseDevice parses a device mapping string to a container.DeviceMapping struct
+// FIXME(vdemeester) de-duplicate this by re-exporting it in docker/docker
+func parseDevice(device string) (container.DeviceMapping, error) {
+	src := ""
+	dst := ""
+	permissions := "rwm"
+	arr := strings.Split(device, ":")
+	switch len(arr) {
+	case 3:
+		permissions = arr[2]
+		fallthrough
+	case 2:
+		if validDeviceMode(arr[1]) {
+			permissions = arr[1]
+		} else {
+			dst = arr[1]
+		}
+		fallthrough
+	case 1:
+		src = arr[0]
+	default:
+		return container.DeviceMapping{}, fmt.Errorf("invalid device specification: %s", device)
+	}
+
+	if dst == "" {
+		dst = src
+	}
+
+	deviceMapping := container.DeviceMapping{
+		PathOnHost:        src,
+		PathInContainer:   dst,
+		CgroupPermissions: permissions,
+	}
+	return deviceMapping, nil
+}
+
+// validDeviceMode checks if the mode for device is valid or not.
+// Valid mode is a composition of r (read), w (write), and m (mknod).
+func validDeviceMode(mode string) bool {
+	var legalDeviceMode = map[rune]bool{
+		'r': true,
+		'w': true,
+		'm': true,
+	}
+	if mode == "" {
+		return false
+	}
+	for _, c := range mode {
+		if !legalDeviceMode[c] {
+			return false
+		}
+		legalDeviceMode[c] = false
+	}
+	return true
 }

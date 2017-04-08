@@ -73,7 +73,6 @@ func (p *v2Puller) Pull(ctx context.Context, ref reference.Named) (err error) {
 			return err
 		}
 		if continueOnError(err) {
-			logrus.Errorf("Error trying v2 registry: %v", err)
 			return fallbackError{
 				err:         err,
 				confirmedV2: p.confirmedV2,
@@ -364,7 +363,7 @@ func (p *v2Puller) pullV2Tag(ctx context.Context, ref reference.Named) (tagUpdat
 			if configClass == "" {
 				configClass = "unknown"
 			}
-			return false, fmt.Errorf("target is %s", configClass)
+			return false, fmt.Errorf("Encountered remote %q(%s) when fetching", m.Manifest.Config.MediaType, configClass)
 		}
 	}
 
@@ -534,15 +533,18 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 	}
 
 	configChan := make(chan []byte, 1)
-	errChan := make(chan error, 1)
+	configErrChan := make(chan error, 1)
+	layerErrChan := make(chan error, 1)
+	downloadsDone := make(chan struct{})
 	var cancel func()
 	ctx, cancel = context.WithCancel(ctx)
+	defer cancel()
 
 	// Pull the image config
 	go func() {
 		configJSON, err := p.pullSchema2Config(ctx, target.Digest)
 		if err != nil {
-			errChan <- ImageConfigPullError{Err: err}
+			configErrChan <- ImageConfigPullError{Err: err}
 			cancel()
 			return
 		}
@@ -553,6 +555,7 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 		configJSON       []byte        // raw serialized image config
 		downloadedRootFS *image.RootFS // rootFS from registered layers
 		configRootFS     *image.RootFS // rootFS from configuration
+		release          func()        // release resources from rootFS download
 	)
 
 	// https://github.com/docker/docker/issues/24766 - Err on the side of caution,
@@ -564,7 +567,7 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 	// check to block Windows images being pulled on Linux is implemented, it
 	// may be necessary to perform the same type of serialisation.
 	if runtime.GOOS == "windows" {
-		configJSON, configRootFS, err = receiveConfig(p.config.ImageStore, configChan, errChan)
+		configJSON, configRootFS, err = receiveConfig(p.config.ImageStore, configChan, configErrChan)
 		if err != nil {
 			return "", "", err
 		}
@@ -575,41 +578,52 @@ func (p *v2Puller) pullSchema2(ctx context.Context, ref reference.Named, mfst *s
 	}
 
 	if p.config.DownloadManager != nil {
-		downloadRootFS := *image.NewRootFS()
-		rootFS, release, err := p.config.DownloadManager.Download(ctx, downloadRootFS, descriptors, p.config.ProgressOutput)
-		if err != nil {
-			if configJSON != nil {
-				// Already received the config
-				return "", "", err
+		go func() {
+			var (
+				err    error
+				rootFS image.RootFS
+			)
+			downloadRootFS := *image.NewRootFS()
+			rootFS, release, err = p.config.DownloadManager.Download(ctx, downloadRootFS, descriptors, p.config.ProgressOutput)
+			if err != nil {
+				// Intentionally do not cancel the config download here
+				// as the error from config download (if there is one)
+				// is more interesting than the layer download error
+				layerErrChan <- err
+				return
 			}
-			select {
-			case err = <-errChan:
-				return "", "", err
-			default:
-				cancel()
-				select {
-				case <-configChan:
-				case <-errChan:
-				}
-				return "", "", err
-			}
-		}
-		if release != nil {
-			defer release()
-		}
 
-		downloadedRootFS = &rootFS
+			downloadedRootFS = &rootFS
+			close(downloadsDone)
+		}()
+	} else {
+		// We have nothing to download
+		close(downloadsDone)
 	}
 
 	if configJSON == nil {
-		configJSON, configRootFS, err = receiveConfig(p.config.ImageStore, configChan, errChan)
+		configJSON, configRootFS, err = receiveConfig(p.config.ImageStore, configChan, configErrChan)
+		if err == nil && configRootFS == nil {
+			err = errRootFSInvalid
+		}
 		if err != nil {
+			cancel()
+			select {
+			case <-downloadsDone:
+			case <-layerErrChan:
+			}
 			return "", "", err
 		}
+	}
 
-		if configRootFS == nil {
-			return "", "", errRootFSInvalid
-		}
+	select {
+	case <-downloadsDone:
+	case err = <-layerErrChan:
+		return "", "", err
+	}
+
+	if release != nil {
+		defer release()
 	}
 
 	if downloadedRootFS != nil {
@@ -658,6 +672,7 @@ func (p *v2Puller) pullManifestList(ctx context.Context, ref reference.Named, mf
 		return "", "", err
 	}
 
+	logrus.Debugf("%s resolved to a manifestList object with %d entries; looking for a os/arch match", ref, len(mfstList.Manifests))
 	var manifestDigest digest.Digest
 	for _, manifestDescriptor := range mfstList.Manifests {
 		// TODO(aaronl): The manifest list spec supports optional
@@ -665,12 +680,15 @@ func (p *v2Puller) pullManifestList(ctx context.Context, ref reference.Named, mf
 		// Once they are, their values should be interpreted here.
 		if manifestDescriptor.Platform.Architecture == runtime.GOARCH && manifestDescriptor.Platform.OS == runtime.GOOS {
 			manifestDigest = manifestDescriptor.Digest
+			logrus.Debugf("found match for %s/%s with media type %s, digest %s", runtime.GOOS, runtime.GOARCH, manifestDescriptor.MediaType, manifestDigest.String())
 			break
 		}
 	}
 
 	if manifestDigest == "" {
-		return "", "", errors.New("no supported platform found in manifest list")
+		errMsg := fmt.Sprintf("no matching manifest for %s/%s in the manifest list entries", runtime.GOOS, runtime.GOARCH)
+		logrus.Debugf(errMsg)
+		return "", "", errors.New(errMsg)
 	}
 
 	manSvc, err := p.repo.Manifests(ctx)

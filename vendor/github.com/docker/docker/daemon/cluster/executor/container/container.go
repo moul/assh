@@ -185,6 +185,7 @@ func (c *containerConfig) exposedPorts() map[nat.Port]struct{} {
 func (c *containerConfig) config() *enginecontainer.Config {
 	config := &enginecontainer.Config{
 		Labels:       c.labels(),
+		StopSignal:   c.spec().StopSignal,
 		Tty:          c.spec().TTY,
 		OpenStdin:    c.spec().OpenStdin,
 		User:         c.spec().User,
@@ -325,11 +326,13 @@ func (c *containerConfig) healthcheck() *enginecontainer.HealthConfig {
 	}
 	interval, _ := gogotypes.DurationFromProto(hcSpec.Interval)
 	timeout, _ := gogotypes.DurationFromProto(hcSpec.Timeout)
+	startPeriod, _ := gogotypes.DurationFromProto(hcSpec.StartPeriod)
 	return &enginecontainer.HealthConfig{
-		Test:     hcSpec.Test,
-		Interval: interval,
-		Timeout:  timeout,
-		Retries:  int(hcSpec.Retries),
+		Test:        hcSpec.Test,
+		Interval:    interval,
+		Timeout:     timeout,
+		Retries:     int(hcSpec.Retries),
+		StartPeriod: startPeriod,
 	}
 }
 
@@ -347,6 +350,8 @@ func (c *containerConfig) hostConfig() *enginecontainer.HostConfig {
 		hc.DNSSearch = c.spec().DNSConfig.Search
 		hc.DNSOptions = c.spec().DNSConfig.Options
 	}
+
+	c.applyPrivileges(hc)
 
 	// The format of extra hosts on swarmkit is specified in:
 	// http://man7.org/linux/man-pages/man5/hosts.5.html
@@ -574,6 +579,7 @@ func (c *containerConfig) networkCreateRequest(name string) (clustertypes.Networ
 		Labels:         na.Network.Spec.Annotations.Labels,
 		Internal:       na.Network.Spec.Internal,
 		Attachable:     na.Network.Spec.Attachable,
+		Ingress:        na.Network.Spec.Ingress,
 		EnableIPv6:     na.Network.Spec.Ipv6Enabled,
 		CheckDuplicate: true,
 	}
@@ -594,6 +600,42 @@ func (c *containerConfig) networkCreateRequest(name string) (clustertypes.Networ
 			NetworkCreate: options,
 		},
 	}, nil
+}
+
+func (c *containerConfig) applyPrivileges(hc *enginecontainer.HostConfig) {
+	privileges := c.spec().Privileges
+	if privileges == nil {
+		return
+	}
+
+	credentials := privileges.CredentialSpec
+	if credentials != nil {
+		switch credentials.Source.(type) {
+		case *api.Privileges_CredentialSpec_File:
+			hc.SecurityOpt = append(hc.SecurityOpt, "credentialspec=file://"+credentials.GetFile())
+		case *api.Privileges_CredentialSpec_Registry:
+			hc.SecurityOpt = append(hc.SecurityOpt, "credentialspec=registry://"+credentials.GetRegistry())
+		}
+	}
+
+	selinux := privileges.SELinuxContext
+	if selinux != nil {
+		if selinux.Disable {
+			hc.SecurityOpt = append(hc.SecurityOpt, "label=disable")
+		}
+		if selinux.User != "" {
+			hc.SecurityOpt = append(hc.SecurityOpt, "label=user:"+selinux.User)
+		}
+		if selinux.Role != "" {
+			hc.SecurityOpt = append(hc.SecurityOpt, "label=role:"+selinux.Role)
+		}
+		if selinux.Level != "" {
+			hc.SecurityOpt = append(hc.SecurityOpt, "label=level:"+selinux.Level)
+		}
+		if selinux.Type != "" {
+			hc.SecurityOpt = append(hc.SecurityOpt, "label=type:"+selinux.Type)
+		}
+	}
 }
 
 func (c containerConfig) eventFilter() filters.Args {

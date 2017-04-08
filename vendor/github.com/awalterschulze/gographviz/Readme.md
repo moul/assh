@@ -5,9 +5,9 @@ This parser has been created using [gocc](http://code.google.com/p/gocc).
 ### Example (Parse and Edit) ###
 
 ```
-graphAst, _ := parser.ParseString(`digraph G {}`)
-graph := NewGraph()
-Analyse(graphAst, graph)
+graphAst, _ := gographviz.ParseString(`digraph G {}`)
+graph := gographviz.NewGraph()
+gographviz.Analyse(graphAst, graph)
 graph.AddNode("G", "a", nil)
 graph.AddNode("G", "b", nil)
 graph.AddEdge("a", "b", true, nil)

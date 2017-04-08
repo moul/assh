@@ -1,7 +1,6 @@
 package command
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 	dopts "github.com/docker/docker/opts"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 )
@@ -38,27 +38,23 @@ type Cli interface {
 	Out() *OutStream
 	Err() io.Writer
 	In() *InStream
+	ConfigFile() *configfile.ConfigFile
 }
 
 // DockerCli is an instance the docker command line client.
 // Instances of the client can be returned from NewDockerCli.
 type DockerCli struct {
-	configFile      *configfile.ConfigFile
-	in              *InStream
-	out             *OutStream
-	err             io.Writer
-	keyFile         string
-	client          client.APIClient
-	hasExperimental bool
-	defaultVersion  string
+	configFile     *configfile.ConfigFile
+	in             *InStream
+	out            *OutStream
+	err            io.Writer
+	keyFile        string
+	client         client.APIClient
+	defaultVersion string
+	server         ServerInfo
 }
 
-// HasExperimental returns true if experimental features are accessible.
-func (cli *DockerCli) HasExperimental() bool {
-	return cli.hasExperimental
-}
-
-// DefaultVersion returns api.defaultVersion of DOCKER_API_VERSION if specified.
+// DefaultVersion returns api.defaultVersion or DOCKER_API_VERSION if specified.
 func (cli *DockerCli) DefaultVersion() string {
 	return cli.defaultVersion
 }
@@ -93,6 +89,12 @@ func (cli *DockerCli) ShowHelp(cmd *cobra.Command, args []string) error {
 // ConfigFile returns the ConfigFile
 func (cli *DockerCli) ConfigFile() *configfile.ConfigFile {
 	return cli.configFile
+}
+
+// ServerInfo returns the server version details for the host this client is
+// connected to
+func (cli *DockerCli) ServerInfo() ServerInfo {
+	return cli.server
 }
 
 // GetAllCredentials returns all of the credentials stored in all of the
@@ -154,7 +156,6 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 	if err != nil {
 		return err
 	}
-
 	cli.defaultVersion = cli.client.ClientVersion()
 
 	if opts.Common.TrustKey == "" {
@@ -164,7 +165,10 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 	}
 
 	if ping, err := cli.client.Ping(context.Background()); err == nil {
-		cli.hasExperimental = ping.Experimental
+		cli.server = ServerInfo{
+			HasExperimental: ping.Experimental,
+			OSType:          ping.OSType,
+		}
 
 		// since the new header was added in 1.25, assume server is 1.24 if header is not present.
 		if ping.APIVersion == "" {
@@ -176,7 +180,15 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions) error {
 			cli.client.UpdateClientVersion(ping.APIVersion)
 		}
 	}
+
 	return nil
+}
+
+// ServerInfo stores details about the supported features and platform of the
+// server
+type ServerInfo struct {
+	HasExperimental bool
+	OSType          string
 }
 
 // NewDockerCli returns a DockerCli instance with IO output and error streams set by in, out and err.
@@ -242,8 +254,9 @@ func newHTTPClient(host string, tlsOptions *tlsconfig.Options) (*http.Client, er
 		// let the api client configure the default transport.
 		return nil, nil
 	}
-
-	config, err := tlsconfig.Client(*tlsOptions)
+	opts := *tlsOptions
+	opts.ExclusiveRootPools = true
+	config, err := tlsconfig.Client(opts)
 	if err != nil {
 		return nil, err
 	}

@@ -1,17 +1,16 @@
 package image
 
 import (
-	"errors"
 	"fmt"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/registry"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 type pullOptions struct {
@@ -76,7 +75,7 @@ func runPull(dockerCli *command.DockerCli, opts pullOptions) error {
 		err = imagePullPrivileged(ctx, dockerCli, authConfig, reference.FamiliarString(distributionRef), requestPrivilege, opts.all)
 	}
 	if err != nil {
-		if strings.Contains(err.Error(), "target is plugin") {
+		if strings.Contains(err.Error(), "when fetching 'plugin'") {
 			return errors.New(err.Error() + " - Use `docker plugin install`")
 		}
 		return err

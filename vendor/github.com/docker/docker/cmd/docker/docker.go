@@ -14,6 +14,7 @@ import (
 	cliconfig "github.com/docker/docker/cli/config"
 	"github.com/docker/docker/cli/debug"
 	cliflags "github.com/docker/docker/cli/flags"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/dockerversion"
 	"github.com/docker/docker/pkg/term"
 	"github.com/spf13/cobra"
@@ -49,7 +50,7 @@ func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 			if err := dockerCli.Initialize(opts); err != nil {
 				return err
 			}
-			return isSupported(cmd, dockerCli.Client().ClientVersion(), dockerCli.HasExperimental())
+			return isSupported(cmd, dockerCli)
 		},
 	}
 	cli.SetupRootCommand(cmd)
@@ -80,7 +81,7 @@ func setFlagErrorFunc(dockerCli *command.DockerCli, cmd *cobra.Command, flags *p
 	flagErrorFunc := cmd.FlagErrorFunc()
 	cmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		initializeDockerCli(dockerCli, flags, opts)
-		if err := isSupported(cmd, dockerCli.Client().ClientVersion(), dockerCli.HasExperimental()); err != nil {
+		if err := isSupported(cmd, dockerCli); err != nil {
 			return err
 		}
 		return flagErrorFunc(cmd, err)
@@ -90,12 +91,12 @@ func setFlagErrorFunc(dockerCli *command.DockerCli, cmd *cobra.Command, flags *p
 func setHelpFunc(dockerCli *command.DockerCli, cmd *cobra.Command, flags *pflag.FlagSet, opts *cliflags.ClientOptions) {
 	cmd.SetHelpFunc(func(ccmd *cobra.Command, args []string) {
 		initializeDockerCli(dockerCli, flags, opts)
-		if err := isSupported(ccmd, dockerCli.Client().ClientVersion(), dockerCli.HasExperimental()); err != nil {
+		if err := isSupported(ccmd, dockerCli); err != nil {
 			ccmd.Println(err)
 			return
 		}
 
-		hideUnsupportedFeatures(ccmd, dockerCli.Client().ClientVersion(), dockerCli.HasExperimental())
+		hideUnsupportedFeatures(ccmd, dockerCli)
 
 		if err := ccmd.Help(); err != nil {
 			ccmd.Println(err)
@@ -122,7 +123,7 @@ func setValidateArgs(dockerCli *command.DockerCli, cmd *cobra.Command, flags *pf
 		cmdArgs := ccmd.Args
 		ccmd.Args = func(cmd *cobra.Command, args []string) error {
 			initializeDockerCli(dockerCli, flags, opts)
-			if err := isSupported(cmd, dockerCli.Client().ClientVersion(), dockerCli.HasExperimental()); err != nil {
+			if err := isSupported(cmd, dockerCli); err != nil {
 				return err
 			}
 			return cmdArgs(cmd, args)
@@ -198,7 +199,16 @@ func dockerPreRun(opts *cliflags.ClientOptions) {
 	}
 }
 
-func hideUnsupportedFeatures(cmd *cobra.Command, clientVersion string, hasExperimental bool) {
+type versionDetails interface {
+	Client() client.APIClient
+	ServerInfo() command.ServerInfo
+}
+
+func hideUnsupportedFeatures(cmd *cobra.Command, details versionDetails) {
+	clientVersion := details.Client().ClientVersion()
+	osType := details.ServerInfo().OSType
+	hasExperimental := details.ServerInfo().HasExperimental
+
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		// hide experimental flags
 		if !hasExperimental {
@@ -208,10 +218,9 @@ func hideUnsupportedFeatures(cmd *cobra.Command, clientVersion string, hasExperi
 		}
 
 		// hide flags not supported by the server
-		if !isFlagSupported(f, clientVersion) {
+		if !isOSTypeSupported(f, osType) || !isVersionSupported(f, clientVersion) {
 			f.Hidden = true
 		}
-
 	})
 
 	for _, subcmd := range cmd.Commands() {
@@ -229,26 +238,31 @@ func hideUnsupportedFeatures(cmd *cobra.Command, clientVersion string, hasExperi
 	}
 }
 
-func isSupported(cmd *cobra.Command, clientVersion string, hasExperimental bool) error {
-	// We check recursively so that, e.g., `docker stack ls` will return the same output as `docker stack`
-	if !hasExperimental {
-		for curr := cmd; curr != nil; curr = curr.Parent() {
-			if _, ok := curr.Tags["experimental"]; ok {
-				return errors.New("only supported on a Docker daemon with experimental features enabled")
-			}
-		}
-	}
+func isSupported(cmd *cobra.Command, details versionDetails) error {
+	clientVersion := details.Client().ClientVersion()
+	osType := details.ServerInfo().OSType
+	hasExperimental := details.ServerInfo().HasExperimental
 
-	if cmdVersion, ok := cmd.Tags["version"]; ok && versions.LessThan(clientVersion, cmdVersion) {
-		return fmt.Errorf("requires API version %s, but the Docker daemon API version is %s", cmdVersion, clientVersion)
+	// Check recursively so that, e.g., `docker stack ls` returns the same output as `docker stack`
+	for curr := cmd; curr != nil; curr = curr.Parent() {
+		if cmdVersion, ok := curr.Tags["version"]; ok && versions.LessThan(clientVersion, cmdVersion) {
+			return fmt.Errorf("%s requires API version %s, but the Docker daemon API version is %s", cmd.CommandPath(), cmdVersion, clientVersion)
+		}
+		if _, ok := curr.Tags["experimental"]; ok && !hasExperimental {
+			return fmt.Errorf("%s is only supported on a Docker daemon with experimental features enabled", cmd.CommandPath())
+		}
 	}
 
 	errs := []string{}
 
 	cmd.Flags().VisitAll(func(f *pflag.Flag) {
 		if f.Changed {
-			if !isFlagSupported(f, clientVersion) {
-				errs = append(errs, fmt.Sprintf("\"--%s\" requires API version %s, but the Docker daemon API version is %s", f.Name, getFlagVersion(f), clientVersion))
+			if !isVersionSupported(f, clientVersion) {
+				errs = append(errs, fmt.Sprintf("\"--%s\" requires API version %s, but the Docker daemon API version is %s", f.Name, getFlagAnnotation(f, "version"), clientVersion))
+				return
+			}
+			if !isOSTypeSupported(f, osType) {
+				errs = append(errs, fmt.Sprintf("\"--%s\" requires the Docker daemon to run on %s, but the Docker daemon is running on %s", f.Name, getFlagAnnotation(f, "ostype"), osType))
 				return
 			}
 			if _, ok := f.Annotations["experimental"]; ok && !hasExperimental {
@@ -263,16 +277,23 @@ func isSupported(cmd *cobra.Command, clientVersion string, hasExperimental bool)
 	return nil
 }
 
-func getFlagVersion(f *pflag.Flag) string {
-	if flagVersion, ok := f.Annotations["version"]; ok && len(flagVersion) == 1 {
-		return flagVersion[0]
+func getFlagAnnotation(f *pflag.Flag, annotation string) string {
+	if value, ok := f.Annotations[annotation]; ok && len(value) == 1 {
+		return value[0]
 	}
 	return ""
 }
 
-func isFlagSupported(f *pflag.Flag, clientVersion string) bool {
-	if v := getFlagVersion(f); v != "" {
+func isVersionSupported(f *pflag.Flag, clientVersion string) bool {
+	if v := getFlagAnnotation(f, "version"); v != "" {
 		return versions.GreaterThanOrEqualTo(clientVersion, v)
+	}
+	return true
+}
+
+func isOSTypeSupported(f *pflag.Flag, osType string) bool {
+	if v := getFlagAnnotation(f, "ostype"); v != "" && osType != "" {
+		return osType == v
 	}
 	return true
 }

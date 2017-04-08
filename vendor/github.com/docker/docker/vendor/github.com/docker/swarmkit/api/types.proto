@@ -14,11 +14,20 @@ message Version {
 	uint64 index = 1;
 }
 
+message IndexEntry {
+	string key = 1;
+	string val = 2;
+}
+
 // Annotations provide useful information to identify API objects. They are
 // common to all API specs.
 message Annotations {
 	string name = 1;
 	map<string, string> labels = 2;
+
+	// Indices provides keys and values for indexing this object.
+	// A single key may have multiple values.
+	repeated IndexEntry indices = 4 [(gogoproto.nullable) = false];
 }
 
 message Resources {
@@ -77,6 +86,18 @@ message NodeDescription {
 
 	// Information about the Docker Engine on the node.
 	EngineDescription engine = 4;
+
+	// Information on the node's TLS setup
+	NodeTLSInfo tls_info = 5 [(gogoproto.customname) = "TLSInfo"];
+}
+
+message NodeTLSInfo {
+	// Information about which root certs the node trusts
+	bytes trust_root = 1;
+
+	// Information about the node's current TLS certificate
+	bytes cert_issuer_subject = 2;
+	bytes cert_issuer_public_key = 3;
 }
 
 message RaftMemberStatus {
@@ -285,12 +306,6 @@ message UpdateConfig {
 	enum FailureAction {
 		PAUSE = 0;
 		CONTINUE = 1;
-		// NOTE: Automated rollback triggered as a failure action is an
-		// experimental feature that is not yet exposed to the end
-		// user. Currently, rollbacks must be initiated manually
-		// through the API by setting Spec to PreviousSpec. We may
-		// decide to expose automatic rollback in the future based on
-		// user feedback, or remove this feature otherwise.
 		ROLLBACK = 2;
 	}
 
@@ -320,12 +335,18 @@ message UpdateConfig {
 	// If the failure action is ROLLBACK, the orchestrator will attempt to
 	// roll back to the previous service spec. If the MaxFailureRatio
 	// threshold is hit during the rollback, the rollback will pause.
-	//
-	// TODO(aaronl): Should there be a separate failure threshold for
-	// rollbacks? Should there be a failure action for rollbacks (to allow
-	// them to do something other than pause when the rollback encounters
-	// errors)?
 	float max_failure_ratio = 5;
+
+	// UpdateOrder controls the order of operations when rolling out an
+	// updated task. Either the old task is shut down before the new task
+	// is started, or the new task is started before the old task is shut
+	// down.
+	enum UpdateOrder {
+		STOP_FIRST = 0;
+		START_FIRST = 1;
+	}
+
+	UpdateOrder order = 6;
 }
 
 // UpdateStatus is the status of an update in progress.
@@ -646,6 +667,9 @@ message ExternalCA {
 	// Options is a set of additional key/value pairs whose interpretation
 	// depends on the specified CA type.
 	map<string, string> options = 3;
+
+	// CACert specifies which root CA is used by this external CA
+	bytes ca_cert = 4 [(gogoproto.customname) = "CACert"];
 }
 
 message CAConfig {
@@ -656,6 +680,21 @@ message CAConfig {
 	// ExternalCAs is a list of CAs to which a manager node will make
 	// certificate signing requests for node certificates.
 	repeated ExternalCA external_cas = 2 [(gogoproto.customname) = "ExternalCAs"];
+
+	// SigningCACert is the desired CA certificate to be used as the root and
+	// signing CA for the swarm.  If not provided, indicates that we are either happy
+	// with the current configuration, or (together with a bump in the ForceRotate value)
+	// that we want a certificate and key generated for us.
+	bytes signing_ca_cert = 3 [(gogoproto.customname) = "SigningCACert"];
+
+	// SigningCAKey is the desired private key, matching the signing CA cert, to be used
+	// to sign certificates for the swarm
+	bytes signing_ca_key = 4 [(gogoproto.customname) = "SigningCAKey"];
+
+	// ForceRotate is a counter that triggers a root CA rotation even if no relevant
+	// parameters have been in the spec. This will force the manager to generate a new
+	// certificate and key, if none have been provided.
+	uint64 force_rotate = 5;
 }
 
 // OrchestrationConfig defines cluster-level orchestration settings.
@@ -755,6 +794,14 @@ message RootCA {
 
 	// JoinTokens contains the join tokens for workers and managers.
 	JoinTokens join_tokens = 4 [(gogoproto.nullable) = false];
+
+	// RootRotation contains the new root cert and key we want to rotate to - if this is nil, we are not in the
+	// middle of a root rotation
+	RootRotation root_rotation = 5;
+
+	// LastForcedRotation matches the Cluster Spec's CAConfig's ForceRotation counter.
+	// It indicates when the current CA cert and key were generated (or updated).
+	uint64 last_forced_rotation = 6;
 }
 
 
@@ -818,6 +865,20 @@ message ManagerStatus {
 	RaftMemberStatus.Reachability reachability = 4;
 }
 
+// FileTarget represents a specific target that is backed by a file
+message FileTarget {
+	// Name represents the final filename in the filesystem
+	string name = 1;
+
+	// UID represents the file UID
+	string uid = 2 [(gogoproto.customname) = "UID"];
+
+	// GID represents the file GID
+	string gid = 3 [(gogoproto.customname) = "GID"];
+
+	// Mode represents the FileMode of the file
+	uint32 mode = 4 [(gogoproto.customtype) = "os.FileMode", (gogoproto.nullable) = false];
+}
 
 // SecretReference is the linkage between a service and a secret that it uses.
 message SecretReference {
@@ -830,20 +891,21 @@ message SecretReference {
 	// lookup/display purposes.  The secret in the reference will be identified by its ID.
 	string secret_name = 2;
 
-	// FileTarget represents a specific target that is backed by a file
-	message FileTarget {
-		// Name represents the final filename in the filesystem
-		string name = 1;
-
-		// UID represents the file UID
-		string uid = 2 [(gogoproto.customname) = "UID"];
-
-		// GID represents the file GID
-		string gid = 3 [(gogoproto.customname) = "GID"];
-
-		// Mode represents the FileMode of the file
-		uint32 mode = 4 [(gogoproto.customtype) = "os.FileMode", (gogoproto.nullable) = false];
+	// Target specifies how this secret should be exposed to the task.
+	oneof target {
+		FileTarget file = 3;
 	}
+}
+
+// ConfigReference is the linkage between a service and a config that it uses.
+message ConfigReference {
+	// ConfigID represents the ID of the specific Config that we're
+	// referencing.
+	string config_id = 1;
+
+	// ConfigName is the name of the config that this references, but this is just provided for
+	// lookup/display purposes. The config in the reference will be identified by its ID.
+	string config_name = 2;
 
 	// Target specifies how this secret should be exposed to the task.
 	oneof target {
@@ -883,6 +945,11 @@ message HealthConfig {
 	// Retries is the number of consecutive failures needed to consider a
 	// container as unhealthy. Zero means inherit.
 	int32 retries = 4;
+
+	// Start period is the period for container initialization during
+	// which health check failures will note count towards the maximum
+	// number of retries.
+	google.protobuf.Duration start_period = 5;
 }
 
 message MaybeEncryptedRecord {
@@ -894,4 +961,35 @@ message MaybeEncryptedRecord {
 	Algorithm algorithm = 1;
 	bytes data = 2;
 	bytes nonce = 3;
+}
+
+
+message RootRotation {
+	bytes ca_cert = 1 [(gogoproto.customname) = "CACert"];
+	bytes ca_key = 2 [(gogoproto.customname) = "CAKey"];
+	// cross-signed CA cert is the CACert that has been cross-signed by the previous root
+	bytes cross_signed_ca_cert = 3 [(gogoproto.customname) = "CrossSignedCACert"];
+}
+
+// Privileges specifies security configuration/permissions.
+message Privileges {
+	// CredentialSpec for managed service account (Windows only).
+	message CredentialSpec {
+		oneof source {
+			string file = 1;
+			string registry = 2;
+		}
+	}
+	CredentialSpec credential_spec = 1;
+
+	// SELinuxContext contains the SELinux labels for the container.
+	message SELinuxContext {
+		bool disable = 1;
+
+		string user = 2;
+		string role = 3;
+		string type = 4;
+		string level = 5;
+	}
+	SELinuxContext selinux_context = 2 [(gogoproto.customname) = "SELinuxContext"];
 }

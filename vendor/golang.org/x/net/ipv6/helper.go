@@ -1,12 +1,14 @@
-// Copyright 2013 The Go Authors.  All rights reserved.
+// Copyright 2013 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package ipv6
 
 import (
+	"encoding/binary"
 	"errors"
 	"net"
+	"unsafe"
 )
 
 var (
@@ -15,7 +17,19 @@ var (
 	errInvalidConnType = errors.New("invalid conn type")
 	errOpNoSupport     = errors.New("operation not supported")
 	errNoSuchInterface = errors.New("no such interface")
+
+	nativeEndian binary.ByteOrder
 )
+
+func init() {
+	i := uint32(1)
+	b := (*[4]byte)(unsafe.Pointer(&i))
+	if b[0] == 1 {
+		nativeEndian = binary.LittleEndian
+	} else {
+		nativeEndian = binary.BigEndian
+	}
+}
 
 func boolint(b bool) int {
 	if b {
