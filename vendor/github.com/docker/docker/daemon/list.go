@@ -208,19 +208,32 @@ func (daemon *Daemon) reduceContainers(config *types.ContainerListOptions, reduc
 // reducePsContainer is the basic representation for a container as expected by the ps command.
 func (daemon *Daemon) reducePsContainer(container *container.Container, ctx *listContext, reducer containerReducer) (*types.Container, error) {
 	container.Lock()
-	defer container.Unlock()
 
 	// filter containers to return
 	action := includeContainerInList(container, ctx)
 	switch action {
 	case excludeContainer:
+		container.Unlock()
 		return nil, nil
 	case stopIteration:
+		container.Unlock()
 		return nil, errStopIteration
 	}
 
 	// transform internal container struct into api structs
-	return reducer(container, ctx)
+	newC, err := reducer(container, ctx)
+	container.Unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	// release lock because size calculation is slow
+	if ctx.Size {
+		sizeRw, sizeRootFs := daemon.getSize(newC.ID)
+		newC.SizeRw = sizeRw
+		newC.SizeRootFs = sizeRootFs
+	}
+	return newC, nil
 }
 
 // foldFilter generates the container filter based on the user's filtering options.
@@ -320,49 +333,13 @@ func (daemon *Daemon) foldFilter(config *types.ContainerListOptions) (*listConte
 	}
 
 	publishFilter := map[nat.Port]bool{}
-	err = psFilters.WalkValues("publish", func(value string) error {
-		if strings.Contains(value, ":") {
-			return fmt.Errorf("filter for 'publish' should not contain ':': %v", value)
-		}
-		//support two formats, original format <portnum>/[<proto>] or <startport-endport>/[<proto>]
-		proto, port := nat.SplitProtoPort(value)
-		start, end, err := nat.ParsePortRange(port)
-		if err != nil {
-			return fmt.Errorf("error while looking up for publish %v: %s", value, err)
-		}
-		for i := start; i <= end; i++ {
-			p, err := nat.NewPort(proto, strconv.FormatUint(i, 10))
-			if err != nil {
-				return fmt.Errorf("error while looking up for publish %v: %s", value, err)
-			}
-			publishFilter[p] = true
-		}
-		return nil
-	})
+	err = psFilters.WalkValues("publish", portOp("publish", publishFilter))
 	if err != nil {
 		return nil, err
 	}
 
 	exposeFilter := map[nat.Port]bool{}
-	err = psFilters.WalkValues("expose", func(value string) error {
-		if strings.Contains(value, ":") {
-			return fmt.Errorf("filter for 'expose' should not contain ':': %v", value)
-		}
-		//support two formats, original format <portnum>/[<proto>] or <startport-endport>/[<proto>]
-		proto, port := nat.SplitProtoPort(value)
-		start, end, err := nat.ParsePortRange(port)
-		if err != nil {
-			return fmt.Errorf("error while looking up for 'expose' %v: %s", value, err)
-		}
-		for i := start; i <= end; i++ {
-			p, err := nat.NewPort(proto, strconv.FormatUint(i, 10))
-			if err != nil {
-				return fmt.Errorf("error while looking up for 'expose' %v: %s", value, err)
-			}
-			exposeFilter[p] = true
-		}
-		return nil
-	})
+	err = psFilters.WalkValues("expose", portOp("expose", exposeFilter))
 	if err != nil {
 		return nil, err
 	}
@@ -381,6 +358,27 @@ func (daemon *Daemon) foldFilter(config *types.ContainerListOptions) (*listConte
 		ContainerListOptions: config,
 		names:                daemon.nameIndex.GetAll(),
 	}, nil
+}
+func portOp(key string, filter map[nat.Port]bool) func(value string) error {
+	return func(value string) error {
+		if strings.Contains(value, ":") {
+			return fmt.Errorf("filter for '%s' should not contain ':': %s", key, value)
+		}
+		//support two formats, original format <portnum>/[<proto>] or <startport-endport>/[<proto>]
+		proto, port := nat.SplitProtoPort(value)
+		start, end, err := nat.ParsePortRange(port)
+		if err != nil {
+			return fmt.Errorf("error while looking up for %s %s: %s", key, value, err)
+		}
+		for i := start; i <= end; i++ {
+			p, err := nat.NewPort(proto, strconv.FormatUint(i, 10))
+			if err != nil {
+				return fmt.Errorf("error while looking up for %s %s: %s", key, value, err)
+			}
+			filter[p] = true
+		}
+		return nil
+	}
 }
 
 // includeContainerInList decides whether a container should be included in the output or not based in the filter.
@@ -506,7 +504,7 @@ func includeContainerInList(container *container.Container, ctx *listContext) it
 				if nw.EndpointSettings == nil {
 					continue
 				}
-				if nw.NetworkID == value {
+				if strings.HasPrefix(nw.NetworkID, value) {
 					return networkExist
 				}
 			}
@@ -642,11 +640,6 @@ func (daemon *Daemon) transformContainer(container *container.Container, ctx *li
 		}
 	}
 
-	if ctx.Size {
-		sizeRw, sizeRootFs := daemon.getSize(container)
-		newC.SizeRw = sizeRw
-		newC.SizeRootFs = sizeRootFs
-	}
 	newC.Labels = container.Config.Labels
 	newC.Mounts = addMountPoints(container)
 

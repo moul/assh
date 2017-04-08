@@ -199,8 +199,8 @@ directive:
 
 ```Dockerfile
 # About my dockerfile
-FROM ImageName
 # directive=value
+FROM ImageName
 ```
 
 The unknown directive is treated as a comment due to not being recognized. In
@@ -803,6 +803,14 @@ the source will be copied inside the destination container.
     ADD test relativeDir/          # adds "test" to `WORKDIR`/relativeDir/
     ADD test /absoluteDir/         # adds "test" to /absoluteDir/
 
+When adding files or directories that contain special characters (such as `[`
+and `]`), you need to escape those paths following the Golang rules to prevent
+them from being treated as a matching pattern. For example, to add a file
+named `arr[0].txt`, use the following;
+
+    ADD arr[[]0].txt /mydir/    # copy a file named "arr[0].txt" to /mydir/
+
+
 All new files and directories are created with a UID and GID of 0.
 
 In the case where `<src>` is a remote file URL, the destination will
@@ -914,6 +922,14 @@ the source will be copied inside the destination container.
 
     COPY test relativeDir/   # adds "test" to `WORKDIR`/relativeDir/
     COPY test /absoluteDir/  # adds "test" to /absoluteDir/
+
+
+When copying files or directories that contain special characters (such as `[`
+and `]`), you need to escape those paths following the Golang rules to prevent
+them from being treated as a matching pattern. For example, to copy a file
+named `arr[0].txt`, use the following;
+
+    COPY arr[[]0].txt /mydir/    # copy a file named "arr[0].txt" to /mydir/
 
 All new files and directories are created with a UID and GID of 0.
 
@@ -1223,6 +1239,11 @@ create a new mount point at `/myvol` and copy the  `greeting` file
 into the newly created volume.
 
 > **Note**:
+> When using Windows-based containers, the destination of a volume inside the
+> container must be one of: a non-existing or empty directory; or a drive other
+> than C:.
+
+> **Note**:
 > If any build steps change the data within the volume after it has been
 > declared, those changes will be discarded.
 
@@ -1396,6 +1417,35 @@ To use these, simply pass them on the command line using the flag:
 --build-arg <varname>=<value>
 ```
 
+By default, these pre-defined variables are excluded from the output of
+`docker history`. Excluding them reduces the risk of accidentally leaking
+sensitive authentication information in an `HTTP_PROXY` variable.
+
+For example, consider building the following Dockerfile using
+`--build-arg HTTP_PROXY=http://user:pass@proxy.lon.example.com`
+
+``` Dockerfile
+FROM ubuntu
+RUN echo "Hello World"
+```
+
+In this case, the value of the `HTTP_PROXY` variable is not available in the
+`docker history` and is not cached. If you were to change location, and your
+proxy server changed to `http://user:pass@proxy.sfo.example.com`, a subsequent
+build does not result in a cache miss.
+
+If you need to override this behaviour then you may do so by adding an `ARG`
+statement in the Dockerfile as follows:
+
+``` Dockerfile
+FROM ubuntu
+ARG HTTP_PROXY
+RUN echo "Hello World"
+```
+
+When building this Dockerfile, the `HTTP_PROXY` is preserved in the
+`docker history`, and changing its value invalidates the build cache.
+
 ### Impact on build caching
 
 `ARG` variables are not persisted into the built image as `ENV` variables are.
@@ -1404,6 +1454,8 @@ Dockerfile defines an `ARG` variable whose value is different from a previous
 build, then a "cache miss" occurs upon its first usage, not its definition. In
 particular, all `RUN` instructions following an `ARG` instruction use the `ARG`
 variable implicitly (as an environment variable), thus can cause a cache miss.
+All predefined `ARG` variables are exempt from caching unless there is a
+matching `ARG` statement in the `Dockerfile`.
 
 For example, consider these two Dockerfile:
 
@@ -1539,6 +1591,7 @@ The options that can appear before `CMD` are:
 
 * `--interval=DURATION` (default: `30s`)
 * `--timeout=DURATION` (default: `30s`)
+* `--start-period=DURATION` (default: `0s`)
 * `--retries=N` (default: `3`)
 
 The health check will first run **interval** seconds after the container is
@@ -1549,6 +1602,11 @@ is considered to have failed.
 
 It takes **retries** consecutive failures of the health check for the container
 to be considered `unhealthy`.
+
+**start period** provides initialization time for containers that need time to bootstrap.
+Probe failure during that period will not be counted towards the maximum number of retries.
+However, if a health check succeeds during the start period, the container is considered
+started and all consecutive failures will be counted towards the maximum number of retries.
 
 There can only be one `HEALTHCHECK` instruction in a Dockerfile. If you list
 more than one then only the last `HEALTHCHECK` will take effect.

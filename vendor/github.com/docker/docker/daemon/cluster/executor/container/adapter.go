@@ -396,20 +396,15 @@ func (c *containerAdapter) deactivateServiceBinding() error {
 	return c.backend.DeactivateContainerServiceBinding(c.container.name())
 }
 
-func (c *containerAdapter) logs(ctx context.Context, options api.LogSubscriptionOptions) (io.ReadCloser, error) {
-	reader, writer := io.Pipe()
+func (c *containerAdapter) logs(ctx context.Context, options api.LogSubscriptionOptions) (<-chan *backend.LogMessage, error) {
+	apiOptions := &types.ContainerLogsOptions{
+		Follow: options.Follow,
 
-	apiOptions := &backend.ContainerLogsConfig{
-		ContainerLogsOptions: types.ContainerLogsOptions{
-			Follow: options.Follow,
-
-			// TODO(stevvooe): Parse timestamp out of message. This
-			// absolutely needs to be done before going to production with
-			// this, at it is completely redundant.
-			Timestamps: true,
-			Details:    false, // no clue what to do with this, let's just deprecate it.
-		},
-		OutStream: writer,
+		// TODO(stevvooe): Parse timestamp out of message. This
+		// absolutely needs to be done before going to production with
+		// this, at it is completely redundant.
+		Timestamps: true,
+		Details:    false, // no clue what to do with this, let's just deprecate it.
 	}
 
 	if options.Since != nil {
@@ -417,7 +412,10 @@ func (c *containerAdapter) logs(ctx context.Context, options api.LogSubscription
 		if err != nil {
 			return nil, err
 		}
-		apiOptions.Since = since.Format(time.RFC3339Nano)
+		// print since as this formatted string because the docker container
+		// logs interface expects it like this.
+		// see github.com/docker/docker/api/types/time.ParseTimestamps
+		apiOptions.Since = fmt.Sprintf("%d.%09d", since.Unix(), int64(since.Nanosecond()))
 	}
 
 	if options.Tail < 0 {
@@ -440,14 +438,11 @@ func (c *containerAdapter) logs(ctx context.Context, options api.LogSubscription
 			}
 		}
 	}
-
-	chStarted := make(chan struct{})
-	go func() {
-		defer writer.Close()
-		c.backend.ContainerLogs(ctx, c.container.name(), apiOptions, chStarted)
-	}()
-
-	return reader, nil
+	msgs, err := c.backend.ContainerLogs(ctx, c.container.name(), apiOptions)
+	if err != nil {
+		return nil, err
+	}
+	return msgs, nil
 }
 
 // todo: typed/wrapped errors

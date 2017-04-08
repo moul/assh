@@ -16,7 +16,7 @@ import (
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/docker/volume"
 	"github.com/docker/libnetwork"
-	"github.com/opencontainers/go-digest"
+	digest "github.com/opencontainers/go-digest"
 )
 
 // ContainersPrune removes unused containers
@@ -34,7 +34,7 @@ func (daemon *Daemon) ContainersPrune(pruneFilters filters.Args) (*types.Contain
 			if !until.IsZero() && c.Created.After(until) {
 				continue
 			}
-			cSize, _ := daemon.getSize(c)
+			cSize, _ := daemon.getSize(c.ID)
 			// TODO: sets RmLink to true?
 			err := daemon.ContainerRm(c.ID, &types.ContainerRmConfig{})
 			if err != nil {
@@ -190,13 +190,10 @@ func (daemon *Daemon) ImagesPrune(pruneFilters filters.Args) (*types.ImagesPrune
 }
 
 // localNetworksPrune removes unused local networks
-func (daemon *Daemon) localNetworksPrune(pruneFilters filters.Args) (*types.NetworksPruneReport, error) {
+func (daemon *Daemon) localNetworksPrune(pruneFilters filters.Args) *types.NetworksPruneReport {
 	rep := &types.NetworksPruneReport{}
 
-	until, err := getUntilFromPruneFilters(pruneFilters)
-	if err != nil {
-		return rep, err
-	}
+	until, _ := getUntilFromPruneFilters(pruneFilters)
 
 	// When the function returns true, the walk will stop.
 	l := func(nw libnetwork.Network) bool {
@@ -204,37 +201,43 @@ func (daemon *Daemon) localNetworksPrune(pruneFilters filters.Args) (*types.Netw
 			return false
 		}
 		nwName := nw.Name()
-		predefined := runconfig.IsPreDefinedNetwork(nwName)
-		if !predefined && len(nw.Endpoints()) == 0 {
-			if err = daemon.DeleteNetwork(nw.ID()); err != nil {
-				logrus.Warnf("could not remove network %s: %v", nwName, err)
-				return false
-			}
-			rep.NetworksDeleted = append(rep.NetworksDeleted, nwName)
+		if runconfig.IsPreDefinedNetwork(nwName) {
+			return false
 		}
+		if len(nw.Endpoints()) > 0 {
+			return false
+		}
+		if err := daemon.DeleteNetwork(nw.ID()); err != nil {
+			logrus.Warnf("could not remove local network %s: %v", nwName, err)
+			return false
+		}
+		rep.NetworksDeleted = append(rep.NetworksDeleted, nwName)
 		return false
 	}
 	daemon.netController.WalkNetworks(l)
-	return rep, err
+	return rep
 }
 
 // clusterNetworksPrune removes unused cluster networks
 func (daemon *Daemon) clusterNetworksPrune(pruneFilters filters.Args) (*types.NetworksPruneReport, error) {
 	rep := &types.NetworksPruneReport{}
 
-	until, err := getUntilFromPruneFilters(pruneFilters)
-	if err != nil {
-		return nil, err
-	}
+	until, _ := getUntilFromPruneFilters(pruneFilters)
 
 	cluster := daemon.GetCluster()
+
+	if !cluster.IsManager() {
+		return rep, nil
+	}
+
 	networks, err := cluster.GetNetworks()
 	if err != nil {
 		return rep, err
 	}
 	networkIsInUse := regexp.MustCompile(`network ([[:alnum:]]+) is in use`)
 	for _, nw := range networks {
-		if nw.Name == "ingress" {
+		if nw.Ingress {
+			// Routing-mesh network removal has to be explicitly invoked by user
 			continue
 		}
 		if !until.IsZero() && nw.Created.After(until) {
@@ -248,7 +251,7 @@ func (daemon *Daemon) clusterNetworksPrune(pruneFilters filters.Args) (*types.Ne
 			// we can safely ignore the "network .. is in use" error
 			match := networkIsInUse.FindStringSubmatch(err.Error())
 			if len(match) != 2 || match[1] != nw.ID {
-				logrus.Warnf("could not remove network %s: %v", nw.Name, err)
+				logrus.Warnf("could not remove cluster network %s: %v", nw.Name, err)
 			}
 			continue
 		}
@@ -259,20 +262,20 @@ func (daemon *Daemon) clusterNetworksPrune(pruneFilters filters.Args) (*types.Ne
 
 // NetworksPrune removes unused networks
 func (daemon *Daemon) NetworksPrune(pruneFilters filters.Args) (*types.NetworksPruneReport, error) {
-	rep := &types.NetworksPruneReport{}
+	if _, err := getUntilFromPruneFilters(pruneFilters); err != nil {
+		return nil, err
+	}
+
 	clusterRep, err := daemon.clusterNetworksPrune(pruneFilters)
 	if err != nil {
-		logrus.Warnf("could not remove cluster networks: %v", err)
-	} else {
-		rep.NetworksDeleted = append(rep.NetworksDeleted, clusterRep.NetworksDeleted...)
+		return nil, fmt.Errorf("could not remove cluster networks: %s", err)
 	}
-	localRep, err := daemon.localNetworksPrune(pruneFilters)
-	if err != nil {
-		logrus.Warnf("could not remove local networks: %v", err)
-	} else {
-		rep.NetworksDeleted = append(rep.NetworksDeleted, localRep.NetworksDeleted...)
-	}
-	return rep, err
+	rep := &types.NetworksPruneReport{}
+	rep.NetworksDeleted = append(rep.NetworksDeleted, clusterRep.NetworksDeleted...)
+
+	localRep := daemon.localNetworksPrune(pruneFilters)
+	rep.NetworksDeleted = append(rep.NetworksDeleted, localRep.NetworksDeleted...)
+	return rep, nil
 }
 
 func getUntilFromPruneFilters(pruneFilters filters.Args) (time.Time, error) {

@@ -15,6 +15,7 @@ import (
 	"github.com/docker/distribution/reference"
 	cliconfig "github.com/docker/docker/cli/config"
 	"github.com/docker/docker/integration-cli/checker"
+	"github.com/docker/docker/integration-cli/cli/build"
 	"github.com/docker/docker/pkg/testutil"
 	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/go-check/check"
@@ -161,7 +162,7 @@ func testConcurrentPush(c *check.C) {
 	repos := []string{}
 	for _, tag := range []string{"push1", "push2", "push3"} {
 		repo := fmt.Sprintf("%v:%v", repoName, tag)
-		buildImageSuccessfully(c, repo, withDockerfile(fmt.Sprintf(`
+		buildImageSuccessfully(c, repo, build.WithDockerfile(fmt.Sprintf(`
 	FROM busybox
 	ENTRYPOINT ["/bin/echo"]
 	ENV FOO foo
@@ -605,7 +606,7 @@ func (s *DockerRegistryAuthTokenSuite) TestPushMisconfiguredTokenServiceResponse
 }
 
 func (s *DockerRegistryAuthTokenSuite) TestPushMisconfiguredTokenServiceResponseError(c *check.C) {
-	ts := getTestTokenService(http.StatusTooManyRequests, `{"errors": [{"code":"TOOMANYREQUESTS","message":"out of tokens"}]}`, 4)
+	ts := getTestTokenService(http.StatusTooManyRequests, `{"errors": [{"code":"TOOMANYREQUESTS","message":"out of tokens"}]}`, 10)
 	defer ts.Close()
 	s.setupRegistryWithTokenService(c, ts.URL)
 	repoName := fmt.Sprintf("%s/busybox", privateRegistryURL)

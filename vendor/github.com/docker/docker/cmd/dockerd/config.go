@@ -21,13 +21,19 @@ func installCommonConfigFlags(conf *config.Config, flags *pflag.FlagSet) {
 	flags.Var(opts.NewNamedListOptsRef("authorization-plugins", &conf.AuthorizationPlugins, nil), "authorization-plugin", "Authorization plugins to load")
 	flags.Var(opts.NewNamedListOptsRef("exec-opts", &conf.ExecOptions, nil), "exec-opt", "Runtime execution options")
 	flags.StringVarP(&conf.Pidfile, "pidfile", "p", defaultPidFile, "Path to use for daemon PID file")
-	flags.StringVarP(&conf.Root, "graph", "g", defaultGraph, "Root of the Docker runtime")
+	flags.StringVarP(&conf.Root, "graph", "g", defaultDataRoot, "Root of the Docker runtime")
+
+	// "--graph" is "soft-deprecated" in favor of "data-root". This flag was added
+	// before Docker 1.0, so won't be removed, only hidden, to discourage its usage.
+	flags.MarkHidden("graph")
+
+	flags.StringVar(&conf.Root, "data-root", defaultDataRoot, "Root directory of persistent Docker state")
+
 	flags.BoolVarP(&conf.AutoRestart, "restart", "r", true, "--restart on the daemon has been deprecated in favor of --restart policies on docker run")
 	flags.MarkDeprecated("restart", "Please use a restart policy on docker run")
 	flags.StringVarP(&conf.GraphDriver, "storage-driver", "s", "", "Storage driver to use")
 	flags.IntVar(&conf.Mtu, "mtu", 0, "Set the containers network MTU")
 	flags.BoolVar(&conf.RawLogs, "raw-logs", false, "Full timestamps without ANSI coloring")
-	// FIXME: why the inconsistency between "hosts" and "sockets"?
 	flags.Var(opts.NewListOptsRef(&conf.DNS, opts.ValidateIPAddress), "dns", "DNS server to use")
 	flags.Var(opts.NewNamedListOptsRef("dns-opts", &conf.DNSOptions, nil), "dns-opt", "DNS options to use")
 	flags.Var(opts.NewListOptsRef(&conf.DNSSearch, opts.ValidateDNSSearch), "dns-search", "DNS search domains to use")

@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/integration-cli/checker"
+	"github.com/docker/docker/integration-cli/cli"
 	"github.com/docker/docker/integration-cli/daemon"
 	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/docker/pkg/stringid"
@@ -47,21 +48,20 @@ func (s *DockerDaemonSuite) TestLegacyDaemonCommand(c *check.C) {
 func (s *DockerDaemonSuite) TestDaemonRestartWithRunningContainersPorts(c *check.C) {
 	s.d.StartWithBusybox(c)
 
-	if out, err := s.d.Cmd("run", "-d", "--name", "top1", "-p", "1234:80", "--restart", "always", "busybox:latest", "top"); err != nil {
-		c.Fatalf("Could not run top1: err=%v\n%s", err, out)
-	}
-	// --restart=no by default
-	if out, err := s.d.Cmd("run", "-d", "--name", "top2", "-p", "80", "busybox:latest", "top"); err != nil {
-		c.Fatalf("Could not run top2: err=%v\n%s", err, out)
-	}
+	cli.Docker(
+		cli.Args("run", "-d", "--name", "top1", "-p", "1234:80", "--restart", "always", "busybox:latest", "top"),
+		cli.Daemon(s.d),
+	).Assert(c, icmd.Success)
+
+	cli.Docker(
+		cli.Args("run", "-d", "--name", "top2", "-p", "80", "busybox:latest", "top"),
+		cli.Daemon(s.d),
+	).Assert(c, icmd.Success)
 
 	testRun := func(m map[string]bool, prefix string) {
 		var format string
 		for cont, shouldRun := range m {
-			out, err := s.d.Cmd("ps")
-			if err != nil {
-				c.Fatalf("Could not run ps: err=%v\n%q", err, out)
-			}
+			out := cli.Docker(cli.Args("ps"), cli.Daemon(s.d)).Assert(c, icmd.Success).Combined()
 			if shouldRun {
 				format = "%scontainer %q is not running"
 			} else {
@@ -198,7 +198,12 @@ func (s *DockerDaemonSuite) TestDaemonRestartWithInvalidBasesize(c *check.C) {
 
 	if newBasesizeBytes < oldBasesizeBytes {
 		err := s.d.RestartWithError("--storage-opt", fmt.Sprintf("dm.basesize=%d", newBasesizeBytes))
-		c.Assert(err, check.IsNil, check.Commentf("daemon should not have started as new base device size is less than existing base device size: %v", err))
+		c.Assert(err, check.NotNil, check.Commentf("daemon should not have started as new base device size is less than existing base device size: %v", err))
+		// 'err != nil' is expected behaviour, no new daemon started,
+		// so no need to stop daemon.
+		if err != nil {
+			return
+		}
 	}
 	s.d.Stop(c)
 }
@@ -1773,7 +1778,7 @@ func (s *DockerDaemonSuite) TestDaemonNoSpaceLeftOnDeviceError(c *check.C) {
 	dockerCmd(c, "run", "--privileged", "--rm", "-v", testDir+":/test:shared", "busybox", "sh", "-c", fmt.Sprintf("mkdir -p /test/test-mount && mount -t ext4 -no loop,rw %v /test/test-mount", loopname))
 	defer mount.Unmount(filepath.Join(testDir, "test-mount"))
 
-	s.d.Start(c, "--graph", filepath.Join(testDir, "test-mount"))
+	s.d.Start(c, "--data-root", filepath.Join(testDir, "test-mount"))
 	defer s.d.Stop(c)
 
 	// pull a repository large enough to fill the mount point

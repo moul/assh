@@ -19,10 +19,10 @@ produces:
 consumes:
   - "application/json"
   - "text/plain"
-basePath: "/v1.27"
+basePath: "/v1.29"
 info:
   title: "Docker Engine API"
-  version: "1.27"
+  version: "1.29"
   x-logo:
     url: "https://docs.docker.com/images/logo-docker-main.png"
   description: |
@@ -44,7 +44,7 @@ info:
 
     The API is usually changed in each release of Docker, so API calls are versioned to ensure that clients don't break.
 
-    For Docker Engine 1.14, the API version is 1.27. To lock to this version, you prefix the URL with `/v1.27`. For example, calling `/info` is the same as calling `/v1.27/info`.
+    For Docker Engine 17.05, the API version is 1.29. To lock to this version, you prefix the URL with `/v1.29`. For example, calling `/info` is the same as calling `/v1.29/info`.
 
     Engine releases in the near future should support this version of the API, so your client will continue to work even if it is talking to a newer Engine.
 
@@ -52,11 +52,13 @@ info:
 
     The API uses an open schema model, which means server may add extra properties to responses. Likewise, the server will ignore any extra query parameters and request body properties. When you write clients, you need to ignore additional properties in responses to ensure they do not break when talking to newer Docker daemons.
 
-    This documentation is for version 1.27 of the API, which was introduced with Docker 1.14. Use this table to find documentation for previous versions of the API:
+    This documentation is for version 1.29 of the API, which was introduced with Docker 17.05. Use this table to find documentation for previous versions of the API:
 
     Docker version  | API version | Changes
     ----------------|-------------|---------
-    1.13.1 | [1.26](https://docs.docker.com/engine/api/v1.26/) | [API changes](https://docs.docker.com/engine/api/version-history/#v1-26-api-changes)
+    17.04.x | [1.28](https://docs.docker.com/engine/api/v1.28/) | [API changes](https://docs.docker.com/engine/api/version-history/#v1-28-api-changes)
+    17.03.1 | [1.27](https://docs.docker.com/engine/api/v1.27/) | [API changes](https://docs.docker.com/engine/api/version-history/#v1-27-api-changes)
+    1.13.1 & 17.03.0 | [1.26](https://docs.docker.com/engine/api/v1.26/) | [API changes](https://docs.docker.com/engine/api/version-history/#v1-26-api-changes)
     1.13.0 | [1.25](https://docs.docker.com/engine/api/v1.25/) | [API changes](https://docs.docker.com/engine/api/version-history/#v1-25-api-changes)
     1.12.x | [1.24](https://docs.docker.com/engine/api/v1.24/) | [API changes](https://docs.docker.com/engine/api/version-history/#v1-24-api-changes)
     1.11.x | [1.23](https://docs.docker.com/engine/api/v1.23/) | [API changes](https://docs.docker.com/engine/api/version-history/#v1-23-api-changes)
@@ -118,8 +120,6 @@ tags:
       Run new commands inside running containers. See the [command-line reference](https://docs.docker.com/engine/reference/commandline/exec/) for more information.
 
       To exec a command in a container, you first need to create an exec instance, then start it. These two API endpoints are wrapped up in a single command-line command, `docker exec`.
-  - name: "Secret"
-    x-displayName: "Secrets"
   # Swarm things
   - name: "Swarm"
     x-displayName: "Swarm"
@@ -137,6 +137,10 @@ tags:
     x-displayName: "Tasks"
     description: |
       A task is a container running on a swarm. It is the atomic scheduling unit of swarm. Swarm mode must be enabled for these endpoints to work.
+  - name: "Secret"
+    x-displayName: "Secrets"
+    description: |
+      Secrets are sensitive data that can be used by services. Swarm mode must be enabled for these endpoints to work.
   # System things
   - name: "Plugin"
     x-displayName: "Plugins"
@@ -241,6 +245,9 @@ definitions:
       ReadOnly:
         description: "Whether the mount should be read-only."
         type: "boolean"
+      Consistency:
+        description: "The consistency requirement for the mount: `default`, `consistent`, `cached`, or `delegated`."
+        type: "string"
       BindOptions:
         description: "Optional configuration for the `bind` type."
         type: "object"
@@ -396,6 +403,12 @@ definitions:
         type: "array"
         items:
           $ref: "#/definitions/DeviceMapping"
+      DeviceCgroupRules:
+        description: "a list of cgroup rules to apply to the container"
+        type: "array"
+        items:
+          type: "string"
+          example: "c 13:* rwm"
       DiskQuota:
         description: "Disk limit (in bytes)."
         type: "integer"
@@ -468,6 +481,34 @@ definitions:
         description: "Maximum IO in bytes per second for the container system drive (Windows only)"
         type: "integer"
         format: "int64"
+
+  HealthConfig:
+    description: "A test to perform to check that the container is healthy."
+    type: "object"
+    properties:
+      Test:
+        description: |
+          The test to perform. Possible values are:
+
+          - `[]` inherit healthcheck from image or parent image
+          - `["NONE"]` disable healthcheck
+          - `["CMD", args...]` exec arguments directly
+          - `["CMD-SHELL", command]` run command with system's default shell
+        type: "array"
+        items:
+          type: "string"
+      Interval:
+        description: "The time to wait between checks in nanoseconds. It should be 0 or not less than 1000000000(1s). 0 means inherit."
+        type: "integer"
+      Timeout:
+        description: "The time to wait before considering the check to have hung. It should be 0 or not less than 1000000000(1s). 0 means inherit."
+        type: "integer"
+      Retries:
+        description: "The number of consecutive failures needed to consider a container as unhealthy. 0 means inherit."
+        type: "integer"
+      StartPeriod:
+        description: "Start period for the container to initialize before starting health-retries countdown in nanoseconds. 0 means inherit."
+        type: "integer"
 
   HostConfig:
     description: "Container configuration that depends on the host we are running on"
@@ -716,7 +757,7 @@ definitions:
         default: false
       Env:
         description: |
-          A list of environment variables to set inside the container in the form `["VAR=value", ...]`
+          A list of environment variables to set inside the container in the form `["VAR=value", ...]`. A variable without `=` is removed from the environment, rather than to have an empty value.
         type: "array"
         items:
           type: "string"
@@ -728,29 +769,7 @@ definitions:
         items:
           type: "string"
       Healthcheck:
-        description: "A test to perform to check that the container is healthy."
-        type: "object"
-        properties:
-          Test:
-            description: |
-              The test to perform. Possible values are:
-
-              - `{}` inherit healthcheck from image or parent image
-              - `{"NONE"}` disable healthcheck
-              - `{"CMD", args...}` exec arguments directly
-              - `{"CMD-SHELL", command}` run command with system's default shell
-            type: "array"
-            items:
-              type: "string"
-          Interval:
-            description: "The time to wait between checks in nanoseconds. It should be 0 or not less than 1000000000(1s). 0 means inherit."
-            type: "integer"
-          Timeout:
-            description: "The time to wait before considering the check to have hung. It should be 0 or not less than 1000000000(1s). 0 means inherit."
-            type: "integer"
-          Retries:
-            description: "The number of consecutive failures needed to consider a container as unhealthy. 0 means inherit."
-            type: "integer"
+        $ref: "#/definitions/HealthConfig"
       ArgsEscaped:
         description: "Command is already escaped (Windows only)"
         type: "boolean"
@@ -1101,6 +1120,8 @@ definitions:
         type: "boolean"
       Attachable:
         type: "boolean"
+      Ingress:
+        type: "boolean"
       Containers:
         type: "object"
         additionalProperties:
@@ -1129,6 +1150,7 @@ definitions:
           foo: "bar"
       Internal: false
       Attachable: false
+      Ingress: false
       Containers:
         19a4d5d687db25203351ed79d478946f861258f018fe384f229f2efa4b23513c:
           Name: "test"
@@ -1432,11 +1454,17 @@ definitions:
           - WorkDir
           - Network
           - Linux
+          - PidHost
           - PropagatedMount
+          - IpcHost
           - Mounts
           - Env
           - Args
         properties:
+          DockerVersion:
+            description: "Docker Version used to create the plugin"
+            type: "string"
+            x-nullable: false
           Description:
             type: "string"
             x-nullable: false
@@ -1499,6 +1527,12 @@ definitions:
                   $ref: "#/definitions/PluginDevice"
           PropagatedMount:
             type: "string"
+            x-nullable: false
+          IpcHost:
+            type: "boolean"
+            x-nullable: false
+          PidHost:
+            type: "boolean"
             x-nullable: false
           Mounts:
             type: "array"
@@ -1577,6 +1611,21 @@ definitions:
           Settable: null
           Value: []
 
+  ObjectVersion:
+    description: |
+      The version number of the object such as node, service, etc. This is needed to avoid conflicting writes.
+      The client must send the version number along with the modified specification when updating these objects.
+      This approach ensures safe concurrency and determinism in that the change on the object
+      may not be applied if the version number has changed from the last read. In other words,
+      if two update requests specify the same base version, only one of the requests can succeed.
+      As a result, two separate update requests that happen at the same time will not
+      unintentially overwrite each other.
+    type: "object"
+    properties:
+      Index:
+        type: "integer"
+        format: "int64"
+
   NodeSpec:
     type: "object"
     properties:
@@ -1613,11 +1662,7 @@ definitions:
       ID:
         type: "string"
       Version:
-        type: "object"
-        properties:
-          Index:
-            type: "integer"
-            format: "int64"
+        $ref: "#/definitions/ObjectVersion"
       CreatedAt:
         type: "string"
         format: "dateTime"
@@ -1686,7 +1731,7 @@ definitions:
           NanoCPUs: 4000000000
           MemoryBytes: 8272408576
         Engine:
-          EngineVersion: "1.14.0"
+          EngineVersion: "17.04.0"
           Labels:
             foo: "bar"
           Plugins:
@@ -1840,11 +1885,7 @@ definitions:
         description: "The ID of the swarm."
         type: "string"
       Version:
-        type: "object"
-        properties:
-          Index:
-            type: "integer"
-            format: "int64"
+        $ref: "#/definitions/ObjectVersion"
       CreatedAt:
         type: "string"
         format: "dateTime"
@@ -1863,6 +1904,11 @@ definitions:
           Image:
             description: "The image name to use for the container."
             type: "string"
+          Labels:
+            description: "User-defined key/value data."
+            type: "object"
+            additionalProperties:
+              type: "string"
           Command:
             description: "The command to be run in the image."
             type: "array"
@@ -1873,6 +1919,9 @@ definitions:
             type: "array"
             items:
               type: "string"
+          Hostname:
+            description: "The hostname to use for the container, as a valid RFC 1123 hostname."
+            type: "string"
           Env:
             description: "A list of environment variables in the form `VAR=value`."
             type: "array"
@@ -1884,13 +1933,16 @@ definitions:
           User:
             description: "The user inside the container."
             type: "string"
-          Labels:
-            description: "User-defined key/value data."
-            type: "object"
-            additionalProperties:
+          Groups:
+            type: "array"
+            description: "A list of additional groups that the container process will run as."
+            items:
               type: "string"
           TTY:
             description: "Whether a pseudo-TTY should be allocated."
+            type: "boolean"
+          OpenStdin:
+            description: "Open `stdin`"
             type: "boolean"
           ReadOnly:
             description: "Mount the container's root filesystem as read only."
@@ -1900,10 +1952,24 @@ definitions:
             type: "array"
             items:
               $ref: "#/definitions/Mount"
+          StopSignal:
+            description: "Signal to stop the container."
+            type: "string"
           StopGracePeriod:
             description: "Amount of time to wait for the container to terminate before forcefully killing it."
             type: "integer"
             format: "int64"
+          HealthCheck:
+            $ref: "#/definitions/HealthConfig"
+          Hosts:
+            type: "array"
+            description: |
+              A list of hostnames/IP mappings to add to the container's `/etc/hosts` file.
+              The format of extra hosts on swarmkit is specified in:
+              http://man7.org/linux/man-pages/man5/hosts.5.html
+                IP_address canonical_hostname [aliases...]
+            items:
+              type: "string"
           DNSConfig:
             description: "Specification for DNS related configurations in resolver configuration file (`resolv.conf`)."
             type: "object"
@@ -1923,6 +1989,38 @@ definitions:
                 type: "array"
                 items:
                   type: "string"
+          Secrets:
+            description: "Secrets contains references to zero or more secrets that will be exposed to the service."
+            type: "array"
+            items:
+              type: "object"
+              properties:
+                File:
+                  description: "File represents a specific target that is backed by a file."
+                  type: "object"
+                  properties:
+                    Name:
+                      description: "Name represents the final filename in the filesystem."
+                      type: "string"
+                    UID:
+                      description: "UID represents the file UID."
+                      type: "string"
+                    GID:
+                      description: "GID represents the file GID."
+                      type: "string"
+                    Mode:
+                      description: "Mode represents the FileMode of the file."
+                      type: "integer"
+                      format: "uint32"
+                SecretID:
+                  description: "SecretID represents the ID of the specific secret that we're referencing."
+                  type: "string"
+                SecretName:
+                  description: |
+                    SecretName is the name of the secret that this references, but this is just provided for
+                    lookup/display purposes. The secret in the reference will be identified by its ID.
+                  type: "string"
+
       Resources:
         description: "Resource requirements which apply to each individual container created as part of the service."
         type: "object"
@@ -1983,6 +2081,18 @@ definitions:
             type: "array"
             items:
               type: "string"
+          Preferences:
+            description: "Preferences provide a way to make the scheduler aware of factors such as topology. They are provided in order from highest to lowest precedence."
+            type: "array"
+            items:
+              type: "object"
+              properties:
+                Spread:
+                  type: "object"
+                  properties:
+                    SpreadDescriptor:
+                      description: "label descriptor, such as engine.labels.az"
+                      type: "string"
       ForceUpdate:
         description: "A counter that triggers an update even if no relevant parameters have been changed."
         type: "integer"
@@ -2030,11 +2140,7 @@ definitions:
         description: "The ID of the task."
         type: "string"
       Version:
-        type: "object"
-        properties:
-          Index:
-            type: "integer"
-            format: "int64"
+        $ref: "#/definitions/ObjectVersion"
       CreatedAt:
         type: "string"
         format: "dateTime"
@@ -2181,6 +2287,7 @@ definitions:
             enum:
               - "continue"
               - "pause"
+              - "rollback"
           Monitor:
             description: "Amount of time to monitor each updated task for failures, in nanoseconds."
             type: "integer"
@@ -2189,6 +2296,44 @@ definitions:
             description: "The fraction of tasks that may fail during an update before the failure action is invoked, specified as a floating point number between 0 and 1."
             type: "number"
             default: 0
+          Order:
+            description: "The order of operations when rolling out an updated task. Either the old task is shut down before the new task is started, or the new task is started before the old task is shut down."
+            type: "string"
+            enum:
+              - "stop-first"
+              - "start-first"
+      RollbackConfig:
+        description: "Specification for the rollback strategy of the service."
+        type: "object"
+        properties:
+          Parallelism:
+            description: "Maximum number of tasks to be rolled back in one iteration (0 means unlimited parallelism)."
+            type: "integer"
+            format: "int64"
+          Delay:
+            description: "Amount of time between rollback iterations, in nanoseconds."
+            type: "integer"
+            format: "int64"
+          FailureAction:
+            description: "Action to take if an rolled back task fails to run, or stops running during the rollback."
+            type: "string"
+            enum:
+              - "continue"
+              - "pause"
+          Monitor:
+            description: "Amount of time to monitor each rolled back task for failures, in nanoseconds."
+            type: "integer"
+            format: "int64"
+          MaxFailureRatio:
+            description: "The fraction of tasks that may fail during a rollback before the failure action is invoked, specified as a floating point number between 0 and 1."
+            type: "number"
+            default: 0
+          Order:
+            description: "The order of operations when rolling back a task. Either the old task is shut down before the new task is started, or the new task is started before the old task is shut down."
+            type: "string"
+            enum:
+              - "stop-first"
+              - "start-first"
       Networks:
         description: "Array of network names or IDs to attach the service to."
         type: "array"
@@ -2242,11 +2387,7 @@ definitions:
       ID:
         type: "string"
       Version:
-        type: "object"
-        properties:
-          Index:
-            type: "integer"
-            format: "int64"
+        $ref: "#/definitions/ObjectVersion"
       CreatedAt:
         type: "string"
         format: "dateTime"
@@ -2315,6 +2456,13 @@ definitions:
             Replicas: 1
         UpdateConfig:
           Parallelism: 1
+          Delay: 1000000000
+          FailureAction: "pause"
+          Monitor: 15000000000
+          MaxFailureRatio: 0.15
+        RollbackConfig:
+          Parallelism: 1
+          Delay: 1000000000
           FailureAction: "pause"
           Monitor: 15000000000
           MaxFailureRatio: 0.15
@@ -2454,11 +2602,7 @@ definitions:
       ID:
         type: "string"
       Version:
-        type: "object"
-        properties:
-          Index:
-            type: "integer"
-            format: "int64"
+        $ref: "#/definitions/ObjectVersion"
       CreatedAt:
         type: "string"
         format: "dateTime"
@@ -3367,6 +3511,10 @@ paths:
         The `precpu_stats` is the CPU statistic of last read, which is used
         for calculating the CPU usage percentage. It is not the same as the
         `cpu_stats` field.
+
+        If either `precpu_stats.online_cpus` or `cpu_stats.online_cpus` is
+        nil then for compatibility with older daemons the length of the
+        corresponding `cpu_usage.percpu_usage` array should be used.
       operationId: "ContainerStats"
       produces: ["application/json"]
       responses:
@@ -3445,6 +3593,7 @@ paths:
                   total_usage: 100215355
                   usage_in_kernelmode: 30000000
                 system_cpu_usage: 739306590000000
+                online_cpus: 4
                 throttling_data:
                   periods: 0
                   throttled_periods: 0
@@ -3460,6 +3609,7 @@ paths:
                   total_usage: 100093996
                   usage_in_kernelmode: 30000000
                 system_cpu_usage: 9492140000000
+                online_cpus: 4
                 throttling_data:
                   periods: 0
                   throttled_periods: 0
@@ -4064,7 +4214,7 @@ paths:
             $ref: "#/definitions/ErrorResponse"
           examples:
             application/json:
-              message: "You cannot remove a running container: c2ada9df5af8. Stop the container before attempting removal or use -f"
+              message: "You cannot remove a running container: c2ada9df5af8. Stop the container before attempting removal or force remove"
         500:
           description: "server error"
           schema:
@@ -4083,6 +4233,11 @@ paths:
         - name: "force"
           in: "query"
           description: "If the container is running, kill it before removing it."
+          type: "boolean"
+          default: false
+        - name: "link"
+          in: "query"
+          description: "Remove the specified link associated with the container."
           type: "boolean"
           default: false
       tags: ["Container"]
@@ -4359,6 +4514,10 @@ paths:
         - name: "t"
           in: "query"
           description: "A name and optional tag to apply to the image in the `name:tag` format. If you omit the tag the default `latest` value is assumed. You can provide several `t` parameters."
+          type: "string"
+        - name: "extrahosts"
+          in: "query"
+          description: "Extra hosts to add to /etc/hosts"
           type: "string"
         - name: "remote"
           in: "query"
@@ -5229,13 +5388,13 @@ paths:
                 type: "string"
           examples:
             application/json:
-              Version: "1.14.0"
+              Version: "17.04.0"
               Os: "linux"
               KernelVersion: "3.19.0-23-generic"
-              GoVersion: "go1.6.3"
+              GoVersion: "go1.7.5"
               GitCommit: "deadbee"
               Arch: "amd64"
-              ApiVersion: "1.26"
+              ApiVersion: "1.27"
               MinAPIVersion: "1.12"
               BuildTime: "2016-06-14T07:09:13.444803460+00:00"
               Experimental: true
@@ -6070,6 +6229,7 @@ paths:
                 EnableIPv6: false
                 Internal: false
                 Attachable: false
+                Ingress: false
                 IPAM:
                   Driver: "default"
                   Config:
@@ -6096,6 +6256,7 @@ paths:
                 EnableIPv6: false
                 Internal: false
                 Attachable: false
+                Ingress: false
                 IPAM:
                   Driver: "default"
                   Config: []
@@ -6109,6 +6270,7 @@ paths:
                 EnableIPv6: false
                 Internal: false
                 Attachable: false
+                Ingress: false
                 IPAM:
                   Driver: "default"
                   Config: []
@@ -6128,6 +6290,7 @@ paths:
             - `id=<network-id>` Matches all or part of a network ID.
             - `label=<key>` or `label=<key>=<value>` of a network label.
             - `name=<network-name>` Matches all or part of a network name.
+            - `scope=["swarm"|"global"|"local"]` Filters networks by scope (`swarm`, `global`, or `local`).
             - `type=["custom"|"builtin"]` Filters networks by type. The `custom` keyword returns all user-defined networks.
           type: "string"
       tags: ["Network"]
@@ -6153,6 +6316,11 @@ paths:
           description: "Network ID or name"
           required: true
           type: "string"
+        - name: "verbose"
+          in: "query"
+          description: "Detailed inspect output for troubleshooting"
+          type: "boolean"
+          default: false
       tags: ["Network"]
 
     delete:
@@ -6224,7 +6392,7 @@ paths:
                 description: "The network's name."
                 type: "string"
               CheckDuplicate:
-                description: "Check for networks with duplicate names."
+                description: "Check for networks with duplicate names. Since Network is primarily keyed based on a random ID and not on the name, and network name is strictly a user-friendly alias to the network which is uniquely identified using ID, there is no guaranteed way to check for duplicates. CheckDuplicate is there to provide a best effort checking of any networks which has the same name but it is not guaranteed to catch all name collisions."
                 type: "boolean"
               Driver:
                 description: "Name of the network driver plugin to use."
@@ -6235,6 +6403,9 @@ paths:
                 type: "boolean"
               Attachable:
                 description: "Globally scoped network is manually attachable by regular containers from workers in swarm mode."
+                type: "boolean"
+              Ingress:
+                description: "Ingress network is the network which provides the routing-mesh in swarm mode."
                 type: "boolean"
               IPAM:
                 description: "Optional custom IP scheme for the network."
@@ -6269,6 +6440,7 @@ paths:
                   foo: "bar"
               Internal: true
               Attachable: false
+              Ingress: false
               Options:
                 com.docker.network.bridge.default_bridge: "true"
                 com.docker.network.bridge.enable_icc: "true"
@@ -6505,7 +6677,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
       parameters:
-        - name: "name"
+        - name: "remote"
           in: "query"
           description: "The name of the plugin. The `:latest` tag is optional, and is the default if omitted."
           required: true
@@ -7268,6 +7440,7 @@ paths:
 
             - `id=<service id>`
             - `label=<service label>`
+            - `mode=["replicated"|"global"]`
             - `name=<service name>`
       tags: ["Service"]
   /services/create:
@@ -7336,6 +7509,7 @@ paths:
                             DriverConfig: {}
                             Labels:
                               com.example.something: "something-value"
+                      Hosts: ["10.10.10.10 host1", "ABCD:EF01:2345:6789:ABCD:EF01:2345:6789 host2"]
                       User: "33"
                       DNSConfig:
                         Nameservers: ["8.8.8.8"]
@@ -7359,9 +7533,17 @@ paths:
                     Replicated:
                       Replicas: 4
                   UpdateConfig:
-                    Delay: 30000000000
                     Parallelism: 2
+                    Delay: 1000000000
                     FailureAction: "pause"
+                    Monitor: 15000000000
+                    MaxFailureRatio: 0.15
+                  RollbackConfig:
+                    Parallelism: 1
+                    Delay: 1000000000
+                    FailureAction: "pause"
+                    Monitor: 15000000000
+                    MaxFailureRatio: 0.15
                   EndpointSpec:
                     Ports:
                       -
@@ -7487,7 +7669,15 @@ paths:
                     Replicated:
                       Replicas: 1
                   UpdateConfig:
+                    Parallelism: 2
+                    Delay: 1000000000
+                    FailureAction: "pause"
+                    Monitor: 15000000000
+                    MaxFailureRatio: 0.15
+                  RollbackConfig:
                     Parallelism: 1
+                    Delay: 1000000000
+                    FailureAction: "pause"
                     Monitor: 15000000000
                     MaxFailureRatio: 0.15
                   EndpointSpec:
@@ -7505,6 +7695,12 @@ paths:
   parameter indicates where to find registry authorization credentials. The
   valid values are `spec` and `previous-spec`."
           default: "spec"
+        - name: "rollback"
+          in: "query"
+          type: "string"
+          description: "Set to this parameter to `previous` to cause a
+  server-side rollback to the previous service spec. The supplied spec will be
+  ignored in this case."
         - name: "X-Registry-Auth"
           in: "header"
           description: "A base64-encoded auth configuration for pulling from private registries. [See the authentication section for details.](#section/Authentication)"
@@ -7768,6 +7964,86 @@ paths:
           required: true
           type: "string"
       tags: ["Task"]
+  /tasks/{id}/logs:
+    get:
+      summary: "Get task logs"
+      description: |
+        Get `stdout` and `stderr` logs from a task.
+
+        **Note**: This endpoint works only for services with the `json-file` or `journald` logging drivers.
+      operationId: "TaskLogs"
+      produces:
+        - "application/vnd.docker.raw-stream"
+        - "application/json"
+      responses:
+        101:
+          description: "logs returned as a stream"
+          schema:
+            type: "string"
+            format: "binary"
+        200:
+          description: "logs returned as a string in response body"
+          schema:
+            type: "string"
+        404:
+          description: "no such task"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+          examples:
+            application/json:
+              message: "No such task: c2ada9df5af8"
+        500:
+          description: "server error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        503:
+          description: "node is not part of a swarm"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          description: "ID of the task"
+          type: "string"
+        - name: "details"
+          in: "query"
+          description: "Show extra details provided to logs."
+          type: "boolean"
+          default: false
+        - name: "follow"
+          in: "query"
+          description: |
+            Return the logs as a stream.
+
+            This will return a `101` HTTP response with a `Connection: upgrade` header, then hijack the HTTP connection to send raw output. For more information about hijacking and the stream format, [see the documentation for the attach endpoint](#operation/ContainerAttach).
+          type: "boolean"
+          default: false
+        - name: "stdout"
+          in: "query"
+          description: "Return logs from `stdout`"
+          type: "boolean"
+          default: false
+        - name: "stderr"
+          in: "query"
+          description: "Return logs from `stderr`"
+          type: "boolean"
+          default: false
+        - name: "since"
+          in: "query"
+          description: "Only return logs since this time, as a UNIX timestamp"
+          type: "integer"
+          default: 0
+        - name: "timestamps"
+          in: "query"
+          description: "Add timestamps to every log line"
+          type: "boolean"
+          default: false
+        - name: "tail"
+          in: "query"
+          description: "Only return this number of log lines from the end of the logs. Specify as an integer or `all` to output all log lines."
+          type: "string"
+          default: "all"
   /secrets:
     get:
       summary: "List secrets"
@@ -7804,6 +8080,9 @@ paths:
           description: |
             A JSON encoded value of the filters (a `map[string][]string`) to process on the secrets list. Available filters:
 
+            - `id=<secret id>`
+            - `label=<key> or label=<key>=value`
+            - `name=<secret name>`
             - `names=<secret name>`
       tags: ["Secret"]
   /secrets/create:
@@ -7937,7 +8216,7 @@ paths:
       parameters:
         - name: "id"
           in: "path"
-          description: "The ID of the secret"
+          description: "The ID or name of the secret"
           type: "string"
           required: true
         - name: "body"

@@ -18,6 +18,8 @@ import (
 
 	"github.com/docker/docker/builder/dockerfile/command"
 	"github.com/docker/docker/integration-cli/checker"
+	"github.com/docker/docker/integration-cli/cli"
+	"github.com/docker/docker/integration-cli/cli/build"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stringutils"
 	"github.com/docker/docker/pkg/testutil"
@@ -26,7 +28,7 @@ import (
 )
 
 func (s *DockerSuite) TestBuildJSONEmptyRun(c *check.C) {
-	buildImageSuccessfully(c, "testbuildjsonemptyrun", withDockerfile(`
+	cli.BuildCmd(c, "testbuildjsonemptyrun", build.WithDockerfile(`
     FROM busybox
     RUN []
     `))
@@ -39,7 +41,7 @@ func (s *DockerSuite) TestBuildShCmdJSONEntrypoint(c *check.C) {
 		expected = "cmd /S /C echo test"
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
     FROM busybox
     ENTRYPOINT ["echo"]
     CMD echo test
@@ -56,7 +58,7 @@ func (s *DockerSuite) TestBuildEnvironmentReplacementUser(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildenvironmentreplacement"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM scratch
   ENV user foo
   USER ${user}
@@ -79,7 +81,7 @@ func (s *DockerSuite) TestBuildEnvironmentReplacementVolume(c *check.C) {
 		volumePath = "/quux"
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM `+minimalBaseImage()+`
   ENV volume `+volumePath+`
   VOLUME ${volume}
@@ -98,7 +100,7 @@ func (s *DockerSuite) TestBuildEnvironmentReplacementExpose(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildenvironmentreplacement"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM scratch
   ENV port 80
   EXPOSE ${port}
@@ -121,7 +123,7 @@ func (s *DockerSuite) TestBuildEnvironmentReplacementExpose(c *check.C) {
 func (s *DockerSuite) TestBuildEnvironmentReplacementWorkdir(c *check.C) {
 	name := "testbuildenvironmentreplacement"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM busybox
   ENV MYWORKDIR /work
   RUN mkdir ${MYWORKDIR}
@@ -167,7 +169,7 @@ func (s *DockerSuite) TestBuildEnvironmentReplacementEnv(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildenvironmentreplacement"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM busybox
   ENV foo zzz
   ENV bar ${foo}
@@ -197,7 +199,7 @@ func (s *DockerSuite) TestBuildEnvironmentReplacementEnv(c *check.C) {
 		} else if strings.HasPrefix(parts[0], "env") {
 			envCount++
 			if parts[1] != "zzz" {
-				c.Fatalf("%s should be 'foo' but instead its %q", parts[0], parts[1])
+				c.Fatalf("%s should be 'zzz' but instead its %q", parts[0], parts[1])
 			}
 		} else if strings.HasPrefix(parts[0], "env") {
 			envCount++
@@ -244,7 +246,7 @@ func (s *DockerSuite) TestBuildHandleEscapesInVolume(c *check.C) {
 	}
 
 	for _, tc := range testCases {
-		buildImageSuccessfully(c, name, withDockerfile(fmt.Sprintf(`
+		buildImageSuccessfully(c, name, build.WithDockerfile(fmt.Sprintf(`
   FROM scratch
   ENV FOO bar
   VOLUME %s
@@ -265,12 +267,12 @@ func (s *DockerSuite) TestBuildOnBuildLowercase(c *check.C) {
 	name := "testbuildonbuildlowercase"
 	name2 := "testbuildonbuildlowercase2"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM busybox
   onbuild run echo quux
   `))
 
-	result := buildImage(name2, withDockerfile(fmt.Sprintf(`
+	result := buildImage(name2, build.WithDockerfile(fmt.Sprintf(`
   FROM %s
   `, name)))
 	result.Assert(c, icmd.Success)
@@ -289,7 +291,7 @@ func (s *DockerSuite) TestBuildEnvEscapes(c *check.C) {
 	// ENV expansions work differently in Windows
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildenvescapes"
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
     FROM busybox
     ENV TEST foo
     CMD echo \$
@@ -306,7 +308,7 @@ func (s *DockerSuite) TestBuildEnvOverwrite(c *check.C) {
 	// ENV expansions work differently in Windows
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildenvoverwrite"
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
     FROM busybox
     ENV TEST foo
     CMD echo ${TEST}
@@ -324,13 +326,13 @@ func (s *DockerSuite) TestBuildOnBuildCmdEntrypointJSON(c *check.C) {
 	name1 := "onbuildcmd"
 	name2 := "onbuildgenerated"
 
-	buildImageSuccessfully(c, name1, withDockerfile(`
+	buildImageSuccessfully(c, name1, build.WithDockerfile(`
 FROM busybox
 ONBUILD CMD ["hello world"]
 ONBUILD ENTRYPOINT ["echo"]
 ONBUILD RUN ["true"]`))
 
-	buildImageSuccessfully(c, name2, withDockerfile(fmt.Sprintf(`FROM %s`, name1)))
+	buildImageSuccessfully(c, name2, build.WithDockerfile(fmt.Sprintf(`FROM %s`, name1)))
 
 	out, _ := dockerCmd(c, "run", name2)
 	if !regexp.MustCompile(`(?m)^hello world`).MatchString(out) {
@@ -344,11 +346,11 @@ func (s *DockerSuite) TestBuildOnBuildEntrypointJSON(c *check.C) {
 	name1 := "onbuildcmd"
 	name2 := "onbuildgenerated"
 
-	buildImageSuccessfully(c, name1, withDockerfile(`
+	buildImageSuccessfully(c, name1, build.WithDockerfile(`
 FROM busybox
 ONBUILD ENTRYPOINT ["echo"]`))
 
-	buildImageSuccessfully(c, name2, withDockerfile(fmt.Sprintf("FROM %s\nCMD [\"hello world\"]\n", name1)))
+	buildImageSuccessfully(c, name2, build.WithDockerfile(fmt.Sprintf("FROM %s\nCMD [\"hello world\"]\n", name1)))
 
 	out, _ := dockerCmd(c, "run", name2)
 	if !regexp.MustCompile(`(?m)^hello world`).MatchString(out) {
@@ -366,10 +368,10 @@ func (s *DockerSuite) TestBuildCacheAdd(c *check.C) {
 	})
 	defer server.Close()
 
-	buildImageSuccessfully(c, name, withDockerfile(fmt.Sprintf(`FROM scratch
+	cli.BuildCmd(c, name, build.WithDockerfile(fmt.Sprintf(`FROM scratch
 		ADD %s/robots.txt /`, server.URL())))
 
-	result := buildImage(name, withDockerfile(fmt.Sprintf(`FROM scratch
+	result := cli.Docker(cli.Build(name), build.WithDockerfile(fmt.Sprintf(`FROM scratch
 		ADD %s/index.html /`, server.URL())))
 	result.Assert(c, icmd.Success)
 	if strings.Contains(result.Combined(), "Using cache") {
@@ -395,14 +397,14 @@ func (s *DockerSuite) TestBuildLastModified(c *check.C) {
 ADD %s/file /`
 	dockerfile := fmt.Sprintf(dFmt, server.URL())
 
-	buildImageSuccessfully(c, name, withoutCache, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithoutCache, build.WithDockerfile(dockerfile))
 	out, _ = dockerCmd(c, "run", name, "ls", "-le", "/file")
 
 	// Build it again and make sure the mtime of the file didn't change.
 	// Wait a few seconds to make sure the time changed enough to notice
 	time.Sleep(2 * time.Second)
 
-	buildImageSuccessfully(c, name, withoutCache, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithoutCache, build.WithDockerfile(dockerfile))
 	out2, _ = dockerCmd(c, "run", name, "ls", "-le", "/file")
 
 	if out != out2 {
@@ -417,7 +419,7 @@ ADD %s/file /`
 	defer server.Close()
 
 	dockerfile = fmt.Sprintf(dFmt, server.URL())
-	buildImageSuccessfully(c, name, withoutCache, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithoutCache, build.WithDockerfile(dockerfile))
 	out2, _ = dockerCmd(c, "run", name, "ls", "-le", "/file")
 
 	if out == out2 {
@@ -1155,7 +1157,7 @@ func (s *DockerSuite) TestBuildForceRm(c *check.C) {
 	containerCountBefore := getContainerCount(c)
 	name := "testbuildforcerm"
 
-	buildImage(name, withBuildFlags("--force-rm"), withBuildContext(c,
+	buildImage(name, cli.WithFlags("--force-rm"), withBuildContext(c,
 		withFile("Dockerfile", `FROM `+minimalBaseImage()+`
 	RUN true
 	RUN thiswillfail`))).Assert(c, icmd.Expected{
@@ -1194,7 +1196,7 @@ func (s *DockerSuite) TestBuildRm(c *check.C) {
 	for _, tc := range testCases {
 		containerCountBefore := getContainerCount(c)
 
-		buildImageSuccessfully(c, name, withBuildFlags(tc.buildflags...), withDockerfile(`FROM busybox
+		buildImageSuccessfully(c, name, cli.WithFlags(tc.buildflags...), build.WithDockerfile(`FROM busybox
 	RUN echo hello world`))
 
 		containerCountAfter := getContainerCount(c)
@@ -1230,7 +1232,7 @@ func (s *DockerSuite) TestBuildWithVolumes(c *check.C) {
 		}
 	)
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM scratch
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM scratch
 		VOLUME /test1
 		VOLUME /test2
     VOLUME /test3 /test4
@@ -1250,7 +1252,7 @@ func (s *DockerSuite) TestBuildWithVolumes(c *check.C) {
 func (s *DockerSuite) TestBuildMaintainer(c *check.C) {
 	name := "testbuildmaintainer"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
         MAINTAINER dockerio`))
 
 	expected := "dockerio"
@@ -1264,7 +1266,7 @@ func (s *DockerSuite) TestBuildUser(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuilduser"
 	expected := "dockerio"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		RUN echo 'dockerio:x:1001:1001::/bin:/bin/false' >> /etc/passwd
 		USER dockerio
 		RUN [ $(whoami) = 'dockerio' ]`))
@@ -1299,7 +1301,7 @@ func (s *DockerSuite) TestBuildRelativeWorkdir(c *check.C) {
 		expectedFinal = `/test2/test3`
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		RUN sh -c "[ "$PWD" = "`+expected1+`" ]"
 		WORKDIR test1
 		RUN sh -c "[ "$PWD" = "`+expected2+`" ]"
@@ -1318,7 +1320,7 @@ func (s *DockerSuite) TestBuildRelativeWorkdir(c *check.C) {
 // Windows semantics. Most path handling verifications are in unit tests
 func (s *DockerSuite) TestBuildWindowsWorkdirProcessing(c *check.C) {
 	testRequires(c, DaemonIsWindows)
-	buildImageSuccessfully(c, "testbuildwindowsworkdirprocessing", withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, "testbuildwindowsworkdirprocessing", build.WithDockerfile(`FROM busybox
 		WORKDIR C:\\foo
 		WORKDIR bar
 		RUN sh -c "[ "$PWD" = "C:/foo/bar" ]"
@@ -1370,7 +1372,7 @@ func (s *DockerSuite) TestBuildWorkdirWithEnvVariables(c *check.C) {
 		expected = `/test1/test2`
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		ENV DIRPATH /test1
 		ENV SUBDIRNAME test2
 		WORKDIR $DIRPATH
@@ -1440,7 +1442,7 @@ func (s *DockerSuite) TestBuildBlankName(c *check.C) {
 	}
 
 	for _, tc := range testCases {
-		buildImage(name, withDockerfile(fmt.Sprintf(`FROM busybox
+		buildImage(name, build.WithDockerfile(fmt.Sprintf(`FROM busybox
 		%s`, tc.expression))).Assert(c, icmd.Expected{
 			ExitCode: 1,
 			Err:      tc.expectedStderr,
@@ -1452,7 +1454,7 @@ func (s *DockerSuite) TestBuildEnv(c *check.C) {
 	testRequires(c, DaemonIsLinux) // ENV expansion is different in Windows
 	name := "testbuildenv"
 	expected := "[PATH=/test:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin PORT=2375]"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		ENV PATH /test:$PATH
 		ENV PORT 2375
 		RUN [ $(env | grep PORT) = 'PORT=2375' ]`))
@@ -1468,7 +1470,7 @@ func (s *DockerSuite) TestBuildPATH(c *check.C) {
 	defPath := "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 	fn := func(dockerfile string, expected string) {
-		buildImageSuccessfully(c, "testbldpath", withDockerfile(dockerfile))
+		buildImageSuccessfully(c, "testbldpath", build.WithDockerfile(dockerfile))
 		res := inspectField(c, "testbldpath", "Config.Env")
 		if res != expected {
 			c.Fatalf("Env %q, expected %q for dockerfile:%q", res, expected, dockerfile)
@@ -1500,7 +1502,7 @@ func (s *DockerSuite) TestBuildContextCleanup(c *check.C) {
 		c.Fatalf("failed to list contents of tmp dir: %s", err)
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
         ENTRYPOINT ["/bin/echo"]`))
 
 	entriesFinal, err := ioutil.ReadDir(filepath.Join(testEnv.DockerBasePath(), "tmp"))
@@ -1522,7 +1524,7 @@ func (s *DockerSuite) TestBuildContextCleanupFailedBuild(c *check.C) {
 		c.Fatalf("failed to list contents of tmp dir: %s", err)
 	}
 
-	buildImage(name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImage(name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
 	RUN /non/existing/command`)).Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
@@ -1541,7 +1543,7 @@ func (s *DockerSuite) TestBuildCmd(c *check.C) {
 	name := "testbuildcmd"
 	expected := "[/bin/echo Hello World]"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
         CMD ["/bin/echo", "Hello World"]`))
 
 	res := inspectField(c, name, "Config.Cmd")
@@ -1555,7 +1557,7 @@ func (s *DockerSuite) TestBuildExpose(c *check.C) {
 	name := "testbuildexpose"
 	expected := "map[2375/tcp:{}]"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM scratch
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM scratch
         EXPOSE 2375`))
 
 	res := inspectField(c, name, "Config.ExposedPorts")
@@ -1591,7 +1593,7 @@ func (s *DockerSuite) TestBuildExposeMorePorts(c *check.C) {
 	tmpl.Execute(buf, portList)
 
 	name := "testbuildexpose"
-	buildImageSuccessfully(c, name, withDockerfile(buf.String()))
+	buildImageSuccessfully(c, name, build.WithDockerfile(buf.String()))
 
 	// check if all the ports are saved inside Config.ExposedPorts
 	res := inspectFieldJSON(c, name, "Config.ExposedPorts")
@@ -1616,7 +1618,7 @@ func (s *DockerSuite) TestBuildExposeMorePorts(c *check.C) {
 func (s *DockerSuite) TestBuildExposeOrder(c *check.C) {
 	testRequires(c, DaemonIsLinux) // Expose not implemented on Windows
 	buildID := func(name, exposed string) string {
-		buildImageSuccessfully(c, name, withDockerfile(fmt.Sprintf(`FROM scratch
+		buildImageSuccessfully(c, name, build.WithDockerfile(fmt.Sprintf(`FROM scratch
 		EXPOSE %s`, exposed)))
 		id := inspectField(c, name, "Id")
 		return id
@@ -1633,7 +1635,7 @@ func (s *DockerSuite) TestBuildExposeUpperCaseProto(c *check.C) {
 	testRequires(c, DaemonIsLinux) // Expose not implemented on Windows
 	name := "testbuildexposeuppercaseproto"
 	expected := "map[5678/udp:{}]"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM scratch
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM scratch
         EXPOSE 5678/UDP`))
 	res := inspectField(c, name, "Config.ExposedPorts")
 	if res != expected {
@@ -1645,7 +1647,7 @@ func (s *DockerSuite) TestBuildEmptyEntrypointInheritance(c *check.C) {
 	name := "testbuildentrypointinheritance"
 	name2 := "testbuildentrypointinheritance2"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
         ENTRYPOINT ["/bin/echo"]`))
 	res := inspectField(c, name, "Config.Entrypoint")
 
@@ -1654,7 +1656,7 @@ func (s *DockerSuite) TestBuildEmptyEntrypointInheritance(c *check.C) {
 		c.Fatalf("Entrypoint %s, expected %s", res, expected)
 	}
 
-	buildImageSuccessfully(c, name2, withDockerfile(fmt.Sprintf(`FROM %s
+	buildImageSuccessfully(c, name2, build.WithDockerfile(fmt.Sprintf(`FROM %s
         ENTRYPOINT []`, name)))
 	res = inspectField(c, name2, "Config.Entrypoint")
 
@@ -1668,7 +1670,7 @@ func (s *DockerSuite) TestBuildEmptyEntrypoint(c *check.C) {
 	name := "testbuildentrypoint"
 	expected := "[]"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
         ENTRYPOINT []`))
 
 	res := inspectField(c, name, "Config.Entrypoint")
@@ -1682,7 +1684,7 @@ func (s *DockerSuite) TestBuildEntrypoint(c *check.C) {
 	name := "testbuildentrypoint"
 
 	expected := "[/bin/echo]"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
         ENTRYPOINT ["/bin/echo"]`))
 
 	res := inspectField(c, name, "Config.Entrypoint")
@@ -1694,17 +1696,17 @@ func (s *DockerSuite) TestBuildEntrypoint(c *check.C) {
 
 // #6445 ensure ONBUILD triggers aren't committed to grandchildren
 func (s *DockerSuite) TestBuildOnBuildLimitedInheritence(c *check.C) {
-	buildImageSuccessfully(c, "testonbuildtrigger1", withDockerfile(`
+	buildImageSuccessfully(c, "testonbuildtrigger1", build.WithDockerfile(`
 		FROM busybox
 		RUN echo "GRANDPARENT"
 		ONBUILD RUN echo "ONBUILD PARENT"
 		`))
 	// ONBUILD should be run in second build.
-	buildImage("testonbuildtrigger2", withDockerfile("FROM testonbuildtrigger1")).Assert(c, icmd.Expected{
+	buildImage("testonbuildtrigger2", build.WithDockerfile("FROM testonbuildtrigger1")).Assert(c, icmd.Expected{
 		Out: "ONBUILD PARENT",
 	})
 	// ONBUILD should *not* be run in third build.
-	result := buildImage("testonbuildtrigger3", withDockerfile("FROM testonbuildtrigger2"))
+	result := buildImage("testonbuildtrigger3", build.WithDockerfile("FROM testonbuildtrigger2"))
 	result.Assert(c, icmd.Success)
 	if strings.Contains(result.Combined(), "ONBUILD PARENT") {
 		c.Fatalf("ONBUILD instruction ran in grandchild of ONBUILD parent")
@@ -1718,11 +1720,11 @@ func (s *DockerSuite) TestBuildSameDockerfileWithAndWithoutCache(c *check.C) {
 		MAINTAINER dockerio
 		EXPOSE 5432
         ENTRYPOINT ["/bin/echo"]`
-	buildImageSuccessfully(c, name, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithDockerfile(dockerfile))
 	id1 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithDockerfile(dockerfile))
 	id2 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withoutCache, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithoutCache, build.WithDockerfile(dockerfile))
 	id3 := getIDByName(c, name)
 	if id1 != id2 {
 		c.Fatal("The cache should have been used but hasn't.")
@@ -1781,7 +1783,7 @@ func (s *DockerSuite) TestBuildAddMultipleLocalFileWithAndWithoutCache(c *check.
 	id1 := getIDByName(c, name)
 	buildImageSuccessfully(c, name, withExternalBuildContext(ctx))
 	id2 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withoutCache, withExternalBuildContext(ctx))
+	buildImageSuccessfully(c, name, build.WithoutCache, withExternalBuildContext(ctx))
 	id3 := getIDByName(c, name)
 	if id1 != id2 {
 		c.Fatal("The cache should have been used but hasn't.")
@@ -1874,7 +1876,7 @@ func (s *DockerSuite) TestBuildAddCurrentDirWithoutCache(c *check.C) {
 	defer ctx.Close()
 	buildImageSuccessfully(c, name, withExternalBuildContext(ctx))
 	id1 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withoutCache, withExternalBuildContext(ctx))
+	buildImageSuccessfully(c, name, build.WithoutCache, withExternalBuildContext(ctx))
 	id2 := getIDByName(c, name)
 	if id1 == id2 {
 		c.Fatal("The cache should have been invalided but hasn't.")
@@ -1891,11 +1893,11 @@ func (s *DockerSuite) TestBuildAddRemoteFileWithAndWithoutCache(c *check.C) {
 	dockerfile := fmt.Sprintf(`FROM `+minimalBaseImage()+`
         MAINTAINER dockerio
         ADD %s/baz /usr/lib/baz/quux`, server.URL())
-	buildImageSuccessfully(c, name, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithDockerfile(dockerfile))
 	id1 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithDockerfile(dockerfile))
 	id2 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withoutCache, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, name, build.WithoutCache, build.WithDockerfile(dockerfile))
 	id3 := getIDByName(c, name)
 
 	if id1 != id2 {
@@ -1968,7 +1970,7 @@ func (s *DockerSuite) TestBuildAddLocalAndRemoteFilesWithAndWithoutCache(c *chec
 	id1 := getIDByName(c, name)
 	buildImageSuccessfully(c, name, withExternalBuildContext(ctx))
 	id2 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withoutCache, withExternalBuildContext(ctx))
+	buildImageSuccessfully(c, name, build.WithoutCache, withExternalBuildContext(ctx))
 	id3 := getIDByName(c, name)
 	if id1 != id2 {
 		c.Fatal("The cache should have been used but hasn't.")
@@ -2026,7 +2028,7 @@ func (s *DockerSuite) TestBuildWithVolumeOwnership(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildimg"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox:latest
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox:latest
         RUN mkdir /test && chown daemon:daemon /test && chmod 0600 /test
         VOLUME /test`))
 
@@ -2044,7 +2046,7 @@ func (s *DockerSuite) TestBuildWithVolumeOwnership(c *check.C) {
 // utilizing cache
 func (s *DockerSuite) TestBuildEntrypointRunCleanup(c *check.C) {
 	name := "testbuildcmdcleanup"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
         RUN echo "hello"`))
 
 	buildImageSuccessfully(c, name, withBuildContext(c,
@@ -2082,11 +2084,11 @@ func (s *DockerSuite) TestBuildInheritance(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildinheritance"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM scratch
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM scratch
 		EXPOSE 2375`))
 	ports1 := inspectField(c, name, "Config.ExposedPorts")
 
-	buildImageSuccessfully(c, name, withDockerfile(fmt.Sprintf(`FROM %s
+	buildImageSuccessfully(c, name, build.WithDockerfile(fmt.Sprintf(`FROM %s
 		ENTRYPOINT ["/bin/echo"]`, name)))
 
 	res := inspectField(c, name, "Config.Entrypoint")
@@ -2101,7 +2103,7 @@ func (s *DockerSuite) TestBuildInheritance(c *check.C) {
 
 func (s *DockerSuite) TestBuildFails(c *check.C) {
 	name := "testbuildfails"
-	buildImage(name, withDockerfile(`FROM busybox
+	buildImage(name, build.WithDockerfile(`FROM busybox
 		RUN sh -c "exit 23"`)).Assert(c, icmd.Expected{
 		ExitCode: 23,
 		Err:      "returned a non-zero code: 23",
@@ -2110,9 +2112,9 @@ func (s *DockerSuite) TestBuildFails(c *check.C) {
 
 func (s *DockerSuite) TestBuildOnBuild(c *check.C) {
 	name := "testbuildonbuild"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		ONBUILD RUN touch foobar`))
-	buildImageSuccessfully(c, name, withDockerfile(fmt.Sprintf(`FROM %s
+	buildImageSuccessfully(c, name, build.WithDockerfile(fmt.Sprintf(`FROM %s
 		RUN [ -f foobar ]`, name)))
 }
 
@@ -2138,7 +2140,7 @@ func (s *DockerSuite) TestBuildAddToSymlinkDest(c *check.C) {
 func (s *DockerSuite) TestBuildEscapeWhitespace(c *check.C) {
 	name := "testbuildescapewhitespace"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   # ESCAPE=\
   FROM busybox
   MAINTAINER "Docker \
@@ -2157,7 +2159,7 @@ func (s *DockerSuite) TestBuildVerifyIntString(c *check.C) {
 	// Verify that strings that look like ints are still passed as strings
 	name := "testbuildstringing"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
 	FROM busybox
 	MAINTAINER 123`))
 
@@ -2290,12 +2292,12 @@ func (s *DockerSuite) TestBuildDockerignoringRenamedDockerfile(c *check.C) {
 		RUN ls /tmp/Dockerfile
 		RUN sh -c "! ls /tmp/MyDockerfile"
 		RUN ls /tmp/.dockerignore`
-	buildImageSuccessfully(c, name, withBuildFlags("-f", "MyDockerfile"), withBuildContext(c,
+	buildImageSuccessfully(c, name, cli.WithFlags("-f", "MyDockerfile"), withBuildContext(c,
 		withFile("Dockerfile", "Should not use me"),
 		withFile("MyDockerfile", dockerfile),
 		withFile(".dockerignore", "MyDockerfile\n"),
 	))
-	buildImageSuccessfully(c, name, withBuildFlags("-f", "MyDockerfile"), withBuildContext(c,
+	buildImageSuccessfully(c, name, cli.WithFlags("-f", "MyDockerfile"), withBuildContext(c,
 		withFile("Dockerfile", "Should not use me"),
 		withFile("MyDockerfile", dockerfile),
 		withFile(".dockerignore", "./MyDockerfile\n"),
@@ -2403,7 +2405,7 @@ func (s *DockerSuite) TestBuildDockerignoringBadExclusion(c *check.C) {
 		withFile(".dockerignore", "!\n"),
 	)).Assert(c, icmd.Expected{
 		ExitCode: 1,
-		Err:      "Error checking context: 'Illegal exclusion pattern: !",
+		Err:      "Error checking context: 'illegal exclusion pattern: \"!\"",
 	})
 }
 
@@ -2495,7 +2497,7 @@ dir1/dir3/**
 func (s *DockerSuite) TestBuildLineBreak(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildlinebreak"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM  busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM  busybox
 RUN    sh -c 'echo root:testpass \
 	> /tmp/passwd'
 RUN    mkdir -p /var/run/sshd
@@ -2506,7 +2508,7 @@ RUN    sh -c "[ "$(ls -d /var/run/sshd)" = "/var/run/sshd" ]"`))
 func (s *DockerSuite) TestBuildEOLInLine(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildeolinline"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM   busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM   busybox
 RUN    sh -c 'echo root:testpass > /tmp/passwd'
 RUN    echo "foo \n bar"; echo "baz"
 RUN    mkdir -p /var/run/sshd
@@ -2517,7 +2519,7 @@ RUN    sh -c "[ "$(ls -d /var/run/sshd)" = "/var/run/sshd" ]"`))
 func (s *DockerSuite) TestBuildCommentsShebangs(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildcomments"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 # This is an ordinary comment.
 RUN { echo '#!/bin/sh'; echo 'echo hello world'; } > /hello.sh
 RUN [ ! -x /hello.sh ]
@@ -2531,7 +2533,7 @@ RUN [ "$(/hello.sh)" = "hello world" ]`))
 func (s *DockerSuite) TestBuildUsersAndGroups(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildusers"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 
 # Make sure our defaults work
 RUN [ "$(id -u):$(id -g)/$(id -un):$(id -gn)" = '0:0/root:root' ]
@@ -2930,7 +2932,7 @@ func (s *DockerSuite) TestBuildFromGit(c *check.C) {
 	}, true)
 	defer git.Close()
 
-	buildImageSuccessfully(c, name, withBuildContextPath(git.RepoURL))
+	buildImageSuccessfully(c, name, build.WithContextPath(git.RepoURL))
 
 	res := inspectField(c, name, "Author")
 	if res != "docker" {
@@ -2949,7 +2951,7 @@ func (s *DockerSuite) TestBuildFromGitWithContext(c *check.C) {
 	}, true)
 	defer git.Close()
 
-	buildImageSuccessfully(c, name, withBuildContextPath(fmt.Sprintf("%s#master:docker", git.RepoURL)))
+	buildImageSuccessfully(c, name, build.WithContextPath(fmt.Sprintf("%s#master:docker", git.RepoURL)))
 
 	res := inspectField(c, name, "Author")
 	if res != "docker" {
@@ -2965,7 +2967,7 @@ func (s *DockerSuite) TestBuildFromGitwithF(c *check.C) {
 	}, true)
 	defer git.Close()
 
-	buildImage(name, withBuildFlags("-f", "myApp/myDockerfile"), withBuildContextPath(git.RepoURL)).Assert(c, icmd.Expected{
+	buildImage(name, cli.WithFlags("-f", "myApp/myDockerfile"), build.WithContextPath(git.RepoURL)).Assert(c, icmd.Expected{
 		Out: "hi from Dockerfile",
 	})
 }
@@ -2997,7 +2999,7 @@ func (s *DockerSuite) TestBuildFromRemoteTarball(c *check.C) {
 	})
 	defer server.Close()
 
-	buildImageSuccessfully(c, name, withBuildContextPath(server.URL()+"/testT.tar"))
+	buildImageSuccessfully(c, name, build.WithContextPath(server.URL()+"/testT.tar"))
 
 	res := inspectField(c, name, "Author")
 	if res != "docker" {
@@ -3008,10 +3010,10 @@ func (s *DockerSuite) TestBuildFromRemoteTarball(c *check.C) {
 func (s *DockerSuite) TestBuildCleanupCmdOnEntrypoint(c *check.C) {
 	name := "testbuildcmdcleanuponentrypoint"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
 		CMD ["test"]
 		ENTRYPOINT ["echo"]`))
-	buildImageSuccessfully(c, name, withDockerfile(fmt.Sprintf(`FROM %s
+	buildImageSuccessfully(c, name, build.WithDockerfile(fmt.Sprintf(`FROM %s
 		ENTRYPOINT ["cat"]`, name)))
 
 	res := inspectField(c, name, "Config.Cmd")
@@ -3026,7 +3028,7 @@ func (s *DockerSuite) TestBuildCleanupCmdOnEntrypoint(c *check.C) {
 
 func (s *DockerSuite) TestBuildClearCmd(c *check.C) {
 	name := "testbuildclearcmd"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
    ENTRYPOINT ["/bin/bash"]
    CMD []`))
 
@@ -3041,7 +3043,7 @@ func (s *DockerSuite) TestBuildEmptyCmd(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 
 	name := "testbuildemptycmd"
-	buildImageSuccessfully(c, name, withDockerfile("FROM "+minimalBaseImage()+"\nMAINTAINER quux\n"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM "+minimalBaseImage()+"\nMAINTAINER quux\n"))
 
 	res := inspectFieldJSON(c, name, "Config.Cmd")
 	if res != "null" {
@@ -3051,9 +3053,9 @@ func (s *DockerSuite) TestBuildEmptyCmd(c *check.C) {
 
 func (s *DockerSuite) TestBuildOnBuildOutput(c *check.C) {
 	name := "testbuildonbuildparent"
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nONBUILD RUN echo foo\n"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nONBUILD RUN echo foo\n"))
 
-	buildImage(name, withDockerfile("FROM "+name+"\nMAINTAINER quux\n")).Assert(c, icmd.Expected{
+	buildImage(name, build.WithDockerfile("FROM "+name+"\nMAINTAINER quux\n")).Assert(c, icmd.Expected{
 		Out: "# Executing 1 build trigger",
 	})
 }
@@ -3061,7 +3063,7 @@ func (s *DockerSuite) TestBuildOnBuildOutput(c *check.C) {
 // FIXME(vdemeester) should be a unit test
 func (s *DockerSuite) TestBuildInvalidTag(c *check.C) {
 	name := "abcd:" + stringutils.GenerateRandomAlphaOnlyString(200)
-	buildImage(name, withDockerfile("FROM "+minimalBaseImage()+"\nMAINTAINER quux\n")).Assert(c, icmd.Expected{
+	buildImage(name, build.WithDockerfile("FROM "+minimalBaseImage()+"\nMAINTAINER quux\n")).Assert(c, icmd.Expected{
 		ExitCode: 125,
 		Err:      "invalid reference format",
 	})
@@ -3069,7 +3071,7 @@ func (s *DockerSuite) TestBuildInvalidTag(c *check.C) {
 
 func (s *DockerSuite) TestBuildCmdShDashC(c *check.C) {
 	name := "testbuildcmdshc"
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nCMD echo cmd\n"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nCMD echo cmd\n"))
 
 	res := inspectFieldJSON(c, name, "Config.Cmd")
 	expected := `["/bin/sh","-c","echo cmd"]`
@@ -3088,9 +3090,9 @@ func (s *DockerSuite) TestBuildCmdSpaces(c *check.C) {
 	// look the same
 	name := "testbuildcmdspaces"
 
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nCMD [\"echo hi\"]\n"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nCMD [\"echo hi\"]\n"))
 	id1 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nCMD [\"echo\", \"hi\"]\n"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nCMD [\"echo\", \"hi\"]\n"))
 	id2 := getIDByName(c, name)
 
 	if id1 == id2 {
@@ -3098,9 +3100,9 @@ func (s *DockerSuite) TestBuildCmdSpaces(c *check.C) {
 	}
 
 	// Now do the same with ENTRYPOINT
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nENTRYPOINT [\"echo hi\"]\n"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nENTRYPOINT [\"echo hi\"]\n"))
 	id1 = getIDByName(c, name)
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nENTRYPOINT [\"echo\", \"hi\"]\n"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nENTRYPOINT [\"echo\", \"hi\"]\n"))
 	id2 = getIDByName(c, name)
 
 	if id1 == id2 {
@@ -3110,7 +3112,7 @@ func (s *DockerSuite) TestBuildCmdSpaces(c *check.C) {
 
 func (s *DockerSuite) TestBuildCmdJSONNoShDashC(c *check.C) {
 	name := "testbuildcmdjson"
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nCMD [\"echo\", \"cmd\"]"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nCMD [\"echo\", \"cmd\"]"))
 
 	res := inspectFieldJSON(c, name, "Config.Cmd")
 	expected := `["echo","cmd"]`
@@ -3120,7 +3122,7 @@ func (s *DockerSuite) TestBuildCmdJSONNoShDashC(c *check.C) {
 }
 
 func (s *DockerSuite) TestBuildEntrypointCanBeOverridenByChild(c *check.C) {
-	buildImageSuccessfully(c, "parent", withDockerfile(`
+	buildImageSuccessfully(c, "parent", build.WithDockerfile(`
     FROM busybox
     ENTRYPOINT exit 130
     `))
@@ -3129,7 +3131,7 @@ func (s *DockerSuite) TestBuildEntrypointCanBeOverridenByChild(c *check.C) {
 		ExitCode: 130,
 	})
 
-	buildImageSuccessfully(c, "child", withDockerfile(`
+	buildImageSuccessfully(c, "child", build.WithDockerfile(`
     FROM parent
     ENTRYPOINT exit 5
     `))
@@ -3150,8 +3152,8 @@ func (s *DockerSuite) TestBuildEntrypointCanBeOverridenByChildInspect(c *check.C
 		expected = `["cmd","/S","/C","echo quux"]`
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nENTRYPOINT /foo/bar"))
-	buildImageSuccessfully(c, name2, withDockerfile(fmt.Sprintf("FROM %s\nENTRYPOINT echo quux", name)))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nENTRYPOINT /foo/bar"))
+	buildImageSuccessfully(c, name2, build.WithDockerfile(fmt.Sprintf("FROM %s\nENTRYPOINT echo quux", name)))
 
 	res := inspectFieldJSON(c, name2, "Config.Entrypoint")
 	if res != expected {
@@ -3165,7 +3167,7 @@ func (s *DockerSuite) TestBuildEntrypointCanBeOverridenByChildInspect(c *check.C
 
 func (s *DockerSuite) TestBuildRunShEntrypoint(c *check.C) {
 	name := "testbuildentrypoint"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
                                 ENTRYPOINT echo`))
 	dockerCmd(c, "run", "--rm", name)
 }
@@ -3174,7 +3176,7 @@ func (s *DockerSuite) TestBuildExoticShellInterpolation(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildexoticshellinterpolation"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
 		FROM busybox
 
 		ENV SOME_VAR a.b.c
@@ -3207,7 +3209,7 @@ func (s *DockerSuite) TestBuildVerifySingleQuoteFails(c *check.C) {
 		expectedExitCode = 127
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		CMD [ '/bin/sh', '-c', 'echo hi' ]`))
 
 	icmd.RunCommand(dockerBinary, "run", "--rm", name).Assert(c, icmd.Expected{
@@ -3223,7 +3225,7 @@ func (s *DockerSuite) TestBuildVerboseOut(c *check.C) {
 		expected = "\n123\r\n"
 	}
 
-	buildImage(name, withDockerfile(`FROM busybox
+	buildImage(name, build.WithDockerfile(`FROM busybox
 RUN echo 123`)).Assert(c, icmd.Expected{
 		Out: expected,
 	})
@@ -3231,7 +3233,7 @@ RUN echo 123`)).Assert(c, icmd.Expected{
 
 func (s *DockerSuite) TestBuildWithTabs(c *check.C) {
 	name := "testbuildwithtabs"
-	buildImageSuccessfully(c, name, withDockerfile("FROM busybox\nRUN echo\tone\t\ttwo"))
+	buildImageSuccessfully(c, name, build.WithDockerfile("FROM busybox\nRUN echo\tone\t\ttwo"))
 	res := inspectFieldJSON(c, name, "ContainerConfig.Cmd")
 	expected1 := `["/bin/sh","-c","echo\tone\t\ttwo"]`
 	expected2 := `["/bin/sh","-c","echo\u0009one\u0009\u0009two"]` // syntactically equivalent, and what Go 1.3 generates
@@ -3247,7 +3249,7 @@ func (s *DockerSuite) TestBuildWithTabs(c *check.C) {
 func (s *DockerSuite) TestBuildLabels(c *check.C) {
 	name := "testbuildlabel"
 	expected := `{"License":"GPL","Vendor":"Acme"}`
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		LABEL Vendor=Acme
                 LABEL License GPL`))
 	res := inspectFieldJSON(c, name, "Config.Labels")
@@ -3259,24 +3261,24 @@ func (s *DockerSuite) TestBuildLabels(c *check.C) {
 func (s *DockerSuite) TestBuildLabelsCache(c *check.C) {
 	name := "testbuildlabelcache"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		LABEL Vendor=Acme`))
 	id1 := getIDByName(c, name)
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		LABEL Vendor=Acme`))
 	id2 := getIDByName(c, name)
 	if id1 != id2 {
 		c.Fatalf("Build 2 should have worked & used cache(%s,%s)", id1, id2)
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		LABEL Vendor=Acme1`))
 	id2 = getIDByName(c, name)
 	if id1 == id2 {
 		c.Fatalf("Build 3 should have worked & NOT used cache(%s,%s)", id1, id2)
 	}
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		LABEL Vendor Acme`))
 	id2 = getIDByName(c, name)
 	if id1 != id2 {
@@ -3284,10 +3286,10 @@ func (s *DockerSuite) TestBuildLabelsCache(c *check.C) {
 	}
 
 	// Now make sure the cache isn't used by mistake
-	buildImageSuccessfully(c, name, withoutCache, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithoutCache, build.WithDockerfile(`FROM busybox
        LABEL f1=b1 f2=b2`))
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
        LABEL f1=b1 f2=b2`))
 	id2 = getIDByName(c, name)
 	if id1 == id2 {
@@ -3300,7 +3302,7 @@ func (s *DockerSuite) TestBuildNotVerboseSuccess(c *check.C) {
 	// This test makes sure that -q works correctly when build is successful:
 	// stdout has only the image ID (long image ID) and stderr is empty.
 	outRegexp := regexp.MustCompile("^(sha256:|)[a-z0-9]{64}\\n$")
-	buildFlags := withBuildFlags("-q")
+	buildFlags := cli.WithFlags("-q")
 
 	tt := []struct {
 		Name      string
@@ -3309,7 +3311,7 @@ func (s *DockerSuite) TestBuildNotVerboseSuccess(c *check.C) {
 		{
 			Name: "quiet_build_stdin_success",
 			BuildFunc: func(name string) *icmd.Result {
-				return buildImage(name, buildFlags, withDockerfile("FROM busybox"))
+				return buildImage(name, buildFlags, build.WithDockerfile("FROM busybox"))
 			},
 		},
 		{
@@ -3327,7 +3329,7 @@ func (s *DockerSuite) TestBuildNotVerboseSuccess(c *check.C) {
 				git := newFakeGit(c, "repo", map[string]string{
 					"Dockerfile": "FROM busybox",
 				}, true)
-				return buildImage(name, buildFlags, withBuildContextPath(git.RepoURL))
+				return buildImage(name, buildFlags, build.WithContextPath(git.RepoURL))
 			},
 		},
 	}
@@ -3353,11 +3355,11 @@ func (s *DockerSuite) TestBuildNotVerboseFailureWithNonExistImage(c *check.C) {
 	testRequires(c, Network)
 	testName := "quiet_build_not_exists_image"
 	dockerfile := "FROM busybox11"
-	quietResult := buildImage(testName, withBuildFlags("-q"), withDockerfile(dockerfile))
+	quietResult := buildImage(testName, cli.WithFlags("-q"), build.WithDockerfile(dockerfile))
 	quietResult.Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
-	result := buildImage(testName, withDockerfile(dockerfile))
+	result := buildImage(testName, build.WithDockerfile(dockerfile))
 	result.Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
@@ -3379,11 +3381,11 @@ func (s *DockerSuite) TestBuildNotVerboseFailure(c *check.C) {
 	}
 
 	for _, tc := range testCases {
-		quietResult := buildImage(tc.testName, withBuildFlags("-q"), withDockerfile(tc.dockerfile))
+		quietResult := buildImage(tc.testName, cli.WithFlags("-q"), build.WithDockerfile(tc.dockerfile))
 		quietResult.Assert(c, icmd.Expected{
 			ExitCode: 1,
 		})
-		result := buildImage(tc.testName, withDockerfile(tc.dockerfile))
+		result := buildImage(tc.testName, build.WithDockerfile(tc.dockerfile))
 		result.Assert(c, icmd.Expected{
 			ExitCode: 1,
 		})
@@ -3399,11 +3401,11 @@ func (s *DockerSuite) TestBuildNotVerboseFailureRemote(c *check.C) {
 	// TODO(vdemeester) with cobra, stdout has a carriage return too much so this test should not check stdout
 	URL := "http://something.invalid"
 	name := "quiet_build_wrong_remote"
-	quietResult := buildImage(name, withBuildFlags("-q"), withBuildContextPath(URL))
+	quietResult := buildImage(name, cli.WithFlags("-q"), build.WithContextPath(URL))
 	quietResult.Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
-	result := buildImage(name, withBuildContextPath(URL))
+	result := buildImage(name, build.WithContextPath(URL))
 	result.Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
@@ -3416,7 +3418,7 @@ func (s *DockerSuite) TestBuildStderr(c *check.C) {
 	// This test just makes sure that no non-error output goes
 	// to stderr
 	name := "testbuildstderr"
-	result := buildImage(name, withDockerfile("FROM busybox\nRUN echo one"))
+	result := buildImage(name, build.WithDockerfile("FROM busybox\nRUN echo one"))
 	result.Assert(c, icmd.Success)
 
 	// Windows to non-Windows should have a security warning
@@ -3494,7 +3496,7 @@ func (s *DockerSuite) TestBuildSymlinkBreakout(c *check.C) {
 	w.Close()
 	f.Close()
 
-	buildImageSuccessfully(c, name, withoutCache, withExternalBuildContext(fakeContextFromDir(ctx)))
+	buildImageSuccessfully(c, name, build.WithoutCache, withExternalBuildContext(fakeContextFromDir(ctx)))
 	if _, err := os.Lstat(filepath.Join(tmpdir, "inject")); err == nil {
 		c.Fatal("symlink breakout - inject")
 	} else if !os.IsNotExist(err) {
@@ -3515,9 +3517,7 @@ ADD xz /usr/local/sbin/
 RUN chmod 755 /usr/local/sbin/xz
 ADD test.xz /
 RUN [ ! -e /injected ]`),
-		withFile("test.xz", "\xfd\x37\x7a\x58\x5a\x00\x00\x04\xe6\xd6\xb4\x46\x02\x00"+
-			"\x21\x01\x16\x00\x00\x00\x74\x2f\xe5\xa3\x01\x00\x3f\xfd"+
-			"\x37\x7a\x58\x5a\x00\x00\x04\xe6\xd6\xb4\x46\x02\x00\x21"),
+		withFile("test.xz", "\xfd\x37\x7a\x58\x5a\x00\x00\x04\xe6\xd6\xb4\x46\x02\x00"+"\x21\x01\x16\x00\x00\x00\x74\x2f\xe5\xa3\x01\x00\x3f\xfd"+"\x37\x7a\x58\x5a\x00\x00\x04\xe6\xd6\xb4\x46\x02\x00\x21"),
 		withFile("xz", "#!/bin/sh\ntouch /injected"),
 	))
 }
@@ -3565,37 +3565,21 @@ func (s *DockerSuite) TestBuildRenamedDockerfile(c *check.C) {
 		})
 	defer ctx.Close()
 
-	out, _, err := dockerCmdInDir(c, ctx.Dir, "build", "-t", "test1", ".")
-	if err != nil {
-		c.Fatalf("Failed to build: %s\n%s", out, err)
-	}
-	if !strings.Contains(out, "from Dockerfile") {
-		c.Fatalf("test1 should have used Dockerfile, output:%s", out)
-	}
+	cli.Docker(cli.Args("build", "-t", "test1", "."), cli.InDir(ctx.Dir)).Assert(c, icmd.Expected{
+		Out: "from Dockerfile",
+	})
 
-	out, _, err = dockerCmdInDir(c, ctx.Dir, "build", "-f", filepath.Join("files", "Dockerfile"), "-t", "test2", ".")
-	if err != nil {
-		c.Fatal(err)
-	}
-	if !strings.Contains(out, "from files/Dockerfile") {
-		c.Fatalf("test2 should have used files/Dockerfile, output:%s", out)
-	}
+	cli.Docker(cli.Args("build", "-f", filepath.Join("files", "Dockerfile"), "-t", "test2", "."), cli.InDir(ctx.Dir)).Assert(c, icmd.Expected{
+		Out: "from files/Dockerfile",
+	})
 
-	out, _, err = dockerCmdInDir(c, ctx.Dir, "build", fmt.Sprintf("--file=%s", filepath.Join("files", "dFile")), "-t", "test3", ".")
-	if err != nil {
-		c.Fatal(err)
-	}
-	if !strings.Contains(out, "from files/dFile") {
-		c.Fatalf("test3 should have used files/dFile, output:%s", out)
-	}
+	cli.Docker(cli.Args("build", fmt.Sprintf("--file=%s", filepath.Join("files", "dFile")), "-t", "test3", "."), cli.InDir(ctx.Dir)).Assert(c, icmd.Expected{
+		Out: "from files/dFile",
+	})
 
-	out, _, err = dockerCmdInDir(c, ctx.Dir, "build", "--file=dFile", "-t", "test4", ".")
-	if err != nil {
-		c.Fatal(err)
-	}
-	if !strings.Contains(out, "from dFile") {
-		c.Fatalf("test4 should have used dFile, output:%s", out)
-	}
+	cli.Docker(cli.Args("build", "--file=dFile", "-t", "test4", "."), cli.InDir(ctx.Dir)).Assert(c, icmd.Expected{
+		Out: "from dFile",
+	})
 
 	dirWithNoDockerfile, err := ioutil.TempDir(os.TempDir(), "test5")
 	c.Assert(err, check.IsNil)
@@ -3603,54 +3587,32 @@ func (s *DockerSuite) TestBuildRenamedDockerfile(c *check.C) {
 	if _, err = os.Create(nonDockerfileFile); err != nil {
 		c.Fatal(err)
 	}
-	out, _, err = dockerCmdInDir(c, ctx.Dir, "build", fmt.Sprintf("--file=%s", nonDockerfileFile), "-t", "test5", ".")
+	cli.Docker(cli.Args("build", fmt.Sprintf("--file=%s", nonDockerfileFile), "-t", "test5", "."), cli.InDir(ctx.Dir)).Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Err:      fmt.Sprintf("The Dockerfile (%s) must be within the build context (.)", nonDockerfileFile),
+	})
 
-	if err == nil {
-		c.Fatalf("test5 was supposed to fail to find passwd")
-	}
+	cli.Docker(cli.Args("build", "-f", filepath.Join("..", "Dockerfile"), "-t", "test6", ".."), cli.InDir(filepath.Join(ctx.Dir, "files"))).Assert(c, icmd.Expected{
+		Out: "from Dockerfile",
+	})
 
-	if expected := fmt.Sprintf("The Dockerfile (%s) must be within the build context (.)", nonDockerfileFile); !strings.Contains(out, expected) {
-		c.Fatalf("wrong error message:%v\nexpected to contain=%v", out, expected)
-	}
+	cli.Docker(cli.Args("build", "-f", filepath.Join(ctx.Dir, "files", "Dockerfile"), "-t", "test7", ".."), cli.InDir(filepath.Join(ctx.Dir, "files"))).Assert(c, icmd.Expected{
+		Out: "from files/Dockerfile",
+	})
 
-	out, _, err = dockerCmdInDir(c, filepath.Join(ctx.Dir, "files"), "build", "-f", filepath.Join("..", "Dockerfile"), "-t", "test6", "..")
-	if err != nil {
-		c.Fatalf("test6 failed: %s", err)
-	}
-	if !strings.Contains(out, "from Dockerfile") {
-		c.Fatalf("test6 should have used root Dockerfile, output:%s", out)
-	}
-
-	out, _, err = dockerCmdInDir(c, filepath.Join(ctx.Dir, "files"), "build", "-f", filepath.Join(ctx.Dir, "files", "Dockerfile"), "-t", "test7", "..")
-	if err != nil {
-		c.Fatalf("test7 failed: %s", err)
-	}
-	if !strings.Contains(out, "from files/Dockerfile") {
-		c.Fatalf("test7 should have used files Dockerfile, output:%s", out)
-	}
-
-	out, _, err = dockerCmdInDir(c, filepath.Join(ctx.Dir, "files"), "build", "-f", filepath.Join("..", "Dockerfile"), "-t", "test8", ".")
-	if err == nil || !strings.Contains(out, "must be within the build context") {
-		c.Fatalf("test8 should have failed with Dockerfile out of context: %s", err)
-	}
+	cli.Docker(cli.Args("build", "-f", filepath.Join("..", "Dockerfile"), "-t", "test8", "."), cli.InDir(filepath.Join(ctx.Dir, "files"))).Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Err:      "must be within the build context",
+	})
 
 	tmpDir := os.TempDir()
-	out, _, err = dockerCmdInDir(c, tmpDir, "build", "-t", "test9", ctx.Dir)
-	if err != nil {
-		c.Fatalf("test9 - failed: %s", err)
-	}
-	if !strings.Contains(out, "from Dockerfile") {
-		c.Fatalf("test9 should have used root Dockerfile, output:%s", out)
-	}
+	cli.Docker(cli.Args("build", "-t", "test9", ctx.Dir), cli.InDir(tmpDir)).Assert(c, icmd.Expected{
+		Out: "from Dockerfile",
+	})
 
-	out, _, err = dockerCmdInDir(c, filepath.Join(ctx.Dir, "files"), "build", "-f", "dFile2", "-t", "test10", ".")
-	if err != nil {
-		c.Fatalf("test10 should have worked: %s", err)
-	}
-	if !strings.Contains(out, "from files/dFile2") {
-		c.Fatalf("test10 should have used files/dFile2, output:%s", out)
-	}
-
+	cli.Docker(cli.Args("build", "-f", "dFile2", "-t", "test10", "."), cli.InDir(filepath.Join(ctx.Dir, "files"))).Assert(c, icmd.Expected{
+		Out: "from files/dFile2",
+	})
 }
 
 func (s *DockerSuite) TestBuildFromMixedcaseDockerfile(c *check.C) {
@@ -3690,7 +3652,7 @@ RUN echo from Dockerfile`,
 
 	// Make sure that -f is ignored and that we don't use the Dockerfile
 	// that's in the current dir
-	result := buildImage("test1", withBuildFlags("-f", "baz", server.URL()+"/baz"), func(cmd *icmd.Cmd) func() {
+	result := buildImage("test1", cli.WithFlags("-f", "baz", server.URL()+"/baz"), func(cmd *icmd.Cmd) func() {
 		cmd.Dir = ctx.Dir
 		return nil
 	})
@@ -3713,7 +3675,7 @@ RUN echo "from Dockerfile"`,
 
 	// Make sure that -f is ignored and that we don't use the Dockerfile
 	// that's in the current dir
-	result := buildImage("test1", withBuildFlags("-f", "baz", "-"), func(cmd *icmd.Cmd) func() {
+	result := buildImage("test1", cli.WithFlags("-f", "baz", "-"), func(cmd *icmd.Cmd) func() {
 		cmd.Dir = ctx.Dir
 		cmd.Stdin = strings.NewReader(`FROM busybox
 RUN echo "from baz"
@@ -3743,7 +3705,7 @@ func (s *DockerSuite) TestBuildFromOfficialNames(c *check.C) {
 	}
 	for idx, fromName := range fromNames {
 		imgName := fmt.Sprintf("%s%d", name, idx)
-		buildImageSuccessfully(c, imgName, withDockerfile("FROM "+fromName))
+		buildImageSuccessfully(c, imgName, build.WithDockerfile("FROM "+fromName))
 		dockerCmd(c, "rmi", imgName)
 	}
 }
@@ -3839,7 +3801,7 @@ func (s *DockerSuite) TestBuildSpaces(c *check.C) {
 	}
 
 	ctx.Add("Dockerfile", "FROM busybox\n   COPY")
-	result2 = buildImage(name, withoutCache, withExternalBuildContext(ctx))
+	result2 = buildImage(name, build.WithoutCache, withExternalBuildContext(ctx))
 	result2.Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
@@ -3854,7 +3816,7 @@ func (s *DockerSuite) TestBuildSpaces(c *check.C) {
 	}
 
 	ctx.Add("Dockerfile", "FROM busybox\n   COPY    ")
-	result2 = buildImage(name, withoutCache, withExternalBuildContext(ctx))
+	result2 = buildImage(name, build.WithoutCache, withExternalBuildContext(ctx))
 	result2.Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
@@ -3884,7 +3846,7 @@ RUN echo "  \
 		expected = "\"    foo  \""
 	}
 
-	buildImage(name, withDockerfile(dockerfile)).Assert(c, icmd.Expected{
+	buildImage(name, build.WithDockerfile(dockerfile)).Assert(c, icmd.Expected{
 		Out: expected,
 	})
 }
@@ -3892,7 +3854,7 @@ RUN echo "  \
 // #4393
 func (s *DockerSuite) TestBuildVolumeFileExistsinContainer(c *check.C) {
 	testRequires(c, DaemonIsLinux) // TODO Windows: This should error out
-	buildImage("docker-test-errcreatevolumewithfile", withDockerfile(`
+	buildImage("docker-test-errcreatevolumewithfile", build.WithDockerfile(`
 	FROM busybox
 	RUN touch /foo
 	VOLUME /foo
@@ -3940,7 +3902,7 @@ func (s *DockerSuite) TestBuildMissingArgs(c *check.C) {
 			dockerfile = "FROM busybox\n" + cmd
 		}
 
-		buildImage("args", withDockerfile(dockerfile)).Assert(c, icmd.Expected{
+		buildImage("args", build.WithDockerfile(dockerfile)).Assert(c, icmd.Expected{
 			ExitCode: 1,
 			Err:      cmd + " requires",
 		})
@@ -3950,7 +3912,7 @@ func (s *DockerSuite) TestBuildMissingArgs(c *check.C) {
 
 func (s *DockerSuite) TestBuildEmptyScratch(c *check.C) {
 	testRequires(c, DaemonIsLinux)
-	buildImage("sc", withDockerfile("FROM scratch")).Assert(c, icmd.Expected{
+	buildImage("sc", build.WithDockerfile("FROM scratch")).Assert(c, icmd.Expected{
 		ExitCode: 1,
 		Err:      "No image was generated",
 	})
@@ -3967,7 +3929,7 @@ func (s *DockerSuite) TestBuildRUNoneJSON(c *check.C) {
 	testRequires(c, DaemonIsLinux) // No hello-world Windows image
 	name := "testbuildrunonejson"
 
-	buildImage(name, withDockerfile(`FROM hello-world:frozen
+	buildImage(name, build.WithDockerfile(`FROM hello-world:frozen
 RUN [ "/hello" ]`)).Assert(c, icmd.Expected{
 		Out: "Hello from Docker",
 	})
@@ -3976,7 +3938,7 @@ RUN [ "/hello" ]`)).Assert(c, icmd.Expected{
 func (s *DockerSuite) TestBuildEmptyStringVolume(c *check.C) {
 	name := "testbuildemptystringvolume"
 
-	buildImage(name, withDockerfile(`
+	buildImage(name, build.WithDockerfile(`
   FROM busybox
   ENV foo=""
   VOLUME $foo
@@ -3999,8 +3961,8 @@ func (s *DockerSuite) TestBuildContainerWithCgroupParent(c *check.C) {
 		c.Fatalf("unable to find self memory cgroup path. CgroupsPath: %v", selfCgroupPaths)
 	}
 	result := buildImage("buildcgroupparent",
-		withBuildFlags("--cgroup-parent", cgroupParent),
-		withDockerfile(`
+		cli.WithFlags("--cgroup-parent", cgroupParent),
+		build.WithDockerfile(`
 FROM busybox
 RUN cat /proc/self/cgroup
 `))
@@ -4018,7 +3980,7 @@ func (s *DockerSuite) TestBuildNoDupOutput(c *check.C) {
 	// property - there was a bug that caused it to be duplicated on the
 	// Step X  line
 	name := "testbuildnodupoutput"
-	result := buildImage(name, withDockerfile(`
+	result := buildImage(name, build.WithDockerfile(`
   FROM busybox
   RUN env`))
 	result.Assert(c, icmd.Success)
@@ -4033,7 +3995,7 @@ func (s *DockerSuite) TestBuildNoDupOutput(c *check.C) {
 func (s *DockerSuite) TestBuildStartsFromOne(c *check.C) {
 	// Explicit check to ensure that build starts from step 1 rather than 0
 	name := "testbuildstartsfromone"
-	result := buildImage(name, withDockerfile(`FROM busybox`))
+	result := buildImage(name, build.WithDockerfile(`FROM busybox`))
 	result.Assert(c, icmd.Success)
 	exp := "\nStep 1/1 : FROM busybox\n"
 	if !strings.Contains(result.Combined(), exp) {
@@ -4054,7 +4016,7 @@ func (s *DockerSuite) TestBuildRUNErrMsg(c *check.C) {
 	}
 	exp := fmt.Sprintf(`The command '%s badEXE a1 \& a2	a3' returned a non-zero code: %d`, shell, exitCode)
 
-	buildImage(name, withDockerfile(`
+	buildImage(name, build.WithDockerfile(`
   FROM busybox
   RUN badEXE a1 \& a2	a3`)).Assert(c, icmd.Expected{
 		ExitCode: exitCode,
@@ -4071,7 +4033,7 @@ func (s *DockerTrustSuite) TestTrustedBuild(c *check.C) {
 
 	name := "testtrustedbuild"
 
-	buildImage(name, trustedBuild, withDockerfile(dockerFile)).Assert(c, icmd.Expected{
+	buildImage(name, trustedBuild, build.WithDockerfile(dockerFile)).Assert(c, icmd.Expected{
 		Out: fmt.Sprintf("FROM %s@sha", repoName[:len(repoName)-7]),
 	})
 
@@ -4091,7 +4053,7 @@ func (s *DockerTrustSuite) TestTrustedBuildUntrustedTag(c *check.C) {
 
 	name := "testtrustedbuilduntrustedtag"
 
-	buildImage(name, trustedBuild, withDockerfile(dockerFile)).Assert(c, icmd.Expected{
+	buildImage(name, trustedBuild, build.WithDockerfile(dockerFile)).Assert(c, icmd.Expected{
 		ExitCode: 1,
 		Err:      "does not have trust data for",
 	})
@@ -4159,7 +4121,7 @@ func (s *DockerTrustSuite) TestTrustedBuildTagFromReleasesRole(c *check.C) {
   RUN []
     `, otherTag)
 	name := "testtrustedbuildreleasesrole"
-	buildImage(name, trustedBuild, withDockerfile(dockerFile)).Assert(c, icmd.Expected{
+	buildImage(name, trustedBuild, build.WithDockerfile(dockerFile)).Assert(c, icmd.Expected{
 		Out: fmt.Sprintf("FROM %s@sha", repoName),
 	})
 }
@@ -4192,7 +4154,7 @@ func (s *DockerTrustSuite) TestTrustedBuildTagIgnoresOtherDelegationRoles(c *che
     `, otherTag)
 
 	name := "testtrustedbuildotherrole"
-	buildImage(name, trustedBuild, withDockerfile(dockerFile)).Assert(c, icmd.Expected{
+	buildImage(name, trustedBuild, build.WithDockerfile(dockerFile)).Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
 }
@@ -4221,7 +4183,7 @@ func (s *DockerSuite) TestBuildNullStringInAddCopyVolume(c *check.C) {
 func (s *DockerSuite) TestBuildStopSignal(c *check.C) {
 	testRequires(c, DaemonIsLinux) // Windows does not support STOPSIGNAL yet
 	imgName := "test_build_stop_signal"
-	buildImageSuccessfully(c, imgName, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, imgName, build.WithDockerfile(`FROM busybox
 		 STOPSIGNAL SIGKILL`))
 	res := inspectFieldJSON(c, imgName, "Config.StopSignal")
 	if res != `"SIGKILL"` {
@@ -4255,8 +4217,8 @@ func (s *DockerSuite) TestBuildBuildTimeArg(c *check.C) {
 
 	}
 	buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	).Assert(c, icmd.Expected{
 		Out: envVal,
 	})
@@ -4277,8 +4239,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgHistory(c *check.C) {
 	dockerfile := fmt.Sprintf(`FROM busybox
 		ARG %s=%s`, envKey, envDef)
 	buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	).Assert(c, icmd.Expected{
 		Out: envVal,
 	})
@@ -4290,6 +4252,36 @@ func (s *DockerSuite) TestBuildBuildTimeArgHistory(c *check.C) {
 	}
 }
 
+func (s *DockerSuite) TestBuildTimeArgHistoryExclusions(c *check.C) {
+	imgName := "bldargtest"
+	envKey := "foo"
+	envVal := "bar"
+	proxy := "HTTP_PROXY=http://user:password@proxy.example.com"
+	explicitProxyKey := "http_proxy"
+	explicitProxyVal := "http://user:password@someproxy.example.com"
+	dockerfile := fmt.Sprintf(`FROM busybox
+		ARG %s
+		ARG %s
+		RUN echo "Testing Build Args!"`, envKey, explicitProxyKey)
+	buildImage(imgName,
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal),
+			"--build-arg", fmt.Sprintf("%s=%s", explicitProxyKey, explicitProxyVal),
+			"--build-arg", proxy),
+		build.WithDockerfile(dockerfile),
+	).Assert(c, icmd.Success)
+
+	out, _ := dockerCmd(c, "history", "--no-trunc", imgName)
+	if strings.Contains(out, proxy) {
+		c.Fatalf("failed to exclude proxy settings from history!")
+	}
+	if !strings.Contains(out, fmt.Sprintf("%s=%s", envKey, envVal)) {
+		c.Fatalf("explicitly defined ARG %s is not in output", explicitProxyKey)
+	}
+	if !strings.Contains(out, fmt.Sprintf("%s=%s", envKey, envVal)) {
+		c.Fatalf("missing build arguments from output")
+	}
+}
+
 func (s *DockerSuite) TestBuildBuildTimeArgCacheHit(c *check.C) {
 	imgName := "bldargtest"
 	envKey := "foo"
@@ -4298,15 +4290,15 @@ func (s *DockerSuite) TestBuildBuildTimeArgCacheHit(c *check.C) {
 		ARG %s
 		RUN echo $%s`, envKey, envKey)
 	buildImageSuccessfully(c, imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	origImgID := getIDByName(c, imgName)
 
 	imgNameCache := "bldargtestcachehit"
 	buildImageSuccessfully(c, imgNameCache,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	newImgID := getIDByName(c, imgName)
 	if newImgID != origImgID {
@@ -4325,18 +4317,18 @@ func (s *DockerSuite) TestBuildBuildTimeArgCacheMissExtraArg(c *check.C) {
 		ARG %s
 		RUN echo $%s`, envKey, extraEnvKey, envKey)
 	buildImageSuccessfully(c, imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	origImgID := getIDByName(c, imgName)
 
 	imgNameCache := "bldargtestcachemiss"
 	buildImageSuccessfully(c, imgNameCache,
-		withBuildFlags(
+		cli.WithFlags(
 			"--build-arg", fmt.Sprintf("%s=%s", envKey, envVal),
 			"--build-arg", fmt.Sprintf("%s=%s", extraEnvKey, extraEnvVal),
 		),
-		withDockerfile(dockerfile),
+		build.WithDockerfile(dockerfile),
 	)
 	newImgID := getIDByName(c, imgNameCache)
 
@@ -4354,15 +4346,15 @@ func (s *DockerSuite) TestBuildBuildTimeArgCacheMissSameArgDiffVal(c *check.C) {
 		ARG %s
 		RUN echo $%s`, envKey, envKey)
 	buildImageSuccessfully(c, imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	origImgID := getIDByName(c, imgName)
 
 	imgNameCache := "bldargtestcachemiss"
 	buildImageSuccessfully(c, imgNameCache,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, newEnvVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, newEnvVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	newImgID := getIDByName(c, imgNameCache)
 	if newImgID == origImgID {
@@ -4384,8 +4376,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgOverrideArgDefinedBeforeEnv(c *check.
         `, envKey, envKey, envValOveride, envKey, envKey)
 
 	result := buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	result.Assert(c, icmd.Success)
 	if strings.Count(result.Combined(), envValOveride) != 2 {
@@ -4412,8 +4404,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgOverrideEnvDefinedBeforeArg(c *check.
 		CMD echo $%s
         `, envKey, envValOveride, envKey, envKey, envKey)
 	result := buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	result.Assert(c, icmd.Success)
 	if strings.Count(result.Combined(), envValOveride) != 2 {
@@ -4446,7 +4438,7 @@ func (s *DockerSuite) TestBuildBuildTimeArgExpansion(c *check.C) {
 	volVal := "/testVol/"
 
 	buildImageSuccessfully(c, imgName,
-		withBuildFlags(
+		cli.WithFlags(
 			"--build-arg", fmt.Sprintf("%s=%s", wdVar, wdVal),
 			"--build-arg", fmt.Sprintf("%s=%s", addVar, addVal),
 			"--build-arg", fmt.Sprintf("%s=%s", copyVar, copyVal),
@@ -4529,8 +4521,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgExpansionOverride(c *check.C) {
 		RUN echo $%s
 		CMD echo $%s`, envKey, envKey, envValOveride, envKey1, envKey, envKey1, envKey1)
 	result := buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	result.Assert(c, icmd.Success)
 	if strings.Count(result.Combined(), envValOveride) != 2 {
@@ -4553,8 +4545,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgUntrustedDefinedAfterUse(c *check.C) 
 		ARG %s
 		CMD echo $%s`, envKey, envKey, envKey)
 	result := buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	result.Assert(c, icmd.Success)
 	if strings.Contains(result.Combined(), envVal) {
@@ -4577,8 +4569,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgBuiltinArg(c *check.C) {
 		CMD echo $%s`, envKey, envKey)
 
 	result := buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	)
 	result.Assert(c, icmd.Success)
 	if !strings.Contains(result.Combined(), envVal) {
@@ -4602,8 +4594,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgDefaultOverride(c *check.C) {
 		RUN echo $%s
 		CMD echo $%s`, envKey, envVal, envKey, envKey, envKey, envKey)
 	result := buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envValOveride)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envValOveride)),
+		build.WithDockerfile(dockerfile),
 	)
 	result.Assert(c, icmd.Success)
 	if strings.Count(result.Combined(), envValOveride) != 1 {
@@ -4625,8 +4617,8 @@ func (s *DockerSuite) TestBuildBuildTimeArgUnconsumedArg(c *check.C) {
 		CMD echo $%s`, envKey, envKey)
 	warnStr := "[Warning] One or more build-args"
 	buildImage(imgName,
-		withBuildFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
-		withDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("%s=%s", envKey, envVal)),
+		build.WithDockerfile(dockerfile),
 	).Assert(c, icmd.Expected{
 		Out: warnStr,
 	})
@@ -4641,6 +4633,7 @@ func (s *DockerSuite) TestBuildBuildTimeArgEnv(c *check.C) {
 		ARG FOO4=fromfile
 		ARG FOO5
 		ARG FOO6
+		ARG FO10
 		RUN env
 		RUN [ "$FOO1" == "fromcmd" ]
 		RUN [ "$FOO2" == "" ]
@@ -4652,9 +4645,10 @@ func (s *DockerSuite) TestBuildBuildTimeArgEnv(c *check.C) {
 		RUN [ "$(env | grep FOO7)" == "" ]
 		RUN [ "$(env | grep FOO8)" == "" ]
 		RUN [ "$(env | grep FOO9)" == "" ]
+		RUN [ "$FO10" == "" ]
 	    `
 	result := buildImage("testbuildtimeargenv",
-		withBuildFlags(
+		cli.WithFlags(
 			"--build-arg", fmt.Sprintf("FOO1=fromcmd"),
 			"--build-arg", fmt.Sprintf("FOO2="),
 			"--build-arg", fmt.Sprintf("FOO3"), // set in env
@@ -4664,8 +4658,9 @@ func (s *DockerSuite) TestBuildBuildTimeArgEnv(c *check.C) {
 			"--build-arg", fmt.Sprintf("FOO7=fromcmd"), // should produce a warning
 			"--build-arg", fmt.Sprintf("FOO8="), // should produce a warning
 			"--build-arg", fmt.Sprintf("FOO9"), // should produce a warning
+			"--build-arg", fmt.Sprintf("FO10"), // not set in env, empty value
 		),
-		withEnvironmentVariales(append(os.Environ(),
+		cli.WithEnvironmentVariables(append(os.Environ(),
 			"FOO1=fromenv",
 			"FOO2=fromenv",
 			"FOO3=fromenv")...),
@@ -4707,7 +4702,7 @@ func (s *DockerSuite) TestBuildBuildTimeArgQuotedValVariants(c *check.C) {
 		RUN [ "$%s" != "$%s" ]`, envKey, envKey1, envKey2, envKey3,
 		envKey, envKey2, envKey, envKey3, envKey1, envKey2, envKey1, envKey3,
 		envKey2, envKey3)
-	buildImageSuccessfully(c, imgName, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, imgName, build.WithDockerfile(dockerfile))
 }
 
 func (s *DockerSuite) TestBuildBuildTimeArgEmptyValVariants(c *check.C) {
@@ -4723,7 +4718,7 @@ func (s *DockerSuite) TestBuildBuildTimeArgEmptyValVariants(c *check.C) {
 		RUN [ "$%s" == "$%s" ]
 		RUN [ "$%s" == "$%s" ]
 		RUN [ "$%s" == "$%s" ]`, envKey, envKey1, envKey2, envKey, envKey1, envKey1, envKey2, envKey, envKey2)
-	buildImageSuccessfully(c, imgName, withDockerfile(dockerfile))
+	buildImageSuccessfully(c, imgName, build.WithDockerfile(dockerfile))
 }
 
 func (s *DockerSuite) TestBuildBuildTimeArgDefintionWithNoEnvInjection(c *check.C) {
@@ -4733,11 +4728,66 @@ func (s *DockerSuite) TestBuildBuildTimeArgDefintionWithNoEnvInjection(c *check.
 		ARG %s
 		RUN env`, envKey)
 
-	result := buildImage(imgName, withDockerfile(dockerfile))
+	result := buildImage(imgName, build.WithDockerfile(dockerfile))
 	result.Assert(c, icmd.Success)
 	if strings.Count(result.Combined(), envKey) != 1 {
 		c.Fatalf("unexpected number of occurrences of the arg in output: %q expected: 1", result.Combined())
 	}
+}
+
+func (s *DockerSuite) TestBuildBuildTimeArgMultipleFrom(c *check.C) {
+	imgName := "multifrombldargtest"
+	dockerfile := `FROM busybox
+    ARG foo=abc
+    LABEL multifromtest=1
+    RUN env > /out
+    FROM busybox
+    ARG bar=def
+    RUN env > /out`
+
+	result := buildImage(imgName, build.WithDockerfile(dockerfile))
+	result.Assert(c, icmd.Success)
+
+	result = icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "images", "-q", "-f", "label=multifromtest=1"},
+	})
+	result.Assert(c, icmd.Success)
+	parentID := strings.TrimSpace(result.Stdout())
+
+	result = icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "run", "--rm", parentID, "cat", "/out"},
+	})
+	result.Assert(c, icmd.Success)
+	c.Assert(result.Stdout(), checker.Contains, "foo=abc")
+
+	result = icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "run", "--rm", imgName, "cat", "/out"},
+	})
+	result.Assert(c, icmd.Success)
+	c.Assert(result.Stdout(), checker.Not(checker.Contains), "foo")
+	c.Assert(result.Stdout(), checker.Contains, "bar=def")
+}
+
+func (s *DockerSuite) TestBuildBuildTimeUnusedArgMultipleFrom(c *check.C) {
+	imgName := "multifromunusedarg"
+	dockerfile := `FROM busybox
+    ARG foo
+    FROM busybox
+    ARG bar
+    RUN env > /out`
+
+	result := buildImage(imgName, build.WithDockerfile(dockerfile), cli.WithFlags(
+		"--build-arg", fmt.Sprintf("baz=abc")))
+	result.Assert(c, icmd.Success)
+	c.Assert(result.Combined(), checker.Contains, "[Warning]")
+	c.Assert(result.Combined(), checker.Contains, "[baz] were not consumed")
+
+	result = icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "run", "--rm", imgName, "cat", "/out"},
+	})
+	result.Assert(c, icmd.Success)
+	c.Assert(result.Stdout(), checker.Not(checker.Contains), "bar")
+	c.Assert(result.Stdout(), checker.Not(checker.Contains), "baz")
 }
 
 func (s *DockerSuite) TestBuildNoNamedVolume(c *check.C) {
@@ -4752,7 +4802,7 @@ func (s *DockerSuite) TestBuildNoNamedVolume(c *check.C) {
 	VOLUME ` + volName + `
 	RUN ls /foo/oops
 	`
-	buildImage("test", withDockerfile(dockerFile)).Assert(c, icmd.Expected{
+	buildImage("test", build.WithDockerfile(dockerFile)).Assert(c, icmd.Expected{
 		ExitCode: 1,
 	})
 }
@@ -4763,7 +4813,7 @@ func (s *DockerSuite) TestBuildTagEvent(c *check.C) {
 	dockerFile := `FROM busybox
 	RUN echo events
 	`
-	buildImageSuccessfully(c, "test", withDockerfile(dockerFile))
+	buildImageSuccessfully(c, "test", build.WithDockerfile(dockerFile))
 
 	until := daemonUnixTime(c)
 	out, _ := dockerCmd(c, "events", "--since", since, "--until", until, "--filter", "type=image")
@@ -4786,7 +4836,7 @@ func (s *DockerSuite) TestBuildMultipleTags(c *check.C) {
 	FROM busybox
 	MAINTAINER test-15780
 	`
-	buildImageSuccessfully(c, "tag1", withBuildFlags("-t", "tag2:v2", "-t", "tag1:latest", "-t", "tag1"), withDockerfile(dockerfile))
+	buildImageSuccessfully(c, "tag1", cli.WithFlags("-t", "tag2:v2", "-t", "tag1:latest", "-t", "tag1"), build.WithDockerfile(dockerfile))
 
 	id1 := getIDByName(c, "tag1")
 	id2 := getIDByName(c, "tag2:v2")
@@ -4930,14 +4980,14 @@ func (s *DockerSuite) TestBuildCacheRootSource(c *check.C) {
 
 // #19375
 func (s *DockerSuite) TestBuildFailsGitNotCallable(c *check.C) {
-	buildImage("gitnotcallable", withEnvironmentVariales("PATH="),
-		withBuildContextPath("github.com/docker/v1.10-migrator.git")).Assert(c, icmd.Expected{
+	buildImage("gitnotcallable", cli.WithEnvironmentVariables("PATH="),
+		build.WithContextPath("github.com/docker/v1.10-migrator.git")).Assert(c, icmd.Expected{
 		ExitCode: 1,
 		Err:      "unable to prepare context: unable to find 'git': ",
 	})
 
-	buildImage("gitnotcallable", withEnvironmentVariales("PATH="),
-		withBuildContextPath("https://github.com/docker/v1.10-migrator.git")).Assert(c, icmd.Expected{
+	buildImage("gitnotcallable", cli.WithEnvironmentVariables("PATH="),
+		build.WithContextPath("https://github.com/docker/v1.10-migrator.git")).Assert(c, icmd.Expected{
 		ExitCode: 1,
 		Err:      "unable to prepare context: unable to find 'git': ",
 	})
@@ -4947,7 +4997,7 @@ func (s *DockerSuite) TestBuildFailsGitNotCallable(c *check.C) {
 func (s *DockerSuite) TestBuildWorkdirWindowsPath(c *check.C) {
 	testRequires(c, DaemonIsWindows)
 	name := "testbuildworkdirwindowspath"
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
 	FROM `+testEnv.MinimalBaseImage()+`
 	RUN mkdir C:\\work
 	WORKDIR C:\\work
@@ -4959,8 +5009,8 @@ func (s *DockerSuite) TestBuildLabel(c *check.C) {
 	name := "testbuildlabel"
 	testLabel := "foo"
 
-	buildImageSuccessfully(c, name, withBuildFlags("--label", testLabel),
-		withDockerfile(`
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", testLabel),
+		build.WithDockerfile(`
   FROM `+minimalBaseImage()+`
   LABEL default foo
 `))
@@ -4974,8 +5024,8 @@ func (s *DockerSuite) TestBuildLabel(c *check.C) {
 
 func (s *DockerSuite) TestBuildLabelOneNode(c *check.C) {
 	name := "testbuildlabel"
-	buildImageSuccessfully(c, name, withBuildFlags("--label", "foo=bar"),
-		withDockerfile("FROM busybox"))
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", "foo=bar"),
+		build.WithDockerfile("FROM busybox"))
 
 	var labels map[string]string
 	inspectFieldAndUnmarshall(c, name, "Config.Labels", &labels)
@@ -4990,12 +5040,12 @@ func (s *DockerSuite) TestBuildLabelCacheCommit(c *check.C) {
 	name := "testbuildlabelcachecommit"
 	testLabel := "foo"
 
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM `+minimalBaseImage()+`
   LABEL default foo
   `))
-	buildImageSuccessfully(c, name, withBuildFlags("--label", testLabel),
-		withDockerfile(`
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", testLabel),
+		build.WithDockerfile(`
   FROM `+minimalBaseImage()+`
   LABEL default foo
   `))
@@ -5018,8 +5068,8 @@ func (s *DockerSuite) TestBuildLabelMultiple(c *check.C) {
 		labelArgs = append(labelArgs, "--label", k+"="+v)
 	}
 
-	buildImageSuccessfully(c, name, withBuildFlags(labelArgs...),
-		withDockerfile(`
+	buildImageSuccessfully(c, name, cli.WithFlags(labelArgs...),
+		build.WithDockerfile(`
   FROM `+minimalBaseImage()+`
   LABEL default foo
 `))
@@ -5037,7 +5087,7 @@ func (s *DockerRegistryAuthHtpasswdSuite) TestBuildFromAuthenticatedRegistry(c *
 	dockerCmd(c, "login", "-u", s.reg.Username(), "-p", s.reg.Password(), privateRegistryURL)
 	baseImage := privateRegistryURL + "/baseimage"
 
-	buildImageSuccessfully(c, baseImage, withDockerfile(`
+	buildImageSuccessfully(c, baseImage, build.WithDockerfile(`
 	FROM busybox
 	ENV env1 val1
 	`))
@@ -5045,7 +5095,7 @@ func (s *DockerRegistryAuthHtpasswdSuite) TestBuildFromAuthenticatedRegistry(c *
 	dockerCmd(c, "push", baseImage)
 	dockerCmd(c, "rmi", baseImage)
 
-	buildImageSuccessfully(c, baseImage, withDockerfile(fmt.Sprintf(`
+	buildImageSuccessfully(c, baseImage, build.WithDockerfile(fmt.Sprintf(`
 	FROM %s
 	ENV env2 val2
 	`, baseImage)))
@@ -5097,8 +5147,8 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 	// Command line option labels will always override
 	name := "scratchy"
 	expected := `{"bar":"from-flag","foo":"from-flag"}`
-	buildImageSuccessfully(c, name, withBuildFlags("--label", "foo=from-flag", "--label", "bar=from-flag"),
-		withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", "foo=from-flag", "--label", "bar=from-flag"),
+		build.WithDockerfile(`FROM `+minimalBaseImage()+`
                 LABEL foo=from-dockerfile`))
 	res := inspectFieldJSON(c, name, "Config.Labels")
 	if res != expected {
@@ -5107,7 +5157,7 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 
 	name = "from"
 	expected = `{"foo":"from-dockerfile"}`
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
                 LABEL foo from-dockerfile`))
 	res = inspectFieldJSON(c, name, "Config.Labels")
 	if res != expected {
@@ -5117,8 +5167,8 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 	// Command line option label will override even via `FROM`
 	name = "new"
 	expected = `{"bar":"from-dockerfile2","foo":"new"}`
-	buildImageSuccessfully(c, name, withBuildFlags("--label", "foo=new"),
-		withDockerfile(`FROM from
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", "foo=new"),
+		build.WithDockerfile(`FROM from
                 LABEL bar from-dockerfile2`))
 	res = inspectFieldJSON(c, name, "Config.Labels")
 	if res != expected {
@@ -5129,8 +5179,8 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 	// will be treated as --label foo="", --label bar=""
 	name = "scratchy2"
 	expected = `{"bar":"","foo":""}`
-	buildImageSuccessfully(c, name, withBuildFlags("--label", "foo", "--label", "bar="),
-		withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", "foo", "--label", "bar="),
+		build.WithDockerfile(`FROM `+minimalBaseImage()+`
                 LABEL foo=from-dockerfile`))
 	res = inspectFieldJSON(c, name, "Config.Labels")
 	if res != expected {
@@ -5142,8 +5192,8 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 	// This time is for inherited images
 	name = "new2"
 	expected = `{"bar":"","foo":""}`
-	buildImageSuccessfully(c, name, withBuildFlags("--label", "foo=", "--label", "bar"),
-		withDockerfile(`FROM from
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", "foo=", "--label", "bar"),
+		build.WithDockerfile(`FROM from
                 LABEL bar from-dockerfile2`))
 	res = inspectFieldJSON(c, name, "Config.Labels")
 	if res != expected {
@@ -5153,8 +5203,8 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 	// Command line option labels with only `FROM`
 	name = "scratchy"
 	expected = `{"bar":"from-flag","foo":"from-flag"}`
-	buildImageSuccessfully(c, name, withBuildFlags("--label", "foo=from-flag", "--label", "bar=from-flag"),
-		withDockerfile(`FROM `+minimalBaseImage()))
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", "foo=from-flag", "--label", "bar=from-flag"),
+		build.WithDockerfile(`FROM `+minimalBaseImage()))
 	res = inspectFieldJSON(c, name, "Config.Labels")
 	if res != expected {
 		c.Fatalf("Labels %s, expected %s", res, expected)
@@ -5163,8 +5213,8 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 	// Command line option labels with env var
 	name = "scratchz"
 	expected = `{"bar":"$PATH"}`
-	buildImageSuccessfully(c, name, withBuildFlags("--label", "bar=$PATH"),
-		withDockerfile(`FROM `+minimalBaseImage()))
+	buildImageSuccessfully(c, name, cli.WithFlags("--label", "bar=$PATH"),
+		build.WithDockerfile(`FROM `+minimalBaseImage()))
 	res = inspectFieldJSON(c, name, "Config.Labels")
 	if res != expected {
 		c.Fatalf("Labels %s, expected %s", res, expected)
@@ -5174,7 +5224,7 @@ func (s *DockerSuite) TestBuildLabelsOverride(c *check.C) {
 // Test case for #22855
 func (s *DockerSuite) TestBuildDeleteCommittedFile(c *check.C) {
 	name := "test-delete-committed-file"
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		RUN echo test > file
 		RUN test -e file
 		RUN rm file
@@ -5246,7 +5296,7 @@ func (s *DockerSuite) TestBuildWithUTF8BOMDockerignore(c *check.C) {
 func (s *DockerSuite) TestBuildShellUpdatesConfig(c *check.C) {
 	name := "testbuildshellupdatesconfig"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
         SHELL ["foo", "-bar"]`))
 	expected := `["foo","-bar","#(nop) ","SHELL [foo -bar]"]`
 	res := inspectFieldJSON(c, name, "ContainerConfig.Cmd")
@@ -5263,7 +5313,7 @@ func (s *DockerSuite) TestBuildShellUpdatesConfig(c *check.C) {
 func (s *DockerSuite) TestBuildShellMultiple(c *check.C) {
 	name := "testbuildshellmultiple"
 
-	result := buildImage(name, withDockerfile(`FROM busybox
+	result := buildImage(name, build.WithDockerfile(`FROM busybox
 		RUN echo defaultshell
 		SHELL ["echo"]
 		RUN echoshell
@@ -5299,7 +5349,7 @@ func (s *DockerSuite) TestBuildShellMultiple(c *check.C) {
 func (s *DockerSuite) TestBuildShellEntrypoint(c *check.C) {
 	name := "testbuildshellentrypoint"
 
-	buildImageSuccessfully(c, name, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name, build.WithDockerfile(`FROM busybox
 		SHELL ["ls"]
 		ENTRYPOINT -l`))
 	// A container started from the image uses the shell-form ENTRYPOINT.
@@ -5313,10 +5363,10 @@ func (s *DockerSuite) TestBuildShellEntrypoint(c *check.C) {
 // #22489 Shell test to confirm shell is inherited in a subsequent build
 func (s *DockerSuite) TestBuildShellInherited(c *check.C) {
 	name1 := "testbuildshellinherited1"
-	buildImageSuccessfully(c, name1, withDockerfile(`FROM busybox
+	buildImageSuccessfully(c, name1, build.WithDockerfile(`FROM busybox
         SHELL ["ls"]`))
 	name2 := "testbuildshellinherited2"
-	buildImage(name2, withDockerfile(`FROM `+name1+`
+	buildImage(name2, build.WithDockerfile(`FROM `+name1+`
         RUN -l`)).Assert(c, icmd.Expected{
 		// ls -l has "total " followed by some number in it, ls without -l does not.
 		Out: "total ",
@@ -5327,7 +5377,7 @@ func (s *DockerSuite) TestBuildShellInherited(c *check.C) {
 func (s *DockerSuite) TestBuildShellNotJSON(c *check.C) {
 	name := "testbuildshellnotjson"
 
-	buildImage(name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImage(name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
         sHeLl exec -form`, // Casing explicit to ensure error is upper-cased.
 	)).Assert(c, icmd.Expected{
 		ExitCode: 1,
@@ -5340,7 +5390,7 @@ func (s *DockerSuite) TestBuildShellNotJSON(c *check.C) {
 func (s *DockerSuite) TestBuildShellWindowsPowershell(c *check.C) {
 	testRequires(c, DaemonIsWindows)
 	name := "testbuildshellpowershell"
-	buildImage(name, withDockerfile(`FROM `+minimalBaseImage()+`
+	buildImage(name, build.WithDockerfile(`FROM `+minimalBaseImage()+`
         SHELL ["powershell", "-command"]
 		RUN Write-Host John`)).Assert(c, icmd.Expected{
 		Out: "\nJohn\n",
@@ -5352,7 +5402,7 @@ func (s *DockerSuite) TestBuildShellWindowsPowershell(c *check.C) {
 func (s *DockerSuite) TestBuildEscapeNotBackslashWordTest(c *check.C) {
 	testRequires(c, DaemonIsWindows)
 	name := "testbuildescapenotbackslashwordtesta"
-	buildImage(name, withDockerfile(`# escape= `+"`"+`
+	buildImage(name, build.WithDockerfile(`# escape= `+"`"+`
 		FROM `+minimalBaseImage()+`
         WORKDIR c:\windows
 		RUN dir /w`)).Assert(c, icmd.Expected{
@@ -5360,7 +5410,7 @@ func (s *DockerSuite) TestBuildEscapeNotBackslashWordTest(c *check.C) {
 	})
 
 	name = "testbuildescapenotbackslashwordtestb"
-	buildImage(name, withDockerfile(`# escape= `+"`"+`
+	buildImage(name, build.WithDockerfile(`# escape= `+"`"+`
 		FROM `+minimalBaseImage()+`
 		SHELL ["powershell.exe"]
         WORKDIR c:\foo
@@ -5374,7 +5424,7 @@ func (s *DockerSuite) TestBuildEscapeNotBackslashWordTest(c *check.C) {
 func (s *DockerSuite) TestBuildCmdShellArgsEscaped(c *check.C) {
 	testRequires(c, DaemonIsWindows)
 	name := "testbuildcmdshellescaped"
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
   FROM `+minimalBaseImage()+`
   CMD "ipconfig"
   `))
@@ -5395,7 +5445,7 @@ func (s *DockerSuite) TestBuildCmdShellArgsEscaped(c *check.C) {
 func (s *DockerSuite) TestBuildStepsWithProgress(c *check.C) {
 	name := "testbuildstepswithprogress"
 	totalRun := 5
-	result := buildImage(name, withDockerfile("FROM busybox\n"+strings.Repeat("RUN echo foo\n", totalRun)))
+	result := buildImage(name, build.WithDockerfile("FROM busybox\n"+strings.Repeat("RUN echo foo\n", totalRun)))
 	result.Assert(c, icmd.Success)
 	c.Assert(result.Combined(), checker.Contains, fmt.Sprintf("Step 1/%d : FROM busybox", 1+totalRun))
 	for i := 2; i <= 1+totalRun; i++ {
@@ -5408,17 +5458,38 @@ func (s *DockerSuite) TestBuildWithFailure(c *check.C) {
 
 	// First test case can only detect `nobody` in runtime so all steps will show up
 	dockerfile := "FROM busybox\nRUN nobody"
-	result := buildImage(name, withDockerfile(dockerfile))
+	result := buildImage(name, build.WithDockerfile(dockerfile))
 	c.Assert(result.Error, checker.NotNil)
 	c.Assert(result.Stdout(), checker.Contains, "Step 1/2 : FROM busybox")
 	c.Assert(result.Stdout(), checker.Contains, "Step 2/2 : RUN nobody")
 
 	// Second test case `FFOM` should have been detected before build runs so no steps
 	dockerfile = "FFOM nobody\nRUN nobody"
-	result = buildImage(name, withDockerfile(dockerfile))
+	result = buildImage(name, build.WithDockerfile(dockerfile))
 	c.Assert(result.Error, checker.NotNil)
 	c.Assert(result.Stdout(), checker.Not(checker.Contains), "Step 1/2 : FROM busybox")
 	c.Assert(result.Stdout(), checker.Not(checker.Contains), "Step 2/2 : RUN nobody")
+}
+
+func (s *DockerSuite) TestBuildCacheFromEqualDiffIDsLength(c *check.C) {
+	dockerfile := `
+		FROM busybox
+		RUN echo "test"
+		ENTRYPOINT ["sh"]`
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+	})
+	defer ctx.Close()
+
+	buildImageSuccessfully(c, "build1", withExternalBuildContext(ctx))
+	id1 := getIDByName(c, "build1")
+
+	// rebuild with cache-from
+	result := buildImage("build2", cli.WithFlags("--cache-from=build1"), withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+	id2 := getIDByName(c, "build2")
+	c.Assert(id1, checker.Equals, id2)
+	c.Assert(strings.Count(result.Combined(), "Using cache"), checker.Equals, 2)
 }
 
 func (s *DockerSuite) TestBuildCacheFrom(c *check.C) {
@@ -5438,7 +5509,7 @@ func (s *DockerSuite) TestBuildCacheFrom(c *check.C) {
 	id1 := getIDByName(c, "build1")
 
 	// rebuild with cache-from
-	result := buildImage("build2", withBuildFlags("--cache-from=build1"), withExternalBuildContext(ctx))
+	result := buildImage("build2", cli.WithFlags("--cache-from=build1"), withExternalBuildContext(ctx))
 	result.Assert(c, icmd.Success)
 	id2 := getIDByName(c, "build2")
 	c.Assert(id1, checker.Equals, id2)
@@ -5446,7 +5517,7 @@ func (s *DockerSuite) TestBuildCacheFrom(c *check.C) {
 	dockerCmd(c, "rmi", "build2")
 
 	// no cache match with unknown source
-	result = buildImage("build2", withBuildFlags("--cache-from=nosuchtag"), withExternalBuildContext(ctx))
+	result = buildImage("build2", cli.WithFlags("--cache-from=nosuchtag"), withExternalBuildContext(ctx))
 	result.Assert(c, icmd.Success)
 	id2 = getIDByName(c, "build2")
 	c.Assert(id1, checker.Not(checker.Equals), id2)
@@ -5467,7 +5538,7 @@ func (s *DockerSuite) TestBuildCacheFrom(c *check.C) {
 	c.Assert(strings.TrimSpace(parentID), checker.Equals, "")
 
 	// cache still applies without parents
-	result = buildImage("build2", withBuildFlags("--cache-from=build1"), withExternalBuildContext(ctx))
+	result = buildImage("build2", cli.WithFlags("--cache-from=build1"), withExternalBuildContext(ctx))
 	result.Assert(c, icmd.Success)
 	id2 = getIDByName(c, "build2")
 	c.Assert(id1, checker.Equals, id2)
@@ -5475,7 +5546,7 @@ func (s *DockerSuite) TestBuildCacheFrom(c *check.C) {
 	history1, _ := dockerCmd(c, "history", "-q", "build2")
 
 	// Retry, no new intermediate images
-	result = buildImage("build3", withBuildFlags("--cache-from=build1"), withExternalBuildContext(ctx))
+	result = buildImage("build3", cli.WithFlags("--cache-from=build1"), withExternalBuildContext(ctx))
 	result.Assert(c, icmd.Success)
 	id3 := getIDByName(c, "build3")
 	c.Assert(id1, checker.Equals, id3)
@@ -5497,7 +5568,7 @@ func (s *DockerSuite) TestBuildCacheFrom(c *check.C) {
 	err = ioutil.WriteFile(filepath.Join(ctx.Dir, "Dockerfile"), []byte(dockerfile), 0644)
 	c.Assert(err, checker.IsNil)
 
-	result = buildImage("build2", withBuildFlags("--cache-from=build1"), withExternalBuildContext(ctx))
+	result = buildImage("build2", cli.WithFlags("--cache-from=build1"), withExternalBuildContext(ctx))
 	result.Assert(c, icmd.Success)
 	id2 = getIDByName(c, "build2")
 	c.Assert(id1, checker.Not(checker.Equals), id2)
@@ -5518,10 +5589,34 @@ func (s *DockerSuite) TestBuildCacheFrom(c *check.C) {
 	c.Assert(layers1[len(layers1)-1], checker.Not(checker.Equals), layers2[len(layers1)-1])
 }
 
+func (s *DockerSuite) TestBuildCacheMultipleFrom(c *check.C) {
+	testRequires(c, DaemonIsLinux) // All tests that do save are skipped in windows
+	dockerfile := `
+		FROM busybox
+		ADD baz /
+		FROM busybox
+    ADD baz /`
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"baz":        "baz",
+	})
+	defer ctx.Close()
+
+	result := buildImage("build1", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+	// second part of dockerfile was a repeat of first so should be cached
+	c.Assert(strings.Count(result.Combined(), "Using cache"), checker.Equals, 1)
+
+	result = buildImage("build2", cli.WithFlags("--cache-from=build1"), withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+	// now both parts of dockerfile should be cached
+	c.Assert(strings.Count(result.Combined(), "Using cache"), checker.Equals, 2)
+}
+
 func (s *DockerSuite) TestBuildNetNone(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildnetnone"
-	buildImage(name, withBuildFlags("--network=none"), withDockerfile(`
+	buildImage(name, cli.WithFlags("--network=none"), build.WithDockerfile(`
   FROM busybox
   RUN ping -c 1 8.8.8.8
   `)).Assert(c, icmd.Expected{
@@ -5536,14 +5631,57 @@ func (s *DockerSuite) TestBuildNetContainer(c *check.C) {
 	id, _ := dockerCmd(c, "run", "--hostname", "foobar", "-d", "busybox", "nc", "-ll", "-p", "1234", "-e", "hostname")
 
 	name := "testbuildnetcontainer"
-	buildImageSuccessfully(c, name, withBuildFlags("--network=container:"+strings.TrimSpace(id)),
-		withDockerfile(`
+	buildImageSuccessfully(c, name, cli.WithFlags("--network=container:"+strings.TrimSpace(id)),
+		build.WithDockerfile(`
   FROM busybox
   RUN nc localhost 1234 > /otherhost
   `))
 
 	host, _ := dockerCmd(c, "run", "testbuildnetcontainer", "cat", "/otherhost")
 	c.Assert(strings.TrimSpace(host), check.Equals, "foobar")
+}
+
+func (s *DockerSuite) TestBuildWithExtraHost(c *check.C) {
+	testRequires(c, DaemonIsLinux)
+
+	name := "testbuildwithextrahost"
+	buildImageSuccessfully(c, name,
+		cli.WithFlags(
+			"--add-host", "foo:127.0.0.1",
+			"--add-host", "bar:127.0.0.1",
+		),
+		build.WithDockerfile(`
+  FROM busybox
+  RUN ping -c 1 foo
+  RUN ping -c 1 bar
+  `))
+}
+
+func (s *DockerSuite) TestBuildWithExtraHostInvalidFormat(c *check.C) {
+	testRequires(c, DaemonIsLinux)
+	dockerfile := `
+		FROM busybox
+		RUN ping -c 1 foo`
+
+	testCases := []struct {
+		testName   string
+		dockerfile string
+		buildFlag  string
+	}{
+		{"extra_host_missing_ip", dockerfile, "--add-host=foo"},
+		{"extra_host_missing_ip_with_delimeter", dockerfile, "--add-host=foo:"},
+		{"extra_host_missing_hostname", dockerfile, "--add-host=:127.0.0.1"},
+		{"extra_host_invalid_ipv4", dockerfile, "--add-host=foo:101.10.2"},
+		{"extra_host_invalid_ipv6", dockerfile, "--add-host=foo:2001::1::3F"},
+	}
+
+	for _, tc := range testCases {
+		result := buildImage(tc.testName, cli.WithFlags(tc.buildFlag), build.WithDockerfile(tc.dockerfile))
+		result.Assert(c, icmd.Expected{
+			ExitCode: 125,
+		})
+	}
+
 }
 
 func (s *DockerSuite) TestBuildSquashParent(c *check.C) {
@@ -5558,11 +5696,11 @@ func (s *DockerSuite) TestBuildSquashParent(c *check.C) {
 		`
 	// build and get the ID that we can use later for history comparison
 	name := "test"
-	buildImageSuccessfully(c, name, withDockerfile(dockerFile))
+	buildImageSuccessfully(c, name, build.WithDockerfile(dockerFile))
 	origID := getIDByName(c, name)
 
 	// build with squash
-	buildImageSuccessfully(c, name, withBuildFlags("--squash"), withDockerfile(dockerFile))
+	buildImageSuccessfully(c, name, cli.WithFlags("--squash"), build.WithDockerfile(dockerFile))
 	id := getIDByName(c, name)
 
 	out, _ := dockerCmd(c, "run", "--rm", id, "/bin/sh", "-c", "cat /hello")
@@ -5589,27 +5727,301 @@ func (s *DockerSuite) TestBuildSquashParent(c *check.C) {
 func (s *DockerSuite) TestBuildContChar(c *check.C) {
 	name := "testbuildcontchar"
 
-	buildImage(name, withDockerfile(`FROM busybox\`)).Assert(c, icmd.Expected{
+	buildImage(name, build.WithDockerfile(`FROM busybox\`)).Assert(c, icmd.Expected{
 		Out: "Step 1/1 : FROM busybox",
 	})
 
-	result := buildImage(name, withDockerfile(`FROM busybox
+	result := buildImage(name, build.WithDockerfile(`FROM busybox
 		 RUN echo hi \`))
 	result.Assert(c, icmd.Success)
 	c.Assert(result.Combined(), checker.Contains, "Step 1/2 : FROM busybox")
 	c.Assert(result.Combined(), checker.Contains, "Step 2/2 : RUN echo hi\n")
 
-	result = buildImage(name, withDockerfile(`FROM busybox
+	result = buildImage(name, build.WithDockerfile(`FROM busybox
 		 RUN echo hi \\`))
 	result.Assert(c, icmd.Success)
 	c.Assert(result.Combined(), checker.Contains, "Step 1/2 : FROM busybox")
 	c.Assert(result.Combined(), checker.Contains, "Step 2/2 : RUN echo hi \\\n")
 
-	result = buildImage(name, withDockerfile(`FROM busybox
+	result = buildImage(name, build.WithDockerfile(`FROM busybox
 		 RUN echo hi \\\`))
 	result.Assert(c, icmd.Success)
 	c.Assert(result.Combined(), checker.Contains, "Step 1/2 : FROM busybox")
 	c.Assert(result.Combined(), checker.Contains, "Step 2/2 : RUN echo hi \\\\\n")
+}
+
+func (s *DockerSuite) TestBuildCopyFromPreviousRootFS(c *check.C) {
+	dockerfile := `
+		FROM busybox AS first
+		COPY foo bar
+		FROM busybox
+    %s
+    COPY baz baz
+    RUN echo mno > baz/cc
+		FROM busybox
+    COPY bar /
+    COPY --from=1 baz sub/
+    COPY --from=0 bar baz
+    COPY --from=first bar bay`
+
+	ctx := fakeContext(c, fmt.Sprintf(dockerfile, ""), map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+		"bar":        "def",
+		"baz/aa":     "ghi",
+		"baz/bb":     "jkl",
+	})
+	defer ctx.Close()
+
+	result := buildImage("build1", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	out, _ := dockerCmd(c, "run", "build1", "cat", "bar")
+	c.Assert(strings.TrimSpace(out), check.Equals, "def")
+	out, _ = dockerCmd(c, "run", "build1", "cat", "sub/aa")
+	c.Assert(strings.TrimSpace(out), check.Equals, "ghi")
+	out, _ = dockerCmd(c, "run", "build1", "cat", "sub/cc")
+	c.Assert(strings.TrimSpace(out), check.Equals, "mno")
+	out, _ = dockerCmd(c, "run", "build1", "cat", "baz")
+	c.Assert(strings.TrimSpace(out), check.Equals, "abc")
+	out, _ = dockerCmd(c, "run", "build1", "cat", "bay")
+	c.Assert(strings.TrimSpace(out), check.Equals, "abc")
+
+	result = buildImage("build2", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	// all commands should be cached
+	c.Assert(strings.Count(result.Combined(), "Using cache"), checker.Equals, 7)
+
+	err := ioutil.WriteFile(filepath.Join(ctx.Dir, "Dockerfile"), []byte(fmt.Sprintf(dockerfile, "COPY baz/aa foo")), 0644)
+	c.Assert(err, checker.IsNil)
+
+	// changing file in parent block should not affect last block
+	result = buildImage("build3", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	c.Assert(strings.Count(result.Combined(), "Using cache"), checker.Equals, 5)
+
+	c.Assert(getIDByName(c, "build1"), checker.Equals, getIDByName(c, "build2"))
+
+	err = ioutil.WriteFile(filepath.Join(ctx.Dir, "foo"), []byte("pqr"), 0644)
+	c.Assert(err, checker.IsNil)
+
+	// changing file in parent block should affect both first and last block
+	result = buildImage("build4", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+	c.Assert(strings.Count(result.Combined(), "Using cache"), checker.Equals, 5)
+
+	out, _ = dockerCmd(c, "run", "build4", "cat", "bay")
+	c.Assert(strings.TrimSpace(out), check.Equals, "pqr")
+	out, _ = dockerCmd(c, "run", "build4", "cat", "baz")
+	c.Assert(strings.TrimSpace(out), check.Equals, "pqr")
+}
+
+func (s *DockerSuite) TestBuildCopyFromPreviousRootFSErrors(c *check.C) {
+	dockerfile := `
+		FROM busybox
+		COPY --from=foo foo bar`
+
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+	})
+	defer ctx.Close()
+
+	buildImage("build1", withExternalBuildContext(ctx)).Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Err:      "invalid from flag value foo",
+	})
+
+	dockerfile = `
+		FROM busybox
+		COPY --from=0 foo bar`
+
+	ctx = fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+	})
+	defer ctx.Close()
+
+	buildImage("build1", withExternalBuildContext(ctx)).Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Err:      "invalid from flag value 0 refers current build block",
+	})
+
+	dockerfile = `
+		FROM busybox AS foo
+		COPY --from=bar foo bar`
+
+	ctx = fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+	})
+	defer ctx.Close()
+
+	buildImage("build1", withExternalBuildContext(ctx)).Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Err:      "invalid from flag value bar",
+	})
+
+	dockerfile = `
+		FROM busybox AS 1
+		COPY --from=1 foo bar`
+
+	ctx = fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+	})
+	defer ctx.Close()
+
+	buildImage("build1", withExternalBuildContext(ctx)).Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Err:      "invalid name for build stage",
+	})
+}
+
+func (s *DockerSuite) TestBuildCopyFromPreviousFrom(c *check.C) {
+	dockerfile := `
+		FROM busybox
+		COPY foo bar`
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+	})
+	defer ctx.Close()
+
+	result := buildImage("build1", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	dockerfile = `
+		FROM build1:latest AS foo
+    FROM busybox
+		COPY --from=foo bar /
+		COPY foo /`
+	ctx = fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "def",
+	})
+	defer ctx.Close()
+
+	result = buildImage("build2", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	out, _ := dockerCmd(c, "run", "build2", "cat", "bar")
+	c.Assert(strings.TrimSpace(out), check.Equals, "abc")
+	out, _ = dockerCmd(c, "run", "build2", "cat", "foo")
+	c.Assert(strings.TrimSpace(out), check.Equals, "def")
+}
+
+func (s *DockerSuite) TestBuildCopyFromImplicitFrom(c *check.C) {
+	dockerfile := `
+		FROM busybox
+		COPY --from=busybox /etc/passwd /mypasswd
+		RUN cmp /etc/passwd /mypasswd`
+
+	if DaemonIsWindows() {
+		dockerfile = `
+			FROM busybox
+			COPY --from=busybox License.txt foo`
+	}
+
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+	})
+	defer ctx.Close()
+
+	result := buildImage("build1", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	if DaemonIsWindows() {
+		out, _ := dockerCmd(c, "run", "build1", "cat", "License.txt")
+		c.Assert(len(out), checker.GreaterThan, 10)
+		out2, _ := dockerCmd(c, "run", "build1", "cat", "foo")
+		c.Assert(out, check.Equals, out2)
+	}
+}
+
+func (s *DockerRegistrySuite) TestBuildCopyFromImplicitPullingFrom(c *check.C) {
+	repoName := fmt.Sprintf("%v/dockercli/testf", privateRegistryURL)
+
+	dockerfile := `
+		FROM busybox
+		COPY foo bar`
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+	})
+	defer ctx.Close()
+
+	result := buildImage(repoName, withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	dockerCmd(c, "push", repoName)
+	dockerCmd(c, "rmi", repoName)
+
+	dockerfile = `
+		FROM busybox
+		COPY --from=%s bar baz`
+
+	ctx = fakeContext(c, fmt.Sprintf(dockerfile, repoName), map[string]string{
+		"Dockerfile": dockerfile,
+	})
+	defer ctx.Close()
+
+	result = buildImage("build1", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	dockerCmdWithResult("run", "build1", "cat", "baz").Assert(c, icmd.Expected{Out: "abc"})
+}
+
+func (s *DockerSuite) TestBuildFromPreviousBlock(c *check.C) {
+	dockerfile := `
+		FROM busybox as foo
+		COPY foo /
+		FROM foo as foo1
+		RUN echo 1 >> foo
+		FROM foo as foO2
+		RUN echo 2 >> foo
+		FROM foo
+		COPY --from=foo1 foo f1
+		COPY --from=FOo2 foo f2
+		` // foo2 case also tests that names are canse insensitive
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "bar",
+	})
+	defer ctx.Close()
+
+	result := buildImage("build1", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	dockerCmdWithResult("run", "build1", "cat", "foo").Assert(c, icmd.Expected{Out: "bar"})
+
+	dockerCmdWithResult("run", "build1", "cat", "f1").Assert(c, icmd.Expected{Out: "bar1"})
+
+	dockerCmdWithResult("run", "build1", "cat", "f2").Assert(c, icmd.Expected{Out: "bar2"})
+}
+
+func (s *DockerTrustSuite) TestCopyFromTrustedBuild(c *check.C) {
+	img1 := s.setupTrustedImage(c, "trusted-build1")
+	img2 := s.setupTrustedImage(c, "trusted-build2")
+	dockerFile := fmt.Sprintf(`
+	FROM %s AS build-base
+	RUN echo ok > /foo
+	FROM %s
+	COPY --from=build-base foo bar`, img1, img2)
+
+	name := "testcopyfromtrustedbuild"
+
+	r := buildImage(name, trustedBuild, build.WithDockerfile(dockerFile))
+	r.Assert(c, icmd.Expected{
+		Out: fmt.Sprintf("FROM %s@sha", img1[:len(img1)-7]),
+	})
+	r.Assert(c, icmd.Expected{
+		Out: fmt.Sprintf("FROM %s@sha", img2[:len(img2)-7]),
+	})
+
+	dockerCmdWithResult("run", name, "cat", "bar").Assert(c, icmd.Expected{Out: "ok"})
 }
 
 // TestBuildOpaqueDirectory tests that a build succeeds which
@@ -5626,14 +6038,14 @@ func (s *DockerSuite) TestBuildOpaqueDirectory(c *check.C) {
 		`
 	// Test that build succeeds, last command fails if opaque directory
 	// was not handled correctly
-	buildImageSuccessfully(c, "testopaquedirectory", withDockerfile(dockerFile))
+	buildImageSuccessfully(c, "testopaquedirectory", build.WithDockerfile(dockerFile))
 }
 
 // Windows test for USER in dockerfile
 func (s *DockerSuite) TestBuildWindowsUser(c *check.C) {
 	testRequires(c, DaemonIsWindows)
 	name := "testbuildwindowsuser"
-	buildImage(name, withDockerfile(`FROM `+testEnv.MinimalBaseImage()+`
+	buildImage(name, build.WithDockerfile(`FROM `+testEnv.MinimalBaseImage()+`
 		RUN net user user /add
 		USER user
 		RUN set username
@@ -5663,7 +6075,7 @@ RUN ["cat", "/foo/file"]
 func (s *DockerSuite) TestBuildWindowsEnvCaseInsensitive(c *check.C) {
 	testRequires(c, DaemonIsWindows)
 	name := "testbuildwindowsenvcaseinsensitive"
-	buildImageSuccessfully(c, name, withDockerfile(`
+	buildImageSuccessfully(c, name, build.WithDockerfile(`
 		FROM `+testEnv.MinimalBaseImage()+`
 		ENV FOO=bar foo=baz
   `))
@@ -5676,7 +6088,7 @@ func (s *DockerSuite) TestBuildWindowsEnvCaseInsensitive(c *check.C) {
 // Test case for 29667
 func (s *DockerSuite) TestBuildWorkdirImageCmd(c *check.C) {
 	image := "testworkdirimagecmd"
-	buildImageSuccessfully(c, image, withDockerfile(`
+	buildImageSuccessfully(c, image, build.WithDockerfile(`
 FROM busybox
 WORKDIR /foo/bar
 `))
@@ -5690,7 +6102,7 @@ WORKDIR /foo/bar
 	c.Assert(strings.TrimSpace(out), checker.Equals, lookingFor)
 
 	image = "testworkdirlabelimagecmd"
-	buildImageSuccessfully(c, image, withDockerfile(`
+	buildImageSuccessfully(c, image, build.WithDockerfile(`
 FROM busybox
 WORKDIR /foo/bar
 LABEL a=b
@@ -5708,8 +6120,8 @@ func (s *DockerSuite) TestBuildWorkdirCmd(c *check.C) {
                 FROM busybox
                 WORKDIR /
                 `
-	buildImageSuccessfully(c, name, withDockerfile(dockerFile))
-	result := buildImage(name, withDockerfile(dockerFile))
+	buildImageSuccessfully(c, name, build.WithDockerfile(dockerFile))
+	result := buildImage(name, build.WithDockerfile(dockerFile))
 	result.Assert(c, icmd.Success)
 	c.Assert(strings.Count(result.Combined(), "Using cache"), checker.Equals, 1)
 }
@@ -5717,7 +6129,7 @@ func (s *DockerSuite) TestBuildWorkdirCmd(c *check.C) {
 // FIXME(vdemeester) should be a unit test
 func (s *DockerSuite) TestBuildLineErrorOnBuild(c *check.C) {
 	name := "test_build_line_error_onbuild"
-	buildImage(name, withDockerfile(`FROM busybox
+	buildImage(name, build.WithDockerfile(`FROM busybox
   ONBUILD
   `)).Assert(c, icmd.Expected{
 		ExitCode: 1,
@@ -5728,7 +6140,7 @@ func (s *DockerSuite) TestBuildLineErrorOnBuild(c *check.C) {
 // FIXME(vdemeester) should be a unit test
 func (s *DockerSuite) TestBuildLineErrorUknownInstruction(c *check.C) {
 	name := "test_build_line_error_unknown_instruction"
-	buildImage(name, withDockerfile(`FROM busybox
+	buildImage(name, build.WithDockerfile(`FROM busybox
   RUN echo hello world
   NOINSTRUCTION echo ba
   RUN echo hello
@@ -5742,7 +6154,7 @@ func (s *DockerSuite) TestBuildLineErrorUknownInstruction(c *check.C) {
 // FIXME(vdemeester) should be a unit test
 func (s *DockerSuite) TestBuildLineErrorWithEmptyLines(c *check.C) {
 	name := "test_build_line_error_with_empty_lines"
-	buildImage(name, withDockerfile(`
+	buildImage(name, build.WithDockerfile(`
   FROM busybox
 
   RUN echo hello world
@@ -5759,7 +6171,7 @@ func (s *DockerSuite) TestBuildLineErrorWithEmptyLines(c *check.C) {
 // FIXME(vdemeester) should be a unit test
 func (s *DockerSuite) TestBuildLineErrorWithComments(c *check.C) {
 	name := "test_build_line_error_with_comments"
-	buildImage(name, withDockerfile(`FROM busybox
+	buildImage(name, build.WithDockerfile(`FROM busybox
   # This will print hello world
   # and then ba
   RUN echo hello world
@@ -5768,4 +6180,19 @@ func (s *DockerSuite) TestBuildLineErrorWithComments(c *check.C) {
 		ExitCode: 1,
 		Err:      "Dockerfile parse error line 5: Unknown instruction: NOINSTRUCTION",
 	})
+}
+
+// #31957
+func (s *DockerSuite) TestBuildSetCommandWithDefinedShell(c *check.C) {
+	buildImageSuccessfully(c, "build1", build.WithDockerfile(`
+FROM busybox
+SHELL ["/bin/sh", "-c"]
+`))
+	buildImageSuccessfully(c, "build2", build.WithDockerfile(`
+FROM build1
+CMD echo foo
+`))
+
+	out, _ := dockerCmd(c, "inspect", "--format", "{{ json .Config.Cmd }}", "build2")
+	c.Assert(strings.TrimSpace(out), checker.Equals, `["/bin/sh","-c","echo foo"]`)
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	daemondiscovery "github.com/docker/docker/daemon/discovery"
 	"github.com/docker/docker/opts"
+	"github.com/docker/docker/pkg/authorization"
 	"github.com/docker/docker/pkg/discovery"
 	"github.com/docker/docker/registry"
 	"github.com/imdario/mergo"
@@ -82,25 +83,27 @@ type CommonTLSOptions struct {
 // It includes json tags to deserialize configuration from a file
 // using the same names that the flags in the command line use.
 type CommonConfig struct {
-	AuthorizationPlugins []string            `json:"authorization-plugins,omitempty"` // AuthorizationPlugins holds list of authorization plugins
-	AutoRestart          bool                `json:"-"`
-	Context              map[string][]string `json:"-"`
-	DisableBridge        bool                `json:"-"`
-	DNS                  []string            `json:"dns,omitempty"`
-	DNSOptions           []string            `json:"dns-opts,omitempty"`
-	DNSSearch            []string            `json:"dns-search,omitempty"`
-	ExecOptions          []string            `json:"exec-opts,omitempty"`
-	GraphDriver          string              `json:"storage-driver,omitempty"`
-	GraphOptions         []string            `json:"storage-opts,omitempty"`
-	Labels               []string            `json:"labels,omitempty"`
-	Mtu                  int                 `json:"mtu,omitempty"`
-	Pidfile              string              `json:"pidfile,omitempty"`
-	RawLogs              bool                `json:"raw-logs,omitempty"`
-	Root                 string              `json:"graph,omitempty"`
-	SocketGroup          string              `json:"group,omitempty"`
-	TrustKeyPath         string              `json:"-"`
-	CorsHeaders          string              `json:"api-cors-header,omitempty"`
-	EnableCors           bool                `json:"api-enable-cors,omitempty"`
+	AuthzMiddleware      *authorization.Middleware `json:"-"`
+	AuthorizationPlugins []string                  `json:"authorization-plugins,omitempty"` // AuthorizationPlugins holds list of authorization plugins
+	AutoRestart          bool                      `json:"-"`
+	Context              map[string][]string       `json:"-"`
+	DisableBridge        bool                      `json:"-"`
+	DNS                  []string                  `json:"dns,omitempty"`
+	DNSOptions           []string                  `json:"dns-opts,omitempty"`
+	DNSSearch            []string                  `json:"dns-search,omitempty"`
+	ExecOptions          []string                  `json:"exec-opts,omitempty"`
+	GraphDriver          string                    `json:"storage-driver,omitempty"`
+	GraphOptions         []string                  `json:"storage-opts,omitempty"`
+	Labels               []string                  `json:"labels,omitempty"`
+	Mtu                  int                       `json:"mtu,omitempty"`
+	Pidfile              string                    `json:"pidfile,omitempty"`
+	RawLogs              bool                      `json:"raw-logs,omitempty"`
+	RootDeprecated       string                    `json:"graph,omitempty"`
+	Root                 string                    `json:"data-root,omitempty"`
+	SocketGroup          string                    `json:"group,omitempty"`
+	TrustKeyPath         string                    `json:"-"`
+	CorsHeaders          string                    `json:"api-cors-header,omitempty"`
+	EnableCors           bool                      `json:"api-enable-cors,omitempty"`
 
 	// LiveRestoreEnabled determines whether we should keep containers
 	// alive upon daemon shutdown/start
@@ -242,7 +245,7 @@ func Reload(configFile string, flags *pflag.FlagSet, reload func(*Config)) error
 	// This is deprecated in 1.13, and, be removed after 3 release cycles.
 	// The following will check the conflict of labels, and report a warning for deprecation.
 	//
-	// TODO: After 3 release cycles (1.16) an error will be returned, and labels will be
+	// TODO: After 3 release cycles (17.12) an error will be returned, and labels will be
 	// sanitized to consolidate duplicate key-value pairs (config.Labels = newLabels):
 	//
 	// newLabels, err := GetConflictFreeLabels(newConfig.Labels)
@@ -276,7 +279,7 @@ func MergeDaemonConfigurations(flagsConfig *Config, flags *pflag.FlagSet, config
 	}
 
 	if err := Validate(fileConfig); err != nil {
-		return nil, fmt.Errorf("file configuration validation failed (%v)", err)
+		return nil, fmt.Errorf("configuration validation from file failed (%v)", err)
 	}
 
 	// merge flags configuration on top of the file configuration
@@ -287,7 +290,7 @@ func MergeDaemonConfigurations(flagsConfig *Config, flags *pflag.FlagSet, config
 	// We need to validate again once both fileConfig and flagsConfig
 	// have been merged
 	if err := Validate(fileConfig); err != nil {
-		return nil, fmt.Errorf("file configuration validation failed (%v)", err)
+		return nil, fmt.Errorf("merged configuration validation from file and command line flags failed (%v)", err)
 	}
 
 	return fileConfig, nil
@@ -351,8 +354,21 @@ func getConflictFreeConfiguration(configFile string, flags *pflag.FlagSet) (*Con
 	}
 
 	reader = bytes.NewReader(b)
-	err = json.NewDecoder(reader).Decode(&config)
-	return &config, err
+	if err := json.NewDecoder(reader).Decode(&config); err != nil {
+		return nil, err
+	}
+
+	if config.RootDeprecated != "" {
+		logrus.Warn(`The "graph" config file option is deprecated. Please use "data-root" instead.`)
+
+		if config.Root != "" {
+			return nil, fmt.Errorf(`cannot specify both "graph" and "data-root" config file options`)
+		}
+
+		config.Root = config.RootDeprecated
+	}
+
+	return &config, nil
 }
 
 // configValuesSet returns the configuration values explicitly set in the file.
@@ -459,14 +475,12 @@ func Validate(config *Config) error {
 			return err
 		}
 	}
-
 	// validate MaxConcurrentDownloads
-	if config.IsValueSet("max-concurrent-downloads") && config.MaxConcurrentDownloads != nil && *config.MaxConcurrentDownloads < 0 {
+	if config.MaxConcurrentDownloads != nil && *config.MaxConcurrentDownloads < 0 {
 		return fmt.Errorf("invalid max concurrent downloads: %d", *config.MaxConcurrentDownloads)
 	}
-
 	// validate MaxConcurrentUploads
-	if config.IsValueSet("max-concurrent-uploads") && config.MaxConcurrentUploads != nil && *config.MaxConcurrentUploads < 0 {
+	if config.MaxConcurrentUploads != nil && *config.MaxConcurrentUploads < 0 {
 		return fmt.Errorf("invalid max concurrent uploads: %d", *config.MaxConcurrentUploads)
 	}
 

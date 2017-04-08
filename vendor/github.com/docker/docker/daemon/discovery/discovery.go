@@ -81,8 +81,7 @@ func discoveryOpts(clusterOpts map[string]string) (time.Duration, time.Duration,
 		ttl = time.Duration(t) * time.Second
 
 		if _, ok := clusterOpts["discovery.heartbeat"]; !ok {
-			h := int(t / defaultDiscoveryTTLFactor)
-			heartbeat = time.Duration(h) * time.Second
+			heartbeat = time.Duration(t) * time.Second / time.Duration(defaultDiscoveryTTLFactor)
 		}
 
 		if ttl <= heartbeat {
@@ -122,6 +121,8 @@ func (d *daemonDiscoveryReloader) advertiseHeartbeat(address string) {
 	if err := d.initHeartbeat(address); err == nil {
 		ready = true
 		close(d.readyCh)
+	} else {
+		logrus.WithError(err).Debug("First discovery heartbeat failed")
 	}
 
 	for {

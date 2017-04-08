@@ -223,10 +223,12 @@
 				"prctl",
 				"pread64",
 				"preadv",
+				"preadv2",
 				"prlimit64",
 				"pselect6",
 				"pwrite64",
 				"pwritev",
+				"pwritev2",
 				"read",
 				"readahead",
 				"readlink",
@@ -898,7 +900,8 @@
 			"names": [
 				"settimeofday",
 				"stime",
-				"adjtimex"
+				"adjtimex",
+				"clock_settime"
 			],
 			"action": "SCMP_ACT_ALLOW",
 			"args": [],

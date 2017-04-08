@@ -34,7 +34,7 @@ type NamerClient struct {
 
 func (client *NamerClient) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
 	if len(client.expectedLabelFilters) > 1 {
-		labelFilters := options.Filter.Get("label")
+		labelFilters := options.Filters.Get("label")
 		if len(labelFilters) != len(client.expectedLabelFilters) {
 			return []types.Container{}, fmt.Errorf("expected filters %v, got %v", client.expectedLabelFilters, labelFilters)
 		}

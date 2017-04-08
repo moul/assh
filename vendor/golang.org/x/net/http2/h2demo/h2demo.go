@@ -19,6 +19,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"path"
 	"regexp"
 	"runtime"
@@ -27,8 +28,8 @@ import (
 	"sync"
 	"time"
 
-	"camlistore.org/pkg/googlestorage"
-	"camlistore.org/pkg/singleflight"
+	"go4.org/syncutil/singleflight"
+	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/http2"
 )
 
@@ -79,7 +80,7 @@ is used transparently by the Go standard library from Go 1.6 and later.
 </p>
 
 <p>Contact info: <i>bradfitz@golang.org</i>, or <a
-href="https://golang.org/issues">file a bug</a>.</p>
+href="https://golang.org/s/http2bug">file a bug</a>.</p>
 
 <h2>Handlers for testing</h2>
 <ul>
@@ -378,37 +379,18 @@ func httpHost() string {
 }
 
 func serveProdTLS() error {
-	c, err := googlestorage.NewServiceClient()
-	if err != nil {
+	const cacheDir = "/var/cache/autocert"
+	if err := os.MkdirAll(cacheDir, 0700); err != nil {
 		return err
 	}
-	slurp := func(key string) ([]byte, error) {
-		const bucket = "http2-demo-server-tls"
-		rc, _, err := c.GetObject(&googlestorage.Object{
-			Bucket: bucket,
-			Key:    key,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("Error fetching GCS object %q in bucket %q: %v", key, bucket, err)
-		}
-		defer rc.Close()
-		return ioutil.ReadAll(rc)
-	}
-	certPem, err := slurp("http2.golang.org.chained.pem")
-	if err != nil {
-		return err
-	}
-	keyPem, err := slurp("http2.golang.org.key")
-	if err != nil {
-		return err
-	}
-	cert, err := tls.X509KeyPair(certPem, keyPem)
-	if err != nil {
-		return err
+	m := autocert.Manager{
+		Cache:      autocert.DirCache(cacheDir),
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist("http2.golang.org"),
 	}
 	srv := &http.Server{
 		TLSConfig: &tls.Config{
-			Certificates: []tls.Certificate{cert},
+			GetCertificate: m.GetCertificate,
 		},
 	}
 	http2.ConfigureServer(srv, &http2.Server{})
@@ -440,11 +422,43 @@ func serveProd() error {
 	return <-errc
 }
 
+const idleTimeout = 5 * time.Minute
+const activeTimeout = 10 * time.Minute
+
+// TODO: put this into the standard library and actually send
+// PING frames and GOAWAY, etc: golang.org/issue/14204
+func idleTimeoutHook() func(net.Conn, http.ConnState) {
+	var mu sync.Mutex
+	m := map[net.Conn]*time.Timer{}
+	return func(c net.Conn, cs http.ConnState) {
+		mu.Lock()
+		defer mu.Unlock()
+		if t, ok := m[c]; ok {
+			delete(m, c)
+			t.Stop()
+		}
+		var d time.Duration
+		switch cs {
+		case http.StateNew, http.StateIdle:
+			d = idleTimeout
+		case http.StateActive:
+			d = activeTimeout
+		default:
+			return
+		}
+		m[c] = time.AfterFunc(d, func() {
+			log.Printf("closing idle conn %v after %v", c.RemoteAddr(), d)
+			go c.Close()
+		})
+	}
+}
+
 func main() {
 	var srv http.Server
 	flag.BoolVar(&http2.VerboseLogs, "verbose", false, "Verbose HTTP/2 debugging.")
 	flag.Parse()
 	srv.Addr = *httpsAddr
+	srv.ConnState = idleTimeoutHook()
 
 	registerHandlers()
 

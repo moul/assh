@@ -13,30 +13,15 @@ func TaskFromGRPC(t swarmapi.Task) types.Task {
 	if t.Spec.GetAttachment() != nil {
 		return types.Task{}
 	}
-	containerConfig := t.Spec.Runtime.(*swarmapi.TaskSpec_Container).Container
 	containerStatus := t.Status.GetContainer()
-	networks := make([]types.NetworkAttachmentConfig, 0, len(t.Spec.Networks))
-	for _, n := range t.Spec.Networks {
-		networks = append(networks, types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
-	}
 
 	task := types.Task{
-		ID: t.ID,
-		Annotations: types.Annotations{
-			Name:   t.Annotations.Name,
-			Labels: t.Annotations.Labels,
-		},
-		ServiceID: t.ServiceID,
-		Slot:      int(t.Slot),
-		NodeID:    t.NodeID,
-		Spec: types.TaskSpec{
-			ContainerSpec: containerSpecFromGRPC(containerConfig),
-			Resources:     resourcesFromGRPC(t.Spec.Resources),
-			RestartPolicy: restartPolicyFromGRPC(t.Spec.Restart),
-			Placement:     placementFromGRPC(t.Spec.Placement),
-			LogDriver:     driverFromGRPC(t.Spec.LogDriver),
-			Networks:      networks,
-		},
+		ID:          t.ID,
+		Annotations: annotationsFromGRPC(t.Annotations),
+		ServiceID:   t.ServiceID,
+		Slot:        int(t.Slot),
+		NodeID:      t.NodeID,
+		Spec:        taskSpecFromGRPC(t.Spec),
 		Status: types.TaskStatus{
 			State:   types.TaskState(strings.ToLower(t.Status.State.String())),
 			Message: t.Status.Message,
@@ -60,7 +45,7 @@ func TaskFromGRPC(t swarmapi.Task) types.Task {
 
 	// NetworksAttachments
 	for _, na := range t.Networks {
-		task.NetworksAttachments = append(task.NetworksAttachments, networkAttachementFromGRPC(na))
+		task.NetworksAttachments = append(task.NetworksAttachments, networkAttachmentFromGRPC(na))
 	}
 
 	if t.Status.PortStatus == nil {

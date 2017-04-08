@@ -30,12 +30,33 @@ Options:
 
 ## Description
 
-By default, `docker inspect` will render all results in a JSON array. If the container and
-image have the same name, this will return container JSON for unspecified type.
+Docker inspect provides detailed information on constructs controlled by Docker.
+
+By default, `docker inspect` will render results in a JSON array.
+
+## Request a custom response format (--format)
+
 If a format is specified, the given template will be executed for each result.
 
 Go's [text/template](http://golang.org/pkg/text/template/) package
 describes all the details of the format.
+
+## Specify target type (--type)
+
+`--type container|image|node|network|secret|service|volume|task|plugin`
+
+The `docker inspect` command matches any type of object by either ID or name.
+In some cases multiple type of objects (for example, a container and a volume)
+exist with the same name, making the result ambigious.
+
+To restrict `docker inspect` to a specific type of object, use the `--type`
+option.
+
+The following example inspects a _volume_ named "myvolume"
+
+```bash
+$ docker inspect --type=volume myvolume
+```
 
 ## Examples
 
@@ -45,33 +66,25 @@ For the most part, you can pick out any field from the JSON in a fairly
 straightforward manner.
 
 ```bash
-{% raw %}
 $ docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $INSTANCE_ID
-{% endraw %}
 ```
 
 ### Get an instance's MAC address
 
 ```bash
-{% raw %}
 $ docker inspect --format='{{range .NetworkSettings.Networks}}{{.MacAddress}}{{end}}' $INSTANCE_ID
-{% endraw %}
 ```
 
 ### Get an instance's log path
 
 ```bash
-{% raw %}
 $ docker inspect --format='{{.LogPath}}' $INSTANCE_ID
-{% endraw %}
 ```
 
 ### Get an instance's image name
 
 ```bash
-{% raw %}
-$ docker inspect --format='{{.Container.Spec.Image}}' $INSTANCE_ID
-{% endraw %}
+$ docker inspect --format='{{.Config.Image}}' $INSTANCE_ID
 ```
 
 ### List all port bindings
@@ -80,9 +93,7 @@ You can loop over arrays and maps in the results to produce simple text
 output:
 
 ```bash
-{% raw %}
 $ docker inspect --format='{{range $p, $conf := .NetworkSettings.Ports}} {{$p}} -> {{(index $conf 0).HostPort}} {{end}}' $INSTANCE_ID
-{% endraw %}
 ```
 
 ### Find a specific port mapping
@@ -96,9 +107,7 @@ then `index` 0 contains the first object inside of that. Then we ask for
 the `HostPort` field to get the public address.
 
 ```bash
-{% raw %}
 $ docker inspect --format='{{(index (index .NetworkSettings.Ports "8787/tcp") 0).HostPort}}' $INSTANCE_ID
-{% endraw %}
 ```
 
 ### Get a subsection in JSON format
@@ -109,7 +118,5 @@ Docker adds a template function, `json`, which can be applied to get
 results in JSON format.
 
 ```bash
-{% raw %}
 $ docker inspect --format='{{json .Config}}' $INSTANCE_ID
-{% endraw %}
 ```

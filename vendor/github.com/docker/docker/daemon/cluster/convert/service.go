@@ -35,6 +35,12 @@ func ServiceFromGRPC(s swarmapi.Service) types.Service {
 			service.UpdateStatus.State = types.UpdateStatePaused
 		case swarmapi.UpdateStatus_COMPLETED:
 			service.UpdateStatus.State = types.UpdateStateCompleted
+		case swarmapi.UpdateStatus_ROLLBACK_STARTED:
+			service.UpdateStatus.State = types.UpdateStateRollbackStarted
+		case swarmapi.UpdateStatus_ROLLBACK_PAUSED:
+			service.UpdateStatus.State = types.UpdateStateRollbackPaused
+		case swarmapi.UpdateStatus_ROLLBACK_COMPLETED:
+			service.UpdateStatus.State = types.UpdateStateRollbackCompleted
 		}
 
 		startedAt, _ := gogotypes.TimestampFromProto(s.UpdateStatus.StartedAt)
@@ -63,51 +69,16 @@ func serviceSpecFromGRPC(spec *swarmapi.ServiceSpec) *types.ServiceSpec {
 		serviceNetworks = append(serviceNetworks, types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
 	}
 
-	taskNetworks := make([]types.NetworkAttachmentConfig, 0, len(spec.Task.Networks))
-	for _, n := range spec.Task.Networks {
-		taskNetworks = append(taskNetworks, types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
-	}
-
-	containerConfig := spec.Task.Runtime.(*swarmapi.TaskSpec_Container).Container
 	convertedSpec := &types.ServiceSpec{
-		Annotations: types.Annotations{
-			Name:   spec.Annotations.Name,
-			Labels: spec.Annotations.Labels,
-		},
-
-		TaskTemplate: types.TaskSpec{
-			ContainerSpec: containerSpecFromGRPC(containerConfig),
-			Resources:     resourcesFromGRPC(spec.Task.Resources),
-			RestartPolicy: restartPolicyFromGRPC(spec.Task.Restart),
-			Placement:     placementFromGRPC(spec.Task.Placement),
-			LogDriver:     driverFromGRPC(spec.Task.LogDriver),
-			Networks:      taskNetworks,
-			ForceUpdate:   spec.Task.ForceUpdate,
-		},
-
+		Annotations:  annotationsFromGRPC(spec.Annotations),
+		TaskTemplate: taskSpecFromGRPC(spec.Task),
 		Networks:     serviceNetworks,
 		EndpointSpec: endpointSpecFromGRPC(spec.Endpoint),
 	}
 
 	// UpdateConfig
-	if spec.Update != nil {
-		convertedSpec.UpdateConfig = &types.UpdateConfig{
-			Parallelism:     spec.Update.Parallelism,
-			MaxFailureRatio: spec.Update.MaxFailureRatio,
-		}
-
-		convertedSpec.UpdateConfig.Delay = spec.Update.Delay
-		if spec.Update.Monitor != nil {
-			convertedSpec.UpdateConfig.Monitor, _ = gogotypes.DurationFromProto(spec.Update.Monitor)
-		}
-
-		switch spec.Update.FailureAction {
-		case swarmapi.UpdateConfig_PAUSE:
-			convertedSpec.UpdateConfig.FailureAction = types.UpdateFailureActionPause
-		case swarmapi.UpdateConfig_CONTINUE:
-			convertedSpec.UpdateConfig.FailureAction = types.UpdateFailureActionContinue
-		}
-	}
+	convertedSpec.UpdateConfig = updateConfigFromGRPC(spec.Update)
+	convertedSpec.RollbackConfig = updateConfigFromGRPC(spec.Rollback)
 
 	// Mode
 	switch t := spec.GetMode().(type) {
@@ -166,30 +137,31 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 	spec.Task.Restart = restartPolicy
 
 	if s.TaskTemplate.Placement != nil {
+		var preferences []*swarmapi.PlacementPreference
+		for _, pref := range s.TaskTemplate.Placement.Preferences {
+			if pref.Spread != nil {
+				preferences = append(preferences, &swarmapi.PlacementPreference{
+					Preference: &swarmapi.PlacementPreference_Spread{
+						Spread: &swarmapi.SpreadOver{
+							SpreadDescriptor: pref.Spread.SpreadDescriptor,
+						},
+					},
+				})
+			}
+		}
 		spec.Task.Placement = &swarmapi.Placement{
 			Constraints: s.TaskTemplate.Placement.Constraints,
+			Preferences: preferences,
 		}
 	}
 
-	if s.UpdateConfig != nil {
-		var failureAction swarmapi.UpdateConfig_FailureAction
-		switch s.UpdateConfig.FailureAction {
-		case types.UpdateFailureActionPause, "":
-			failureAction = swarmapi.UpdateConfig_PAUSE
-		case types.UpdateFailureActionContinue:
-			failureAction = swarmapi.UpdateConfig_CONTINUE
-		default:
-			return swarmapi.ServiceSpec{}, fmt.Errorf("unrecongized update failure action %s", s.UpdateConfig.FailureAction)
-		}
-		spec.Update = &swarmapi.UpdateConfig{
-			Parallelism:     s.UpdateConfig.Parallelism,
-			Delay:           s.UpdateConfig.Delay,
-			FailureAction:   failureAction,
-			MaxFailureRatio: s.UpdateConfig.MaxFailureRatio,
-		}
-		if s.UpdateConfig.Monitor != 0 {
-			spec.Update.Monitor = gogotypes.DurationProto(s.UpdateConfig.Monitor)
-		}
+	spec.Update, err = updateConfigToGRPC(s.UpdateConfig)
+	if err != nil {
+		return swarmapi.ServiceSpec{}, err
+	}
+	spec.Rollback, err = updateConfigToGRPC(s.RollbackConfig)
+	if err != nil {
+		return swarmapi.ServiceSpec{}, err
 	}
 
 	if s.EndpointSpec != nil {
@@ -234,6 +206,19 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 	}
 
 	return spec, nil
+}
+
+func annotationsFromGRPC(ann swarmapi.Annotations) types.Annotations {
+	a := types.Annotations{
+		Name:   ann.Name,
+		Labels: ann.Labels,
+	}
+
+	if a.Labels == nil {
+		a.Labels = make(map[string]string)
+	}
+
+	return a
 }
 
 func resourcesFromGRPC(res *swarmapi.ResourceRequirements) *types.ResourceRequirements {
@@ -342,10 +327,21 @@ func restartPolicyToGRPC(p *types.RestartPolicy) (*swarmapi.RestartPolicy, error
 }
 
 func placementFromGRPC(p *swarmapi.Placement) *types.Placement {
-	var r *types.Placement
-	if p != nil {
-		r = &types.Placement{}
-		r.Constraints = p.Constraints
+	if p == nil {
+		return nil
+	}
+	r := &types.Placement{
+		Constraints: p.Constraints,
+	}
+
+	for _, pref := range p.Preferences {
+		if spread := pref.GetSpread(); spread != nil {
+			r.Preferences = append(r.Preferences, types.PlacementPreference{
+				Spread: &types.SpreadOver{
+					SpreadDescriptor: spread.SpreadDescriptor,
+				},
+			})
+		}
 	}
 
 	return r
@@ -370,5 +366,93 @@ func driverToGRPC(p *types.Driver) *swarmapi.Driver {
 	return &swarmapi.Driver{
 		Name:    p.Name,
 		Options: p.Options,
+	}
+}
+
+func updateConfigFromGRPC(updateConfig *swarmapi.UpdateConfig) *types.UpdateConfig {
+	if updateConfig == nil {
+		return nil
+	}
+
+	converted := &types.UpdateConfig{
+		Parallelism:     updateConfig.Parallelism,
+		MaxFailureRatio: updateConfig.MaxFailureRatio,
+	}
+
+	converted.Delay = updateConfig.Delay
+	if updateConfig.Monitor != nil {
+		converted.Monitor, _ = gogotypes.DurationFromProto(updateConfig.Monitor)
+	}
+
+	switch updateConfig.FailureAction {
+	case swarmapi.UpdateConfig_PAUSE:
+		converted.FailureAction = types.UpdateFailureActionPause
+	case swarmapi.UpdateConfig_CONTINUE:
+		converted.FailureAction = types.UpdateFailureActionContinue
+	case swarmapi.UpdateConfig_ROLLBACK:
+		converted.FailureAction = types.UpdateFailureActionRollback
+	}
+
+	switch updateConfig.Order {
+	case swarmapi.UpdateConfig_STOP_FIRST:
+		converted.Order = types.UpdateOrderStopFirst
+	case swarmapi.UpdateConfig_START_FIRST:
+		converted.Order = types.UpdateOrderStartFirst
+	}
+
+	return converted
+}
+
+func updateConfigToGRPC(updateConfig *types.UpdateConfig) (*swarmapi.UpdateConfig, error) {
+	if updateConfig == nil {
+		return nil, nil
+	}
+
+	converted := &swarmapi.UpdateConfig{
+		Parallelism:     updateConfig.Parallelism,
+		Delay:           updateConfig.Delay,
+		MaxFailureRatio: updateConfig.MaxFailureRatio,
+	}
+
+	switch updateConfig.FailureAction {
+	case types.UpdateFailureActionPause, "":
+		converted.FailureAction = swarmapi.UpdateConfig_PAUSE
+	case types.UpdateFailureActionContinue:
+		converted.FailureAction = swarmapi.UpdateConfig_CONTINUE
+	case types.UpdateFailureActionRollback:
+		converted.FailureAction = swarmapi.UpdateConfig_ROLLBACK
+	default:
+		return nil, fmt.Errorf("unrecognized update failure action %s", updateConfig.FailureAction)
+	}
+	if updateConfig.Monitor != 0 {
+		converted.Monitor = gogotypes.DurationProto(updateConfig.Monitor)
+	}
+
+	switch updateConfig.Order {
+	case types.UpdateOrderStopFirst, "":
+		converted.Order = swarmapi.UpdateConfig_STOP_FIRST
+	case types.UpdateOrderStartFirst:
+		converted.Order = swarmapi.UpdateConfig_START_FIRST
+	default:
+		return nil, fmt.Errorf("unrecognized update order %s", updateConfig.Order)
+	}
+
+	return converted, nil
+}
+
+func taskSpecFromGRPC(taskSpec swarmapi.TaskSpec) types.TaskSpec {
+	taskNetworks := make([]types.NetworkAttachmentConfig, 0, len(taskSpec.Networks))
+	for _, n := range taskSpec.Networks {
+		taskNetworks = append(taskNetworks, types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
+	}
+
+	return types.TaskSpec{
+		ContainerSpec: containerSpecFromGRPC(taskSpec.GetContainer()),
+		Resources:     resourcesFromGRPC(taskSpec.Resources),
+		RestartPolicy: restartPolicyFromGRPC(taskSpec.Restart),
+		Placement:     placementFromGRPC(taskSpec.Placement),
+		LogDriver:     driverFromGRPC(taskSpec.LogDriver),
+		Networks:      taskNetworks,
+		ForceUpdate:   taskSpec.ForceUpdate,
 	}
 }

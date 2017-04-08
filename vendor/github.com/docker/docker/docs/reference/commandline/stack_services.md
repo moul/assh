@@ -28,12 +28,12 @@ Options:
   -q, --quiet           Only display IDs
 ```
 
-### Description
+## Description
 
 Lists the services that are running as part of the specified stack. This
 command has to be run targeting a manager node.
 
-### Examples
+## Examples
 
 The following command shows all services in the `myapp` stack:
 
@@ -90,12 +90,10 @@ The following example uses a template without headers and outputs the
 `ID`, `Mode`, and `Replicas` entries separated by a colon for all services:
 
 ```bash
-{% raw %}
 $ docker stack services --format "{{.ID}}: {{.Mode}} {{.Replicas}}"
 
 0zmvwuiu3vue: replicated 10/10
 fm6uf97exkul: global 5/5
-{% endraw %}
 ```
 
 

@@ -43,14 +43,11 @@ import (
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/docker/pkg/system"
+	"github.com/docker/docker/plugin"
 	"github.com/docker/docker/registry"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/go-connections/tlsconfig"
 	"github.com/spf13/pflag"
-)
-
-const (
-	flagDaemonConfigFile = "config-file"
 )
 
 // DaemonCli represents the daemon CLI.
@@ -264,9 +261,20 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	// Notify that the API is active, but before daemon is set up.
 	preNotifySystem()
 
-	d, err := daemon.NewDaemon(cli.Config, registryService, containerdRemote)
+	pluginStore := plugin.NewStore()
+
+	if err := cli.initMiddlewares(api, serverConfig, pluginStore); err != nil {
+		logrus.Fatalf("Error creating middlewares: %v", err)
+	}
+
+	d, err := daemon.NewDaemon(cli.Config, registryService, containerdRemote, pluginStore)
 	if err != nil {
 		return fmt.Errorf("Error starting daemon: %v", err)
+	}
+
+	// validate after NewDaemon has restored enabled plugins. Dont change order.
+	if err := validateAuthzPlugins(cli.Config.AuthorizationPlugins, pluginStore); err != nil {
+		return fmt.Errorf("Error validating authorization plugin: %v", err)
 	}
 
 	if cli.Config.MetricsAddress != "" {
@@ -307,10 +315,6 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 
 	cli.d = d
 
-	// initMiddlewares needs cli.d to be populated. Dont change this init order.
-	if err := cli.initMiddlewares(api, serverConfig); err != nil {
-		logrus.Fatalf("Error creating middlewares: %v", err)
-	}
 	d.SetCluster(c)
 	initRouter(api, d, c)
 
@@ -415,10 +419,14 @@ func loadDaemonCliConfig(opts daemonOptions) (*config.Config, error) {
 		conf.CommonTLSOptions.KeyFile = opts.common.TLSOptions.KeyFile
 	}
 
+	if flags.Changed("graph") && flags.Changed("data-root") {
+		return nil, fmt.Errorf(`cannot specify both "--graph" and "--data-root" option`)
+	}
+
 	if opts.configFile != "" {
 		c, err := config.MergeDaemonConfigurations(conf, flags, opts.configFile)
 		if err != nil {
-			if flags.Changed(flagDaemonConfigFile) || !os.IsNotExist(err) {
+			if flags.Changed("config-file") || !os.IsNotExist(err) {
 				return nil, fmt.Errorf("unable to configure the Docker daemon with file %s: %v\n", opts.configFile, err)
 			}
 		}
@@ -433,11 +441,15 @@ func loadDaemonCliConfig(opts daemonOptions) (*config.Config, error) {
 		return nil, err
 	}
 
+	if flags.Changed("graph") {
+		logrus.Warnf(`the "-g / --graph" flag is deprecated. Please use "--data-root" instead`)
+	}
+
 	// Labels of the docker engine used to allow multiple values associated with the same key.
 	// This is deprecated in 1.13, and, be removed after 3 release cycles.
 	// The following will check the conflict of labels, and report a warning for deprecation.
 	//
-	// TODO: After 3 release cycles (1.16) an error will be returned, and labels will be
+	// TODO: After 3 release cycles (17.12) an error will be returned, and labels will be
 	// sanitized to consolidate duplicate key-value pairs (config.Labels = newLabels):
 	//
 	// newLabels, err := daemon.GetConflictFreeLabels(config.Labels)
@@ -494,24 +506,22 @@ func initRouter(s *apiserver.Server, d *daemon.Daemon, c *cluster.Cluster) {
 	s.InitRouter(debug.IsEnabled(), routers...)
 }
 
-func (cli *DaemonCli) initMiddlewares(s *apiserver.Server, cfg *apiserver.Config) error {
+func (cli *DaemonCli) initMiddlewares(s *apiserver.Server, cfg *apiserver.Config, pluginStore *plugin.Store) error {
 	v := cfg.Version
 
-	exp := middleware.NewExperimentalMiddleware(cli.d.HasExperimental())
+	exp := middleware.NewExperimentalMiddleware(cli.Config.Experimental)
 	s.UseMiddleware(exp)
 
 	vm := middleware.NewVersionMiddleware(v, api.DefaultVersion, api.MinVersion)
 	s.UseMiddleware(vm)
 
-	if cfg.EnableCors {
+	if cfg.EnableCors || cfg.CorsHeaders != "" {
 		c := middleware.NewCORSMiddleware(cfg.CorsHeaders)
 		s.UseMiddleware(c)
 	}
 
-	if err := validateAuthzPlugins(cli.Config.AuthorizationPlugins, cli.d.PluginStore); err != nil {
-		return fmt.Errorf("Error validating authorization plugin: %v", err)
-	}
-	cli.authzMiddleware = authorization.NewMiddleware(cli.Config.AuthorizationPlugins, cli.d.PluginStore)
+	cli.authzMiddleware = authorization.NewMiddleware(cli.Config.AuthorizationPlugins, pluginStore)
+	cli.Config.AuthzMiddleware = cli.authzMiddleware
 	s.UseMiddleware(cli.authzMiddleware)
 	return nil
 }
