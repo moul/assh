@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 )
@@ -61,14 +62,14 @@ func runRemove(dockerCli *command.DockerCli, opts removeOptions) error {
 	hasError = removeNetworks(ctx, dockerCli, networks) || hasError
 
 	if hasError {
-		return fmt.Errorf("Failed to remove some resources")
+		return errors.Errorf("Failed to remove some resources")
 	}
 	return nil
 }
 
 func removeServices(
 	ctx context.Context,
-	dockerCli *command.DockerCli,
+	dockerCli command.Cli,
 	services []swarm.Service,
 ) bool {
 	var err error
@@ -83,7 +84,7 @@ func removeServices(
 
 func removeNetworks(
 	ctx context.Context,
-	dockerCli *command.DockerCli,
+	dockerCli command.Cli,
 	networks []types.NetworkResource,
 ) bool {
 	var err error
@@ -98,7 +99,7 @@ func removeNetworks(
 
 func removeSecrets(
 	ctx context.Context,
-	dockerCli *command.DockerCli,
+	dockerCli command.Cli,
 	secrets []swarm.Secret,
 ) bool {
 	var err error

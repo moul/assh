@@ -77,12 +77,15 @@ type clientConfig struct {
 }
 
 // New returns a Daemon instance to be used for testing.
-// This will create a directory such as d123456789 in the folder specified by $DEST.
+// This will create a directory such as d123456789 in the folder specified by $DOCKER_INTEGRATION_DAEMON_DEST or $DEST.
 // The daemon will not automatically start.
 func New(t testingT, dockerBinary string, dockerdBinary string, config Config) *Daemon {
-	dest := os.Getenv("DEST")
+	dest := os.Getenv("DOCKER_INTEGRATION_DAEMON_DEST")
 	if dest == "" {
-		t.Fatalf("Please set the DEST environment variable")
+		dest = os.Getenv("DEST")
+	}
+	if dest == "" {
+		t.Fatalf("Please set the DOCKER_INTEGRATION_DAEMON_DEST or the DEST environment variable")
 	}
 
 	if err := os.MkdirAll(SockRoot, 0700); err != nil {
@@ -215,7 +218,7 @@ func (d *Daemon) StartWithLogFile(out *os.File, providedArgs ...string) error {
 	}
 	args := append(d.GlobalFlags,
 		"--containerd", "/var/run/docker/libcontainerd/docker-containerd.sock",
-		"--graph", d.Root,
+		"--data-root", d.Root,
 		"--exec-root", d.execRoot,
 		"--pidfile", fmt.Sprintf("%s/docker.pid", d.Folder),
 		fmt.Sprintf("--userland-proxy=%t", d.userlandProxy),
@@ -623,6 +626,7 @@ func (d *Daemon) SockRequest(method, endpoint string, data interface{}) (int, []
 
 // SockRequestRaw executes a socket request on a daemon and returns an http
 // response and a reader for the output data.
+// Deprecated: use request package instead
 func (d *Daemon) SockRequestRaw(method, endpoint string, data io.Reader, ct string) (*http.Response, io.ReadCloser, error) {
 	return request.SockRequestRaw(method, endpoint, data, ct, d.Sock())
 }
@@ -714,7 +718,7 @@ func (d *Daemon) ReloadConfig() error {
 	errCh := make(chan error)
 	started := make(chan struct{})
 	go func() {
-		_, body, err := request.SockRequestRaw("GET", "/events", nil, "", d.Sock())
+		_, body, err := request.DoOnHost(d.Sock(), "/events", request.Method(http.MethodGet))
 		close(started)
 		if err != nil {
 			errCh <- err

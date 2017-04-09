@@ -43,10 +43,14 @@ func TestConvertRestartPolicyFromFailure(t *testing.T) {
 	assert.DeepEqual(t, policy, expected)
 }
 
+func strPtr(val string) *string {
+	return &val
+}
+
 func TestConvertEnvironment(t *testing.T) {
-	source := map[string]string{
-		"foo": "bar",
-		"key": "value",
+	source := map[string]*string{
+		"foo": strPtr("bar"),
+		"key": strPtr("value"),
 	}
 	env := convertEnvironment(source)
 	sort.Strings(env)
@@ -156,9 +160,10 @@ func TestConvertEndpointSpec(t *testing.T) {
 			Published: 80,
 		},
 	}
-	endpoint, err := convertEndpointSpec(source)
+	endpoint, err := convertEndpointSpec("vip", source)
 
 	expected := swarm.EndpointSpec{
+		Mode: swarm.ResolutionMode(strings.ToLower("vip")),
 		Ports: []swarm.PortConfig{
 			{
 				TargetPort:    8080,
@@ -179,10 +184,9 @@ func TestConvertEndpointSpec(t *testing.T) {
 
 func TestConvertServiceNetworksOnlyDefault(t *testing.T) {
 	networkConfigs := networkMap{}
-	networks := map[string]*composetypes.ServiceNetworkConfig{}
 
 	configs, err := convertServiceNetworks(
-		networks, networkConfigs, NewNamespace("foo"), "service")
+		nil, networkConfigs, NewNamespace("foo"), "service")
 
 	expected := []swarm.NetworkAttachmentConfig{
 		{
@@ -233,6 +237,31 @@ func TestConvertServiceNetworks(t *testing.T) {
 
 	assert.NilError(t, err)
 	assert.DeepEqual(t, []swarm.NetworkAttachmentConfig(sortedConfigs), expected)
+}
+
+func TestConvertServiceNetworksCustomDefault(t *testing.T) {
+	networkConfigs := networkMap{
+		"default": composetypes.NetworkConfig{
+			External: composetypes.External{
+				External: true,
+				Name:     "custom",
+			},
+		},
+	}
+	networks := map[string]*composetypes.ServiceNetworkConfig{}
+
+	configs, err := convertServiceNetworks(
+		networks, networkConfigs, NewNamespace("foo"), "service")
+
+	expected := []swarm.NetworkAttachmentConfig{
+		{
+			Target:  "custom",
+			Aliases: []string{"service"},
+		},
+	}
+
+	assert.NilError(t, err)
+	assert.DeepEqual(t, []swarm.NetworkAttachmentConfig(configs), expected)
 }
 
 type byTargetSort []swarm.NetworkAttachmentConfig

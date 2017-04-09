@@ -34,6 +34,60 @@ The settings currently supported are:
  * path of devices
  * args
 
+## What is settable ?
+
+Look at the plugin manifest, it's easy to see what fields are settable,
+by looking at the `Settable` field.
+
+Here is an extract of a plugin manifest:
+
+```
+{
+        "config": {
+            ...
+            "args": {
+                "name": "myargs",
+                "settable": ["value"],
+                "value": ["foo", "bar"]
+            },
+            "env": [
+                {
+                    "name": "DEBUG",
+                    "settable": ["value"],
+                    "value": "0"
+                },
+                {
+                    "name": "LOGGING",
+                    "value": "1"
+                }
+            ],
+	    "devices": [
+                {
+                    "name": "mydevice",
+                    "path": "/dev/foo",
+                    "settable": ["path"]
+                }
+            ],
+	    "mounts": [
+                {
+                    "destination": "/baz",
+                    "name": "mymount",
+                    "options": ["rbind"],
+                    "settable": ["source"],
+                    "source": "/foo",
+                    "type": "bind"
+                }
+            ],
+	    ...
+	 }
+}
+```
+
+In this example, we can see that the `value` of the `DEBUG` environment variable is settable,
+the `source` of the `mymount` mount is also settable. Same for the `path` of `mydevice` and `value` of `myargs`.
+
+On the contrary, the `LOGGING` environment variable doesn't have any settable field, which implies that user cannot tweak it.
+
 ## Examples
 
 ### Change an environment variable
@@ -42,16 +96,13 @@ The following example change the env variable `DEBUG` on the
 `sample-volume-plugin` plugin.
 
 ```bash
-{% raw %}
 $ docker plugin inspect -f {{.Settings.Env}} tiborvass/sample-volume-plugin
-
 [DEBUG=0]
 
 $ docker plugin set tiborvass/sample-volume-plugin DEBUG=1
 
 $ docker plugin inspect -f {{.Settings.Env}} tiborvass/sample-volume-plugin
 [DEBUG=1]
-{% endraw %}
 ```
 
 ### Change the source of a mount
@@ -60,7 +111,6 @@ The following example change the source of the `mymount` mount on
 the `myplugin` plugin.
 
 ```bash
-{% raw %}
 $ docker plugin inspect -f '{{with $mount := index .Settings.Mounts 0}}{{$mount.Source}}{{end}}' myplugin
 /foo
 
@@ -68,7 +118,6 @@ $ docker plugins set myplugin mymount.source=/bar
 
 $ docker plugin inspect -f '{{with $mount := index .Settings.Mounts 0}}{{$mount.Source}}{{end}}' myplugin
 /bar
-{% endraw %}
 ```
 
 > **Note**: Since only `source` is settable in `mymount`,
@@ -80,7 +129,6 @@ The following example change the path of the `mydevice` device on
 the `myplugin` plugin.
 
 ```bash
-{% raw %}
 $ docker plugin inspect -f '{{with $device := index .Settings.Devices 0}}{{$device.Path}}{{end}}' myplugin
 /dev/foo
 
@@ -88,7 +136,6 @@ $ docker plugins set myplugin mydevice.path=/dev/bar
 
 $ docker plugin inspect -f '{{with $device := index .Settings.Devices 0}}{{$device.Path}}{{end}}' myplugin
 /dev/bar
-{% endraw %}
 ```
 
 > **Note**: Since only `path` is settable in `mydevice`,
@@ -96,18 +143,16 @@ $ docker plugin inspect -f '{{with $device := index .Settings.Devices 0}}{{$devi
 
 ### Change the source of the arguments
 
-The following example change the source of the args on the `myplugin` plugin.
+The following example change the value of the args on the `myplugin` plugin.
 
 ```bash
-{% raw %}
 $ docker plugin inspect -f '{{.Settings.Args}}' myplugin
 ["foo", "bar"]
 
-$ docker plugins set myplugin args="foo bar baz"
+$ docker plugins set myplugin myargs="foo bar baz"
 
 $ docker plugin inspect -f '{{.Settings.Args}}' myplugin
 ["foo", "bar", "baz"]
-{% endraw %}
 ```
 
 ## Related commands

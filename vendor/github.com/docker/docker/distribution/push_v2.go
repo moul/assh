@@ -283,8 +283,8 @@ func (pd *v2PushDescriptor) Upload(ctx context.Context, progressOutput progress.
 	// Do we have any metadata associated with this layer's DiffID?
 	v2Metadata, err := pd.v2MetadataService.GetMetadata(diffID)
 	if err == nil {
-		// check for blob existence in the target repository if we have a mapping with it
-		descriptor, exists, err := pd.layerAlreadyExists(ctx, progressOutput, diffID, false, 1, v2Metadata)
+		// check for blob existence in the target repository
+		descriptor, exists, err := pd.layerAlreadyExists(ctx, progressOutput, diffID, true, 1, v2Metadata)
 		if exists || err != nil {
 			return descriptor, err
 		}
@@ -585,7 +585,7 @@ func getMaxMountAndExistenceCheckAttempts(layer PushLayer) (maxMountAttempts, ma
 }
 
 // getRepositoryMountCandidates returns an array of v2 metadata items belonging to the given registry. The
-// array is sorted from youngest to oldest. If requireReigstryMatch is true, the resulting array will contain
+// array is sorted from youngest to oldest. If requireRegistryMatch is true, the resulting array will contain
 // only metadata entries having registry part of SourceRepository matching the part of repoInfo.
 func getRepositoryMountCandidates(
 	repoInfo reference.Named,

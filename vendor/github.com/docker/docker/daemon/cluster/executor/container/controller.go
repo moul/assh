@@ -1,11 +1,7 @@
 package container
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/binary"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -317,8 +313,10 @@ func (r *controller) Shutdown(ctx context.Context) error {
 
 	// remove container from service binding
 	if err := r.adapter.deactivateServiceBinding(); err != nil {
-		log.G(ctx).WithError(err).Errorf("failed to deactivate service binding for container %s", r.adapter.container.name())
-		return err
+		log.G(ctx).WithError(err).Warningf("failed to deactivate service binding for container %s", r.adapter.container.name())
+		// Don't return an error here, because failure to deactivate
+		// the service binding is expected if the container was never
+		// started.
 	}
 
 	if err := r.adapter.shutdown(ctx); err != nil {
@@ -443,11 +441,12 @@ func (r *controller) Logs(ctx context.Context, publisher exec.LogPublisher, opti
 		return errors.Wrap(err, "container not ready for logs")
 	}
 
-	rc, err := r.adapter.logs(ctx, options)
+	logsContext, cancel := context.WithCancel(ctx)
+	msgs, err := r.adapter.logs(logsContext, options)
+	defer cancel()
 	if err != nil {
 		return errors.Wrap(err, "failed getting container logs")
 	}
-	defer rc.Close()
 
 	var (
 		// use a rate limiter to keep things under control but also provides some
@@ -460,53 +459,38 @@ func (r *controller) Logs(ctx context.Context, publisher exec.LogPublisher, opti
 		}
 	)
 
-	brd := bufio.NewReader(rc)
 	for {
-		// so, message header is 8 bytes, treat as uint64, pull stream off MSB
-		var header uint64
-		if err := binary.Read(brd, binary.BigEndian, &header); err != nil {
-			if err == io.EOF {
-				return nil
-			}
-
-			return errors.Wrap(err, "failed reading log header")
+		msg, ok := <-msgs
+		if !ok {
+			// we're done here, no more messages
+			return nil
 		}
 
-		stream, size := (header>>(7<<3))&0xFF, header & ^(uint64(0xFF)<<(7<<3))
+		if msg.Err != nil {
+			// the defered cancel closes the adapter's log stream
+			return msg.Err
+		}
 
-		// limit here to decrease allocation back pressure.
-		if err := limiter.WaitN(ctx, int(size)); err != nil {
+		// wait here for the limiter to catch up
+		if err := limiter.WaitN(ctx, len(msg.Line)); err != nil {
 			return errors.Wrap(err, "failed rate limiter")
 		}
-
-		buf := make([]byte, size)
-		_, err := io.ReadFull(brd, buf)
-		if err != nil {
-			return errors.Wrap(err, "failed reading buffer")
-		}
-
-		// Timestamp is RFC3339Nano with 1 space after. Lop, parse, publish
-		parts := bytes.SplitN(buf, []byte(" "), 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid timestamp in log message: %v", buf)
-		}
-
-		ts, err := time.Parse(time.RFC3339Nano, string(parts[0]))
-		if err != nil {
-			return errors.Wrap(err, "failed to parse timestamp")
-		}
-
-		tsp, err := gogotypes.TimestampProto(ts)
+		tsp, err := gogotypes.TimestampProto(msg.Timestamp)
 		if err != nil {
 			return errors.Wrap(err, "failed to convert timestamp")
+		}
+		var stream api.LogStream
+		if msg.Source == "stdout" {
+			stream = api.LogStreamStdout
+		} else if msg.Source == "stderr" {
+			stream = api.LogStreamStderr
 		}
 
 		if err := publisher.Publish(ctx, api.LogMessage{
 			Context:   msgctx,
 			Timestamp: tsp,
-			Stream:    api.LogStream(stream),
-
-			Data: parts[1],
+			Stream:    stream,
+			Data:      msg.Line,
 		}); err != nil {
 			return errors.Wrap(err, "failed to publish log message")
 		}

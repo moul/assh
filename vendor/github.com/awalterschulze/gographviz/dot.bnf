@@ -280,6 +280,8 @@ SubGraphStmt
 	: "{" StmtList "}"                            << ast.NewSubGraph(nil, $1) >>
 	| subgraph "{" StmtList "}"                   << ast.NewSubGraph(nil, $2) >>
 	| subgraph Id "{" StmtList "}"                << ast.NewSubGraph($1, $3) >>
+	| subgraph "{" "}"                   	      << ast.NewSubGraph(nil, nil) >>
+	| subgraph Id "{" "}"                         << ast.NewSubGraph($1, nil) >>
 	;
 
 //An edgeop is -> in directed graphs and -- in undirected graphs.

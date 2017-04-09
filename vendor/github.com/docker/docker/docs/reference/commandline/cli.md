@@ -30,7 +30,7 @@ Options:
   -D, --debug              Enable debug mode
       --help               Print usage
   -H, --host value         Daemon socket(s) to connect to (default [])
-  -l, --log-level string   Set the logging level ("debug", "info", "warn", "error", "fatal") (default "info")
+  -l, --log-level string   Set the logging level ("debug"|"info"|"warn"|"error"|"fatal") (default "info")
       --tls                Use TLS; implied by --tlsverify
       --tlscacert string   Trust certs signed only by this CA (default "/root/.docker/ca.pem")
       --tlscert string     Path to TLS certificate file (default "/root/.docker/cert.pem")
@@ -160,6 +160,19 @@ property is not set, the client falls back to the default table
 format. For a list of supported formatting directives, see
 [**Formatting** section in the `docker stats` documentation](stats.md)
 
+The property `secretFormat` specifies the default format for `docker
+secret ls` output. When the `--format` flag is not provided with the
+`docker secret ls` command, Docker's client uses this property. If this
+property is not set, the client falls back to the default table
+format. For a list of supported formatting directives, see
+[**Formatting** section in the `docker secret ls` documentation](secret_ls.md)
+
+The property `nodesFormat` specifies the default format for `docker node ls` output.
+When the `--format` flag is not provided with the `docker node ls` command,
+Docker's client uses the value of `nodesFormat`. If the value of `nodesFormat` is not set,
+the client uses the default table format. For a list of supported formatting
+directives, see the [**Formatting** section in the `docker node ls` documentation](node_ls.md)
+
 The property `credsStore` specifies an external binary to serve as the default
 credential store. When this property is set, `docker login` will attempt to
 store credentials in the binary specified by `docker-credential-<value>` which
@@ -195,7 +208,6 @@ attach`, `docker exec`, `docker run` or `docker start` command.
 Following is a sample `config.json` file:
 
 ```json
-{% raw %}
 {
   "HttpHeaders": {
     "MyHeader": "MyValue"
@@ -205,7 +217,9 @@ Following is a sample `config.json` file:
   "pluginsFormat": "table {{.ID}}\t{{.Name}}\t{{.Enabled}}",
   "statsFormat": "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}",
   "servicesFormat": "table {{.ID}}\t{{.Name}}\t{{.Mode}}",
+  "secretFormat": "table {{.ID}}\t{{.Name}}\t{{.CreatedAt}}\t{{.UpdatedAt}}",
   "serviceInspectFormat": "pretty",
+  "nodesFormat": "table {{.ID}}\t{{.Hostname}}\t{{.Availability}}",
   "detachKeys": "ctrl-e,e",
   "credsStore": "secretservice",
   "credHelpers": {
@@ -213,7 +227,6 @@ Following is a sample `config.json` file:
     "unicorn.example.com": "vcbait"
   }
 }
-{% endraw %}
 ```
 
 ### Notary

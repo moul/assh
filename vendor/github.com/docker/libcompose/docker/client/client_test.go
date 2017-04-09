@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/docker/docker/cliconfig"
+	cliconfig "github.com/docker/docker/cli/config"
 	"github.com/docker/go-connections/tlsconfig"
 )
 
@@ -109,7 +109,7 @@ func TestCreateWithOptions(t *testing.T) {
 				TLS:        true,
 				APIVersion: "v1.22",
 			},
-			expectedError: fmt.Sprintf("Could not load X509 key pair: open %s/cert.pem: no such file or directory. Make sure the key is not encrypted", cliconfig.ConfigDir()),
+			expectedError: fmt.Sprintf("Could not load X509 key pair: open %s/cert.pem: no such file or directory. Make sure the key is not encrypted", cliconfig.Dir()),
 		},
 		{
 			options: Options{

@@ -6,6 +6,7 @@ import (
 
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 )
@@ -14,7 +15,7 @@ type removeOptions struct {
 	names []string
 }
 
-func newSecretRemoveCommand(dockerCli *command.DockerCli) *cobra.Command {
+func newSecretRemoveCommand(dockerCli command.Cli) *cobra.Command {
 	return &cobra.Command{
 		Use:     "rm SECRET [SECRET...]",
 		Aliases: []string{"remove"},
@@ -29,7 +30,7 @@ func newSecretRemoveCommand(dockerCli *command.DockerCli) *cobra.Command {
 	}
 }
 
-func runSecretRemove(dockerCli *command.DockerCli, opts removeOptions) error {
+func runSecretRemove(dockerCli command.Cli, opts removeOptions) error {
 	client := dockerCli.Client()
 	ctx := context.Background()
 
@@ -45,7 +46,7 @@ func runSecretRemove(dockerCli *command.DockerCli, opts removeOptions) error {
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf("%s", strings.Join(errs, "\n"))
+		return errors.Errorf("%s", strings.Join(errs, "\n"))
 	}
 
 	return nil

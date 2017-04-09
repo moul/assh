@@ -167,20 +167,8 @@
         "ports": {
           "type": "array",
           "items": {
-            "oneOf": [
-              {"type": "number", "format": "ports"},
-              {"type": "string", "format": "ports"},
-              {
-                "type": "object",
-                "properties": {
-                  "mode": {"type": "string"},
-                  "target": {"type": "integer"},
-                  "published": {"type": "integer"},
-                  "protocol": {"type": "string"}
-                },
-                "additionalProperties": false
-              }
-            ]
+            "type": ["string", "number"],
+            "format": "ports"
           },
           "uniqueItems": true
         },
@@ -350,7 +338,6 @@
           "additionalProperties": false
         },
         "internal": {"type": "boolean"},
-        "attachable": {"type": "boolean"},
         "labels": {"$ref": "#/definitions/list_or_dict"}
       },
       "additionalProperties": false

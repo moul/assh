@@ -5,12 +5,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"golang.org/x/net/context"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/libcompose/utils"
-
+	"golang.org/x/net/context"
 	. "gopkg.in/check.v1"
 )
 
@@ -278,9 +276,7 @@ func (s *CliSuite) TestLink(c *C) {
 
 	cn := s.GetContainerByName(c, serverName)
 	c.Assert(cn, NotNil)
-	c.Assert(cn.Config.ExposedPorts, DeepEquals, map[nat.Port]struct{}{
-		"80/tcp": {},
-	})
+	c.Assert(cn.Config.ExposedPorts, DeepEquals, nat.PortSet{"80/tcp": struct{}{}})
 
 	clientName := fmt.Sprintf("%s_%s_1", p, "client")
 	cn = s.GetContainerByName(c, clientName)
