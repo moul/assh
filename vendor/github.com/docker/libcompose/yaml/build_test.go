@@ -3,9 +3,14 @@ package yaml
 import (
 	"testing"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
+)
+
+var (
+	buildno = "1"
+	user    = "vincent"
+	empty   = "\x00"
 )
 
 func TestMarshalBuild(t *testing.T) {
@@ -37,9 +42,9 @@ dockerfile: alternate
 			build: Build{
 				Context:    ".",
 				Dockerfile: "alternate",
-				Args: map[string]string{
-					"buildno": "1",
-					"user":    "vincent",
+				Args: map[string]*string{
+					"buildno": &buildno,
+					"user":    &user,
 				},
 			},
 			expected: `args:
@@ -91,9 +96,9 @@ args:
 			expected: &Build{
 				Context:    ".",
 				Dockerfile: "alternate",
-				Args: map[string]string{
-					"buildno": "1",
-					"user":    "vincent",
+				Args: map[string]*string{
+					"buildno": &buildno,
+					"user":    &user,
 				},
 			},
 		},
@@ -104,9 +109,9 @@ args:
   - user`,
 			expected: &Build{
 				Context: ".",
-				Args: map[string]string{
-					"buildno": "\x00",
-					"user":    "\x00",
+				Args: map[string]*string{
+					"buildno": &empty,
+					"user":    &empty,
 				},
 			},
 		},
@@ -117,9 +122,9 @@ args:
   - user=vincent`,
 			expected: &Build{
 				Context: ".",
-				Args: map[string]string{
-					"buildno": "1",
-					"user":    "vincent",
+				Args: map[string]*string{
+					"buildno": &buildno,
+					"user":    &user,
 				},
 			},
 		},

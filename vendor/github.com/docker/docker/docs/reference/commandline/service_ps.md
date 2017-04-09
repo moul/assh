@@ -17,12 +17,13 @@ aliases: ["/engine/reference/commandline/service_tasks/"]
 # service ps
 
 ```Markdown
-Usage:  docker service ps [OPTIONS] SERVICE
+Usage:  docker service ps [OPTIONS] SERVICE [SERVICE...]
 
 List the tasks of one or more services
 
 Options:
   -f, --filter filter   Filter output based on conditions provided
+      --format string   Pretty-print tasks using a Go template
       --help            Print usage
       --no-resolve      Do not map IDs to Names
       --no-trunc        Do not truncate output
@@ -146,11 +147,41 @@ ID            NAME      IMAGE        NODE      DESIRED STATE  CURRENT STATE     
 8eaxrb2fqpbn  redis.10  redis:3.0.6  manager1  Running        Running 8 seconds
 ```
 
-
 #### desired-state
 
-The `desired-state` filter can take the values `running`, `shutdown`, and `accepted`.
+The `desired-state` filter can take the values `running`, `shutdown`, or `accepted`.
 
+### Formatting
+
+The formatting options (`--format`) pretty-prints tasks output
+using a Go template.
+
+Valid placeholders for the Go template are listed below:
+
+Placeholder     | Description
+----------------|------------------------------------------------------------------------------------------
+`.ID`           | Task ID
+`.Name`         | Task name
+`.Image`        | Task image
+`.Node`         | Node ID
+`.DesiredState` | Desired state of the task (`running`, `shutdown`, or `accepted`)
+`.CurrentState` | Current state of the task
+`.Error`        | Error
+`.Ports`        | Task published ports
+
+When using the `--format` option, the `service ps` command will either
+output the data exactly as the template declares or, when using the
+`table` directive, includes column headers as well.
+
+The following example uses a template without headers and outputs the
+`Name` and `Image` entries separated by a colon for all tasks:
+
+```bash
+$ docker service ps --format "{{.Name}}: {{.Image}}" top
+top.1: busybox
+top.2: busybox
+top.3: busybox
+```
 
 ## Related commands
 

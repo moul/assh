@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -38,6 +37,8 @@ var validCommitCommands = map[string]bool{
 }
 
 // BuiltinAllowedBuildArgs is list of built-in allowed build args
+// these args are considered transparent and are excluded from the image history.
+// Filtering from history is implemented in dispatchers.go
 var BuiltinAllowedBuildArgs = map[string]bool{
 	"HTTP_PROXY":  true,
 	"http_proxy":  true,
@@ -69,13 +70,15 @@ type Builder struct {
 	runConfig        *container.Config // runconfig for cmd, run, entrypoint etc.
 	flags            *BFlags
 	tmpContainers    map[string]struct{}
-	image            string // imageID
+	image            string         // imageID
+	imageContexts    *imageContexts // helper for storing contexts from builds
 	noBaseImage      bool
 	maintainer       string
 	cmdSet           bool
 	disableCommit    bool
 	cacheBusted      bool
-	allowedBuildArgs map[string]bool // list of build-time args that are allowed for expansion/substitution and passing to commands in 'run'.
+	allowedBuildArgs map[string]*string  // list of build-time args that are allowed for expansion/substitution and passing to commands in 'run'.
+	allBuildArgs     map[string]struct{} // list of all build-time args found during parsing of the Dockerfile
 	directive        parser.Directive
 
 	// TODO: remove once docker.Commit can receive a tag
@@ -87,12 +90,13 @@ type Builder struct {
 
 // BuildManager implements builder.Backend and is shared across all Builder objects.
 type BuildManager struct {
-	backend builder.Backend
+	backend   builder.Backend
+	pathCache *pathCache // TODO: make this persistent
 }
 
 // NewBuildManager creates a BuildManager.
 func NewBuildManager(b builder.Backend) (bm *BuildManager) {
-	return &BuildManager{backend: b}
+	return &BuildManager{backend: b, pathCache: &pathCache{}}
 }
 
 // BuildFromContext builds a new image from a given context.
@@ -117,6 +121,7 @@ func (bm *BuildManager) BuildFromContext(ctx context.Context, src io.ReadCloser,
 	if err != nil {
 		return "", err
 	}
+	b.imageContexts.cache = bm.pathCache
 	return b.build(pg.StdoutFormatter, pg.StderrFormatter, pg.Output)
 }
 
@@ -126,9 +131,6 @@ func (bm *BuildManager) BuildFromContext(ctx context.Context, src io.ReadCloser,
 func NewBuilder(clientCtx context.Context, config *types.ImageBuildOptions, backend builder.Backend, buildContext builder.Context, dockerfile io.ReadCloser) (b *Builder, err error) {
 	if config == nil {
 		config = new(types.ImageBuildOptions)
-	}
-	if config.BuildArgs == nil {
-		config.BuildArgs = make(map[string]*string)
 	}
 	ctx, cancel := context.WithCancel(clientCtx)
 	b = &Builder{
@@ -142,15 +144,14 @@ func NewBuilder(clientCtx context.Context, config *types.ImageBuildOptions, back
 		runConfig:        new(container.Config),
 		tmpContainers:    map[string]struct{}{},
 		id:               stringid.GenerateNonCryptoID(),
-		allowedBuildArgs: make(map[string]bool),
+		allowedBuildArgs: make(map[string]*string),
+		allBuildArgs:     make(map[string]struct{}),
 		directive: parser.Directive{
 			EscapeSeen:           false,
 			LookingForDirectives: true,
 		},
 	}
-	if icb, ok := backend.(builder.ImageCacheBuilder); ok {
-		b.imageCache = icb.MakeImageCache(config.CacheFrom)
-	}
+	b.imageContexts = &imageContexts{b: b}
 
 	parser.SetEscapeToken(parser.DefaultEscapeToken, &b.directive) // Assume the default token for escape
 
@@ -162,6 +163,14 @@ func NewBuilder(clientCtx context.Context, config *types.ImageBuildOptions, back
 	}
 
 	return b, nil
+}
+
+func (b *Builder) resetImageCache() {
+	if icb, ok := b.docker.(builder.ImageCacheBuilder); ok {
+		b.imageCache = icb.MakeImageCache(b.options.CacheFrom)
+	}
+	b.noBaseImage = false
+	b.cacheBusted = false
 }
 
 // sanitizeRepoAndTags parses the raw "t" parameter received from the client
@@ -199,26 +208,13 @@ func sanitizeRepoAndTags(names []string) ([]reference.Named, error) {
 	return repoAndTags, nil
 }
 
-func (b *Builder) processLabels() error {
+func (b *Builder) processLabels() {
 	if len(b.options.Labels) == 0 {
-		return nil
+		return
 	}
 
-	var labels []string
-	for k, v := range b.options.Labels {
-		labels = append(labels, fmt.Sprintf("%q='%s'", k, v))
-	}
-	// Sort the label to have a repeatable order
-	sort.Strings(labels)
-
-	line := "LABEL " + strings.Join(labels, " ")
-	_, node, err := parser.ParseLine(line, &b.directive, false)
-	if err != nil {
-		return err
-	}
+	node := parser.NodeFromLabels(b.options.Labels)
 	b.dockerfile.Children = append(b.dockerfile.Children, node)
-
-	return nil
 }
 
 // build runs the Dockerfile builder from a context and a docker object that allows to make calls
@@ -235,6 +231,8 @@ func (b *Builder) processLabels() error {
 // * Print a happy message and return the image ID.
 //
 func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (string, error) {
+	defer b.imageContexts.unmount()
+
 	b.Stdout = stdout
 	b.Stderr = stderr
 	b.Output = out
@@ -251,9 +249,7 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 		return "", err
 	}
 
-	if err := b.processLabels(); err != nil {
-		return "", err
-	}
+	b.processLabels()
 
 	var shortImgID string
 	total := len(b.dockerfile.Children)
@@ -287,18 +283,7 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 		}
 	}
 
-	// check if there are any leftover build-args that were passed but not
-	// consumed during build. Return a warning, if there are any.
-	leftoverArgs := []string{}
-	for arg := range b.options.BuildArgs {
-		if !b.isBuildArgAllowed(arg) {
-			leftoverArgs = append(leftoverArgs, arg)
-		}
-	}
-
-	if len(leftoverArgs) > 0 {
-		fmt.Fprintf(b.Stderr, "[Warning] One or more build-args %v were not consumed\n", leftoverArgs)
-	}
+	b.warnOnUnusedBuildArgs()
 
 	if b.image == "" {
 		return "", errors.New("No image was generated. Is your Dockerfile empty?")
@@ -315,15 +300,32 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 		}
 	}
 
+	fmt.Fprintf(b.Stdout, "Successfully built %s\n", shortImgID)
+
 	imageID := image.ID(b.image)
 	for _, rt := range repoAndTags {
 		if err := b.docker.TagImageWithReference(imageID, rt); err != nil {
 			return "", err
 		}
+		fmt.Fprintf(b.Stdout, "Successfully tagged %s\n", reference.FamiliarString(rt))
 	}
 
-	fmt.Fprintf(b.Stdout, "Successfully built %s\n", shortImgID)
 	return b.image, nil
+}
+
+// check if there are any leftover build-args that were passed but not
+// consumed during build. Print a warning, if there are any.
+func (b *Builder) warnOnUnusedBuildArgs() {
+	leftoverArgs := []string{}
+	for arg := range b.options.BuildArgs {
+		if _, ok := b.allBuildArgs[arg]; !ok {
+			leftoverArgs = append(leftoverArgs, arg)
+		}
+	}
+
+	if len(leftoverArgs) > 0 {
+		fmt.Fprintf(b.Stderr, "[Warning] One or more build-args %v were not consumed\n", leftoverArgs)
+	}
 }
 
 // Cancel cancels an ongoing Dockerfile build.

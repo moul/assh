@@ -23,7 +23,7 @@ Display detailed information on one or more nodes
 Options:
   -f, --format string   Format the output using the given Go template
       --help            Print usage
-      --pretty          Print the information in a human friendly format.
+      --pretty          Print the information in a human friendly format
 ```
 
 ## Description
@@ -109,7 +109,6 @@ $ docker node inspect swarm-manager
 ### Specify an output format
 
 ```none
-{% raw %}
 $ docker node inspect --format '{{ .ManagerStatus.Leader }}' self
 
 false
@@ -136,7 +135,6 @@ Plugins:
   Network:              overlay, bridge, null, host, overlay
   Volume:               local
 Engine Version:         1.12.0
-{% endraw %}
 ```
 
 ## Related commands

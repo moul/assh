@@ -83,24 +83,19 @@ func finishCPUInfo(c *InfoStat) error {
 	// of the value from /proc/cpuinfo because we want to report the maximum
 	// clock-speed of the CPU for c.Mhz, matching the behaviour of Windows
 	lines, err = common.ReadLines(sysCPUPath(c.CPU, "cpufreq/cpuinfo_max_freq"))
-	// if we encounter errors below but has a value from parsing /proc/cpuinfo
-	// then we ignore the error
+	// if we encounter errors below such as there are no cpuinfo_max_freq file,
+	// we just ignore. so let Mhz is 0.
 	if err != nil {
-		if c.Mhz == 0 {
-			return err
-		} else {
-			return nil
-		}
+		return nil
 	}
 	value, err = strconv.ParseFloat(lines[0], 64)
 	if err != nil {
-		if c.Mhz == 0 {
-			return err
-		} else {
-			return nil
-		}
+		return nil
 	}
 	c.Mhz = value / 1000.0 // value is in kHz
+	if c.Mhz > 9999 {
+		c.Mhz = c.Mhz / 1000.0 // value in Hz
+	}
 	return nil
 }
 
@@ -116,6 +111,7 @@ func Info() ([]InfoStat, error) {
 	lines, _ := common.ReadLines(filename)
 
 	var ret []InfoStat
+	var processorName string
 
 	c := InfoStat{CPU: -1, Cores: 1}
 	for _, line := range lines {
@@ -127,6 +123,8 @@ func Info() ([]InfoStat, error) {
 		value := strings.TrimSpace(fields[1])
 
 		switch key {
+		case "Processor":
+			processorName = value
 		case "processor":
 			if c.CPU >= 0 {
 				err := finishCPUInfo(&c)
@@ -135,7 +133,7 @@ func Info() ([]InfoStat, error) {
 				}
 				ret = append(ret, c)
 			}
-			c = InfoStat{Cores: 1}
+			c = InfoStat{Cores: 1, ModelName: processorName}
 			t, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
 				return ret, err
@@ -186,6 +184,8 @@ func Info() ([]InfoStat, error) {
 			c.Flags = strings.FieldsFunc(value, func(r rune) bool {
 				return r == ',' || r == ' '
 			})
+		case "microcode":
+			c.Microcode = value
 		}
 	}
 	if c.CPU >= 0 {
@@ -200,6 +200,10 @@ func Info() ([]InfoStat, error) {
 
 func parseStatLine(line string) (*TimesStat, error) {
 	fields := strings.Fields(line)
+
+	if len(fields) == 0 {
+		return nil, errors.New("stat does not contain cpu info")
+	}
 
 	if strings.HasPrefix(fields[0], "cpu") == false {
 		//		return CPUTimesStat{}, e

@@ -20,7 +20,6 @@ import (
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/runconfig"
-	volumestore "github.com/docker/docker/volume/store"
 	"github.com/opencontainers/runc/libcontainer/label"
 )
 
@@ -143,7 +142,7 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 	}
 	// Make sure NetworkMode has an acceptable value. We do this to ensure
 	// backwards API compatibility.
-	container.HostConfig = runconfig.SetDefaultNetModeIfBlank(container.HostConfig)
+	runconfig.SetDefaultNetModeIfBlank(container.HostConfig)
 
 	daemon.updateContainerNetworkSettings(container, endpointsConfigs)
 
@@ -156,7 +155,17 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 	return container, nil
 }
 
-func (daemon *Daemon) generateSecurityOpt(ipcMode containertypes.IpcMode, pidMode containertypes.PidMode, privileged bool) ([]string, error) {
+func (daemon *Daemon) generateSecurityOpt(hostConfig *containertypes.HostConfig) ([]string, error) {
+	for _, opt := range hostConfig.SecurityOpt {
+		con := strings.Split(opt, "=")
+		if con[0] == "label" {
+			// Caller overrode SecurityOpts
+			return nil, nil
+		}
+	}
+	ipcMode := hostConfig.IpcMode
+	pidMode := hostConfig.PidMode
+	privileged := hostConfig.Privileged
 	if ipcMode.IsHost() || pidMode.IsHost() || privileged {
 		return label.DisableSecOpt(), nil
 	}
@@ -232,9 +241,6 @@ func (daemon *Daemon) VolumeCreate(name, driverName string, opts, labels map[str
 
 	v, err := daemon.volumes.Create(name, driverName, opts, labels)
 	if err != nil {
-		if volumestore.IsNameConflict(err) {
-			return nil, fmt.Errorf("A volume named %s already exists. Choose a different volume name.", name)
-		}
 		return nil, err
 	}
 

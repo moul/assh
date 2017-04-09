@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"golang.org/x/net/context"
 
+	"github.com/docker/docker/api/errors"
 	"github.com/docker/docker/api/server/httputils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -25,6 +27,7 @@ var (
 		"name":   true,
 		"id":     true,
 		"label":  true,
+		"scope":  true,
 	}
 )
 
@@ -60,12 +63,12 @@ SKIP:
 		}
 
 		var nr *types.NetworkResource
-		// Versions < 1.26 fetches all the containers attached to a network
+		// Versions < 1.28 fetches all the containers attached to a network
 		// in a network list api call. It is a heavy weight operation when
-		// run across all the networks. Starting API version 1.26, this detailed
+		// run across all the networks. Starting API version 1.28, this detailed
 		// info is available for network specific GET API (equivalent to inspect)
-		if versions.LessThan(httputils.VersionFromContext(ctx), "1.26") {
-			nr = n.buildDetailedNetworkResources(nw)
+		if versions.LessThan(httputils.VersionFromContext(ctx), "1.28") {
+			nr = n.buildDetailedNetworkResources(nw, false)
 		} else {
 			nr = n.buildNetworkResource(nw)
 		}
@@ -85,6 +88,16 @@ func (n *networkRouter) getNetwork(ctx context.Context, w http.ResponseWriter, r
 	}
 
 	term := vars["id"]
+	var (
+		verbose bool
+		err     error
+	)
+	if v := r.URL.Query().Get("verbose"); v != "" {
+		if verbose, err = strconv.ParseBool(v); err != nil {
+			err = fmt.Errorf("invalid value for verbose: %s", v)
+			return errors.NewBadRequestError(err)
+		}
+	}
 
 	// In case multiple networks have duplicate names, return error.
 	// TODO (yongtang): should we wrap with version here for backward compatibility?
@@ -100,17 +113,17 @@ func (n *networkRouter) getNetwork(ctx context.Context, w http.ResponseWriter, r
 	nw := n.backend.GetNetworks()
 	for _, network := range nw {
 		if network.ID() == term {
-			return httputils.WriteJSON(w, http.StatusOK, *n.buildDetailedNetworkResources(network))
+			return httputils.WriteJSON(w, http.StatusOK, *n.buildDetailedNetworkResources(network, verbose))
 		}
 		if network.Name() == term {
 			// No need to check the ID collision here as we are still in
 			// local scope and the network ID is unique in this scope.
-			listByFullName[network.ID()] = *n.buildDetailedNetworkResources(network)
+			listByFullName[network.ID()] = *n.buildDetailedNetworkResources(network, verbose)
 		}
 		if strings.HasPrefix(network.ID(), term) {
 			// No need to check the ID collision here as we are still in
 			// local scope and the network ID is unique in this scope.
-			listByPartialID[network.ID()] = *n.buildDetailedNetworkResources(network)
+			listByPartialID[network.ID()] = *n.buildDetailedNetworkResources(network, verbose)
 		}
 	}
 
@@ -181,6 +194,16 @@ func (n *networkRouter) postNetworkCreate(ctx context.Context, w http.ResponseWr
 
 	nw, err := n.backend.CreateNetwork(create)
 	if err != nil {
+		var warning string
+		if _, ok := err.(libnetwork.NetworkNameError); ok {
+			// check if user defined CheckDuplicate, if set true, return err
+			// otherwise prepare a warning message
+			if create.CheckDuplicate {
+				return libnetwork.NetworkNameError(create.Name)
+			}
+			warning = libnetwork.NetworkNameError(create.Name).Error()
+		}
+
 		if _, ok := err.(libnetwork.ManagerRedirectError); !ok {
 			return err
 		}
@@ -188,7 +211,10 @@ func (n *networkRouter) postNetworkCreate(ctx context.Context, w http.ResponseWr
 		if err != nil {
 			return err
 		}
-		nw = &types.NetworkCreateResponse{ID: id}
+		nw = &types.NetworkCreateResponse{
+			ID:      id,
+			Warning: warning,
+		}
 	}
 
 	return httputils.WriteJSON(w, http.StatusCreated, nw)
@@ -268,6 +294,7 @@ func (n *networkRouter) buildNetworkResource(nw libnetwork.Network) *types.Netwo
 	r.EnableIPv6 = info.IPv6Enabled()
 	r.Internal = info.Internal()
 	r.Attachable = info.Attachable()
+	r.Ingress = info.Ingress()
 	r.Options = info.DriverOptions()
 	r.Containers = make(map[string]types.EndpointResource)
 	buildIpamResources(r, info)
@@ -281,7 +308,7 @@ func (n *networkRouter) buildNetworkResource(nw libnetwork.Network) *types.Netwo
 	return r
 }
 
-func (n *networkRouter) buildDetailedNetworkResources(nw libnetwork.Network) *types.NetworkResource {
+func (n *networkRouter) buildDetailedNetworkResources(nw libnetwork.Network, verbose bool) *types.NetworkResource {
 	if nw == nil {
 		return &types.NetworkResource{}
 	}
@@ -301,6 +328,28 @@ func (n *networkRouter) buildDetailedNetworkResources(nw libnetwork.Network) *ty
 		}
 
 		r.Containers[key] = buildEndpointResource(tmpID, e.Name(), ei)
+	}
+	if !verbose {
+		return r
+	}
+	services := nw.Info().Services()
+	r.Services = make(map[string]network.ServiceInfo)
+	for name, service := range services {
+		tasks := []network.Task{}
+		for _, t := range service.Tasks {
+			tasks = append(tasks, network.Task{
+				Name:       t.Name,
+				EndpointID: t.EndpointID,
+				EndpointIP: t.EndpointIP,
+				Info:       t.Info,
+			})
+		}
+		r.Services[name] = network.ServiceInfo{
+			VIP:          service.VIP,
+			Ports:        service.Ports,
+			Tasks:        tasks,
+			LocalLBIndex: service.LocalLBIndex,
+		}
 	}
 	return r
 }

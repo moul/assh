@@ -60,6 +60,7 @@ The currently supported filters are:
 
 * [id](service_ls.md#id)
 * [label](service_ls.md#label)
+* [mode](service_ls.md#mode)
 * [name](service_ls.md#name)
 
 #### id
@@ -98,6 +99,18 @@ ID            NAME      MODE        REPLICAS  IMAGE
 74nzcxxjv6fq  backend   replicated  3/3       redis:3.0.6
 ```
 
+#### mode
+
+The `mode` filter matches on the mode (either `replicated` or `global`) of a service.
+
+The following filter matches only `global` services.
+
+```bash
+$ docker service ls --filter mode=global
+ID                  NAME                MODE                REPLICAS            IMAGE
+w7y0v2yrn620        top                 global              1/1                 busybox
+```
+
 #### name
 
 The `name` filter matches on all or part of a service's name.
@@ -124,6 +137,7 @@ Placeholder | Description
 `.Mode`     | Service mode (replicated, global)
 `.Replicas` | Service replicas
 `.Image`    | Service image
+`.Ports`    | Service ports published in ingress mode
 
 When using the `--format` option, the `service ls` command will either
 output the data exactly as the template declares or, when using the
@@ -133,12 +147,10 @@ The following example uses a template without headers and outputs the
 `ID`, `Mode`, and `Replicas` entries separated by a colon for all services:
 
 ```bash
-{% raw %}
 $ docker service ls --format "{{.ID}}: {{.Mode}} {{.Replicas}}"
 
 0zmvwuiu3vue: replicated 10/10
 fm6uf97exkul: global 5/5
-{% endraw %}
 ```
 
 ## Related commands

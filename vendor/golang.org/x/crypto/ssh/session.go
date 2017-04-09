@@ -601,12 +601,5 @@ func (w Waitmsg) Lang() string {
 }
 
 func (w Waitmsg) String() string {
-	str := fmt.Sprintf("Process exited with status %v", w.status)
-	if w.signal != "" {
-		str += fmt.Sprintf(" from signal %v", w.signal)
-	}
-	if w.msg != "" {
-		str += fmt.Sprintf(". Reason was: %v", w.msg)
-	}
-	return str
+	return fmt.Sprintf("Process exited with: %v. Reason was: %v (%v)", w.status, w.msg, w.signal)
 }

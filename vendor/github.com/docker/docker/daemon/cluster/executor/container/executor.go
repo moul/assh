@@ -116,6 +116,7 @@ func (e *executor) Describe(ctx context.Context) (*api.NodeDescription, error) {
 func (e *executor) Configure(ctx context.Context, node *api.Node) error {
 	na := node.Attachment
 	if na == nil {
+		e.backend.ReleaseIngress()
 		return nil
 	}
 
@@ -125,6 +126,7 @@ func (e *executor) Configure(ctx context.Context, node *api.Node) error {
 			Driver: na.Network.IPAM.Driver.Name,
 		},
 		Options:        na.Network.DriverState.Options,
+		Ingress:        true,
 		CheckDuplicate: true,
 	}
 
@@ -137,13 +139,15 @@ func (e *executor) Configure(ctx context.Context, node *api.Node) error {
 		options.IPAM.Config = append(options.IPAM.Config, c)
 	}
 
-	return e.backend.SetupIngress(clustertypes.NetworkCreateRequest{
+	_, err := e.backend.SetupIngress(clustertypes.NetworkCreateRequest{
 		ID: na.Network.ID,
 		NetworkCreateRequest: types.NetworkCreateRequest{
 			Name:          na.Network.Spec.Annotations.Name,
 			NetworkCreate: options,
 		},
 	}, na.Addresses[0])
+
+	return err
 }
 
 // Controller returns a docker container runner.
@@ -152,7 +156,7 @@ func (e *executor) Controller(t *api.Task) (exec.Controller, error) {
 		return newNetworkAttacherController(e.backend, t, e.secrets)
 	}
 
-	ctlr, err := newController(e.backend, t, e.secrets)
+	ctlr, err := newController(e.backend, t, secrets.Restrict(e.secrets, t))
 	if err != nil {
 		return nil, err
 	}

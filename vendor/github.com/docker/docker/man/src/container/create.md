@@ -23,9 +23,12 @@ You can specify multiple  **-v** options to mount one or more mounts to a
 container. To use these same mounts in other containers, specify the
 **--volumes-from** option also.
 
-You can add `:ro` or `:rw` suffix to a volume to mount it  read-only or
-read-write mode, respectively. By default, the volumes are mounted read-write.
-See examples.
+You can supply additional options for each bind-mount following an additional
+colon.  A `:ro` or `:rw` suffix mounts a volume in read-only or read-write
+mode, respectively. By default, volumes are mounted in read-write mode.  
+You can also specify the consistency requirement for the mount, either
+`:consistent` (the default), `:cached`, or `:delegated`.  Multiple options are
+separated by commas, e.g. `:ro,cached`.
 
 Labeling systems like SELinux require that proper labels are placed on volume
 content mounted into a container. Without a label, the security system might
@@ -60,7 +63,7 @@ Use `df <source-dir>` to figure out the source mount and then use
 `findmnt -o TARGET,PROPAGATION <source-mount-dir>` to figure out propagation
 properties of source mount. If `findmnt` utility is not available, then one
 can look at mount entry for source mount point in `/proc/self/mountinfo`. Look
-at `optional fields` and see if any propagaion properties are specified.
+at `optional fields` and see if any propagation properties are specified.
 `shared:X` means mount is `shared`, `master:X` means mount is `slave` and if
 nothing is there that means mount is `private`.
 

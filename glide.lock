@@ -1,32 +1,32 @@
 hash: aec675fc4428e70de14f6436b259ae34adf78b246d8dd326116fc94ec135015c
-updated: 2017-02-16T18:13:58.294495146+01:00
+updated: 2017-04-08T23:34:07.256774867+02:00
 imports:
 - name: github.com/aokoli/goutils
   version: 9c37978a95bd5c709a15883b6242714ea6709e64
 - name: github.com/awalterschulze/gographviz
-  version: 057e6a5e9343c1e85264a73798ca7c7a197c8b69
+  version: 34601d9f074195d33729d076c373e18a2aa67411
   subpackages:
   - ast
-  - errors
-  - lexer
-  - parser
-  - token
+  - internal/errors
+  - internal/lexer
+  - internal/parser
+  - internal/token
 - name: github.com/bugsnag/osext
   version: 0dd3f918b21bec95ace9dc86c7e70266cfc5c702
 - name: github.com/deckarep/gosx-notifier
   version: 61a88900fb062ed8c63828adf4d7b58463b61f78
 - name: github.com/docker/docker
-  version: 7f0b833621f61072d3176d224be02ea5089761f9
+  version: 51aa2a226e21e20c5b4634a28245c760f4e18f37
   subpackages:
   - api/types/strslice
 - name: github.com/docker/go-units
   version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
 - name: github.com/docker/libcompose
-  version: 70abeb3a42fce124d6b688e39a7c2153f3a363ad
+  version: 8e4221d0435d29e6239adf9ccb4de1f0c0ab0935
   subpackages:
   - yaml
 - name: github.com/dustin/go-humanize
-  version: 7a41df006ff9af79a29f0ffa9c5f21fbe6314a2d
+  version: 259d2a102b871d17f30e3cd9881a642961a1e486
 - name: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
 - name: github.com/gin-gonic/gin
@@ -48,12 +48,14 @@ imports:
   version: 0de36badf60155d5953373ed432982b20c62fb91
 - name: github.com/manucorporat/sse
   version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/Masterminds/semver
+  version: 59c29afe1a994eacb71c833025ca7acf874bb1da
 - name: github.com/Masterminds/sprig
-  version: c974324bb59b465f00b128a055656d44f60e4ffc
+  version: 4fd5bcb33f764801522c8e35f464a12ceb180873
 - name: github.com/mattn/go-colorable
-  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
+  version: ded68f7a9561c023e790de24279db7ebf473ea80
 - name: github.com/mattn/go-isatty
-  version: 281032e84ae07510239465db46bf442aa44b953a
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/mattn/go-zglob
   version: 95345c4e1c0ebc9d16a3284177f09360f4d20fab
   subpackages:
@@ -63,7 +65,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/shirou/gopsutil
-  version: 35c783ec7ddaa3d86d51eec2e38e57f912325160
+  version: e49a95f3d5f824c3f9875ca49e54e4fef17f82cf
   subpackages:
   - cpu
   - host
@@ -76,15 +78,17 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: cd7d1bbe41066b6c1f19780f895901052150a575
 - name: github.com/StackExchange/wmi
-  version: e542ed97d15e640bdc14b5c12162d59e8fc67324
+  version: 9f32b5905fd6ce7384093f9d048437e79f7b4d85
 - name: github.com/urfave/cli
-  version: 2526b57c56f30b50466c96c4133b1a4ad0f0191f
+  version: 8ba6f23b6e36d03666a14bd9421f5e3efcb59aca
 - name: golang.org/x/crypto
-  version: 5bcd134fee4dd1475da17714aac19c0aa0142e2f
+  version: 1f22c0103821b9390939b6776727195525381532
   subpackages:
+  - pbkdf2
+  - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: f315505cf3349909cdf013ea56690da34e96a451
+  version: a6577fac2d73be281a500b310739095313165611
   subpackages:
   - context
 - name: golang.org/x/sys
@@ -98,7 +102,7 @@ imports:
 - name: gopkg.in/go-playground/validator.v8
   version: c193cecd124b5cc722d7ee5538e945bdb3348435
 - name: gopkg.in/yaml.v2
-  version: a3f3340b5840cee44f372bddb5880fcbc419b46a
+  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports:
 - name: github.com/gopherjs/gopherjs
   version: db27c7c470d7404b6b201f82d6fd4821260bd13e

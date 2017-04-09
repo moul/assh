@@ -26,6 +26,7 @@ func newUpgradeCommand(dockerCli *command.DockerCli) *cobra.Command {
 			}
 			return runUpgrade(dockerCli, options)
 		},
+		Tags: map[string]string{"version": "1.26"},
 	}
 
 	flags := cmd.Flags()
@@ -38,11 +39,11 @@ func runUpgrade(dockerCli *command.DockerCli, opts pluginOptions) error {
 	ctx := context.Background()
 	p, _, err := dockerCli.Client().PluginInspectWithRaw(ctx, opts.localName)
 	if err != nil {
-		return fmt.Errorf("error reading plugin data: %v", err)
+		return errors.Errorf("error reading plugin data: %v", err)
 	}
 
 	if p.Enabled {
-		return fmt.Errorf("the plugin must be disabled before upgrading")
+		return errors.Errorf("the plugin must be disabled before upgrading")
 	}
 
 	opts.localName = p.Name

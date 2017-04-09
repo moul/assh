@@ -39,7 +39,6 @@ package cluster
 //
 
 import (
-	"crypto/x509"
 	"fmt"
 	"net"
 	"os"
@@ -89,8 +88,7 @@ var errSwarmCertificatesExpired = errors.New("Swarm certificates have expired. T
 // NetworkSubnetsProvider exposes functions for retrieving the subnets
 // of networks managed by Docker, so they can be filtered.
 type NetworkSubnetsProvider interface {
-	V4Subnets() []net.IPNet
-	V6Subnets() []net.IPNet
+	Subnets() ([]net.IPNet, []net.IPNet)
 }
 
 // Config provides values for Cluster.
@@ -128,6 +126,7 @@ type Cluster struct {
 type attacher struct {
 	taskID           string
 	config           *network.NetworkingConfig
+	inProgress       bool
 	attachWaitCh     chan *network.NetworkingConfig
 	attachCompleteCh chan struct{}
 	detachWaitCh     chan struct{}
@@ -172,13 +171,8 @@ func New(config Config) (*Cluster, error) {
 		logrus.Error("swarm component could not be started before timeout was reached")
 	case err := <-nr.Ready():
 		if err != nil {
-			if errors.Cause(err) == errSwarmLocked {
-				return c, nil
-			}
-			if err, ok := errors.Cause(c.nr.err).(x509.CertificateInvalidError); ok && err.Reason == x509.Expired {
-				return c, nil
-			}
-			return nil, errors.Wrap(err, "swarm component could not be started")
+			logrus.WithError(err).Error("swarm component could not be started")
+			return c, nil
 		}
 	}
 	return c, nil
@@ -386,4 +380,19 @@ func detectLockedError(err error) error {
 		return errors.WithStack(errSwarmLocked)
 	}
 	return err
+}
+
+func (c *Cluster) lockedManagerAction(fn func(ctx context.Context, state nodeState) error) error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	state := c.currentNodeState()
+	if !state.IsActiveManager() {
+		return c.errNoManager(state)
+	}
+
+	ctx, cancel := c.getRequestContext()
+	defer cancel()
+
+	return fn(ctx, state)
 }

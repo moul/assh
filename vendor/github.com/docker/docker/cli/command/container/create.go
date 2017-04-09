@@ -8,13 +8,13 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/docker/docker/cli/command/image"
 	apiclient "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/registry"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/net/context"
@@ -57,12 +57,12 @@ func NewCreateCommand(dockerCli *command.DockerCli) *cobra.Command {
 }
 
 func runCreate(dockerCli *command.DockerCli, flags *pflag.FlagSet, opts *createOptions, copts *containerOptions) error {
-	config, hostConfig, networkingConfig, err := parse(flags, copts)
+	containerConfig, err := parse(flags, copts)
 	if err != nil {
 		reportError(dockerCli.Err(), "create", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
 	}
-	response, err := createContainer(context.Background(), dockerCli, config, hostConfig, networkingConfig, hostConfig.ContainerIDFile, opts.name)
+	response, err := createContainer(context.Background(), dockerCli, containerConfig, opts.name)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (cid *cidFile) Close() error {
 		return nil
 	}
 	if err := os.Remove(cid.path); err != nil {
-		return fmt.Errorf("failed to remove the CID file '%s': %s \n", cid.path, err)
+		return errors.Errorf("failed to remove the CID file '%s': %s \n", cid.path, err)
 	}
 
 	return nil
@@ -127,7 +127,7 @@ func (cid *cidFile) Close() error {
 
 func (cid *cidFile) Write(id string) error {
 	if _, err := cid.file.Write([]byte(id)); err != nil {
-		return fmt.Errorf("Failed to write the container ID to the file: %s", err)
+		return errors.Errorf("Failed to write the container ID to the file: %s", err)
 	}
 	cid.written = true
 	return nil
@@ -135,18 +135,21 @@ func (cid *cidFile) Write(id string) error {
 
 func newCIDFile(path string) (*cidFile, error) {
 	if _, err := os.Stat(path); err == nil {
-		return nil, fmt.Errorf("Container ID file found, make sure the other container isn't running or delete %s", path)
+		return nil, errors.Errorf("Container ID file found, make sure the other container isn't running or delete %s", path)
 	}
 
 	f, err := os.Create(path)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create the container ID file: %s", err)
+		return nil, errors.Errorf("Failed to create the container ID file: %s", err)
 	}
 
 	return &cidFile{path: path, file: f}, nil
 }
 
-func createContainer(ctx context.Context, dockerCli *command.DockerCli, config *container.Config, hostConfig *container.HostConfig, networkingConfig *networktypes.NetworkingConfig, cidfile, name string) (*container.ContainerCreateCreatedBody, error) {
+func createContainer(ctx context.Context, dockerCli *command.DockerCli, containerConfig *containerConfig, name string) (*container.ContainerCreateCreatedBody, error) {
+	config := containerConfig.Config
+	hostConfig := containerConfig.HostConfig
+	networkingConfig := containerConfig.NetworkingConfig
 	stderr := dockerCli.Err()
 
 	var (
@@ -155,6 +158,7 @@ func createContainer(ctx context.Context, dockerCli *command.DockerCli, config *
 		namedRef        reference.Named
 	)
 
+	cidfile := hostConfig.ContainerIDFile
 	if cidfile != "" {
 		var err error
 		if containerIDFile, err = newCIDFile(cidfile); err != nil {

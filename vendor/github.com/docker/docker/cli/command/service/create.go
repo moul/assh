@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"golang.org/x/net/context"
 )
 
@@ -22,14 +23,14 @@ func newCreateCommand(dockerCli *command.DockerCli) *cobra.Command {
 			if len(args) > 1 {
 				opts.args = args[1:]
 			}
-			return runCreate(dockerCli, opts)
+			return runCreate(dockerCli, cmd.Flags(), opts)
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringVar(&opts.mode, flagMode, "replicated", "Service mode (replicated or global)")
 	flags.StringVar(&opts.name, flagName, "", "Service name")
 
-	addServiceFlags(cmd, opts)
+	addServiceFlags(flags, opts)
 
 	flags.VarP(&opts.labels, flagLabel, "l", "Service labels")
 	flags.Var(&opts.containerLabels, flagContainerLabel, "Container labels")
@@ -37,6 +38,8 @@ func newCreateCommand(dockerCli *command.DockerCli) *cobra.Command {
 	flags.Var(&opts.envFile, flagEnvFile, "Read in a file of environment variables")
 	flags.Var(&opts.mounts, flagMount, "Attach a filesystem mount to the service")
 	flags.Var(&opts.constraints, flagConstraint, "Placement constraints")
+	flags.Var(&opts.placementPrefs, flagPlacementPref, "Add a placement preference")
+	flags.SetAnnotation(flagPlacementPref, "version", []string{"1.28"})
 	flags.Var(&opts.networks, flagNetwork, "Network attachments")
 	flags.Var(&opts.secrets, flagSecret, "Specify secrets to expose to the service")
 	flags.SetAnnotation(flagSecret, "version", []string{"1.25"})
@@ -56,7 +59,7 @@ func newCreateCommand(dockerCli *command.DockerCli) *cobra.Command {
 	return cmd
 }
 
-func runCreate(dockerCli *command.DockerCli, opts *serviceOptions) error {
+func runCreate(dockerCli *command.DockerCli, flags *pflag.FlagSet, opts *serviceOptions) error {
 	apiClient := dockerCli.Client()
 	createOpts := types.ServiceCreateOptions{}
 
@@ -102,5 +105,14 @@ func runCreate(dockerCli *command.DockerCli, opts *serviceOptions) error {
 	}
 
 	fmt.Fprintf(dockerCli.Out(), "%s\n", response.ID)
-	return nil
+
+	if opts.detach {
+		if !flags.Changed("detach") {
+			fmt.Fprintln(dockerCli.Err(), "Since --detach=false was not specified, tasks will be created in the background.\n"+
+				"In a future release, --detach=false will become the default.")
+		}
+		return nil
+	}
+
+	return waitOnService(ctx, dockerCli, response.ID, opts)
 }

@@ -50,13 +50,10 @@ var ForbiddenProperties = map[string]string{
 	"memswap_limit": "Set resource limits using deploy.resources",
 }
 
-// Dict is a mapping of strings to interface{}
-type Dict map[string]interface{}
-
 // ConfigFile is a filename and the contents of the file as a Dict
 type ConfigFile struct {
 	Filename string
-	Config   Dict
+	Config   map[string]interface{}
 }
 
 // ConfigDetails are the details about a group of ConfigFiles
@@ -99,7 +96,7 @@ type ServiceConfig struct {
 	HealthCheck     *HealthCheckConfig
 	Image           string
 	Ipc             string
-	Labels          MappingWithEquals
+	Labels          Labels
 	Links           []string
 	Logging         *LoggingConfig
 	MacAddress      string `mapstructure:"mac_address"`
@@ -119,7 +116,7 @@ type ServiceConfig struct {
 	Tty             bool `mapstructure:"tty"`
 	Ulimits         map[string]*UlimitsConfig
 	User            string
-	Volumes         []string
+	Volumes         []ServiceVolumeConfig
 	WorkingDir      string `mapstructure:"working_dir"`
 }
 
@@ -134,10 +131,15 @@ type StringList []string
 type StringOrNumberList []string
 
 // MappingWithEquals is a mapping type that can be converted from a list of
-// key=value strings
-type MappingWithEquals map[string]string
+// key[=value] strings.
+// For the key with an empty value (`key=`), the mapped value is set to a pointer to `""`.
+// For the key without value (`key`), the mapped value is set to nil.
+type MappingWithEquals map[string]*string
 
-// MappingWithColon is a mapping type that can be converted from alist of
+// Labels is a mapping type for labels
+type Labels map[string]string
+
+// MappingWithColon is a mapping type that can be converted from a list of
 // 'key: value' strings
 type MappingWithColon map[string]string
 
@@ -151,20 +153,22 @@ type LoggingConfig struct {
 type DeployConfig struct {
 	Mode          string
 	Replicas      *uint64
-	Labels        MappingWithEquals
+	Labels        Labels
 	UpdateConfig  *UpdateConfig `mapstructure:"update_config"`
 	Resources     Resources
 	RestartPolicy *RestartPolicy `mapstructure:"restart_policy"`
 	Placement     Placement
+	EndpointMode  string `mapstructure:"endpoint_mode"`
 }
 
 // HealthCheckConfig the healthcheck configuration for a service
 type HealthCheckConfig struct {
-	Test     HealthCheckTest
-	Timeout  string
-	Interval string
-	Retries  *uint64
-	Disable  bool
+	Test        HealthCheckTest
+	Timeout     string
+	Interval    string
+	Retries     *uint64
+	StartPeriod string
+	Disable     bool
 }
 
 // HealthCheckTest is the command run to test the health of a service
@@ -223,13 +227,34 @@ type ServicePortConfig struct {
 	Protocol  string
 }
 
+// ServiceVolumeConfig are references to a volume used by a service
+type ServiceVolumeConfig struct {
+	Type        string
+	Source      string
+	Target      string
+	ReadOnly    bool `mapstructure:"read_only"`
+	Consistency string
+	Bind        *ServiceVolumeBind
+	Volume      *ServiceVolumeVolume
+}
+
+// ServiceVolumeBind are options for a service volume of type bind
+type ServiceVolumeBind struct {
+	Propagation string
+}
+
+// ServiceVolumeVolume are options for a service volume of type volume
+type ServiceVolumeVolume struct {
+	NoCopy bool `mapstructure:"nocopy"`
+}
+
 // ServiceSecretConfig is the secret configuration for a service
 type ServiceSecretConfig struct {
 	Source string
 	Target string
 	UID    string
 	GID    string
-	Mode   uint32
+	Mode   *uint32
 }
 
 // UlimitsConfig the ulimit configuration
@@ -247,7 +272,7 @@ type NetworkConfig struct {
 	External   External
 	Internal   bool
 	Attachable bool
-	Labels     MappingWithEquals
+	Labels     Labels
 }
 
 // IPAMConfig for a network
@@ -266,7 +291,7 @@ type VolumeConfig struct {
 	Driver     string
 	DriverOpts map[string]string `mapstructure:"driver_opts"`
 	External   External
-	Labels     MappingWithEquals
+	Labels     Labels
 }
 
 // External identifies a Volume or Network as a reference to a resource that is
@@ -280,5 +305,5 @@ type External struct {
 type SecretConfig struct {
 	File     string
 	External External
-	Labels   MappingWithEquals
+	Labels   Labels
 }

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/docker/docker/cliconfig"
+	cliconfig "github.com/docker/docker/cli/config"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/go-connections/sockets"
@@ -30,7 +30,7 @@ var (
 
 func init() {
 	if dockerCertPath == "" {
-		dockerCertPath = cliconfig.ConfigDir()
+		dockerCertPath = cliconfig.Dir()
 	}
 }
 

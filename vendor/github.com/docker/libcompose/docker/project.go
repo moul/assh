@@ -80,7 +80,7 @@ func (p *Project) RemoveOrphans(ctx context.Context, projectName string, service
 	filter := filters.NewArgs()
 	filter.Add("label", labels.PROJECT.EqString(projectName))
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
-		Filter: filter,
+		Filters: filter,
 	})
 	if err != nil {
 		return err

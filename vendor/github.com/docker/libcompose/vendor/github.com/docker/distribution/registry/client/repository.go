@@ -15,12 +15,12 @@ import (
 
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/context"
-	"github.com/docker/distribution/digest"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/api/v2"
 	"github.com/docker/distribution/registry/client/transport"
 	"github.com/docker/distribution/registry/storage/cache"
 	"github.com/docker/distribution/registry/storage/cache/memory"
+	"github.com/opencontainers/go-digest"
 )
 
 // Registry provides an interface for calling Repositories, which returns a catalog of repositories.
@@ -268,7 +268,7 @@ func descriptorFromResponse(response *http.Response) (distribution.Descriptor, e
 		return desc, nil
 	}
 
-	dgst, err := digest.ParseDigest(digestHeader)
+	dgst, err := digest.Parse(digestHeader)
 	if err != nil {
 		return distribution.Descriptor{}, err
 	}
@@ -301,18 +301,20 @@ func (t *tags) Get(ctx context.Context, tag string) (distribution.Descriptor, er
 		return distribution.Descriptor{}, err
 	}
 
-	req, err := http.NewRequest("HEAD", u, nil)
-	if err != nil {
-		return distribution.Descriptor{}, err
+	newRequest := func(method string) (*http.Response, error) {
+		req, err := http.NewRequest(method, u, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, t := range distribution.ManifestMediaTypes() {
+			req.Header.Add("Accept", t)
+		}
+		resp, err := t.client.Do(req)
+		return resp, err
 	}
 
-	for _, t := range distribution.ManifestMediaTypes() {
-		req.Header.Add("Accept", t)
-	}
-
-	var attempts int
-	resp, err := t.client.Do(req)
-check:
+	resp, err := newRequest("HEAD")
 	if err != nil {
 		return distribution.Descriptor{}, err
 	}
@@ -321,23 +323,20 @@ check:
 	switch {
 	case resp.StatusCode >= 200 && resp.StatusCode < 400:
 		return descriptorFromResponse(resp)
-	case resp.StatusCode == http.StatusMethodNotAllowed:
-		req, err = http.NewRequest("GET", u, nil)
+	default:
+		// if the response is an error - there will be no body to decode.
+		// Issue a GET request:
+		//   - for data from a server that does not handle HEAD
+		//   - to get error details in case of a failure
+		resp, err = newRequest("GET")
 		if err != nil {
 			return distribution.Descriptor{}, err
 		}
+		defer resp.Body.Close()
 
-		for _, t := range distribution.ManifestMediaTypes() {
-			req.Header.Add("Accept", t)
+		if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+			return descriptorFromResponse(resp)
 		}
-
-		resp, err = t.client.Do(req)
-		attempts++
-		if attempts > 1 {
-			return distribution.Descriptor{}, err
-		}
-		goto check
-	default:
 		return distribution.Descriptor{}, HandleErrorResponse(resp)
 	}
 }
@@ -476,7 +475,7 @@ func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...dis
 		return nil, distribution.ErrManifestNotModified
 	} else if SuccessStatus(resp.StatusCode) {
 		if contentDgst != nil {
-			dgst, err := digest.ParseDigest(resp.Header.Get("Docker-Content-Digest"))
+			dgst, err := digest.Parse(resp.Header.Get("Docker-Content-Digest"))
 			if err == nil {
 				*contentDgst = dgst
 			}
@@ -554,7 +553,7 @@ func (ms *manifests) Put(ctx context.Context, m distribution.Manifest, options .
 
 	if SuccessStatus(resp.StatusCode) {
 		dgstHeader := resp.Header.Get("Docker-Content-Digest")
-		dgst, err := digest.ParseDigest(dgstHeader)
+		dgst, err := digest.Parse(dgstHeader)
 		if err != nil {
 			return "", err
 		}
@@ -662,7 +661,7 @@ func (bs *blobs) Put(ctx context.Context, mediaType string, p []byte) (distribut
 	if err != nil {
 		return distribution.Descriptor{}, err
 	}
-	dgstr := digest.Canonical.New()
+	dgstr := digest.Canonical.Digester()
 	n, err := io.Copy(writer, io.TeeReader(bytes.NewReader(p), dgstr.Hash()))
 	if err != nil {
 		return distribution.Descriptor{}, err

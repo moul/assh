@@ -138,6 +138,17 @@ func TestMemSwappiness(t *testing.T) {
 	assert.Equal(t, int64(10), *hostCfg.MemorySwappiness)
 }
 
+func TestMemReservation(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		MemReservation: 100000,
+	}
+	_, hostCfg, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.Equal(t, int64(100000), hostCfg.MemoryReservation)
+}
+
 func TestOomKillDisable(t *testing.T) {
 	ctx := &ctx.Context{}
 	sc := &config.ServiceConfig{

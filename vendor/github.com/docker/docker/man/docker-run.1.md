@@ -61,6 +61,7 @@ docker-run - Run a command in a new container
 [**--memory-reservation**[=*MEMORY-RESERVATION*]]
 [**--memory-swap**[=*LIMIT*]]
 [**--memory-swappiness**[=*MEMORY-SWAPPINESS*]]
+[**--mount**[=*[MOUNT]*]]
 [**--name**[=*NAME*]]
 [**--network-alias**[=*[]*]]
 [**--network**[=*"bridge"*]]
@@ -233,8 +234,7 @@ to the quota you specify.
 
    At any time you can run **docker ps** in
 the other shell to view a list of the running containers. You can reattach to a
-detached container with **docker attach**. If you choose to run a container in
-the detached mode, then you cannot use the **-rm** option.
+detached container with **docker attach**.
 
    When attached in the tty mode, you can detach from the container (and leave it
 running) using a configurable key sequence. The default sequence is `CTRL-p CTRL-q`.
@@ -426,6 +426,42 @@ unit, `b` is used. Set LIMIT to `-1` to enable unlimited swap.
 The IPv6 link-local address will be based on the device's MAC address
 according to RFC4862.
 
+**--mount**=[*[type=TYPE[,TYPE-SPECIFIC-OPTIONS]]*]
+   Attach a filesystem mount to the container
+
+   Current supported mount `TYPES` are `bind`, `volume`, and `tmpfs`.
+
+   e.g.
+
+   `type=bind,source=/path/on/host,destination=/path/in/container`
+
+   `type=volume,source=my-volume,destination=/path/in/container,volume-label="color=red",volume-label="shape=round"`
+
+   `type=tmpfs,tmpfs-size=512M,destination=/path/in/container`
+
+   Common Options:
+
+   * `src`, `source`: mount source spec for `bind` and `volume`. Mandatory for `bind`.
+   * `dst`, `destination`, `target`: mount destination spec.
+   * `ro`, `read-only`: `true` or `false` (default).
+
+   Options specific to `bind`:
+
+   * `bind-propagation`: `shared`, `slave`, `private`, `rshared`, `rslave`, or `rprivate`(default). See also `mount(2)`.
+   * `consistency`: `consistent`(default), `cached`, or `delegated`. Currently, only effective for Docker for Mac.
+
+   Options specific to `volume`:
+
+   * `volume-driver`: Name of the volume-driver plugin.
+   * `volume-label`: Custom metadata.
+   * `volume-nocopy`: `true`(default) or `false`. If set to `false`, the Engine copies existing files and directories under the mount-path into the volume, allowing the host to access them.
+   * `volume-opt`: specific to a given volume driver.
+
+   Options specific to `tmpfs`:
+
+   * `tmpfs-size`: Size of the tmpfs mount in bytes. Unlimited by default in Linux.
+   * `tmpfs-mode`: File mode of the tmpfs in octal. (e.g. `700` or `0700`.) Defaults to `1777` in Linux.
+
 **--name**=""
    Assign a name to the container
 
@@ -605,6 +641,9 @@ options are the same as the Linux default `mount` flags. If you do not specify
 any options, the systems uses the following options:
 `rw,noexec,nosuid,nodev,size=65536k`.
 
+   See also `--mount`, which is the successor of `--tmpfs` and `--volume`.
+   Even though there is no plan to deprecate `--tmpfs`, usage of `--mount` is recommended.
+
 **-u**, **--user**=""
    Sets the username or UID used and optionally the groupname or GID for the specified command.
 
@@ -625,6 +664,7 @@ any options, the systems uses the following options:
    * [rw|ro]
    * [z|Z]
    * [`[r]shared`|`[r]slave`|`[r]private`]
+   * [`delegated`|`cached`|`consistent`]
    * [nocopy]
 
 The `CONTAINER-DIR` must be an absolute path such as `/src/docs`. The `HOST-DIR`
@@ -642,9 +682,12 @@ You can specify multiple  **-v** options to mount one or more mounts to a
 container. To use these same mounts in other containers, specify the
 **--volumes-from** option also.
 
-You can add `:ro` or `:rw` suffix to a volume to mount it  read-only or
-read-write mode, respectively. By default, the volumes are mounted read-write.
-See examples.
+You can supply additional options for each bind-mount following an additional
+colon.  A `:ro` or `:rw` suffix mounts a volume in read-only or read-write
+mode, respectively. By default, volumes are mounted in read-write mode.
+You can also specify the consistency requirement for the mount, either
+`:consistent` (the default), `:cached`, or `:delegated`.  Multiple options are
+separated by commas, e.g. `:ro,cached`.
 
 Labeling systems like SELinux require that proper labels are placed on volume
 content mounted into a container. Without a label, the security system might
@@ -679,7 +722,7 @@ Use `df <source-dir>` to figure out the source mount and then use
 `findmnt -o TARGET,PROPAGATION <source-mount-dir>` to figure out propagation
 properties of source mount. If `findmnt` utility is not available, then one
 can look at mount entry for source mount point in `/proc/self/mountinfo`. Look
-at `optional fields` and see if any propagaion properties are specified.
+at `optional fields` and see if any propagation properties are specified.
 `shared:X` means mount is `shared`, `master:X` means mount is `slave` and if
 nothing is there that means mount is `private`.
 
@@ -700,6 +743,9 @@ change propagation properties of source mount. Say `/` is source mount for
 
 To disable automatic copying of data from the container path to the volume, use
 the `nocopy` flag. The `nocopy` flag can be set on bind mounts and named volumes.
+
+See also `--mount`, which is the successor of `--tmpfs` and `--volume`.
+Even though there is no plan to deprecate `--volume`, usage of `--mount` is recommended.
 
 **--volume-driver**=""
    Container's volume driver. This driver creates volumes specified either from
