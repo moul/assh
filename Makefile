@@ -3,12 +3,11 @@ GODIR ?=	github.com/moul/advanced-ssh-config
 
 PKG_BASE_DIR ?=	./pkg
 CONVEY_PORT ?=	9042
-SOURCES :=	$(shell find ./cmd/ ./pkg/ -type f -name "*.go") glide.lock
-GOLIST :=	$(shell go list ./cmd/... ./pkg/...)
-COMMANDS :=	$(shell go list ./cmd/...)
-PACKAGES :=	$(shell go list ./pkg/...)
-REL_COMMANDS := $(subst $(GODIR),./,$(COMMANDS))
-REL_PACKAGES := $(subst $(GODIR),./,$(PACKAGES))
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+SOURCES :=	$(call rwildcard,./cmd/ ./pkg/,*.go) glide.lock
+COMMANDS :=	$(call uniq,$(dir $(call rwildcard,./cmd/,*.go)))
+PACKAGES :=	$(call uniq,$(dir $(call rwildcard,./pkg/,*.go)))
 GOENV ?=	GO15VENDOREXPERIMENT=1
 GO ?=		$(GOENV) go
 USER ?=		$(shell whoami)
@@ -73,7 +72,7 @@ cover:	profile.out
 profile.out:	$(SOURCES)
 	rm -f $@
 	find . -name profile.out -delete
-	for package in $(REL_PACKAGES); do \
+	for package in $(PACKAGES); do \
 	  rm -f $$package/profile.out; \
 	  $(GO) test -covermode=count -coverpkg=$(PKG_BASE_DIR)/... -coverprofile=$$package/profile.out $$package; \
 	done
