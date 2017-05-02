@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	"github.com/urfave/cli"
@@ -9,7 +11,15 @@ import (
 )
 
 func init() {
-	config.SetASSHBinaryPath(os.Args[0])
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	abspath, err := filepath.Abs(ex)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config.SetASSHBinaryPath(abspath)
 }
 
 // Commands is the list of cli commands
