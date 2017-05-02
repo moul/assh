@@ -824,6 +824,7 @@ Host *
 * Add RateLimit support ([#65](https://github.com/moul/advanced-ssh-config/issues/65))
 * Add possibility to disable automatic configuration rewrite ([#239](https://github.com/moul/advanced-ssh-config/issues/239))
 * Add `BeforeConfigWrite` and `AfterConfigWrite` new hooks ([#239](https://github.com/moul/advanced-ssh-config/issues/239))
+* Generate full assh binary path in ~/.ssh/config ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.6.0...master)
 
