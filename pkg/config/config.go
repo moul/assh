@@ -394,6 +394,9 @@ func (c *Config) applyMissingNames() {
 		template.prepare()
 	}
 	c.Defaults.isDefault = true
+	if c.Defaults.Hooks == nil {
+		c.Defaults.Hooks = &HostHooks{}
+	}
 }
 
 // SaveSSHConfig saves the configuration to ~/.ssh/config
