@@ -1,0 +1,17 @@
+# based on https://github.com/moul/advanced-ssh-config/issues/248
+
+defaults:
+  ControlMaster: auto
+  ControlPath: ~/tmp/.ssh/%h-%p-%r.sock
+  ControlPersist: yes
+  IdentityFile:
+    - /Users/1/.ssh/1/id_rsa
+    - /Users/2/.ssh/2/id_rsa
+    - /Users/3/.ssh/3/id_rsa
+  UseKeychain: yes
+  Port: 22
+  StrictHostkeychecking: no
+  Forwardx11: no
+  ForwardAgent: yes
+  Protocol: 2
+  ServerAliveInterval: 5
