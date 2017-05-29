@@ -184,7 +184,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 		if match, _ := path.Match(pattern, computedHost.inputName); match {
 			computedHost.HostName = computedHost.inputName
 		} else {
-			computedHost.HostName = computedHost.ExpandString(hostname)
+			computedHost.HostName = computedHost.ExpandString(hostname, "")
 		}
 	}
 
