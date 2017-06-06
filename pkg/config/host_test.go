@@ -57,23 +57,33 @@ func TestHost_ExpandString(t *testing.T) {
 		var input, output, expected string
 
 		input = "ls -la"
-		output = host.ExpandString(input)
+		output = host.ExpandString(input, "")
 		expected = "ls -la"
 		So(output, ShouldEqual, expected)
 
 		input = "nc %h %p"
-		output = host.ExpandString(input)
+		output = host.ExpandString(input, "")
 		expected = "nc 1.2.3.4 42"
 		So(output, ShouldEqual, expected)
 
 		input = "ssh %name"
-		output = host.ExpandString(input)
+		output = host.ExpandString(input, "")
 		expected = "ssh abc"
 		So(output, ShouldEqual, expected)
 
 		input = "echo %h %p %name %h %p %name"
-		output = host.ExpandString(input)
+		output = host.ExpandString(input, "")
 		expected = "echo 1.2.3.4 42 abc 1.2.3.4 42 abc"
+		So(output, ShouldEqual, expected)
+
+		input = "echo %g"
+		output = host.ExpandString(input, "")
+		expected = "echo "
+		So(output, ShouldEqual, expected)
+
+		input = "echo %g"
+		output = host.ExpandString(input, "def")
+		expected = "echo def"
 		So(output, ShouldEqual, expected)
 	})
 }

@@ -38,11 +38,12 @@ test:
 
 .PHONY: examples
 examples:
-	@for example in $(dir $(wildcard examples/*/assh.yml)); do                \
-	  set -xe;                                                                \
-	  ./assh -c $$example/assh.yml config build > $$example/ssh_config;       \
-	  ./assh -c $$example/assh.yml config graphviz > $$example/graphviz.dot;  \
-	  dot -Tpng $$example/graphviz.dot > $$example/graphviz.png;              \
+	@for example in $(dir $(wildcard examples/*/assh.yml)); do                    \
+	  set -xe;                                                                    \
+	  ./assh -c $$example/assh.yml config build > $$example/ssh_config;           \
+	  ./assh -c $$example/assh.yml config graphviz > $$example/graphviz.dot;      \
+	  dot -Tpng $$example/graphviz.dot > $$example/graphviz.png;                  \
+	  if [ -x $$example/test.sh ]; then (cd $$example; ./test.sh || exit 1); fi;  \
 	done
 
 .PHONY: install

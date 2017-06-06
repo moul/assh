@@ -1438,7 +1438,7 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 	return nil
 }
 
-func (h *Host) ExpandString(input string) string {
+func (h *Host) ExpandString(input string, gateway string) string {
 	output := input
 
 	// name of the host in config
@@ -1452,6 +1452,9 @@ func (h *Host) ExpandString(input string) string {
 
 	// port
 	output = strings.Replace(output, "%p", fmt.Sprintf("%s", h.Port), -1)
+
+	// gateway
+	output = strings.Replace(output, "%g", gateway, -1)
 
 	// FIXME: add
 	//   %L -> first component of the local host name
