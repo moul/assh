@@ -89,19 +89,19 @@ func Test_hostPrepare(t *testing.T) {
 		host, err := computeHost("aaa", 0, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "1.2.3.4")
-		So(hostPrepare(host), ShouldBeNil)
+		So(hostPrepare(host, ""), ShouldBeNil)
 		So(host.HostName, ShouldEqual, "1.2.3.4")
 
 		host, err = computeHost("bbb", 0, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "bbb")
-		So(hostPrepare(host), ShouldBeNil)
+		So(hostPrepare(host, ""), ShouldBeNil)
 		So(host.HostName, ShouldEqual, "bbb")
 
 		host, err = computeHost("eee", 0, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "eee")
-		So(hostPrepare(host), ShouldBeNil)
+		So(hostPrepare(host, ""), ShouldBeNil)
 		So(host.HostName, ShouldEqual, "42.42.42.42")
 	})
 }

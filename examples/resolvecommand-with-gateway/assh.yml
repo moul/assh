@@ -1,0 +1,2 @@
+defaults:
+  ResolveCommand: echo h=%h p=%p name=%name n=%n g=%g

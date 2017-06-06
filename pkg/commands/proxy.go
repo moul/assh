@@ -166,14 +166,14 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				// FIXME: detect ssh client version and use netcat if too old
 				// for now, the workaround is to configure the ProxyCommand of the host to "nc %h %p"
 
-				if err = hostPrepare(hostCopy); err != nil {
+				if err = hostPrepare(hostCopy, gateway); err != nil {
 					return err
 				}
 
 				if hostCopy.ProxyCommand != "" {
-					command = "ssh %name -- " + hostCopy.ExpandString(hostCopy.ProxyCommand)
+					command = "ssh %name -- " + hostCopy.ExpandString(hostCopy.ProxyCommand, gateway)
 				} else {
-					command = hostCopy.ExpandString("ssh -W %h:%p ") + "%name"
+					command = hostCopy.ExpandString("ssh -W %h:%p ", "") + "%name"
 				}
 
 				Logger.Debugf("Using gateway '%s': %s", gateway, command)
@@ -199,7 +199,7 @@ func proxyDirect(host *config.Host, dryRun bool) error {
 }
 
 func proxyCommand(host *config.Host, command string, dryRun bool) error {
-	command = host.ExpandString(command)
+	command = host.ExpandString(command, "")
 	Logger.Debugf("ProxyCommand: %s", command)
 	args, err := shlex.Split(command)
 	if err != nil {
@@ -217,7 +217,7 @@ func proxyCommand(host *config.Host, command string, dryRun bool) error {
 	return spawn.Run()
 }
 
-func hostPrepare(host *config.Host) error {
+func hostPrepare(host *config.Host, gateway string) error {
 	if host.HostName == "" {
 		host.HostName = host.Name()
 	}
@@ -236,8 +236,8 @@ func hostPrepare(host *config.Host) error {
 	}
 
 	if host.ResolveCommand != "" {
-		command := host.ExpandString(host.ResolveCommand)
-		Logger.Debugf("Resolving host: %q using command: %q", host.HostName, command)
+		command := host.ExpandString(host.ResolveCommand, gateway)
+		Logger.Debugf("Resolving host: %q using command: %q", host.HostName, host.ResolveCommand)
 
 		args, err := shlex.Split(command)
 		if err != nil {
@@ -295,7 +295,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	}
 
 	Logger.Debugf("Preparing host object")
-	if err := hostPrepare(host); err != nil {
+	if err := hostPrepare(host, ""); err != nil {
 		return err
 	}
 
