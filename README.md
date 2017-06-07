@@ -815,6 +815,7 @@ Host *
 
 ### master (unreleased)
 
+* Automatically detect if `-q` is passed to the parent ssh process to disable logging ([#253](https://github.com/moul/advanced-ssh-config/pull/253)) by [@cao](https://github.com/cao)
 * Add a new `%g` (gateway) parameter to `ResolveCommand` and `ProxyCommand` ([#247](https://github.com/moul/advanced-ssh-config/pull/247)
 * Fix panic on particular `assh.yml` files
 * Fix build issue on OSX ([#238](https://github.com/moul/advanced-ssh-config/pull/238) by [@jcftang](https://github.com/jcftang))
