@@ -28,6 +28,8 @@ func GetLoggingLevelByInspectingParent() (logrus.Level, error) {
 		return logrus.DebugLevel, nil
 	} else if strings.Contains(cmdline, "-v") {
 		return logrus.InfoLevel, nil
+	} else if strings.Contains(cmdline, "-q") {
+		return logrus.ErrorLevel, nil
 	}
 	return logrus.WarnLevel, nil
 }
