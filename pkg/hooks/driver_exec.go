@@ -2,8 +2,10 @@ package hooks
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/moul/advanced-ssh-config/pkg/templates"
 )
@@ -32,7 +34,25 @@ func (d ExecDriver) Run(args RunArgs) error {
 		return err
 	}
 
-	cmd := exec.Command("/bin/sh", "-c", buff.String())
+	var (
+		availableShells = []string{"/bin/sh", "/bin/bash", "/bin/zsh"}
+		selectedShell   = ""
+	)
+	for _, shell := range availableShells {
+		info, err := os.Stat(shell)
+		if err != nil {
+			continue
+		}
+		if info.Mode()&0111 != 0 {
+			selectedShell = shell
+			break
+		}
+	}
+	if selectedShell == "" {
+		return fmt.Errorf("No available shell found. (tried %s)", strings.Join(availableShells, ", "))
+	}
+
+	cmd := exec.Command(selectedShell, "-c", buff.String())
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
