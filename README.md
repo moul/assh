@@ -4,6 +4,7 @@
 ![License](https://img.shields.io/github/license/moul/advanced-ssh-config.svg)
 [![GitHub release](https://img.shields.io/github/release/moul/advanced-ssh-config.svg)](https://github.com/moul/advanced-ssh-config/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moul/advanced-ssh-config)](https://goreportcard.com/report/github.com/moul/advanced-ssh-config)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config?ref=badge_shield)
 
 <img src="https://raw.githubusercontent.com/moul/advanced-ssh-config/master/resources/assh.png" width="400" />
 
@@ -1052,3 +1053,6 @@ ansible_ssh_executable = '/usr/local/bin/assh wrapper ssh'
 ## License
 
 © 2009-2016 Manfred Touron - MIT License
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config.svg?type=large)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config?ref=badge_large)
