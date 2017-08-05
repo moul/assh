@@ -19,6 +19,11 @@ import (
 
 // NewProject creates a Project with the specified context.
 func NewProject(context *ctx.Context, parseOptions *config.ParseOptions) (project.APIProject, error) {
+
+	if err := context.LookupConfig(); err != nil {
+		logrus.Errorf("Failed to load docker config: %v", err)
+	}
+
 	if context.AuthLookup == nil {
 		context.AuthLookup = auth.NewConfigLookup(context.ConfigFile)
 	}
@@ -57,11 +62,6 @@ func NewProject(context *ctx.Context, parseOptions *config.ParseOptions) (projec
 
 	err := p.Parse()
 	if err != nil {
-		return nil, err
-	}
-
-	if err = context.LookupConfig(); err != nil {
-		logrus.Errorf("Failed to open project %s: %v", p.Name, err)
 		return nil, err
 	}
 

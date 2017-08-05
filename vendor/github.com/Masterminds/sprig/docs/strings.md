@@ -278,8 +278,108 @@ rules. And `0` is considered a plural because the English language treats it
 as such (`zero anchovies`). The Sprig developers are working on a solution for
 better internationalization.
 
+## snakecase
+
+Convert string from camelCase to snake_case.
+
+Introduced in 2.12.0.
+
+```
+snakecase "FirstName"
+```
+
+This above will produce `first_name`.
+
+## camelcase
+
+Convert string from snake_case to CamelCase
+
+Introduced in 2.12.0.
+
+```
+camelcase "http_server"
+```
+
+This above will produce `HttpServer`.
+
+## shuffle
+
+Shuffle a string.
+
+Introduced in 2.12.0.
+
+
+```
+shuffle "hello"
+```
+
+The above will randomize the letters in `hello`, perhaps producing `oelhl`.
+
+## regexMatch
+
+Returns true if the input string mratches the regular expression.
+
+```
+regexMatch "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}" "test@acme.com"
+```
+
+The above produces `true`
+
+## regexFindAll
+
+Returns a slice of all matches of the regular expression in the input string
+
+```
+regexFindAll "[2,4,6,8]" "123456789 
+```
+
+The above produces `[2 4 6 8]`
+
+## regexFind
+
+Return the first (left most) match of the regular expression in the input string
+
+```
+regexFind "[a-zA-Z][1-9]" "abcd1234"
+```
+
+The above produces `d1`
+
+## regexReplaceAll
+
+Returns a copy of the input string, replacing matches of the Regexp with the replacement string replacement.
+Inside string replacement, $ signs are interpreted as in Expand, so for instance $1 represents the text of the first submatch
+
+```
+regexReplaceAll "a(x*)b" "-ab-axxb-" "${1}W"
+```
+
+The above produces `-W-xxW-`
+
+## regexReplaceAllLiteral
+
+Returns a copy of the input string, replacing matches of the Regexp with the replacement string replacement
+The replacement string is substituted directly, without using Expand
+
+```
+regexReplaceAllLiteral "a(x*)b" "-ab-axxb-" "${1}"
+```
+
+The above produces `-${1}-${1}-`
+
+## regexSplit
+
+Slices the input string into substrings separated by the expression and returns a slice of the substrings between those expression matches. The last parameter `n` determines the number of substrings to return, where `-1` means return all matches
+
+```
+regexSplit "z+" "pizza" -1
+```
+
+The above produces `[pi a]`
+
 ## See Also...
 
 The [Conversion Functions](conversion.html) contain functions for converting
 strings. The [String Slice Functions](string_slice.html) contains functions
 for working with an array of strings.
+

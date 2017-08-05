@@ -1,6 +1,7 @@
 package client
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestFactoryWithEnv(t *testing.T) {
 			envs: map[string]string{
 				"DOCKER_CERT_PATH": "invalid/path",
 			},
-			expectedError:   "Could not load X509 key pair: open invalid/path/cert.pem: no such file or directory. Make sure the key is not encrypted",
+			expectedError:   "Could not load X509 key pair: open invalid/path/cert.pem: no such file or directory",
 			expectedVersion: "v1.20",
 		},
 		{
@@ -32,7 +33,7 @@ func TestFactoryWithEnv(t *testing.T) {
 		recoverEnvs := setupEnvs(t, c.envs)
 		factory, err := NewDefaultFactory(Options{})
 		if c.expectedError != "" {
-			if err == nil || err.Error() != c.expectedError {
+			if err == nil || !strings.Contains(err.Error(), c.expectedError) {
 				t.Errorf("expected an error %s, got %s, for %v", c.expectedError, err.Error(), c)
 			}
 		} else {
@@ -59,7 +60,7 @@ func TestFactoryWithOptions(t *testing.T) {
 			options: Options{
 				Host: "host",
 			},
-			expectedError: "unable to parse docker host `host`",
+			expectedError: "unable to parse docker host",
 		},
 		{
 			options: Options{
@@ -78,7 +79,7 @@ func TestFactoryWithOptions(t *testing.T) {
 	for _, c := range cases {
 		factory, err := NewDefaultFactory(c.options)
 		if c.expectedError != "" {
-			if err == nil || err.Error() != c.expectedError {
+			if err == nil || !strings.Contains(err.Error(), c.expectedError) {
 				t.Errorf("expected an error %s, got %s, for %v", c.expectedError, err.Error(), c)
 			}
 		} else {

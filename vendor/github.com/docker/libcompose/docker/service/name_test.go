@@ -7,8 +7,9 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"github.com/docker/libcompose/labels"
-	"github.com/docker/libcompose/test"
+	"github.com/pkg/errors"
 )
 
 func TestSingleNamer(t *testing.T) {
@@ -27,7 +28,8 @@ func TestSingleNamer(t *testing.T) {
 }
 
 type NamerClient struct {
-	test.NopClient
+	client.Client
+	err                  error
 	expectedLabelFilters []string
 	containers           []types.Container
 }
@@ -51,11 +53,13 @@ func (client *NamerClient) ContainerList(ctx context.Context, options types.Cont
 			}
 		}
 	}
-	return client.containers, nil
+	return client.containers, client.err
 }
 
 func TestDefaultNamerClientError(t *testing.T) {
-	client := test.NewNopClient()
+	client := &NamerClient{
+		err: errors.New("Engine no longer exists"),
+	}
 	_, err := NewNamer(context.Background(), client, "project", "service", false)
 	if err == nil || err.Error() != "Engine no longer exists" {
 		t.Fatalf("expected an error 'Engine no longer exists', got %s", err)

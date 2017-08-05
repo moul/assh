@@ -8,7 +8,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/errors"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/strslice"
@@ -19,6 +18,7 @@ import (
 	"github.com/docker/docker/pkg/pools"
 	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/docker/pkg/term"
+	"github.com/sirupsen/logrus"
 )
 
 // Seconds to wait after sending TERM before trying KILL
@@ -253,7 +253,7 @@ func (d *Daemon) ContainerExecStart(ctx context.Context, name string, stdin io.R
 		return fmt.Errorf("context cancelled")
 	case err := <-attachErr:
 		if err != nil {
-			if _, ok := err.(stream.DetachError); !ok {
+			if _, ok := err.(term.EscapeError); !ok {
 				return fmt.Errorf("exec attach failed with error: %v", err)
 			}
 			d.LogContainerEvent(c, "exec_detach")

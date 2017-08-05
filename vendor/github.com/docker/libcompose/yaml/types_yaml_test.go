@@ -202,3 +202,13 @@ func TestSliceWithEmptyValue(t *testing.T) {
 	assert.True(t, contains(s2.Foo, "empty="))
 	assert.True(t, contains(s2.Foo, "lookup"))
 }
+
+func TestEqualSliceToMapEqualSign(t *testing.T) {
+	slice := MaporEqualSlice{"foo=bar=baz"}
+	result := slice.ToMap()
+	assert.Equal(t, "bar=baz", result["foo"])
+
+	slice = MaporEqualSlice{"foo=bar=baz=buz"}
+	result = slice.ToMap()
+	assert.Equal(t, "bar=baz=buz", result["foo"])
+}

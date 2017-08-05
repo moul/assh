@@ -501,43 +501,43 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `NodeId : Id	<< ast.NewNodeId(X[0], nil) >>`,
+		String: `NodeId : Id	<< ast.NewNodeID(X[0], nil) >>`,
 		Id:         "NodeId",
 		NTType:     12,
 		Index:      48,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewNodeId(X[0], nil)
+			return ast.NewNodeID(X[0], nil)
 		},
 	},
 	ProdTabEntry{
-		String: `NodeId : Id Port	<< ast.NewNodeId(X[0], X[1]) >>`,
+		String: `NodeId : Id Port	<< ast.NewNodeID(X[0], X[1]) >>`,
 		Id:         "NodeId",
 		NTType:     12,
 		Index:      49,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewNodeId(X[0], X[1])
+			return ast.NewNodeID(X[0], X[1])
 		},
 	},
 	ProdTabEntry{
-		String: `Port : ":" Id	<< ast.NewPort(X[1], nil) >>`,
+		String: `Port : ":" Id	<< ast.NewPort(X[1], nil), nil >>`,
 		Id:         "Port",
 		NTType:     13,
 		Index:      50,
 		NumSymbols: 2,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewPort(X[1], nil)
+			return ast.NewPort(X[1], nil), nil
 		},
 	},
 	ProdTabEntry{
-		String: `Port : ":" Id ":" Id	<< ast.NewPort(X[1], X[3]) >>`,
+		String: `Port : ":" Id ":" Id	<< ast.NewPort(X[1], X[3]), nil >>`,
 		Id:         "Port",
 		NTType:     13,
 		Index:      51,
 		NumSymbols: 4,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewPort(X[1], X[3])
+			return ast.NewPort(X[1], X[3]), nil
 		},
 	},
 	ProdTabEntry{
@@ -611,13 +611,13 @@ var productionsTable = ProdTab{
 		},
 	},
 	ProdTabEntry{
-		String: `Id : id	<< ast.NewId(X[0]) >>`,
+		String: `Id : id	<< ast.NewID(X[0]) >>`,
 		Id:         "Id",
 		NTType:     16,
 		Index:      59,
 		NumSymbols: 1,
 		ReduceFunc: func(X []Attrib) (Attrib, error) {
-			return ast.NewId(X[0])
+			return ast.NewID(X[0])
 		},
 	},
 }

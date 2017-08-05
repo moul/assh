@@ -228,7 +228,6 @@ func RestartCommand(factory app.ProjectFactory) cli.Command {
 			cli.IntFlag{
 				Name:  "timeout,t",
 				Usage: "Specify a shutdown timeout in seconds.",
-				Value: 10,
 			},
 		},
 	}
@@ -244,7 +243,6 @@ func StopCommand(factory app.ProjectFactory) cli.Command {
 			cli.IntFlag{
 				Name:  "timeout,t",
 				Usage: "Specify a shutdown timeout in seconds.",
-				Value: 10,
 			},
 		},
 	}
@@ -283,7 +281,6 @@ func ScaleCommand(factory app.ProjectFactory) cli.Command {
 			cli.IntFlag{
 				Name:  "timeout,t",
 				Usage: "Specify a shutdown timeout in seconds.",
-				Value: 10,
 			},
 		},
 	}

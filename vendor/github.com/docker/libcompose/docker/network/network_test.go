@@ -8,9 +8,10 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
 	"github.com/docker/libcompose/config"
-	"github.com/docker/libcompose/test"
 	"github.com/docker/libcompose/yaml"
+	"github.com/pkg/errors"
 )
 
 type networkNotFound struct {
@@ -218,7 +219,7 @@ func testExpectedContainsNetwork(t *testing.T, index int, expected []*Network, n
 }
 
 type networkClient struct {
-	test.NopClient
+	client.Client
 	expectedNetworkCreate   types.NetworkCreate
 	expectedRemoveNetworkID string
 	expectedName            string
@@ -228,7 +229,7 @@ type networkClient struct {
 	removeError             error
 }
 
-func (c *networkClient) NetworkInspect(ctx context.Context, networkID string) (types.NetworkResource, error) {
+func (c *networkClient) NetworkInspect(ctx context.Context, networkID string, verbose bool) (types.NetworkResource, error) {
 	if c.inspectError != nil {
 		return types.NetworkResource{}, c.inspectError
 	}
@@ -254,7 +255,7 @@ func (c *networkClient) NetworkCreate(ctx context.Context, name string, options 
 			ID: c.expectedName,
 		}, nil
 	}
-	return c.NopClient.NetworkCreate(ctx, name, options)
+	return types.NetworkCreateResponse{}, errors.New("Engine no longer exists")
 }
 
 func (c *networkClient) NetworkRemove(ctx context.Context, networkID string) error {
@@ -264,7 +265,7 @@ func (c *networkClient) NetworkRemove(ctx context.Context, networkID string) err
 		}
 		return nil
 	}
-	return c.NopClient.NetworkRemove(ctx, networkID)
+	return errors.New("Engine no longer exists")
 }
 
 func TestNetworksInitialize(t *testing.T) {

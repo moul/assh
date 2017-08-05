@@ -10,7 +10,6 @@ transitionTable[s](r) returns the next state.
 type TransitionTable [NumStates]func(rune) int
 
 var TransTab = TransitionTable{
-
 	// S0
 	func(r rune) int {
 		switch {
@@ -98,19 +97,15 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S1
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S2
 	func(r rune) int {
 		switch {
@@ -128,31 +123,24 @@ var TransTab = TransitionTable{
 			return 33
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 33
-
 		}
 		return NoState
 	},
-
 	// S3
 	func(r rune) int {
 		switch {
 		case r == 10: // ['\n','\n']
 			return 34
-
 		default:
 			return 3
 		}
-
 	},
-
 	// S4
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S5
 	func(r rune) int {
 		switch {
@@ -164,21 +152,17 @@ var TransTab = TransitionTable{
 			return 8
 		case r == 62: // ['>','>']
 			return 36
-
 		}
 		return NoState
 	},
-
 	// S6
 	func(r rune) int {
 		switch {
 		case 48 <= r && r <= 57: // ['0','9']
 			return 37
-
 		}
 		return NoState
 	},
-
 	// S7
 	func(r rune) int {
 		switch {
@@ -186,11 +170,9 @@ var TransTab = TransitionTable{
 			return 38
 		case r == 47: // ['/','/']
 			return 39
-
 		}
 		return NoState
 	},
-
 	// S8
 	func(r rune) int {
 		switch {
@@ -198,27 +180,21 @@ var TransTab = TransitionTable{
 			return 40
 		case 48 <= r && r <= 57: // ['0','9']
 			return 8
-
 		}
 		return NoState
 	},
-
 	// S9
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S10
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S11
 	func(r rune) int {
 		switch {
@@ -232,19 +208,15 @@ var TransTab = TransitionTable{
 			return 43
 		case 63 <= r && r <= 255: // ['?',\u00ff]
 			return 41
-
 		}
 		return NoState
 	},
-
 	// S12
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S13
 	func(r rune) int {
 		switch {
@@ -260,11 +232,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S14
 	func(r rune) int {
 		switch {
@@ -288,11 +258,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S15
 	func(r rune) int {
 		switch {
@@ -316,11 +284,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S16
 	func(r rune) int {
 		switch {
@@ -344,11 +310,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S17
 	func(r rune) int {
 		switch {
@@ -372,11 +336,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S18
 	func(r rune) int {
 		switch {
@@ -404,27 +366,21 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S19
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S20
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S21
 	func(r rune) int {
 		switch {
@@ -440,11 +396,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S22
 	func(r rune) int {
 		switch {
@@ -464,11 +418,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S23
 	func(r rune) int {
 		switch {
@@ -488,11 +440,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S24
 	func(r rune) int {
 		switch {
@@ -512,11 +462,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S25
 	func(r rune) int {
 		switch {
@@ -536,11 +484,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S26
 	func(r rune) int {
 		switch {
@@ -562,27 +508,21 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S27
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S28
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S29
 	func(r rune) int {
 		switch {
@@ -598,11 +538,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S30
 	func(r rune) int {
 		switch {
@@ -620,19 +558,15 @@ var TransTab = TransitionTable{
 			return 33
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 33
-
 		}
 		return NoState
 	},
-
 	// S31
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S32
 	func(r rune) int {
 		switch {
@@ -650,11 +584,9 @@ var TransTab = TransitionTable{
 			return 65
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 65
-
 		}
 		return NoState
 	},
-
 	// S33
 	func(r rune) int {
 		switch {
@@ -672,79 +604,61 @@ var TransTab = TransitionTable{
 			return 33
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 33
-
 		}
 		return NoState
 	},
-
 	// S34
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S35
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S36
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S37
 	func(r rune) int {
 		switch {
 		case 48 <= r && r <= 57: // ['0','9']
 			return 37
-
 		}
 		return NoState
 	},
-
 	// S38
 	func(r rune) int {
 		switch {
 		case r == 42: // ['*','*']
 			return 66
-
 		default:
 			return 38
 		}
-
 	},
-
 	// S39
 	func(r rune) int {
 		switch {
 		case r == 10: // ['\n','\n']
 			return 34
-
 		default:
 			return 39
 		}
-
 	},
-
 	// S40
 	func(r rune) int {
 		switch {
 		case 48 <= r && r <= 57: // ['0','9']
 			return 67
-
 		}
 		return NoState
 	},
-
 	// S41
 	func(r rune) int {
 		switch {
@@ -758,11 +672,9 @@ var TransTab = TransitionTable{
 			return 43
 		case 63 <= r && r <= 255: // ['?',\u00ff]
 			return 41
-
 		}
 		return NoState
 	},
-
 	// S42
 	func(r rune) int {
 		switch {
@@ -772,19 +684,15 @@ var TransTab = TransitionTable{
 			return 68
 		case 63 <= r && r <= 255: // ['?',\u00ff]
 			return 68
-
 		}
 		return NoState
 	},
-
 	// S43
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S44
 	func(r rune) int {
 		switch {
@@ -800,11 +708,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S45
 	func(r rune) int {
 		switch {
@@ -824,11 +730,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S46
 	func(r rune) int {
 		switch {
@@ -852,11 +756,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S47
 	func(r rune) int {
 		switch {
@@ -876,11 +778,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S48
 	func(r rune) int {
 		switch {
@@ -900,11 +800,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S49
 	func(r rune) int {
 		switch {
@@ -922,11 +820,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S50
 	func(r rune) int {
 		switch {
@@ -944,11 +840,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S51
 	func(r rune) int {
 		switch {
@@ -968,11 +862,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S52
 	func(r rune) int {
 		switch {
@@ -992,11 +884,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S53
 	func(r rune) int {
 		switch {
@@ -1016,11 +906,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S54
 	func(r rune) int {
 		switch {
@@ -1040,11 +928,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S55
 	func(r rune) int {
 		switch {
@@ -1064,11 +950,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S56
 	func(r rune) int {
 		switch {
@@ -1088,11 +972,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S57
 	func(r rune) int {
 		switch {
@@ -1116,11 +998,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S58
 	func(r rune) int {
 		switch {
@@ -1140,11 +1020,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S59
 	func(r rune) int {
 		switch {
@@ -1162,11 +1040,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S60
 	func(r rune) int {
 		switch {
@@ -1186,11 +1062,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S61
 	func(r rune) int {
 		switch {
@@ -1210,11 +1084,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S62
 	func(r rune) int {
 		switch {
@@ -1234,11 +1106,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S63
 	func(r rune) int {
 		switch {
@@ -1256,11 +1126,9 @@ var TransTab = TransitionTable{
 			return 33
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 33
-
 		}
 		return NoState
 	},
-
 	// S64
 	func(r rune) int {
 		switch {
@@ -1278,11 +1146,9 @@ var TransTab = TransitionTable{
 			return 33
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 33
-
 		}
 		return NoState
 	},
-
 	// S65
 	func(r rune) int {
 		switch {
@@ -1300,11 +1166,9 @@ var TransTab = TransitionTable{
 			return 33
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 33
-
 		}
 		return NoState
 	},
-
 	// S66
 	func(r rune) int {
 		switch {
@@ -1312,23 +1176,18 @@ var TransTab = TransitionTable{
 			return 66
 		case r == 47: // ['/','/']
 			return 89
-
 		default:
 			return 38
 		}
-
 	},
-
 	// S67
 	func(r rune) int {
 		switch {
 		case 48 <= r && r <= 57: // ['0','9']
 			return 67
-
 		}
 		return NoState
 	},
-
 	// S68
 	func(r rune) int {
 		switch {
@@ -1340,11 +1199,9 @@ var TransTab = TransitionTable{
 			return 90
 		case 63 <= r && r <= 255: // ['?',\u00ff]
 			return 68
-
 		}
 		return NoState
 	},
-
 	// S69
 	func(r rune) int {
 		switch {
@@ -1364,11 +1221,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S70
 	func(r rune) int {
 		switch {
@@ -1388,11 +1243,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S71
 	func(r rune) int {
 		switch {
@@ -1412,11 +1265,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S72
 	func(r rune) int {
 		switch {
@@ -1436,11 +1287,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S73
 	func(r rune) int {
 		switch {
@@ -1460,11 +1309,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S74
 	func(r rune) int {
 		switch {
@@ -1484,11 +1331,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S75
 	func(r rune) int {
 		switch {
@@ -1508,11 +1353,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S76
 	func(r rune) int {
 		switch {
@@ -1532,11 +1375,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S77
 	func(r rune) int {
 		switch {
@@ -1556,11 +1397,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S78
 	func(r rune) int {
 		switch {
@@ -1580,11 +1419,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S79
 	func(r rune) int {
 		switch {
@@ -1604,11 +1441,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S80
 	func(r rune) int {
 		switch {
@@ -1628,11 +1463,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S81
 	func(r rune) int {
 		switch {
@@ -1656,11 +1489,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S82
 	func(r rune) int {
 		switch {
@@ -1680,11 +1511,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S83
 	func(r rune) int {
 		switch {
@@ -1704,11 +1533,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S84
 	func(r rune) int {
 		switch {
@@ -1728,11 +1555,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S85
 	func(r rune) int {
 		switch {
@@ -1752,11 +1577,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S86
 	func(r rune) int {
 		switch {
@@ -1776,11 +1599,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S87
 	func(r rune) int {
 		switch {
@@ -1800,11 +1621,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S88
 	func(r rune) int {
 		switch {
@@ -1828,19 +1647,15 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S89
 	func(r rune) int {
 		switch {
-
 		}
 		return NoState
 	},
-
 	// S90
 	func(r rune) int {
 		switch {
@@ -1854,11 +1669,9 @@ var TransTab = TransitionTable{
 			return 43
 		case 63 <= r && r <= 255: // ['?',\u00ff]
 			return 41
-
 		}
 		return NoState
 	},
-
 	// S91
 	func(r rune) int {
 		switch {
@@ -1876,11 +1689,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S92
 	func(r rune) int {
 		switch {
@@ -1898,11 +1709,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S93
 	func(r rune) int {
 		switch {
@@ -1920,11 +1729,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S94
 	func(r rune) int {
 		switch {
@@ -1940,11 +1747,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S95
 	func(r rune) int {
 		switch {
@@ -1964,11 +1769,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S96
 	func(r rune) int {
 		switch {
@@ -1988,11 +1791,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S97
 	func(r rune) int {
 		switch {
@@ -2008,11 +1809,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S98
 	func(r rune) int {
 		switch {
@@ -2032,11 +1831,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S99
 	func(r rune) int {
 		switch {
@@ -2056,11 +1853,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S100
 	func(r rune) int {
 		switch {
@@ -2080,11 +1875,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S101
 	func(r rune) int {
 		switch {
@@ -2104,11 +1897,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S102
 	func(r rune) int {
 		switch {
@@ -2128,11 +1919,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S103
 	func(r rune) int {
 		switch {
@@ -2150,11 +1939,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S104
 	func(r rune) int {
 		switch {
@@ -2172,11 +1959,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S105
 	func(r rune) int {
 		switch {
@@ -2196,11 +1981,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S106
 	func(r rune) int {
 		switch {
@@ -2220,11 +2003,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S107
 	func(r rune) int {
 		switch {
@@ -2244,11 +2025,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S108
 	func(r rune) int {
 		switch {
@@ -2268,11 +2047,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S109
 	func(r rune) int {
 		switch {
@@ -2292,11 +2069,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S110
 	func(r rune) int {
 		switch {
@@ -2316,11 +2091,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S111
 	func(r rune) int {
 		switch {
@@ -2340,11 +2113,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S112
 	func(r rune) int {
 		switch {
@@ -2360,11 +2131,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S113
 	func(r rune) int {
 		switch {
@@ -2384,11 +2153,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S114
 	func(r rune) int {
 		switch {
@@ -2406,11 +2173,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S115
 	func(r rune) int {
 		switch {
@@ -2430,11 +2195,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S116
 	func(r rune) int {
 		switch {
@@ -2452,11 +2215,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S117
 	func(r rune) int {
 		switch {
@@ -2474,11 +2235,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S118
 	func(r rune) int {
 		switch {
@@ -2498,11 +2257,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S119
 	func(r rune) int {
 		switch {
@@ -2522,11 +2279,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S120
 	func(r rune) int {
 		switch {
@@ -2546,11 +2301,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S121
 	func(r rune) int {
 		switch {
@@ -2568,11 +2321,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S122
 	func(r rune) int {
 		switch {
@@ -2590,11 +2341,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S123
 	func(r rune) int {
 		switch {
@@ -2614,11 +2363,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S124
 	func(r rune) int {
 		switch {
@@ -2638,11 +2385,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S125
 	func(r rune) int {
 		switch {
@@ -2662,11 +2407,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S126
 	func(r rune) int {
 		switch {
@@ -2682,11 +2425,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S127
 	func(r rune) int {
 		switch {
@@ -2706,11 +2447,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S128
 	func(r rune) int {
 		switch {
@@ -2730,11 +2469,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S129
 	func(r rune) int {
 		switch {
@@ -2754,11 +2491,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S130
 	func(r rune) int {
 		switch {
@@ -2778,11 +2513,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S131
 	func(r rune) int {
 		switch {
@@ -2802,11 +2535,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S132
 	func(r rune) int {
 		switch {
@@ -2826,11 +2557,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S133
 	func(r rune) int {
 		switch {
@@ -2850,11 +2579,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S134
 	func(r rune) int {
 		switch {
@@ -2870,11 +2597,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S135
 	func(r rune) int {
 		switch {
@@ -2894,11 +2619,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S136
 	func(r rune) int {
 		switch {
@@ -2918,11 +2641,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S137
 	func(r rune) int {
 		switch {
@@ -2942,11 +2663,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S138
 	func(r rune) int {
 		switch {
@@ -2966,11 +2685,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S139
 	func(r rune) int {
 		switch {
@@ -2990,11 +2707,9 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},
-
 	// S140
 	func(r rune) int {
 		switch {
@@ -3010,7 +2725,6 @@ var TransTab = TransitionTable{
 			return 29
 		case 65534 <= r && r <= 1114111: // [\ufffe,\U0010ffff]
 			return 29
-
 		}
 		return NoState
 	},

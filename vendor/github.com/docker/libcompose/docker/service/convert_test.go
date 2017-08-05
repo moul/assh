@@ -171,6 +171,17 @@ func TestOomScoreAdj(t *testing.T) {
 	assert.Equal(t, 500, hostCfg.OomScoreAdj)
 }
 
+func TestStopGracePeriod(t *testing.T) {
+	ctx := &ctx.Context{}
+	sc := &config.ServiceConfig{
+		StopGracePeriod: "5s",
+	}
+	cfg, _, err := Convert(sc, ctx.Context, nil)
+	assert.Nil(t, err)
+
+	assert.Equal(t, 5, *cfg.StopTimeout)
+}
+
 func TestStopSignal(t *testing.T) {
 	ctx := &ctx.Context{}
 	sc := &config.ServiceConfig{

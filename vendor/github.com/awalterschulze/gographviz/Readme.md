@@ -7,7 +7,9 @@ This parser has been created using [gocc](http://code.google.com/p/gocc).
 ```
 graphAst, _ := gographviz.ParseString(`digraph G {}`)
 graph := gographviz.NewGraph()
-gographviz.Analyse(graphAst, graph)
+if err := gographviz.Analyse(graphAst, graph); err != nil {
+    panic(err)
+}
 graph.AddNode("G", "a", nil)
 graph.AddNode("G", "b", nil)
 graph.AddEdge("a", "b", true, nil)
@@ -27,7 +29,8 @@ go get github.com/awalterschulze/gographviz
 
 ### Users ###
 
-[aptly](https://github.com/smira/aptly) - Debian repository management tool
+  - [aptly](https://github.com/smira/aptly) - Debian repository management tool
+  - [gorgonai](https://github.com/chewxy/gorgonia) - A Library that helps facilitate machine learning in Go
 
 ### Mentions ###
 

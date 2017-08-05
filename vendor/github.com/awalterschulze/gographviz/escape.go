@@ -21,16 +21,17 @@ import (
 	"unicode"
 )
 
+// Escape is just a Graph that escapes some strings when required.
 type Escape struct {
 	*Graph
 }
 
-//Returns a graph which will try to escape some strings when required
+// NewEscape returns a graph which will try to escape some strings when required
 func NewEscape() *Escape {
 	return &Escape{NewGraph()}
 }
 
-func isHtml(s string) bool {
+func isHTML(s string) bool {
 	if len(s) == 0 {
 		return false
 	}
@@ -41,10 +42,10 @@ func isHtml(s string) bool {
 	count := 0
 	for _, c := range ss {
 		if c == '<' {
-			count += 1
+			count++
 		}
 		if c == '>' {
-			count -= 1
+			count--
 		}
 	}
 	if count == 0 {
@@ -58,7 +59,7 @@ func isLetter(ch rune) bool {
 		ch >= 0x80 && unicode.IsLetter(ch) && ch != 'ε'
 }
 
-func isId(s string) bool {
+func isID(s string) bool {
 	i := 0
 	pos := false
 	for _, c := range s {
@@ -123,14 +124,14 @@ func esc(s string) string {
 	if len(s) == 0 {
 		return s
 	}
-	if isHtml(s) {
+	if isHTML(s) {
 		return s
 	}
 	ss := strings.TrimSpace(s)
 	if ss[0] == '<' {
 		return fmt.Sprintf("\"%s\"", strings.Replace(s, "\"", "\\\"", -1))
 	}
-	if isId(s) {
+	if isID(s) {
 		return s
 	}
 	if isNumber(s) {
@@ -150,34 +151,42 @@ func escAttrs(attrs map[string]string) map[string]string {
 	return newAttrs
 }
 
-func (this *Escape) SetName(name string) {
-	this.Graph.SetName(esc(name))
+// SetName sets the graph name and escapes it, if needed.
+func (escape *Escape) SetName(name string) error {
+	return escape.Graph.SetName(esc(name))
 }
 
-func (this *Escape) AddPortEdge(src, srcPort, dst, dstPort string, directed bool, attrs map[string]string) {
-	this.Graph.AddPortEdge(esc(src), srcPort, esc(dst), dstPort, directed, escAttrs(attrs))
+// AddPortEdge adds an edge with ports and escapes the src, dst and attrs, if needed.
+func (escape *Escape) AddPortEdge(src, srcPort, dst, dstPort string, directed bool, attrs map[string]string) error {
+	return escape.Graph.AddPortEdge(esc(src), srcPort, esc(dst), dstPort, directed, escAttrs(attrs))
 }
 
-func (this *Escape) AddEdge(src, dst string, directed bool, attrs map[string]string) {
-	this.AddPortEdge(src, "", dst, "", directed, attrs)
+// AddEdge adds an edge and escapes the src, dst and attrs, if needed.
+func (escape *Escape) AddEdge(src, dst string, directed bool, attrs map[string]string) error {
+	return escape.AddPortEdge(src, "", dst, "", directed, attrs)
 }
 
-func (this *Escape) AddNode(parentGraph string, name string, attrs map[string]string) {
-	this.Graph.AddNode(esc(parentGraph), esc(name), escAttrs(attrs))
+// AddNode adds a node and escapes the parentGraph, name and attrs, if needed.
+func (escape *Escape) AddNode(parentGraph string, name string, attrs map[string]string) error {
+	return escape.Graph.AddNode(esc(parentGraph), esc(name), escAttrs(attrs))
 }
 
-func (this *Escape) AddAttr(parentGraph string, field, value string) {
-	this.Graph.AddAttr(esc(parentGraph), esc(field), esc(value))
+// AddAttr adds an attribute and escapes the parentGraph, field and value, if needed.
+func (escape *Escape) AddAttr(parentGraph string, field, value string) error {
+	return escape.Graph.AddAttr(esc(parentGraph), esc(field), esc(value))
 }
 
-func (this *Escape) AddSubGraph(parentGraph string, name string, attrs map[string]string) {
-	this.Graph.AddSubGraph(esc(parentGraph), esc(name), escAttrs(attrs))
+// AddSubGraph adds a subgraph and escapes the parentGraph, name and attrs, if needed.
+func (escape *Escape) AddSubGraph(parentGraph string, name string, attrs map[string]string) error {
+	return escape.Graph.AddSubGraph(esc(parentGraph), esc(name), escAttrs(attrs))
 }
 
-func (this *Escape) IsNode(name string) bool {
-	return this.Graph.IsNode(esc(name))
+// IsNode returns whether the, escaped if needed, name is a node in the graph.
+func (escape *Escape) IsNode(name string) bool {
+	return escape.Graph.IsNode(esc(name))
 }
 
-func (this *Escape) IsSubGraph(name string) bool {
-	return this.Graph.IsSubGraph(esc(name))
+// IsSubGraph returns whether the, escaped if needed, name is a subgraph in the grahp.
+func (escape *Escape) IsSubGraph(name string) bool {
+	return escape.Graph.IsSubGraph(esc(name))
 }

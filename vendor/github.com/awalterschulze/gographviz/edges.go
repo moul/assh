@@ -18,7 +18,7 @@ import (
 	"sort"
 )
 
-//Represents an Edge.
+// Edge represents an Edge.
 type Edge struct {
 	Src     string
 	SrcPort string
@@ -28,43 +28,43 @@ type Edge struct {
 	Attrs   Attrs
 }
 
-//Represents a set of Edges.
+// Edges represents a set of Edges.
 type Edges struct {
 	SrcToDsts map[string]map[string][]*Edge
 	DstToSrcs map[string]map[string][]*Edge
 	Edges     []*Edge
 }
 
-//Creates a blank set of Edges.
+// NewEdges creates a blank set of Edges.
 func NewEdges() *Edges {
 	return &Edges{make(map[string]map[string][]*Edge), make(map[string]map[string][]*Edge), make([]*Edge, 0)}
 }
 
-//Adds an Edge to the set of Edges.
-func (this *Edges) Add(edge *Edge) {
-	if _, ok := this.SrcToDsts[edge.Src]; !ok {
-		this.SrcToDsts[edge.Src] = make(map[string][]*Edge)
+// Add adds an Edge to the set of Edges.
+func (edges *Edges) Add(edge *Edge) {
+	if _, ok := edges.SrcToDsts[edge.Src]; !ok {
+		edges.SrcToDsts[edge.Src] = make(map[string][]*Edge)
 	}
-	if _, ok := this.SrcToDsts[edge.Src][edge.Dst]; !ok {
-		this.SrcToDsts[edge.Src][edge.Dst] = make([]*Edge, 0)
+	if _, ok := edges.SrcToDsts[edge.Src][edge.Dst]; !ok {
+		edges.SrcToDsts[edge.Src][edge.Dst] = make([]*Edge, 0)
 	}
-	this.SrcToDsts[edge.Src][edge.Dst] = append(this.SrcToDsts[edge.Src][edge.Dst], edge)
+	edges.SrcToDsts[edge.Src][edge.Dst] = append(edges.SrcToDsts[edge.Src][edge.Dst], edge)
 
-	if _, ok := this.DstToSrcs[edge.Dst]; !ok {
-		this.DstToSrcs[edge.Dst] = make(map[string][]*Edge)
+	if _, ok := edges.DstToSrcs[edge.Dst]; !ok {
+		edges.DstToSrcs[edge.Dst] = make(map[string][]*Edge)
 	}
-	if _, ok := this.DstToSrcs[edge.Dst][edge.Src]; !ok {
-		this.DstToSrcs[edge.Dst][edge.Src] = make([]*Edge, 0)
+	if _, ok := edges.DstToSrcs[edge.Dst][edge.Src]; !ok {
+		edges.DstToSrcs[edge.Dst][edge.Src] = make([]*Edge, 0)
 	}
-	this.DstToSrcs[edge.Dst][edge.Src] = append(this.DstToSrcs[edge.Dst][edge.Src], edge)
+	edges.DstToSrcs[edge.Dst][edge.Src] = append(edges.DstToSrcs[edge.Dst][edge.Src], edge)
 
-	this.Edges = append(this.Edges, edge)
+	edges.Edges = append(edges.Edges, edge)
 }
 
-//Returns a sorted list of Edges.
-func (this Edges) Sorted() []*Edge {
-	es := make(edgeSorter, len(this.Edges))
-	copy(es, this.Edges)
+// Sorted returns a sorted list of Edges.
+func (edges Edges) Sorted() []*Edge {
+	es := make(edgeSorter, len(edges.Edges))
+	copy(es, edges.Edges)
 	sort.Sort(es)
 	return es
 }
@@ -107,7 +107,7 @@ func (es edgeSorter) Less(i, j int) bool {
 		attrs[k] = v
 	}
 
-	for _, k := range attrs.SortedNames() {
+	for _, k := range attrs.sortedNames() {
 		if es[i].Attrs[k] < es[j].Attrs[k] {
 			return true
 		} else if es[i].Attrs[k] > es[j].Attrs[k] {

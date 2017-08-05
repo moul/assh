@@ -23,61 +23,63 @@ import (
 	"github.com/awalterschulze/gographviz/internal/parser"
 )
 
-func (this *Nodes) String() string {
+func (nodes *Nodes) String() string {
 	s := "Nodes:"
-	for i := range this.Nodes {
-		s += fmt.Sprintf("Node{%v}", this.Nodes[i])
+	for i := range nodes.Nodes {
+		s += fmt.Sprintf("Node{%v}", nodes.Nodes[i])
 	}
 	return s + "\n"
 }
 
-func (this *Edges) String() string {
+func (edges *Edges) String() string {
 	s := "Edges:"
-	for i := range this.Edges {
-		s += fmt.Sprintf("Edge{%v}", this.Edges[i])
+	for i := range edges.Edges {
+		s += fmt.Sprintf("Edge{%v}", edges.Edges[i])
 	}
 	return s + "\n"
-}
-
-func check(t *testing.T, err error) {
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-}
-
-func assert(t *testing.T, msg string, v1 interface{}, v2 interface{}) {
-	if v1 != v2 {
-		t.Fatalf("%v %v != %v", msg, v1, v2)
-	}
 }
 
 func anal(t *testing.T, input string) Interface {
 	t.Logf("Input: %v\n", input)
 	g, err := parser.ParseString(input)
-	check(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Parsed: %v\n", g)
 	ag := NewGraph()
-	Analyse(g, ag)
+	if err := Analyse(g, ag); err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Analysed: %v\n", ag)
 	agstr := ag.String()
 	t.Logf("Written: %v\n", agstr)
 	g2, err := parser.ParseString(agstr)
-	check(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Parsed %v\n", g2)
 	ag2 := NewEscape()
-	Analyse(g2, ag2)
+	if err := Analyse(g2, ag2); err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("Analysed %v\n", ag2)
 	ag2str := ag2.String()
 	t.Logf("Written: %v\n", ag2str)
-	assert(t, "analysed", agstr, ag2str)
+	if agstr != ag2str {
+		t.Fatalf("analysed: want %s got %s", agstr, ag2str)
+	}
 	return ag2
 }
 
 func analfile(t *testing.T, filename string) Interface {
 	f, err := os.Open(filename)
-	check(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	all, err := ioutil.ReadAll(f)
-	check(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return anal(t, string(all))
 }
 
@@ -121,15 +123,15 @@ func TestHashComments(t *testing.T) {
 
 func TestIntLit(t *testing.T) {
 	anal(t, `graph G {
-	1 -- 30 [f=1];}`)
+	1 -- 30 [dim=1];}`)
 }
 
 func TestFloat1(t *testing.T) {
-	anal(t, `digraph { bla = 2.0 }`)
+	anal(t, `digraph { Damping = 2.0 }`)
 }
 
 func TestFloat2(t *testing.T) {
-	anal(t, `digraph { bla = .1 }`)
+	anal(t, `digraph { Damping = .1 }`)
 }
 
 func TestNegative(t *testing.T) {
@@ -137,7 +139,7 @@ func TestNegative(t *testing.T) {
 }
 
 func TestUnderscore(t *testing.T) {
-	anal(t, `digraph { a_b = 1 }`)
+	anal(t, `digraph { dim = 1 }`)
 }
 
 func TestNonAscii(t *testing.T) {
@@ -149,7 +151,7 @@ func TestPorts(t *testing.T) {
 }
 
 func TestHtml(t *testing.T) {
-	anal(t, `digraph { a = <<table></table>> }`)
+	anal(t, `digraph { tooltip = <<table></table>> }`)
 }
 
 func TestIdWithKeyword(t *testing.T) {

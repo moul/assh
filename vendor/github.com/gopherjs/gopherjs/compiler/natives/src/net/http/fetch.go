@@ -4,6 +4,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"strconv"
@@ -49,20 +50,9 @@ func (r *streamReader) Read(p []byte) (n int, err error) {
 }
 
 func (r *streamReader) Close() error {
-	// TOOD: Cannot do this because it's a blocking call, and Close() is often called
-	//       via `defer resp.Body.Close()`, but GopherJS currently has an issue with supporting that.
-	//       See https://github.com/gopherjs/gopherjs/issues/381 and https://github.com/gopherjs/gopherjs/issues/426.
-	/*ch := make(chan error)
-	r.stream.Call("cancel").Call("then",
-		func(result *js.Object) {
-			if result != js.Undefined {
-				ch <- errors.New(result.String()) // TODO: Verify this works, it probably doesn't and should be rewritten as result.Get("message").String() or something.
-				return
-			}
-			ch <- nil
-		},
-	)
-	return <-ch*/
+	// This ignores any error returned from cancel method. So far, I did not encounter any concrete
+	// situation where reporting the error is meaningful. Most users ignore error from resp.Body.Close().
+	// If there's a need to report error here, it can be implemented and tested when that need comes up.
 	r.stream.Call("cancel")
 	return nil
 }
@@ -79,8 +69,9 @@ func (t *fetchTransport) RoundTrip(req *Request) (*Response, error) {
 		}
 	}
 	opt := map[string]interface{}{
-		"method":  req.Method,
-		"headers": headers,
+		"method":      req.Method,
+		"headers":     headers,
+		"credentials": "same-origin",
 	}
 	if req.Body != nil {
 		// TODO: Find out if request body can be streamed into the fetch request rather than in advance here.
@@ -121,18 +112,18 @@ func (t *fetchTransport) RoundTrip(req *Request) (*Response, error) {
 				Body:          &streamReader{stream: result.Get("body").Call("getReader")},
 				Request:       req,
 			}:
-			case <-req.Cancel:
+			case <-req.Context().Done():
 			}
 		},
 		func(reason *js.Object) {
 			select {
-			case errCh <- errors.New("net/http: fetch() failed"):
-			case <-req.Cancel:
+			case errCh <- fmt.Errorf("net/http: fetch() failed: %s", reason.String()):
+			case <-req.Context().Done():
 			}
 		},
 	)
 	select {
-	case <-req.Cancel:
+	case <-req.Context().Done():
 		// TODO: Abort request if possible using Fetch API.
 		return nil, errors.New("net/http: request canceled")
 	case resp := <-respCh:
