@@ -8,15 +8,19 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 )
 
-const GOOS = sys.TheGoos
+const GOOS = sys.GOOS
 const GOARCH = "js"
 const Compiler = "gopherjs"
 
 // fake for error.go
 type eface struct {
-	_type *struct {
-		_string *string
-	}
+	_type *_type
+}
+type _type struct {
+}
+
+func (t *_type) string() string {
+	return ""
 }
 
 func init() {
@@ -75,7 +79,7 @@ func GOMAXPROCS(n int) int {
 
 func Gosched() {
 	c := make(chan struct{})
-	js.Global.Call("setTimeout", func() { close(c) }, 0)
+	js.Global.Call("$setTimeout", js.InternalObject(func() { close(c) }), 0)
 	<-c
 }
 
@@ -160,6 +164,11 @@ var MemProfileRate int = 512 * 1024
 func SetBlockProfileRate(rate int) {
 }
 
+func SetMutexProfileFraction(rate int) int {
+	// TODO: Investigate this. If it's possible to implement, consider doing so, otherwise remove this comment.
+	return 0
+}
+
 func Stack(buf []byte, all bool) int {
 	s := js.Global.Get("Error").New().Get("stack")
 	if s == js.Undefined {
@@ -188,3 +197,5 @@ func NumCgoCall() int64 {
 func efaceOf(ep *interface{}) *eface {
 	panic("efaceOf: not supported")
 }
+
+func KeepAlive(interface{}) {}

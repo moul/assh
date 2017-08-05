@@ -18,44 +18,44 @@ import (
 	"sort"
 )
 
-//Represents a Node.
+// Node represents a Node.
 type Node struct {
 	Name  string
 	Attrs Attrs
 }
 
-//Represents a set of Nodes.
+// Nodes represents a set of Nodes.
 type Nodes struct {
 	Lookup map[string]*Node
 	Nodes  []*Node
 }
 
-//Creates a new set of Nodes.
+// NewNodes creates a new set of Nodes.
 func NewNodes() *Nodes {
 	return &Nodes{make(map[string]*Node), make([]*Node, 0)}
 }
 
-//Adds a Node to the set of Nodes, ammending the attributes of an already existing node.
-func (this *Nodes) Add(node *Node) {
-	n, ok := this.Lookup[node.Name]
+// Add adds a Node to the set of Nodes, extending the attributes of an already existing node.
+func (nodes *Nodes) Add(node *Node) {
+	n, ok := nodes.Lookup[node.Name]
 	if ok {
-		n.Attrs.Ammend(node.Attrs)
+		n.Attrs.Extend(node.Attrs)
 		return
 	}
-	this.Lookup[node.Name] = node
-	this.Nodes = append(this.Nodes, node)
+	nodes.Lookup[node.Name] = node
+	nodes.Nodes = append(nodes.Nodes, node)
 }
 
-//Returns a sorted list of nodes.
-func (this Nodes) Sorted() []*Node {
-	keys := make([]string, 0, len(this.Lookup))
-	for key := range this.Lookup {
+// Sorted returns a sorted list of nodes.
+func (nodes Nodes) Sorted() []*Node {
+	keys := make([]string, 0, len(nodes.Lookup))
+	for key := range nodes.Lookup {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	nodes := make([]*Node, len(keys))
+	nodeList := make([]*Node, len(keys))
 	for i := range keys {
-		nodes[i] = this.Lookup[keys[i]]
+		nodeList[i] = nodes.Lookup[keys[i]]
 	}
-	return nodes
+	return nodeList
 }

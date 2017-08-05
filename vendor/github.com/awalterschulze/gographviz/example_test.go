@@ -36,11 +36,21 @@ func ExampleRead() {
 
 func ExampleNewGraph() {
 	g := NewGraph()
-	g.SetName("G")
-	g.SetDir(true)
-	g.AddNode("G", "Hello", nil)
-	g.AddNode("G", "World", nil)
-	g.AddEdge("Hello", "World", true, nil)
+	if err := g.SetName("G"); err != nil {
+		panic(err)
+	}
+	if err := g.SetDir(true); err != nil {
+		panic(err)
+	}
+	if err := g.AddNode("G", "Hello", nil); err != nil {
+		panic(err)
+	}
+	if err := g.AddNode("G", "World", nil); err != nil {
+		panic(err)
+	}
+	if err := g.AddEdge("Hello", "World", true, nil); err != nil {
+		panic(err)
+	}
 	s := g.String()
 	fmt.Println(s)
 	// Output: digraph G {
@@ -63,42 +73,47 @@ func NewMyOwnGraphStructure() *MyOwnGraphStructure {
 	}
 }
 
-func (this *MyOwnGraphStructure) SetStrict(strict bool) {}
-func (this *MyOwnGraphStructure) SetDir(directed bool)  {}
-func (this *MyOwnGraphStructure) SetName(name string)   {}
-func (this *MyOwnGraphStructure) AddPortEdge(src, srcPort, dst, dstPort string, directed bool, attrs map[string]string) {
+func (myown *MyOwnGraphStructure) SetStrict(strict bool) error { return nil }
+func (myown *MyOwnGraphStructure) SetDir(directed bool) error  { return nil }
+func (myown *MyOwnGraphStructure) SetName(name string) error   { return nil }
+func (myown *MyOwnGraphStructure) AddPortEdge(src, srcPort, dst, dstPort string, directed bool, attrs map[string]string) error {
 	srci, err := strconv.Atoi(src)
 	if err != nil {
-		return
+		return err
 	}
 	dsti, err := strconv.Atoi(dst)
 	if err != nil {
-		return
+		return err
 	}
 	ai, err := strconv.Atoi(attrs["label"])
 	if err != nil {
-		return
+		return err
 	}
-	if _, ok := this.weights[srci]; !ok {
-		this.weights[srci] = make(map[int]int)
+	if _, ok := myown.weights[srci]; !ok {
+		myown.weights[srci] = make(map[int]int)
 	}
-	this.weights[srci][dsti] = ai
-	if srci > this.max {
-		this.max = srci
+	myown.weights[srci][dsti] = ai
+	if srci > myown.max {
+		myown.max = srci
 	}
-	if dsti > this.max {
-		this.max = dsti
+	if dsti > myown.max {
+		myown.max = dsti
 	}
-
+	return nil
 }
-func (this *MyOwnGraphStructure) AddEdge(src, dst string, directed bool, attrs map[string]string) {
-	this.AddPortEdge(src, "", dst, "", directed, attrs)
+func (myown *MyOwnGraphStructure) AddEdge(src, dst string, directed bool, attrs map[string]string) error {
+	return myown.AddPortEdge(src, "", dst, "", directed, attrs)
 }
-func (this *MyOwnGraphStructure) AddNode(parentGraph string, name string, attrs map[string]string) {}
-func (this *MyOwnGraphStructure) AddAttr(parentGraph string, field, value string)                  {}
-func (this *MyOwnGraphStructure) AddSubGraph(parentGraph string, name string, attrs map[string]string) {
+func (myown *MyOwnGraphStructure) AddNode(parentGraph string, name string, attrs map[string]string) error {
+	return nil
 }
-func (this *MyOwnGraphStructure) String() string { return "" }
+func (myown *MyOwnGraphStructure) AddAttr(parentGraph string, field, value string) error {
+	return nil
+}
+func (myown *MyOwnGraphStructure) AddSubGraph(parentGraph string, name string, attrs map[string]string) error {
+	return nil
+}
+func (myown *MyOwnGraphStructure) String() string { return "" }
 
 //An Example of how to parse into your own simpler graph structure and output it back to graphviz.
 //This example reads in only numbers and outputs a matrix graph.
@@ -117,19 +132,29 @@ func ExampleMyOwnGraphStructure() {
 		panic(err)
 	}
 	mine := NewMyOwnGraphStructure()
-	Analyse(parsed, mine)
+	if err := Analyse(parsed, mine); err != nil {
+		panic(err)
+	}
 	output := NewGraph()
-	output.SetName(name)
-	output.SetDir(true)
+	if err := output.SetName(name); err != nil {
+		panic(err)
+	}
+	if err := output.SetDir(true); err != nil {
+		panic(err)
+	}
 	for i := 1; i <= mine.max; i++ {
-		output.AddNode(name, fmt.Sprintf("%v", i), nil)
+		if err := output.AddNode(name, fmt.Sprintf("%v", i), nil); err != nil {
+			panic(err)
+		}
 		if _, ok := mine.weights[i]; !ok {
 			mine.weights[i] = make(map[int]int)
 		}
 	}
 	for i := 1; i <= mine.max; i++ {
 		for j := 1; j <= mine.max; j++ {
-			output.AddEdge(fmt.Sprintf("%v", i), fmt.Sprintf("%v", j), true, map[string]string{"label": fmt.Sprintf("%v", mine.weights[i][j])})
+			if err := output.AddEdge(fmt.Sprintf("%v", i), fmt.Sprintf("%v", j), true, map[string]string{"label": fmt.Sprintf("%v", mine.weights[i][j])}); err != nil {
+				panic(err)
+			}
 		}
 	}
 	s := output.String()

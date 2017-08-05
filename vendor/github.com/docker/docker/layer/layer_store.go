@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution"
 	"github.com/docker/docker/daemon/graphdriver"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/docker/pkg/stringid"
+	"github.com/docker/docker/pkg/system"
 	"github.com/opencontainers/go-digest"
+	"github.com/sirupsen/logrus"
 	"github.com/vbatts/tar-split/tar/asm"
 	"github.com/vbatts/tar-split/tar/storage"
 )
@@ -34,6 +36,10 @@ type layerStore struct {
 
 	mounts map[string]*mountedLayer
 	mountL sync.Mutex
+
+	useTarSplit bool
+
+	platform string
 }
 
 // StoreOptions are the options used to create a new Store instance
@@ -42,10 +48,10 @@ type StoreOptions struct {
 	MetadataStorePathTemplate string
 	GraphDriver               string
 	GraphDriverOptions        []string
-	UIDMaps                   []idtools.IDMap
-	GIDMaps                   []idtools.IDMap
+	IDMappings                *idtools.IDMappings
 	PluginGetter              plugingetter.PluginGetter
 	ExperimentalEnabled       bool
+	Platform                  string
 }
 
 // NewStoreFromOptions creates a new Store instance
@@ -53,8 +59,8 @@ func NewStoreFromOptions(options StoreOptions) (Store, error) {
 	driver, err := graphdriver.New(options.GraphDriver, options.PluginGetter, graphdriver.Options{
 		Root:                options.StorePath,
 		DriverOptions:       options.GraphDriverOptions,
-		UIDMaps:             options.UIDMaps,
-		GIDMaps:             options.GIDMaps,
+		UIDMaps:             options.IDMappings.UIDs(),
+		GIDMaps:             options.IDMappings.GIDs(),
 		ExperimentalEnabled: options.ExperimentalEnabled,
 	})
 	if err != nil {
@@ -67,18 +73,25 @@ func NewStoreFromOptions(options StoreOptions) (Store, error) {
 		return nil, err
 	}
 
-	return NewStoreFromGraphDriver(fms, driver)
+	return NewStoreFromGraphDriver(fms, driver, options.Platform)
 }
 
 // NewStoreFromGraphDriver creates a new Store instance using the provided
 // metadata store and graph driver. The metadata store will be used to restore
 // the Store.
-func NewStoreFromGraphDriver(store MetadataStore, driver graphdriver.Driver) (Store, error) {
+func NewStoreFromGraphDriver(store MetadataStore, driver graphdriver.Driver, platform string) (Store, error) {
+	caps := graphdriver.Capabilities{}
+	if capDriver, ok := driver.(graphdriver.CapabilityDriver); ok {
+		caps = capDriver.Capabilities()
+	}
+
 	ls := &layerStore{
-		store:    store,
-		driver:   driver,
-		layerMap: map[ChainID]*roLayer{},
-		mounts:   map[string]*mountedLayer{},
+		store:       store,
+		driver:      driver,
+		layerMap:    map[ChainID]*roLayer{},
+		mounts:      map[string]*mountedLayer{},
+		useTarSplit: !caps.ReproducesExactDiffs,
+		platform:    platform,
 	}
 
 	ids, mounts, err := store.List()
@@ -137,6 +150,11 @@ func (ls *layerStore) loadLayer(layer ChainID) (*roLayer, error) {
 		return nil, fmt.Errorf("failed to get descriptor for %s: %s", layer, err)
 	}
 
+	platform, err := ls.store.GetPlatform(layer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get platform for %s: %s", layer, err)
+	}
+
 	cl = &roLayer{
 		chainID:    layer,
 		diffID:     diff,
@@ -145,6 +163,7 @@ func (ls *layerStore) loadLayer(layer ChainID) (*roLayer, error) {
 		layerStore: ls,
 		references: map[Layer]struct{}{},
 		descriptor: descriptor,
+		platform:   platform,
 	}
 
 	if parent != "" {
@@ -207,18 +226,21 @@ func (ls *layerStore) applyTar(tx MetadataTransaction, ts io.Reader, parent stri
 	digester := digest.Canonical.Digester()
 	tr := io.TeeReader(ts, digester.Hash())
 
-	tsw, err := tx.TarSplitWriter(true)
-	if err != nil {
-		return err
-	}
-	metaPacker := storage.NewJSONPacker(tsw)
-	defer tsw.Close()
+	rdr := tr
+	if ls.useTarSplit {
+		tsw, err := tx.TarSplitWriter(true)
+		if err != nil {
+			return err
+		}
+		metaPacker := storage.NewJSONPacker(tsw)
+		defer tsw.Close()
 
-	// we're passing nil here for the file putter, because the ApplyDiff will
-	// handle the extraction of the archive
-	rdr, err := asm.NewInputTarStream(tr, metaPacker, nil)
-	if err != nil {
-		return err
+		// we're passing nil here for the file putter, because the ApplyDiff will
+		// handle the extraction of the archive
+		rdr, err = asm.NewInputTarStream(tr, metaPacker, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	applySize, err := ls.driver.ApplyDiff(layer.cacheID, parent, rdr)
@@ -237,17 +259,25 @@ func (ls *layerStore) applyTar(tx MetadataTransaction, ts io.Reader, parent stri
 	return nil
 }
 
-func (ls *layerStore) Register(ts io.Reader, parent ChainID) (Layer, error) {
-	return ls.registerWithDescriptor(ts, parent, distribution.Descriptor{})
+func (ls *layerStore) Register(ts io.Reader, parent ChainID, platform Platform) (Layer, error) {
+	return ls.registerWithDescriptor(ts, parent, platform, distribution.Descriptor{})
 }
 
-func (ls *layerStore) registerWithDescriptor(ts io.Reader, parent ChainID, descriptor distribution.Descriptor) (Layer, error) {
+func (ls *layerStore) registerWithDescriptor(ts io.Reader, parent ChainID, platform Platform, descriptor distribution.Descriptor) (Layer, error) {
 	// err is used to hold the error which will always trigger
 	// cleanup of creates sources but may not be an error returned
 	// to the caller (already exists).
 	var err error
 	var pid string
 	var p *roLayer
+
+	// Integrity check - ensure we are creating something for the correct platform
+	if system.LCOWSupported() {
+		if strings.ToLower(ls.platform) != strings.ToLower(string(platform)) {
+			return nil, fmt.Errorf("cannot create entry for platform %q in layer store for platform %q", platform, ls.platform)
+		}
+	}
+
 	if string(parent) != "" {
 		p = ls.get(parent)
 		if p == nil {
@@ -276,6 +306,7 @@ func (ls *layerStore) registerWithDescriptor(ts io.Reader, parent ChainID, descr
 		layerStore:     ls,
 		references:     map[Layer]struct{}{},
 		descriptor:     descriptor,
+		platform:       platform,
 	}
 
 	if err = ls.driver.Create(layer.cacheID, pid, nil); err != nil {
@@ -378,7 +409,6 @@ func (ls *layerStore) deleteLayer(layer *roLayer, metadata *Metadata) error {
 	if err != nil {
 		return err
 	}
-
 	err = ls.store.Remove(layer.chainID)
 	if err != nil {
 		return err
@@ -508,7 +538,6 @@ func (ls *layerStore) CreateRWLayer(name string, parent ChainID, opts *CreateRWL
 	if err = ls.driver.CreateReadWrite(m.mountID, pid, createOpts); err != nil {
 		return nil, err
 	}
-
 	if err = ls.saveMount(m); err != nil {
 		return nil, err
 	}
@@ -638,6 +667,34 @@ func (ls *layerStore) initMount(graphID, parent, mountLabel string, initFunc Mou
 	}
 
 	return initID, nil
+}
+
+func (ls *layerStore) getTarStream(rl *roLayer) (io.ReadCloser, error) {
+	if !ls.useTarSplit {
+		var parentCacheID string
+		if rl.parent != nil {
+			parentCacheID = rl.parent.cacheID
+		}
+
+		return ls.driver.Diff(rl.cacheID, parentCacheID)
+	}
+
+	r, err := ls.store.TarSplitReader(rl.chainID)
+	if err != nil {
+		return nil, err
+	}
+
+	pr, pw := io.Pipe()
+	go func() {
+		err := ls.assembleTarTo(rl.cacheID, r, nil, pw)
+		if err != nil {
+			pw.CloseWithError(err)
+		} else {
+			pw.Close()
+		}
+	}()
+
+	return pr, nil
 }
 
 func (ls *layerStore) assembleTarTo(graphID string, metadata io.ReadCloser, size *int64, w io.Writer) error {

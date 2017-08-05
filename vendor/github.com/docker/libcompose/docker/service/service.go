@@ -525,6 +525,7 @@ func (s *Service) eachContainer(ctx context.Context, containers []*container.Con
 
 // Stop implements Service.Stop. It stops any containers related to the service.
 func (s *Service) Stop(ctx context.Context, timeout int) error {
+	timeout = s.stopTimeout(timeout)
 	return s.collectContainersAndDo(ctx, func(c *container.Container) error {
 		return c.Stop(ctx, timeout)
 	})
@@ -532,6 +533,7 @@ func (s *Service) Stop(ctx context.Context, timeout int) error {
 
 // Restart implements Service.Restart. It restarts any containers related to the service.
 func (s *Service) Restart(ctx context.Context, timeout int) error {
+	timeout = s.stopTimeout(timeout)
 	return s.collectContainersAndDo(ctx, func(c *container.Container) error {
 		return c.Restart(ctx, timeout)
 	})
@@ -587,6 +589,7 @@ func (s *Service) Scale(ctx context.Context, scale int, timeout int) error {
 		for _, c := range containers {
 			foundCount++
 			if foundCount > scale {
+				timeout = s.stopTimeout(timeout)
 				if err := c.Stop(ctx, timeout); err != nil {
 					return err
 				}
@@ -727,4 +730,20 @@ func (s *Service) specificiesHostPort() bool {
 	}
 
 	return false
+}
+
+//take in timeout flag from cli as parameter
+//return timeout if it is set,
+//else return stop_grace_period if it is set,
+//else return default 10s
+func (s *Service) stopTimeout(timeout int) int {
+	DEFAULTTIMEOUT := 10
+	if timeout != 0 {
+		return timeout
+	}
+	configTimeout := utils.DurationStrToSecondsInt(s.Config().StopGracePeriod)
+	if configTimeout != nil {
+		return *configTimeout
+	}
+	return DEFAULTTIMEOUT
 }

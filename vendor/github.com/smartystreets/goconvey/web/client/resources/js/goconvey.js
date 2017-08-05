@@ -158,10 +158,7 @@ function wireup()
 	{
 		var newSetting = $(this).data('show-debug-output');
 		save('show-debug-output', newSetting);
-		if (newSetting === "show")
-			$('.story-line-desc .message').show();
-		else
-			$('.story-line-desc .message').hide();
+		setDebugOutputUI(newSetting);
 	});
 	$('.enum#ui-effects').on('click', 'li:not(.sel)', function()
 	{
@@ -430,6 +427,22 @@ function setTooltips()
 			if(!$(this).tipsy(true))
 				$(this).tipsy(tips[key]);
 		});
+	}
+}
+
+function setDebugOutputUI(newSetting){
+	var $storyLine = $('.story-line');
+	switch(newSetting) {
+		case 'hide':
+			$('.message', $storyLine).hide();
+			break;
+		case 'fail':
+			$('.message', $storyLine.not('.fail, .panic')).hide();
+			$('.message', $storyLine.filter('.fail, .panic')).show();
+			break;
+		default:
+			$('.message', $storyLine).show();
+			break;
 	}
 }
 
@@ -833,6 +846,10 @@ function process(data, status, jqxhr)
 			icon: $('.favicon').attr('href')
 		});
 
+                convey.notif.onclick = function() { 
+                  window.focus(); 
+                };
+
 		convey.notifTimer = setTimeout(function() { convey.notif.close(); }, 5000);
 	}
 
@@ -913,8 +930,8 @@ function renderFrame(frame)
 
 	$('.history .item').removeClass('selected');
 
-	if (get('show-debug-output') === "hide")
-		$('.story-line-desc .message').hide();
+
+	setDebugOutputUI(get('show-debug-output'));
 
 	log("Rendering finished");
 }
@@ -1327,7 +1344,7 @@ function customMarkupPipes()
 		if (num < 0)
 			return "0";
 		else if (num <= 5)
-			return "5px";	// Still shows low coverage
+			return "5";	// Still shows low coverage
 		else if (num > 100)
 			str = "100";
 		return str;

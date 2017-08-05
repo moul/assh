@@ -30,6 +30,7 @@ var $throwRuntimeError; /* set by package "runtime" */
 var $throwNilPointerError = function() { $throwRuntimeError("invalid memory address or nil pointer dereference"); };
 var $call = function(fn, rcvr, args) { return fn.apply(rcvr, args); };
 var $makeFunc = function(fn) { return function() { return $externalize(fn(this, new ($sliceType($jsObjectPtr))($global.Array.prototype.slice.call(arguments, []))), $emptyInterface); }; };
+var $unused = function(v) {};
 
 var $mapArray = function(array, f) {
   var newArray = new array.constructor(array.length);
@@ -110,10 +111,14 @@ var $subslice = function(slice, low, high, max) {
   return s;
 };
 
-var $sliceToArray = function(slice) {
-  if (slice.$length === 0) {
-    return [];
+var $substring = function(str, low, high) {
+  if (low < 0 || high < low || high > str.length) {
+    $throwRuntimeError("slice bounds out of range");
   }
+  return str.substring(low, high);
+};
+
+var $sliceToArray = function(slice) {
   if (slice.$array.constructor !== Array) {
     return slice.$array.subarray(slice.$offset, slice.$offset + slice.$length);
   }

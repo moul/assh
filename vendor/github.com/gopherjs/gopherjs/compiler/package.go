@@ -460,7 +460,7 @@ func Compile(importPath string, files []*ast.File, fileSet *token.FileSet, impor
 				case *types.Basic, *types.Array, *types.Slice, *types.Chan, *types.Signature, *types.Interface, *types.Pointer, *types.Map:
 					size = sizes32.Sizeof(t)
 				}
-				c.Printf(`%s = $newType(%d, %s, "%s.%s", "%s", "%s", %s);`, lhs, size, typeKind(o.Type()), o.Pkg().Name(), o.Name(), o.Name(), o.Pkg().Path(), constructor)
+				c.Printf(`%s = $newType(%d, %s, "%s.%s", %t, "%s", %t, %s);`, lhs, size, typeKind(o.Type()), o.Pkg().Name(), o.Name(), o.Name() != "", o.Pkg().Path(), o.Exported(), constructor)
 			})
 			d.MethodListCode = c.CatchOutput(0, func() {
 				if _, isInterface := o.Type().Underlying().(*types.Interface); !isInterface {
@@ -573,6 +573,7 @@ func (c *funcContext) initArgs(ty types.Type) string {
 		}
 		return fmt.Sprintf("[%s], [%s], %t", strings.Join(params, ", "), strings.Join(results, ", "), t.Variadic())
 	case *types.Struct:
+		pkgPath := ""
 		fields := make([]string, t.NumFields())
 		for i := range fields {
 			field := t.Field(i)
@@ -580,13 +581,12 @@ func (c *funcContext) initArgs(ty types.Type) string {
 			if !field.Anonymous() {
 				name = field.Name()
 			}
-			pkgPath := ""
 			if !field.Exported() {
 				pkgPath = field.Pkg().Path()
 			}
-			fields[i] = fmt.Sprintf(`{prop: "%s", name: "%s", pkg: "%s", typ: %s, tag: %s}`, fieldName(t, i), name, pkgPath, c.typeName(field.Type()), encodeString(t.Tag(i)))
+			fields[i] = fmt.Sprintf(`{prop: "%s", name: "%s", exported: %t, typ: %s, tag: %s}`, fieldName(t, i), name, field.Exported(), c.typeName(field.Type()), encodeString(t.Tag(i)))
 		}
-		return fmt.Sprintf("[%s]", strings.Join(fields, ", "))
+		return fmt.Sprintf(`"%s", [%s]`, pkgPath, strings.Join(fields, ", "))
 	default:
 		panic("invalid type")
 	}
@@ -606,17 +606,7 @@ func (c *funcContext) translateToplevelFunction(fun *ast.FuncDecl, info *analysi
 			return []byte(fmt.Sprintf("\t%s = function() {\n\t\t$throwRuntimeError(\"native function not implemented: %s\");\n\t};\n", funcRef, o.FullName()))
 		}
 
-		var initStmts []ast.Stmt
-		if recv != nil && !isBlank(recv) {
-			initStmts = append([]ast.Stmt{
-				&ast.AssignStmt{
-					Lhs: []ast.Expr{recv},
-					Tok: token.DEFINE,
-					Rhs: []ast.Expr{c.setType(&this{}, sig.Recv().Type())},
-				},
-			}, initStmts...)
-		}
-		params, fun := translateFunction(fun.Type, initStmts, fun.Body, c, sig, info, funcRef)
+		params, fun := translateFunction(fun.Type, recv, fun.Body, c, sig, info, funcRef)
 		joinedParams = strings.Join(params, ", ")
 		return []byte(fmt.Sprintf("\t%s = %s;\n", funcRef, fun))
 	}
@@ -668,7 +658,7 @@ func (c *funcContext) translateToplevelFunction(fun *ast.FuncDecl, info *analysi
 	return code.Bytes()
 }
 
-func translateFunction(typ *ast.FuncType, initStmts []ast.Stmt, body *ast.BlockStmt, outerContext *funcContext, sig *types.Signature, info *analysis.FuncInfo, funcRef string) ([]string, string) {
+func translateFunction(typ *ast.FuncType, recv *ast.Ident, body *ast.BlockStmt, outerContext *funcContext, sig *types.Signature, info *analysis.FuncInfo, funcRef string) ([]string, string) {
 	if info == nil {
 		panic("nil info")
 	}
@@ -701,17 +691,6 @@ func translateFunction(typ *ast.FuncType, initStmts []ast.Stmt, body *ast.BlockS
 				continue
 			}
 			params = append(params, c.objectName(c.p.Defs[ident]))
-
-			switch c.p.Defs[ident].Type().Underlying().(type) {
-			case *types.Array, *types.Struct:
-				initStmts = append([]ast.Stmt{
-					&ast.AssignStmt{
-						Lhs: []ast.Expr{ident},
-						Tok: token.DEFINE,
-						Rhs: []ast.Expr{ident},
-					},
-				}, initStmts...)
-			}
 		}
 	}
 
@@ -732,8 +711,18 @@ func translateFunction(typ *ast.FuncType, initStmts []ast.Stmt, body *ast.BlockS
 			}
 		}
 
-		c.translateStmtList(initStmts)
+		if recv != nil && !isBlank(recv) {
+			this := "this"
+			if isWrapped(c.p.TypeOf(recv)) {
+				this = "this.$val"
+			}
+			c.Printf("%s = %s;", c.translateExpr(recv), this)
+		}
+
 		c.translateStmtList(body.List)
+		if len(c.Flattened) != 0 && !endsWithReturn(body.List) {
+			c.translateStmt(&ast.ReturnStmt{}, nil)
+		}
 	}))
 
 	sort.Strings(c.localVars)
@@ -790,9 +779,6 @@ func translateFunction(typ *ast.FuncType, initStmts []ast.Stmt, body *ast.BlockS
 	if len(c.Flattened) != 0 {
 		prefix = prefix + " s: while (true) { switch ($s) { case 0:"
 		suffix = " } return; }" + suffix
-		if !endsWithReturn(body.List) {
-			suffix = " $s = -1; case -1:" + suffix
-		}
 	}
 
 	if c.HasDefer {

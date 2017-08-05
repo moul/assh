@@ -11,12 +11,14 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
+	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/ssh/testdata"
 )
 
@@ -28,6 +30,8 @@ func rawKey(pub PublicKey) interface{} {
 		return (*dsa.PublicKey)(k)
 	case *ecdsaPublicKey:
 		return (*ecdsa.PublicKey)(k)
+	case ed25519PublicKey:
+		return (ed25519.PublicKey)(k)
 	case *Certificate:
 		return k
 	}
@@ -126,6 +130,47 @@ func TestParseECPrivateKey(t *testing.T) {
 
 	if !validateECPublicKey(ecKey.Curve, ecKey.X, ecKey.Y) {
 		t.Fatalf("public key does not validate.")
+	}
+}
+
+// See Issue https://github.com/golang/go/issues/6650.
+func TestParseEncryptedPrivateKeysFails(t *testing.T) {
+	const wantSubstring = "encrypted"
+	for i, tt := range testdata.PEMEncryptedKeys {
+		_, err := ParsePrivateKey(tt.PEMBytes)
+		if err == nil {
+			t.Errorf("#%d key %s: ParsePrivateKey successfully parsed, expected an error", i, tt.Name)
+			continue
+		}
+
+		if !strings.Contains(err.Error(), wantSubstring) {
+			t.Errorf("#%d key %s: got error %q, want substring %q", i, tt.Name, err, wantSubstring)
+		}
+	}
+}
+
+// Parse encrypted private keys with passphrase
+func TestParseEncryptedPrivateKeysWithPassphrase(t *testing.T) {
+	data := []byte("sign me")
+	for _, tt := range testdata.PEMEncryptedKeys {
+		s, err := ParsePrivateKeyWithPassphrase(tt.PEMBytes, []byte(tt.EncryptionKey))
+		if err != nil {
+			t.Fatalf("ParsePrivateKeyWithPassphrase returned error: %s", err)
+			continue
+		}
+		sig, err := s.Sign(rand.Reader, data)
+		if err != nil {
+			t.Fatalf("dsa.Sign: %v", err)
+		}
+		if err := s.PublicKey().Verify(data, sig); err != nil {
+			t.Errorf("Verify failed: %v", err)
+		}
+	}
+
+	tt := testdata.PEMEncryptedKeys[0]
+	_, err := ParsePrivateKeyWithPassphrase(tt.PEMBytes, []byte("incorrect"))
+	if err != x509.IncorrectPasswordError {
+		t.Fatalf("got %v want IncorrectPasswordError", err)
 	}
 }
 
@@ -306,14 +351,14 @@ func TestInvalidEntry(t *testing.T) {
 }
 
 var knownHostsParseTests = []struct {
-	input     string
-	err       string
+	input string
+	err   string
 
-	marker   string
-	comment  string
-	hosts    []string
-	rest     string
-} {
+	marker  string
+	comment string
+	hosts   []string
+	rest    string
+}{
 	{
 		"",
 		"EOF",
@@ -372,13 +417,13 @@ var knownHostsParseTests = []struct {
 		"localhost,[host2:123]\tssh-rsa {RSAPUB}\tcomment comment",
 		"",
 
-		"", "comment comment", []string{"localhost","[host2:123]"}, "",
+		"", "comment comment", []string{"localhost", "[host2:123]"}, "",
 	},
 	{
 		"@marker \tlocalhost,[host2:123]\tssh-rsa {RSAPUB}",
 		"",
 
-		"marker", "", []string{"localhost","[host2:123]"}, "",
+		"marker", "", []string{"localhost", "[host2:123]"}, "",
 	},
 	{
 		"@marker \tlocalhost,[host2:123]\tssh-rsa aabbccdd",
@@ -433,5 +478,23 @@ func TestKnownHostsParsing(t *testing.T) {
 		if rest := string(rest); rest != test.rest {
 			t.Errorf("#%d: expected remaining input to be %q, but got %q", i, test.rest, rest)
 		}
+	}
+}
+
+func TestFingerprintLegacyMD5(t *testing.T) {
+	pub, _ := getTestKey()
+	fingerprint := FingerprintLegacyMD5(pub)
+	want := "fb:61:6d:1a:e3:f0:95:45:3c:a0:79:be:4a:93:63:66" // ssh-keygen -lf -E md5 rsa
+	if fingerprint != want {
+		t.Errorf("got fingerprint %q want %q", fingerprint, want)
+	}
+}
+
+func TestFingerprintSHA256(t *testing.T) {
+	pub, _ := getTestKey()
+	fingerprint := FingerprintSHA256(pub)
+	want := "SHA256:Anr3LjZK8YVpjrxu79myrW9Hrb/wpcMNpVvTq/RcBm8" // ssh-keygen -lf rsa
+	if fingerprint != want {
+		t.Errorf("got fingerprint %q want %q", fingerprint, want)
 	}
 }

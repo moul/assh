@@ -35,7 +35,7 @@ func (n *Network) fullName() string {
 
 // Inspect inspect the current network
 func (n *Network) Inspect(ctx context.Context) (types.NetworkResource, error) {
-	return n.client.NetworkInspect(ctx, n.fullName())
+	return n.client.NetworkInspect(ctx, n.fullName(), false)
 }
 
 // Remove removes the current network (from docker engine)

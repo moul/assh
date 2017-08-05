@@ -21,22 +21,34 @@ import (
 
 func TestEscape(t *testing.T) {
 	g := NewEscape()
-	g.SetName("asdf adsf")
-	g.SetDir(true)
-	g.AddNode("asdf asdf", "kasdf99 99", map[string]string{
-		"<asfd": "1",
-	})
-	g.AddNode("asdf asdf", "7", map[string]string{
-		"<asfd": "1",
-	})
-	g.AddNode("asdf asdf", "a << b", nil)
-	g.AddEdge("kasdf99 99", "7", true, nil)
+	if err := g.SetName("asdf adsf"); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.SetDir(true); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddNode("asdf asdf", "kasdf99 99", map[string]string{
+		"URL": "<a",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddNode("asdf asdf", "7", map[string]string{
+		"URL": "<a",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddNode("asdf asdf", "a << b", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddEdge("kasdf99 99", "7", true, nil); err != nil {
+		t.Fatal(err)
+	}
 	s := g.String()
 	if !strings.HasPrefix(s, `digraph "asdf adsf" {
 	"kasdf99 99"->7;
 	"a &lt;&lt; b";
-	"kasdf99 99" [ "<asfd"=1 ];
-	7 [ "<asfd"=1 ];
+	"kasdf99 99" [ URL="<a" ];
+	7 [ URL="<a" ];
 
 }`) {
 		t.Fatalf("%s", s)
@@ -48,13 +60,27 @@ func TestEscape(t *testing.T) {
 
 func TestClusterSubgraphs(t *testing.T) {
 	g := NewEscape()
-	g.SetName("G")
-	g.SetDir(false)
-	g.AddSubGraph("G", "cluster0", nil)
-	g.AddSubGraph("cluster0", "cluster_1", nil)
-	g.AddSubGraph("cluster0", "cluster_2", nil)
-	g.AddNode("G", "Code deployment", nil)
-	g.AddPortEdge("cluster_2", "", "cluster_1", "", false, nil)
+	if err := g.SetName("G"); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.SetDir(false); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddSubGraph("G", "cluster0", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddSubGraph("cluster0", "cluster_1", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddSubGraph("cluster0", "cluster_2", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddNode("G", "Code deployment", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddPortEdge("cluster_2", "", "cluster_1", "", false, nil); err != nil {
+		t.Fatal(err)
+	}
 	s := g.String()
 	graphStr := `graph G {
 	cluster_2--cluster_1;

@@ -125,12 +125,6 @@ _int_lit
 // That is, in quoted strings, the dyad \" is converted to "; all other
 // characters are left unchanged. In particular, \\ remains \\.
 
-// As another aid for readability, dot allows double-quoted strings to span
-// multiple physical lines using the standard C convention of a backslash
-// immediately preceding a newline character.
-
-// In addition, double-quoted strings can be concatenated using a '+' operator.
-
 _escaped_char : '\\' ( _unicode_char | '"' | '\\' ) ;
 _char         : _unicode_char | _escaped_char ;
 _string_lit   : '"' { _char } '"' ;
@@ -260,8 +254,8 @@ NodeStmt
 
 //node_id	:	ID [ port ]
 NodeId
-	: Id                                          << ast.NewNodeId($0, nil) >>
-	| Id Port                                     << ast.NewNodeId($0, $1) >>
+	: Id                                          << ast.NewNodeID($0, nil) >>
+	| Id Port                                     << ast.NewNodeID($0, $1) >>
 	;
 
 //compass_pt	:	(n | ne | e | se | s | sw | w | nw | c | _)
@@ -271,9 +265,12 @@ NodeId
 //port	:	':' ID [ ':' compass_pt ]
 //		|	':' compass_pt
 Port
-	: ":" Id                                      << ast.NewPort($1, nil) >>
-	| ":" Id ":" Id                               << ast.NewPort($1, $3) >>
+	: ":" Id                                      << ast.NewPort($1, nil), nil >>
+	| ":" Id ":" Id                               << ast.NewPort($1, $3), nil >>
 	;
+
+//TODO: Semicolons aid readability but are not required except in the rare case that a named subgraph with no body immediately preceeds an anonymous subgraph,
+//since the precedence rules cause this sequence to be parsed as a subgraph with a heading and a body. Also, any amount of whitespace may be inserted between terminals.
 
 //subgraph	:	[ subgraph [ ID ] ] '{' stmt_list '}'
 SubGraphStmt
@@ -290,31 +287,6 @@ EdgeOp
 	| "--"                                        << ast.UNDIRECTED, nil >>
 	;
 
-//		An ID is one of the following:
-//		Any string of alphabetic ([a-zA-Z'200-'377]) characters, underscores ('_') or digits ([0-9]), not beginning with a digit; //CHECK 200-377
-//		a numeral [-]?(.[0-9]+ | [0-9]+(.[0-9]*)? );
-//		any double-quoted string ("...") possibly containing escaped quotes ('")1; //TODO
-//		an HTML string (<...>).
-//		An ID is just a string; the lack of quote characters in the first two forms is just for simplicity.
-//		There is no semantic difference between abc_2 and "abc_2", or between 2.34 and "2.34".
-//		Obviously, to use a keyword as an ID, it must be quoted. Note that, in HTML strings, angle brackets must occur in matched pairs, and unescaped newlines are allowed.
-//		In addition, the content must be legal XML, so that the special XML escape sequences for ", &, <, and > may be necessary in order to embed these characters in attribute values or raw text.
-//		Both quoted strings and HTML strings are scanned as a unit, so any embedded comments will be treated as part of the strings.
 Id
-	: id                                          << ast.NewId($0) >>
+	: id                                          << ast.NewID($0) >>
 	;
-
-//The language supports C++-style comments: /* */ and //.
-//In addition, a line beginning with a '#' character is considered a line output from a C preprocessor (e.g., # 34 to indicate line 34 ) and discarded.
-
-//TODO (if dot file is not parsable, it might be because of these points)
-
-//Semicolons aid readability but are not required except in the rare case that a named subgraph with no body immediately preceeds an anonymous subgraph,
-//since the precedence rules cause this sequence to be parsed as a subgraph with a heading and a body. Also, any amount of whitespace may be inserted between terminals.
-
-//TODO
-//As another aid for readability, dot allows single logical lines to span multiple physical lines using the standard C convention of a backslash immediately preceding a newline character.
-//In addition, double-quoted strings can be concatenated using a '+' operator. As HTML strings can contain newline characters, they do not support the concatenation operator.
-
-//TODO
-//Note there are still 3 sections on the webpage which have not been included (Subgraphs and Clusters, Lexical and Semantic Notes, and Character Encodings)

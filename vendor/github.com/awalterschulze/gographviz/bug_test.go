@@ -1,3 +1,17 @@
+//Copyright 2017 GoGraphviz Authors
+//
+//Licensed under the Apache License, Version 2.0 (the "License");
+//you may not use this file except in compliance with the License.
+//You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
+
 package gographviz
 
 import (
@@ -12,27 +26,29 @@ type bugSubGraphWorldVisitor struct {
 	found bool
 }
 
-func (this *bugSubGraphWorldVisitor) Visit(v ast.Elem) ast.Visitor {
+func (w *bugSubGraphWorldVisitor) Visit(v ast.Elem) ast.Visitor {
 	edge, ok := v.(ast.EdgeStmt)
 	if !ok {
-		return this
+		return w
 	}
-	if edge.Source.GetId().String() != "2" {
-		return this
+	if edge.Source.GetID().String() != "2" {
+		return w
 	}
 	dst := edge.EdgeRHS[0].Destination
 	if _, ok := dst.(*ast.SubGraph); !ok {
-		this.t.Fatalf("2 -> Not SubGraph")
+		w.t.Fatalf("2 -> Not SubGraph")
 	} else {
-		this.found = true
+		w.found = true
 	}
-	return this
+	return w
 }
 
 func TestBugSubGraphWorld(t *testing.T) {
 	g := analtest(t, "world.gv.txt")
 	st, err := parser.ParseString(g.String())
-	check(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	s := &bugSubGraphWorldVisitor{
 		t: t,
 	}

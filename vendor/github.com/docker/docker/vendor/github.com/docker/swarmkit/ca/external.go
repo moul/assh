@@ -8,19 +8,34 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/cloudflare/cfssl/api"
 	"github.com/cloudflare/cfssl/config"
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/signer"
+	"github.com/docker/swarmkit/log"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
+)
+
+const (
+	// ExternalCrossSignProfile is the profile that we will be sending cross-signing CSR sign requests with
+	ExternalCrossSignProfile = "CA"
+
+	// CertificateMaxSize is the maximum expected size of a certificate.
+	// While there is no specced upper limit to the size of an x509 certificate in PEM format,
+	// one with a ridiculous RSA key size (16384) and 26 256-character DNS SAN fields is about 14k.
+	// While there is no upper limit on the length of certificate chains, long chains are impractical.
+	// To be conservative, and to also account for external CA certificate responses in JSON format
+	// from CFSSL, we'll set the max to be 256KiB.
+	CertificateMaxSize int64 = 256 << 10
 )
 
 // ErrNoExternalCAURLs is an error used it indicate that an ExternalCA is
@@ -79,13 +94,19 @@ func (eca *ExternalCA) UpdateTLSConfig(tlsConfig *tls.Config) {
 	}
 }
 
-// UpdateURLs updates the list of CSR API endpoints by setting it to the given
-// urls.
+// UpdateURLs updates the list of CSR API endpoints by setting it to the given urls.
 func (eca *ExternalCA) UpdateURLs(urls ...string) {
 	eca.mu.Lock()
 	defer eca.mu.Unlock()
 
 	eca.urls = urls
+}
+
+// UpdateRootCA changes the root CA used to append intermediates
+func (eca *ExternalCA) UpdateRootCA(rca *RootCA) {
+	eca.mu.Lock()
+	eca.rootCA = rca
+	eca.mu.Unlock()
 }
 
 // Sign signs a new certificate by proxying the given certificate signing
@@ -96,6 +117,7 @@ func (eca *ExternalCA) Sign(ctx context.Context, req signer.SignRequest) (cert [
 	eca.mu.Lock()
 	urls := eca.urls
 	client := eca.client
+	intermediates := eca.rootCA.Intermediates
 	eca.mu.Unlock()
 
 	if len(urls) == 0 {
@@ -114,9 +136,9 @@ func (eca *ExternalCA) Sign(ctx context.Context, req signer.SignRequest) (cert [
 		cert, err = makeExternalSignRequest(requestCtx, client, url, csrJSON)
 		cancel()
 		if err == nil {
-			return append(cert, eca.rootCA.Intermediates...), err
+			return append(cert, intermediates...), err
 		}
-		logrus.Debugf("unable to proxy certificate signing request to %s: %s", url, err)
+		log.G(ctx).Debugf("unable to proxy certificate signing request to %s: %s", url, err)
 	}
 
 	return nil, err
@@ -157,6 +179,7 @@ func (eca *ExternalCA) CrossSignRootCA(ctx context.Context, rca RootCA) ([]byte,
 			CN:    rootCert.Subject.CommonName,
 			Names: cfCSRObj.Names,
 		},
+		Profile: ExternalCrossSignProfile,
 	}
 	// cfssl actually ignores non subject alt name extensions in the CSR, so we have to add the CA extension in the signing
 	// request as well
@@ -179,7 +202,8 @@ func makeExternalSignRequest(ctx context.Context, client *http.Client, url strin
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	b := io.LimitReader(resp.Body, CertificateMaxSize)
+	body, err := ioutil.ReadAll(b)
 	if err != nil {
 		return nil, recoverableErr{err: errors.Wrap(err, "unable to read CSR response body")}
 	}
