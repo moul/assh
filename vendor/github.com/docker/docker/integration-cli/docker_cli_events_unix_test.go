@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 	"unicode"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/docker/docker/integration-cli/cli/build"
 	"github.com/go-check/check"
 	"github.com/kr/pty"
+	"golang.org/x/sys/unix"
 )
 
 // #5979
@@ -421,14 +421,14 @@ func (s *DockerDaemonSuite) TestDaemonEvents(c *check.C) {
 	fmt.Fprintf(configFile, "%s", daemonConfig)
 	configFile.Close()
 
-	c.Assert(s.d.Signal(syscall.SIGHUP), checker.IsNil)
+	c.Assert(s.d.Signal(unix.SIGHUP), checker.IsNil)
 
 	time.Sleep(3 * time.Second)
 
 	out, err = s.d.Cmd("events", "--since=0", "--until", daemonUnixTime(c))
 	c.Assert(err, checker.IsNil)
 
-	c.Assert(out, checker.Contains, fmt.Sprintf("daemon reload %s (cluster-advertise=, cluster-store=, cluster-store-opts={}, debug=true, default-runtime=runc, default-shm-size=67108864, insecure-registries=[], labels=[\"bar=foo\"], live-restore=false, max-concurrent-downloads=1, max-concurrent-uploads=5, name=%s, registry-mirrors=[], runtimes=runc:{docker-runc []}, shutdown-timeout=10)", daemonID, daemonName))
+	c.Assert(out, checker.Contains, fmt.Sprintf("daemon reload %s (allow-nondistributable-artifacts=[], cluster-advertise=, cluster-store=, cluster-store-opts={}, debug=true, default-runtime=runc, default-shm-size=67108864, insecure-registries=[], labels=[\"bar=foo\"], live-restore=false, max-concurrent-downloads=1, max-concurrent-uploads=5, name=%s, registry-mirrors=[], runtimes=runc:{docker-runc []}, shutdown-timeout=10)", daemonID, daemonName))
 }
 
 func (s *DockerDaemonSuite) TestDaemonEventsWithFilters(c *check.C) {
@@ -459,7 +459,7 @@ func (s *DockerDaemonSuite) TestDaemonEventsWithFilters(c *check.C) {
 	}
 	c.Assert(daemonID, checker.Not(checker.Equals), "")
 
-	c.Assert(s.d.Signal(syscall.SIGHUP), checker.IsNil)
+	c.Assert(s.d.Signal(unix.SIGHUP), checker.IsNil)
 
 	time.Sleep(3 * time.Second)
 

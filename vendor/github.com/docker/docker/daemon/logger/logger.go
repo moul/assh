@@ -68,11 +68,6 @@ func (m *Message) AsLogMessage() *backend.LogMessage {
 	return (*backend.LogMessage)(m)
 }
 
-// LogAttributes is used to hold the extra attributes available in the log message
-// Primarily used for converting the map type to string and sorting.
-// Imported here so it can be used internally with less refactoring
-type LogAttributes backend.LogAttributes
-
 // Logger is the interface for docker logging drivers.
 type Logger interface {
 	Log(*Message) error
@@ -125,4 +120,12 @@ func (w *LogWatcher) Close() {
 // one goroutine.
 func (w *LogWatcher) WatchClose() <-chan struct{} {
 	return w.closeNotifier
+}
+
+// Capability defines the list of capabilties that a driver can implement
+// These capabilities are not required to be a logging driver, however do
+// determine how a logging driver can be used
+type Capability struct {
+	// Determines if a log driver can read back logs
+	ReadLogs bool
 }

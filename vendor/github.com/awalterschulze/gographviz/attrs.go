@@ -15,57 +15,85 @@
 package gographviz
 
 import (
-	"fmt"
-	"os"
 	"sort"
 )
 
-//Represents attributes for an Edge, Node or Graph.
-type Attrs map[string]string
+// Attrs represents attributes for an Edge, Node or Graph.
+type Attrs map[Attr]string
 
-//Creates an empty Attributes type.
-func NewAttrs() Attrs {
-	return make(Attrs)
-}
-
-//Adds an attribute name and value.
-func (this Attrs) Add(field string, value string) {
-	prev, ok := this[field]
-	if ok {
-		fmt.Fprintf(os.Stderr, "WARNING: overwriting field %v value %v, with value %v\n", field, prev, value)
+// NewAttrs creates an empty Attributes type.
+func NewAttrs(m map[string]string) (Attrs, error) {
+	as := make(Attrs)
+	for k, v := range m {
+		if err := as.Add(k, v); err != nil {
+			return nil, err
+		}
 	}
-	this[field] = value
+	return as, nil
 }
 
-//Adds the attributes into this Attrs type overwriting duplicates.
-func (this Attrs) Extend(more Attrs) {
+// Add adds an attribute name and value.
+func (attrs Attrs) Add(field string, value string) error {
+	a, err := NewAttr(field)
+	if err != nil {
+		return err
+	}
+	attrs.add(a, value)
+	return nil
+}
+
+func (attrs Attrs) add(field Attr, value string) {
+	attrs[field] = value
+}
+
+// Extend adds the attributes into attrs Attrs type overwriting duplicates.
+func (attrs Attrs) Extend(more Attrs) {
 	for key, value := range more {
-		this.Add(key, value)
+		attrs.add(key, value)
 	}
 }
 
-//Only adds the missing attributes to this Attrs type.
-func (this Attrs) Ammend(more Attrs) {
+// Ammend only adds the missing attributes to attrs Attrs type.
+func (attrs Attrs) Ammend(more Attrs) {
 	for key, value := range more {
-		if _, ok := this[key]; !ok {
-			this.Add(key, value)
+		if _, ok := attrs[key]; !ok {
+			attrs.add(key, value)
 		}
 	}
 }
 
-func (this Attrs) SortedNames() []string {
-	keys := make([]string, 0)
-	for key := range this {
-		keys = append(keys, key)
+func (attrs Attrs) toMap() map[string]string {
+	m := make(map[string]string)
+	for k, v := range attrs {
+		m[string(k)] = v
 	}
-	sort.Strings(keys)
-	return keys
+	return m
 }
 
-func (this Attrs) Copy() Attrs {
-	attrs := make(Attrs)
-	for k, v := range this {
-		attrs[k] = v
+type attrList []Attr
+
+func (attrs attrList) Len() int { return len(attrs) }
+func (attrs attrList) Less(i, j int) bool {
+	return attrs[i] < attrs[j]
+}
+func (attrs attrList) Swap(i, j int) {
+	attrs[i], attrs[j] = attrs[j], attrs[i]
+}
+
+func (attrs Attrs) sortedNames() []Attr {
+	keys := make(attrList, 0)
+	for key := range attrs {
+		keys = append(keys, key)
 	}
-	return attrs
+	sort.Sort(keys)
+	return []Attr(keys)
+}
+
+// Copy returns a copy of the attributes map
+func (attrs Attrs) Copy() Attrs {
+	mm := make(Attrs)
+	for k, v := range attrs {
+		mm[k] = v
+	}
+	return mm
 }

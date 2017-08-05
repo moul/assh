@@ -12,7 +12,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/libnetwork/datastore"
 	"github.com/docker/libnetwork/discoverapi"
 	"github.com/docker/libnetwork/driverapi"
@@ -24,6 +23,7 @@ import (
 	"github.com/docker/libnetwork/osl"
 	"github.com/docker/libnetwork/portmapper"
 	"github.com/docker/libnetwork/types"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
 
@@ -153,7 +153,8 @@ func Init(dc driverapi.DriverCallback, config map[string]interface{}) error {
 	}
 
 	c := driverapi.Capability{
-		DataScope: datastore.LocalScope,
+		DataScope:         datastore.LocalScope,
+		ConnectivityScope: datastore.LocalScope,
 	}
 	return dc.RegisterDriver(networkType, d, c)
 }
@@ -1345,6 +1346,13 @@ func (d *driver) RevokeExternalConnectivity(nid, eid string) error {
 	}
 
 	endpoint.portMapping = nil
+
+	// Clean the connection tracker state of the host for the specific endpoint
+	// The host kernel keeps track of the connections (TCP and UDP), so if a new endpoint gets the same IP of
+	// this one (that is going down), is possible that some of the packets would not be routed correctly inside
+	// the new endpoint
+	// Deeper details: https://github.com/docker/docker/issues/8795
+	clearEndpointConnections(d.nlh, endpoint)
 
 	if err = d.storeUpdate(endpoint); err != nil {
 		return fmt.Errorf("failed to update bridge endpoint %s to store: %v", endpoint.id[0:7], err)

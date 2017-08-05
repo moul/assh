@@ -1,8 +1,8 @@
 package goutils
 
 import (
-"testing"
-"fmt"
+	"fmt"
+	"testing"
 )
 
 // ****************************** TESTS ********************************************
@@ -26,7 +26,6 @@ func TestAbbreviate(t *testing.T) {
 		t.Errorf("Abbreviate(%v, %v) = %v, want %v", in, maxWidth, x, out)
 	}
 
-
 	// Test 3
 	out = "a..."
 	maxWidth = 4
@@ -35,7 +34,6 @@ func TestAbbreviate(t *testing.T) {
 		t.Errorf("Abbreviate(%v, %v) = %v, want %v", in, maxWidth, x, out)
 	}
 }
-
 
 func TestAbbreviateFull(t *testing.T) {
 
@@ -58,19 +56,15 @@ func TestAbbreviateFull(t *testing.T) {
 		t.Errorf("AbbreviateFull(%v, %v, %v) = %v, want %v", in, offset, maxWidth, x, out)
 	}
 
-
 	// Test 3
 	out = "...ijklmno"
 	offset = 12
 	maxWidth = 10
 
-
 	if x, _ := AbbreviateFull(in, offset, maxWidth); x != out {
 		t.Errorf("AbbreviateFull(%v, %v, %v) = %v, want %v", in, offset, maxWidth, x, out)
 	}
 }
-
-
 
 func TestIndexOf(t *testing.T) {
 
@@ -100,7 +94,6 @@ func TestIndexOf(t *testing.T) {
 		t.Errorf("IndexOf(%v, %v, %v) = %v, want %v", str, sub, start, x, out)
 	}
 
-
 	// Test 4
 	sub = "z"
 	out = -1
@@ -109,8 +102,7 @@ func TestIndexOf(t *testing.T) {
 		t.Errorf("IndexOf(%v, %v, %v) = %v, want %v", str, sub, start, x, out)
 	}
 
-} 
-
+}
 
 func TestIsBlank(t *testing.T) {
 
@@ -137,9 +129,7 @@ func TestIsBlank(t *testing.T) {
 	if x := IsBlank(str); x != out {
 		t.Errorf("IndexOf(%v) = %v, want %v", str, x, out)
 	}
-} 
-
-
+}
 
 func TestDeleteWhiteSpace(t *testing.T) {
 
@@ -158,8 +148,7 @@ func TestDeleteWhiteSpace(t *testing.T) {
 	if x := DeleteWhiteSpace(str); x != out {
 		t.Errorf("IndexOf(%v) = %v, want %v", str, x, out)
 	}
-} 
-
+}
 
 func TestIndexOfDifference(t *testing.T) {
 
@@ -170,8 +159,7 @@ func TestIndexOfDifference(t *testing.T) {
 	if x := IndexOfDifference(str1, str2); x != out {
 		t.Errorf("IndexOfDifference(%v, %v) = %v, want %v", str1, str2, x, out)
 	}
-} 
-
+}
 
 // ****************************** EXAMPLES ********************************************
 
@@ -184,20 +172,18 @@ func ExampleAbbreviate() {
 	out4, _ := Abbreviate(str, 4)
 	_, err1 := Abbreviate(str, 3)
 
-
 	fmt.Println(out1)
 	fmt.Println(out2)
 	fmt.Println(out3)
 	fmt.Println(out4)
 	fmt.Println(err1)
-	// Output: 
+	// Output:
 	// abc...
 	// abcdefg
 	// abcdefg
 	// a...
 	// stringutils illegal argument: Minimum abbreviation width is 4
 }
-
 
 func ExampleAbbreviateFull() {
 
@@ -215,7 +201,6 @@ func ExampleAbbreviateFull() {
 	_, err1 := AbbreviateFull(str2, 0, 3)
 	_, err2 := AbbreviateFull(str2, 5, 6)
 
-
 	fmt.Println(out1)
 	fmt.Println(out2)
 	fmt.Println(out3)
@@ -227,7 +212,7 @@ func ExampleAbbreviateFull() {
 	fmt.Println(out9)
 	fmt.Println(err1)
 	fmt.Println(err2)
-	// Output: 
+	// Output:
 	// abcdefg...
 	// abcdefg...
 	// abcdefg...
@@ -238,9 +223,8 @@ func ExampleAbbreviateFull() {
 	// ...ijklmno
 	// ...ijklmno
 	// stringutils illegal argument: Minimum abbreviation width is 4
-	// stringutils illegal argument: Minimum abbreviation width with offset is 7 
+	// stringutils illegal argument: Minimum abbreviation width with offset is 7
 }
-
 
 func ExampleIsBlank() {
 
@@ -253,13 +237,12 @@ func ExampleIsBlank() {
 	fmt.Println(out2)
 	fmt.Println(out3)
 	fmt.Println(out4)
-	// Output: 
+	// Output:
 	// true
 	// true
 	// false
 	// false
 }
-
 
 func ExampleDeleteWhiteSpace() {
 
@@ -272,18 +255,17 @@ func ExampleDeleteWhiteSpace() {
 	fmt.Println(out2)
 	fmt.Println(out3)
 	fmt.Println(out4)
-	// Output: 
-	// 
+	// Output:
+	//
 	// bob
 	// bob
 	// bob
 }
 
-
 func ExampleIndexOf() {
 
 	str := "abcdefgehije"
-	out1 := IndexOf(str, "e", 0) 
+	out1 := IndexOf(str, "e", 0)
 	out2 := IndexOf(str, "e", 5)
 	out3 := IndexOf(str, "e", 8)
 	out4 := IndexOf(str, "eh", 0)
@@ -298,7 +280,7 @@ func ExampleIndexOf() {
 	fmt.Println(out5)
 	fmt.Println(out6)
 	fmt.Println(out7)
-	// Output: 
+	// Output:
 	// 4
 	// 7
 	// 11
@@ -307,12 +289,10 @@ func ExampleIndexOf() {
 	// -1
 	// -1
 }
- 
-
 
 func ExampleIndexOfDifference() {
 
-	out1 := IndexOfDifference("abc", "abc") 
+	out1 := IndexOfDifference("abc", "abc")
 	out2 := IndexOfDifference("ab", "abxyz")
 	out3 := IndexOfDifference("", "abc")
 	out4 := IndexOfDifference("abcde", "abxyz")
@@ -321,7 +301,7 @@ func ExampleIndexOfDifference() {
 	fmt.Println(out2)
 	fmt.Println(out3)
 	fmt.Println(out4)
-	// Output: 
+	// Output:
 	// -1
 	// 2
 	// 0

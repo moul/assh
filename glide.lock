@@ -1,10 +1,10 @@
 hash: aec675fc4428e70de14f6436b259ae34adf78b246d8dd326116fc94ec135015c
-updated: 2017-04-08T23:34:07.256774867+02:00
+updated: 2017-08-05T22:03:32.347691067+02:00
 imports:
 - name: github.com/aokoli/goutils
-  version: 9c37978a95bd5c709a15883b6242714ea6709e64
+  version: 3391d3790d23d03408670993e957e8f408993c34
 - name: github.com/awalterschulze/gographviz
-  version: 34601d9f074195d33729d076c373e18a2aa67411
+  version: 01fdca2df2c7f57917d029fc952cbf23f621101b
   subpackages:
   - ast
   - internal/errors
@@ -16,46 +16,53 @@ imports:
 - name: github.com/deckarep/gosx-notifier
   version: 61a88900fb062ed8c63828adf4d7b58463b61f78
 - name: github.com/docker/docker
-  version: 51aa2a226e21e20c5b4634a28245c760f4e18f37
+  version: d4f6db83c21cfc6af54fffb1f13e8acb7199f96a
   subpackages:
   - api/types/strslice
 - name: github.com/docker/go-units
   version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
 - name: github.com/docker/libcompose
-  version: 8e4221d0435d29e6239adf9ccb4de1f0c0ab0935
+  version: 1b708aac26a4fc6f9bff31728a8e3a252ef57dbd
   subpackages:
   - yaml
 - name: github.com/dustin/go-humanize
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
 - name: github.com/flynn/go-shlex
   version: 3f9db97f856818214da2e1057f8ad84803971cff
+- name: github.com/gin-contrib/sse
+  version: 22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae
 - name: github.com/gin-gonic/gin
-  version: e2212d40c62a98b388a5eb48ecbdcf88534688ba
+  version: 81007d2ce0176f7a9ce52dd12e56edd7ef40e72c
   subpackages:
   - binding
+  - json
   - render
 - name: github.com/go-ole/go-ole
-  version: de8695c8edbf8236f30d6e1376e20b198a028d42
+  version: 085abb85892dc1949567b726dff00fa226c60c45
   subpackages:
   - oleutil
 - name: github.com/golang/protobuf
-  version: 2402d76f3d41f928c7902a765dfc872356dd3aad
+  version: 8ee79997227bf9b34611aee7946ae64735e6fd93
   subpackages:
   - proto
 - name: github.com/guelfey/go.dbus
   version: f6a3a2366cc39b8479cadc499d3c735fb10fbdda
 - name: github.com/haklop/gnotifier
   version: 0de36badf60155d5953373ed432982b20c62fb91
-- name: github.com/manucorporat/sse
-  version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
+- name: github.com/huandu/xstrings
+  version: 3959339b333561bf62a38b424fd41517c2c90f40
+- name: github.com/imdario/mergo
+  version: 3e95a51e0639b4cf372f2ccf74c86749d747fbdc
+- name: github.com/json-iterator/go
+  version: 1cfa233923ea407d7f0c70d7a7d835030678e788
 - name: github.com/Masterminds/semver
   version: 59c29afe1a994eacb71c833025ca7acf874bb1da
 - name: github.com/Masterminds/sprig
-  version: 4fd5bcb33f764801522c8e35f464a12ceb180873
+  version: e039e20e500c2c025d9145be375e27cf42a94174
 - name: github.com/mattn/go-colorable
-  version: ded68f7a9561c023e790de24279db7ebf473ea80
+  version: 6c0fd4aa6ec5818d5e3ea9e03ae436972a6c5a9a
 - name: github.com/mattn/go-isatty
-  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+  version: 57fdcb988a5c543893cc61bce354a6e24ab70022
 - name: github.com/mattn/go-zglob
   version: 95345c4e1c0ebc9d16a3284177f09360f4d20fab
   subpackages:
@@ -65,7 +72,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/shirou/gopsutil
-  version: e49a95f3d5f824c3f9875ca49e54e4fef17f82cf
+  version: 3aa2ffab12a1852644f6d33cd782f877272bf305
   subpackages:
   - cpu
   - host
@@ -76,48 +83,55 @@ imports:
 - name: github.com/shirou/w32
   version: bb4de0191aa41b5507caa14b0650cdbddcd9280b
 - name: github.com/Sirupsen/logrus
-  version: cd7d1bbe41066b6c1f19780f895901052150a575
+  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
 - name: github.com/StackExchange/wmi
-  version: 9f32b5905fd6ce7384093f9d048437e79f7b4d85
+  version: ea383cf3ba6ec950874b8486cd72356d007c768f
+- name: github.com/ugorji/go
+  version: 5efa3251c7f7d05e5d9704a69a984ec9f1386a40
+  subpackages:
+  - codec
 - name: github.com/urfave/cli
-  version: 8ba6f23b6e36d03666a14bd9421f5e3efcb59aca
+  version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
 - name: golang.org/x/crypto
-  version: 1f22c0103821b9390939b6776727195525381532
+  version: 42ff06aea7c329876e5a0fe94acc96902accf0ad
   subpackages:
   - pbkdf2
   - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: a6577fac2d73be281a500b310739095313165611
+  version: 48359f4f600b3a2d5cf657458e3f940021631a56
   subpackages:
   - context
 - name: golang.org/x/sys
-  version: d4feaf1a7e61e1d9e79e6c4e76c6349e9cab0a03
+  version: d75a52659825e75fff6158388dddc6a5b04f9ba5
   subpackages:
   - unix
+  - windows
 - name: golang.org/x/time
-  version: f51c12702a4d776e4c1fa9b0fabab841babae631
+  version: 8be79e1e0910c292df4e79c241bb7e8f7e725959
   subpackages:
   - rate
 - name: gopkg.in/go-playground/validator.v8
-  version: c193cecd124b5cc722d7ee5538e945bdb3348435
+  version: 5f1438d3fca68893a817e4a66806cea46a9e4ebf
 - name: gopkg.in/yaml.v2
-  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+  version: 25c4ec802a7d637f88d584ab26798e94ad14c13b
 testImports:
 - name: github.com/gopherjs/gopherjs
-  version: db27c7c470d7404b6b201f82d6fd4821260bd13e
+  version: 2b1d432c8a82c9bff0b0baffaeb3ec6e92974112
   subpackages:
   - js
 - name: github.com/jtolds/gls
-  version: 8ddce2a84170772b95dd5d576c48d517b22cac63
+  version: 77f18212c9c7edc9bd6a33d383a7b545ce62f064
 - name: github.com/smartystreets/assertions
-  version: 40711f7748186bbf9c99977cd89f21ce1a229447
+  version: 3c7b29c4776a870a5983b38635e241a40a7e5422
   subpackages:
   - internal/go-render/render
   - internal/oglematchers
 - name: github.com/smartystreets/goconvey
-  version: d4c757aa9afd1e2fc1832aaab209b5794eb336e1
+  version: 9e8dc3f972df6c8fcc0375ef492c24d0bb204857
   subpackages:
   - convey
   - convey/gotest
   - convey/reporting
+- name: github.com/smartystreets/logging
+  version: ac3a674540761aa0b4382094ba4795f917e85c7f

@@ -18,33 +18,34 @@ import (
 	"sort"
 )
 
-//Represents the relations between graphs and nodes.
-//Each node belongs the main graph or a subgraph.
+// Relations represents the relations between graphs and nodes.
+// Each node belongs the main graph or a subgraph.
 type Relations struct {
 	ParentToChildren map[string]map[string]bool
 	ChildToParents   map[string]map[string]bool
 }
 
-//Creates an empty set of relations.
+// NewRelations creates an empty set of relations.
 func NewRelations() *Relations {
 	return &Relations{make(map[string]map[string]bool), make(map[string]map[string]bool)}
 }
 
-//Adds a node to a parent graph.
-func (this *Relations) Add(parent string, child string) {
-	if _, ok := this.ParentToChildren[parent]; !ok {
-		this.ParentToChildren[parent] = make(map[string]bool)
+// Add adds a node to a parent graph.
+func (relations *Relations) Add(parent string, child string) {
+	if _, ok := relations.ParentToChildren[parent]; !ok {
+		relations.ParentToChildren[parent] = make(map[string]bool)
 	}
-	this.ParentToChildren[parent][child] = true
-	if _, ok := this.ChildToParents[child]; !ok {
-		this.ChildToParents[child] = make(map[string]bool)
+	relations.ParentToChildren[parent][child] = true
+	if _, ok := relations.ChildToParents[child]; !ok {
+		relations.ChildToParents[child] = make(map[string]bool)
 	}
-	this.ChildToParents[child][parent] = true
+	relations.ChildToParents[child][parent] = true
 }
 
-func (this *Relations) SortedChildren(parent string) []string {
+// SortedChildren returns a list of sorted children of the given parent graph.
+func (relations *Relations) SortedChildren(parent string) []string {
 	keys := make([]string, 0)
-	for key := range this.ParentToChildren[parent] {
+	for key := range relations.ParentToChildren[parent] {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)

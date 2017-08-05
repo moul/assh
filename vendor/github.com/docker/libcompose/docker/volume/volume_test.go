@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/docker/docker/api/types/volume"
+	"github.com/docker/docker/client"
 	"github.com/docker/libcompose/config"
-	"github.com/docker/libcompose/test"
 )
 
 func TestVolumesFromServices(t *testing.T) {
@@ -87,7 +87,7 @@ func testExpectedContainsVolume(t *testing.T, index int, expected []*Volume, vol
 }
 
 type volumeClient struct {
-	test.NopClient
+	client.Client
 	expectedName         string
 	expectedVolumeCreate volume.VolumesCreateBody
 	inspectError         error

@@ -1,5 +1,5 @@
 # This file describes the standard way to build libcompose, using docker
-FROM golang:1.7.5
+FROM golang:1.8.3
 
 # virtualenv is necessary to run acceptance tests
 RUN apt-get update && \
@@ -13,18 +13,23 @@ RUN go get github.com/aktau/github-release && \
     go get github.com/golang/lint/golint
 
 # Which docker version to test on and what default one to use
-ENV DOCKER_VERSIONS 1.9.1 1.10.3 1.11.2 1.12.6 1.13.0
-ENV DEFAULT_DOCKER_VERSION 1.10.3
+ENV DOCKER_VERSIONS 1.9.1 1.10.3 1.13.1 17.03.2 17.06.0
+ENV DEFAULT_DOCKER_VERSION 17.03.2
 
 # Download docker
-RUN set -e; \
+RUN set -e; set -x; \
     for v in $(echo ${DOCKER_VERSIONS} | cut -f1); do \
         if test "${v}" = "1.9.1" || test "${v}" = "1.10.3"; then \
            mkdir -p /usr/local/bin/docker-${v}/; \
            curl https://get.docker.com/builds/Linux/x86_64/docker-${v} -o /usr/local/bin/docker-${v}/docker; \
            chmod +x /usr/local/bin/docker-${v}/docker; \
+        elif test "${v}" = "1.13.1"; then \
+           curl https://get.docker.com/builds/Linux/x86_64/docker-${v}.tgz -o docker-${v}.tgz; \
+             tar xzf docker-${v}.tgz -C /usr/local/bin/; \
+             mv /usr/local/bin/docker /usr/local/bin/docker-${v}; \
+             rm docker-${v}.tgz; \
         else \
-             curl https://get.docker.com/builds/Linux/x86_64/docker-${v}.tgz -o docker-${v}.tgz; \
+             curl https://download.docker.com/linux/static/stable/x86_64/docker-${v}-ce.tgz -o docker-${v}.tgz; \
              tar xzf docker-${v}.tgz -C /usr/local/bin/; \
              mv /usr/local/bin/docker /usr/local/bin/docker-${v}; \
              rm docker-${v}.tgz; \
