@@ -64,6 +64,9 @@ func ParseFile(filename string) (*ast.Graph, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	return Parse(f)
+	g, err := Parse(f)
+	if err := f.Close(); err != nil {
+		return nil, err
+	}
+	return g, err
 }

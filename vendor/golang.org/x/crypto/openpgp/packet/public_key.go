@@ -224,6 +224,32 @@ func NewElGamalPublicKey(creationTime time.Time, pub *elgamal.PublicKey) *Public
 	return pk
 }
 
+func NewECDSAPublicKey(creationTime time.Time, pub *ecdsa.PublicKey) *PublicKey {
+	pk := &PublicKey{
+		CreationTime: creationTime,
+		PubKeyAlgo:   PubKeyAlgoECDSA,
+		PublicKey:    pub,
+		ec:           new(ecdsaKey),
+	}
+
+	switch pub.Curve {
+	case elliptic.P256():
+		pk.ec.oid = oidCurveP256
+	case elliptic.P384():
+		pk.ec.oid = oidCurveP384
+	case elliptic.P521():
+		pk.ec.oid = oidCurveP521
+	default:
+		panic("unknown elliptic curve")
+	}
+
+	pk.ec.p.bytes = elliptic.Marshal(pub.Curve, pub.X, pub.Y)
+	pk.ec.p.bitLength = uint16(8 * len(pk.ec.p.bytes))
+
+	pk.setFingerPrintAndKeyId()
+	return pk
+}
+
 func (pk *PublicKey) parse(r io.Reader) (err error) {
 	// RFC 4880, section 5.5.2
 	var buf [6]byte
@@ -514,7 +540,6 @@ func (pk *PublicKey) VerifySignature(signed hash.Hash, sig *Signature) (err erro
 	default:
 		return errors.SignatureError("Unsupported public key algorithm used in signature")
 	}
-	panic("unreachable")
 }
 
 // VerifySignatureV3 returns nil iff sig is a valid signature, made by this
@@ -559,7 +584,6 @@ func (pk *PublicKey) VerifySignatureV3(signed hash.Hash, sig *SignatureV3) (err 
 	default:
 		panic("shouldn't happen")
 	}
-	panic("unreachable")
 }
 
 // keySignatureHash returns a Hash of the message that needs to be signed for

@@ -27,14 +27,14 @@ var _ Interface = NewGraph()
 
 //Interface allows you to parse the graph into your own structure.
 type Interface interface {
-	SetStrict(strict bool)
-	SetDir(directed bool)
-	SetName(name string)
-	AddPortEdge(src, srcPort, dst, dstPort string, directed bool, attrs map[string]string)
-	AddEdge(src, dst string, directed bool, attrs map[string]string)
-	AddNode(parentGraph string, name string, attrs map[string]string)
-	AddAttr(parentGraph string, field, value string)
-	AddSubGraph(parentGraph string, name string, attrs map[string]string)
+	SetStrict(strict bool) error
+	SetDir(directed bool) error
+	SetName(name string) error
+	AddPortEdge(src, srcPort, dst, dstPort string, directed bool, attrs map[string]string) error
+	AddEdge(src, dst string, directed bool, attrs map[string]string) error
+	AddNode(parentGraph string, name string, attrs map[string]string) error
+	AddAttr(parentGraph string, field, value string) error
+	AddSubGraph(parentGraph string, name string, attrs map[string]string) error
 	String() string
 }
 
@@ -54,5 +54,5 @@ func Read(buf []byte) (*Graph, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewAnalysedGraph(st), nil
+	return NewAnalysedGraph(st)
 }

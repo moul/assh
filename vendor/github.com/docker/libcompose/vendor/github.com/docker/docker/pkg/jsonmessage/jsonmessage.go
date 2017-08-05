@@ -35,6 +35,9 @@ type JSONProgress struct {
 	Current    int64 `json:"current,omitempty"`
 	Total      int64 `json:"total,omitempty"`
 	Start      int64 `json:"start,omitempty"`
+	// If true, don't show xB/yB
+	HideCounts bool   `json:"hidecounts,omitempty"`
+	Units      string `json:"units,omitempty"`
 }
 
 func (p *JSONProgress) String() string {
@@ -53,11 +56,16 @@ func (p *JSONProgress) String() string {
 	if p.Current <= 0 && p.Total <= 0 {
 		return ""
 	}
-	current := units.HumanSize(float64(p.Current))
 	if p.Total <= 0 {
-		return fmt.Sprintf("%8v", current)
+		switch p.Units {
+		case "":
+			current := units.HumanSize(float64(p.Current))
+			return fmt.Sprintf("%8v", current)
+		default:
+			return fmt.Sprintf("%d %s", p.Current, p.Units)
+		}
 	}
-	total := units.HumanSize(float64(p.Total))
+
 	percentage := int(float64(p.Current)/float64(p.Total)*100) / 2
 	if percentage > 50 {
 		percentage = 50
@@ -71,11 +79,25 @@ func (p *JSONProgress) String() string {
 		pbBox = fmt.Sprintf("[%s>%s] ", strings.Repeat("=", percentage), strings.Repeat(" ", numSpaces))
 	}
 
-	numbersBox = fmt.Sprintf("%8v/%v", current, total)
+	switch {
+	case p.HideCounts:
+	case p.Units == "": // no units, use bytes
+		current := units.HumanSize(float64(p.Current))
+		total := units.HumanSize(float64(p.Total))
 
-	if p.Current > p.Total {
-		// remove total display if the reported current is wonky.
-		numbersBox = fmt.Sprintf("%8v", current)
+		numbersBox = fmt.Sprintf("%8v/%v", current, total)
+
+		if p.Current > p.Total {
+			// remove total display if the reported current is wonky.
+			numbersBox = fmt.Sprintf("%8v", current)
+		}
+	default:
+		numbersBox = fmt.Sprintf("%d/%d %s", p.Current, p.Total, p.Units)
+
+		if p.Current > p.Total {
+			// remove total display if the reported current is wonky.
+			numbersBox = fmt.Sprintf("%d %s", p.Current, p.Units)
+		}
 	}
 
 	if p.Current > 0 && p.Start > 0 && percentage < 50 {
@@ -105,7 +127,7 @@ type JSONMessage struct {
 	TimeNano        int64         `json:"timeNano,omitempty"`
 	Error           *JSONError    `json:"errorDetail,omitempty"`
 	ErrorMessage    string        `json:"error,omitempty"` //deprecated
-	// Aux contains out-of-band data, such as digests for push signing.
+	// Aux contains out-of-band data, such as digests for push signing and image id after building.
 	Aux *json.RawMessage `json:"aux,omitempty"`
 }
 

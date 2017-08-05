@@ -116,8 +116,8 @@ services:
 	}
 }
 
-func TestExtendBuildOverImage(t *testing.T) {
-	_, configV1, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
+func TestExtendBuildOverImageV1(t *testing.T) {
+	_, config, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
 parent:
   image: foo
 child:
@@ -129,41 +129,56 @@ child:
 		t.Fatal(err)
 	}
 
-	_, configV2, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
-version: '2'
-services:
-  parent:
-    image: foo
-  child:
-    build:
-      context: .
-    extends:
-      service: parent
-`), nil)
-	if err != nil {
-		t.Fatal(err)
+	parent := config["parent"]
+	child := config["child"]
+
+	if parent.Image != "foo" {
+		t.Fatal("Invalid image", parent.Image)
 	}
 
-	for _, config := range []map[string]*ServiceConfig{configV1, configV2} {
-		parent := config["parent"]
-		child := config["child"]
+	if child.Build.Context != "." {
+		t.Fatal("Invalid build", child.Build)
+	}
 
-		if parent.Image != "foo" {
-			t.Fatal("Invalid image", parent.Image)
-		}
-
-		if child.Build.Context != "." {
-			t.Fatal("Invalid build", child.Build)
-		}
-
-		if child.Image != "" {
-			t.Fatal("Invalid image", child.Image)
-		}
+	if child.Image != "" {
+		t.Fatal("Invalid image", child.Image)
 	}
 }
 
-func TestExtendImageOverBuild(t *testing.T) {
-	_, configV1, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
+func TestExtendBuildOverImageV2(t *testing.T) {
+	_, config, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
+version: '2'
+services:
+  parent:
+    image: foo
+  child:
+    build:
+      context: .
+    extends:
+      service: parent
+`), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	parent := config["parent"]
+	child := config["child"]
+
+	if parent.Image != "foo" {
+		t.Fatal("Invalid image", parent.Image)
+	}
+
+	if child.Build.Context != "." {
+		t.Fatal("Invalid build", child.Build)
+	}
+
+	if child.Image != "foo" {
+		t.Fatal("Invalid image", child.Image)
+	}
+}
+
+func TestExtendImageOverBuildV1(t *testing.T) {
+	_, config, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
 parent:
   build: .
 child:
@@ -175,7 +190,29 @@ child:
 		t.Fatal(err)
 	}
 
-	_, configV2, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
+	parent := config["parent"]
+	child := config["child"]
+
+	if parent.Image != "" {
+		t.Fatal("Invalid image", parent.Image)
+	}
+
+	if parent.Build.Context != "." {
+		t.Fatal("Invalid build", parent.Build)
+	}
+
+	if child.Build.Context != "" {
+		t.Fatal("Invalid build", child.Build)
+	}
+
+	if child.Image != "foo" {
+		t.Fatal("Invalid image", child.Image)
+	}
+
+}
+
+func TestExtendImageOverBuildV2(t *testing.T) {
+	_, config, _, _, err := Merge(NewServiceConfigs(), nil, &NullLookup{}, "", []byte(`
 version: '2'
 services:
   parent:
@@ -190,25 +227,23 @@ services:
 		t.Fatal(err)
 	}
 
-	for _, config := range []map[string]*ServiceConfig{configV1, configV2} {
-		parent := config["parent"]
-		child := config["child"]
+	parent := config["parent"]
+	child := config["child"]
 
-		if parent.Image != "" {
-			t.Fatal("Invalid image", parent.Image)
-		}
+	if parent.Image != "" {
+		t.Fatal("Invalid image", parent.Image)
+	}
 
-		if parent.Build.Context != "." {
-			t.Fatal("Invalid build", parent.Build)
-		}
+	if parent.Build.Context != "." {
+		t.Fatal("Invalid build", parent.Build)
+	}
 
-		if child.Build.Context != "" {
-			t.Fatal("Invalid build", child.Build)
-		}
+	if child.Build.Context != "." {
+		t.Fatal("Invalid build", child.Build)
+	}
 
-		if child.Image != "foo" {
-			t.Fatal("Invalid image", child.Image)
-		}
+	if child.Image != "foo" {
+		t.Fatal("Invalid image", child.Image)
 	}
 }
 

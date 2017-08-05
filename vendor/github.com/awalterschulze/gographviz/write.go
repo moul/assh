@@ -30,121 +30,143 @@ func newWriter(g *Graph) *writer {
 }
 
 func appendAttrs(list ast.StmtList, attrs Attrs) ast.StmtList {
-	for _, name := range attrs.SortedNames() {
+	for _, name := range attrs.sortedNames() {
 		stmt := &ast.Attr{
-			Field: ast.Id(name),
-			Value: ast.Id(attrs[name]),
+			Field: ast.ID(name),
+			Value: ast.ID(attrs[name]),
 		}
 		list = append(list, stmt)
 	}
 	return list
 }
 
-func (this *writer) newSubGraph(name string) *ast.SubGraph {
-	sub := this.SubGraphs.SubGraphs[name]
-	this.writtenLocations[sub.Name] = true
+func (w *writer) newSubGraph(name string) (*ast.SubGraph, error) {
+	sub := w.SubGraphs.SubGraphs[name]
+	w.writtenLocations[sub.Name] = true
 	s := &ast.SubGraph{}
-	s.Id = ast.Id(sub.Name)
+	s.ID = ast.ID(sub.Name)
 	s.StmtList = appendAttrs(s.StmtList, sub.Attrs)
-	children := this.Relations.SortedChildren(name)
+	children := w.Relations.SortedChildren(name)
 	for _, child := range children {
-		if this.IsNode(child) {
-			s.StmtList = append(s.StmtList, this.newNodeStmt(child))
-		} else if this.IsSubGraph(child) {
-			s.StmtList = append(s.StmtList, this.newSubGraph(child))
+		if w.IsNode(child) {
+			s.StmtList = append(s.StmtList, w.newNodeStmt(child))
+		} else if w.IsSubGraph(child) {
+			subgraph, err := w.newSubGraph(child)
+			if err != nil {
+				return nil, err
+			}
+			s.StmtList = append(s.StmtList, subgraph)
 		} else {
-			panic(fmt.Sprintf("%v is not a node or a subgraph", child))
+			return nil, fmt.Errorf("%v is not a node or a subgraph", child)
 		}
 	}
-	return s
+	return s, nil
 }
 
-func (this *writer) newNodeId(name string, port string) *ast.NodeId {
-	node := this.Nodes.Lookup[name]
-	return ast.MakeNodeId(node.Name, port)
+func (w *writer) newNodeID(name string, port string) *ast.NodeID {
+	node := w.Nodes.Lookup[name]
+	return ast.MakeNodeID(node.Name, port)
 }
 
-func (this *writer) newNodeStmt(name string) *ast.NodeStmt {
-	node := this.Nodes.Lookup[name]
-	id := ast.MakeNodeId(node.Name, "")
-	this.writtenLocations[node.Name] = true
+func (w *writer) newNodeStmt(name string) *ast.NodeStmt {
+	node := w.Nodes.Lookup[name]
+	id := ast.MakeNodeID(node.Name, "")
+	w.writtenLocations[node.Name] = true
 	return &ast.NodeStmt{
-		id,
-		ast.PutMap(node.Attrs),
+		NodeID: id,
+		Attrs:  ast.PutMap(node.Attrs.toMap()),
 	}
 }
 
-func (this *writer) newLocation(name string, port string) ast.Location {
-	if this.IsNode(name) {
-		return this.newNodeId(name, port)
-	} else if this.IsClusterSubGraph(name) {
+func (w *writer) newLocation(name string, port string) (ast.Location, error) {
+	if w.IsNode(name) {
+		return w.newNodeID(name, port), nil
+	} else if w.isClusterSubGraph(name) {
 		if len(port) != 0 {
-			panic(fmt.Sprintf("subgraph cannot have a port: %v", port))
+			return nil, fmt.Errorf("subgraph cannot have a port: %v", port)
 		}
-		return ast.MakeNodeId(name, port)
-	} else if this.IsSubGraph(name) {
+		return ast.MakeNodeID(name, port), nil
+	} else if w.IsSubGraph(name) {
 		if len(port) != 0 {
-			panic(fmt.Sprintf("subgraph cannot have a port: %v", port))
+			return nil, fmt.Errorf("subgraph cannot have a port: %v", port)
 		}
-		return this.newSubGraph(name)
+		return w.newSubGraph(name)
 	}
-	panic(fmt.Sprintf("%v is not a node or a subgraph", name))
+	return nil, fmt.Errorf("%v is not a node or a subgraph", name)
 }
 
-func (this *writer) newEdgeStmt(edge *Edge) *ast.EdgeStmt {
-	src := this.newLocation(edge.Src, edge.SrcPort)
-	dst := this.newLocation(edge.Dst, edge.DstPort)
+func (w *writer) newEdgeStmt(edge *Edge) (*ast.EdgeStmt, error) {
+	src, err := w.newLocation(edge.Src, edge.SrcPort)
+	if err != nil {
+		return nil, err
+	}
+	dst, err := w.newLocation(edge.Dst, edge.DstPort)
+	if err != nil {
+		return nil, err
+	}
 	stmt := &ast.EdgeStmt{
 		Source: src,
 		EdgeRHS: ast.EdgeRHS{
 			&ast.EdgeRH{
-				ast.EdgeOp(edge.Dir),
-				dst,
+				Op:          ast.EdgeOp(edge.Dir),
+				Destination: dst,
 			},
 		},
-		Attrs: ast.PutMap(edge.Attrs),
+		Attrs: ast.PutMap(edge.Attrs.toMap()),
 	}
-	return stmt
+	return stmt, nil
 }
 
-func (this *writer) Write() *ast.Graph {
+func (w *writer) Write() (*ast.Graph, error) {
 	t := &ast.Graph{}
-	t.Strict = this.Strict
-	t.Type = ast.GraphType(this.Directed)
-	t.Id = ast.Id(this.Name)
+	t.Strict = w.Strict
+	t.Type = ast.GraphType(w.Directed)
+	t.ID = ast.ID(w.Name)
 
-	t.StmtList = appendAttrs(t.StmtList, this.Attrs)
+	t.StmtList = appendAttrs(t.StmtList, w.Attrs)
 
-	for _, edge := range this.Edges.Edges {
-		t.StmtList = append(t.StmtList, this.newEdgeStmt(edge))
+	for _, edge := range w.Edges.Edges {
+		e, err := w.newEdgeStmt(edge)
+		if err != nil {
+			return nil, err
+		}
+		t.StmtList = append(t.StmtList, e)
 	}
 
-	subGraphs := this.SubGraphs.Sorted()
+	subGraphs := w.SubGraphs.Sorted()
 	for _, s := range subGraphs {
-		if _, ok := this.writtenLocations[s.Name]; !ok {
-			if _, ok := this.Relations.ParentToChildren[this.Name][s.Name]; ok {
-				t.StmtList = append(t.StmtList, this.newSubGraph(s.Name))
+		if _, ok := w.writtenLocations[s.Name]; !ok {
+			if _, ok := w.Relations.ParentToChildren[w.Name][s.Name]; ok {
+				s, err := w.newSubGraph(s.Name)
+				if err != nil {
+					return nil, err
+				}
+				t.StmtList = append(t.StmtList, s)
 			}
 		}
 	}
 
-	nodes := this.Nodes.Sorted()
+	nodes := w.Nodes.Sorted()
 	for _, n := range nodes {
-		if _, ok := this.writtenLocations[n.Name]; !ok {
-			t.StmtList = append(t.StmtList, this.newNodeStmt(n.Name))
+		if _, ok := w.writtenLocations[n.Name]; !ok {
+			t.StmtList = append(t.StmtList, w.newNodeStmt(n.Name))
 		}
 	}
 
-	return t
+	return t, nil
 }
 
-//Creates an Abstract Syntrax Tree from the Graph.
-func (g *Graph) WriteAst() *ast.Graph {
+// WriteAst creates an Abstract Syntrax Tree from the Graph.
+func (g *Graph) WriteAst() (*ast.Graph, error) {
 	w := newWriter(g)
 	return w.Write()
 }
 
-//Returns a DOT string representing the Graph.
+// String returns a DOT string representing the Graph.
 func (g *Graph) String() string {
-	return g.WriteAst().String()
+	w, err := g.WriteAst()
+	if err != nil {
+		return fmt.Sprintf("error: %v", err)
+	}
+	return w.String()
 }

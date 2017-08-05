@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	cliconfig "github.com/docker/docker/cli/config"
+	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/docker/go-connections/sockets"

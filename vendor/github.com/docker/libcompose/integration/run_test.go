@@ -45,5 +45,5 @@ func (s *CliSuite) TestRun(c *C) {
 	lastLine := lines[len(lines)-2 : len(lines)-1][0]
 
 	c.Assert(cn.State.Running, Equals, false)
-	c.Assert(lastLine, Equals, "test")
+	c.Assert(lastLine, Equals, "test\r")
 }

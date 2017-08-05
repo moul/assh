@@ -187,8 +187,6 @@ func (c *Container) Run(ctx context.Context, configOverride *config.ServiceConfi
 	}
 	if configOverride.Tty {
 		out = os.Stdout
-	}
-	if configOverride.Tty {
 		stderr = os.Stderr
 	}
 
@@ -219,6 +217,22 @@ func (c *Container) Run(ctx context.Context, configOverride *config.ServiceConfi
 
 	if err := c.client.ContainerStart(ctx, c.container.ID, types.ContainerStartOptions{}); err != nil {
 		return -1, err
+	}
+
+	if configOverride.Tty {
+		ws, err := term.GetWinsize(inFd)
+		if err != nil {
+			return -1, err
+		}
+
+		resizeOpts := types.ResizeOptions{
+			Height: uint(ws.Height),
+			Width:  uint(ws.Width),
+		}
+
+		if err := c.client.ContainerResize(ctx, c.container.ID, resizeOpts); err != nil {
+			return -1, err
+		}
 	}
 
 	if err := <-errCh; err != nil {

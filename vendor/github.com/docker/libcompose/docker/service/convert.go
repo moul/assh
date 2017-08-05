@@ -166,6 +166,7 @@ func Convert(c *config.ServiceConfig, ctx project.Context, clientFactory compose
 		Volumes:      toMap(Filter(vols, isVolume)),
 		MacAddress:   c.MacAddress,
 		StopSignal:   c.StopSignal,
+		StopTimeout:  utils.DurationStrToSecondsInt(c.StopGracePeriod),
 	}
 
 	ulimits := []*units.Ulimit{}

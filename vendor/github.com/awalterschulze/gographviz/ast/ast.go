@@ -51,13 +51,10 @@ const (
 )
 
 func (this Bool) String() string {
-	switch this {
-	case false:
-		return "false"
-	case true:
+	if this {
 		return "true"
 	}
-	panic("unreachable")
+	return "false"
 }
 
 func (this Bool) Walk(v Visitor) {
@@ -75,13 +72,10 @@ const (
 )
 
 func (this GraphType) String() string {
-	switch this {
-	case false:
-		return "graph"
-	case true:
+	if this {
 		return "digraph"
 	}
-	panic("unreachable")
+	return "graph"
 }
 
 func (this GraphType) Walk(v Visitor) {
@@ -94,14 +88,14 @@ func (this GraphType) Walk(v Visitor) {
 type Graph struct {
 	Type     GraphType
 	Strict   bool
-	Id       Id
+	ID       ID
 	StmtList StmtList
 }
 
 func NewGraph(t, strict, id, l Attrib) (*Graph, error) {
-	g := &Graph{Type: t.(GraphType), Strict: bool(strict.(Bool)), Id: Id("")}
+	g := &Graph{Type: t.(GraphType), Strict: bool(strict.(Bool)), ID: ID("")}
 	if id != nil {
-		g.Id = id.(Id)
+		g.ID = id.(ID)
 	}
 	if l != nil {
 		g.StmtList = l.(StmtList)
@@ -110,7 +104,7 @@ func NewGraph(t, strict, id, l Attrib) (*Graph, error) {
 }
 
 func (this *Graph) String() string {
-	s := this.Type.String() + " " + this.Id.String() + " {\n"
+	s := this.Type.String() + " " + this.ID.String() + " {\n"
 	if this.StmtList != nil {
 		s += this.StmtList.String()
 	}
@@ -124,7 +118,7 @@ func (this *Graph) Walk(v Visitor) {
 	}
 	v = v.Visit(this)
 	this.Type.Walk(v)
-	this.Id.Walk(v)
+	this.ID.Walk(v)
 	this.StmtList.Walk(v)
 }
 
@@ -181,15 +175,15 @@ func (this *SubGraph) isStmt()  {}
 func (this *Attr) isStmt()      {}
 
 type SubGraph struct {
-	Id       Id
+	ID       ID
 	StmtList StmtList
 }
 
 func NewSubGraph(id, l Attrib) (*SubGraph, error) {
-	g := &SubGraph{Id: Id(fmt.Sprintf("anon%d", r.Int63()))}
+	g := &SubGraph{ID: ID(fmt.Sprintf("anon%d", r.Int63()))}
 	if id != nil {
-		if len(id.(Id)) > 0 {
-			g.Id = id.(Id)
+		if len(id.(ID)) > 0 {
+			g.ID = id.(ID)
 		}
 	}
 	if l != nil {
@@ -198,24 +192,20 @@ func NewSubGraph(id, l Attrib) (*SubGraph, error) {
 	return g, nil
 }
 
-func (this *SubGraph) GetId() Id {
-	return this.Id
+func (this *SubGraph) GetID() ID {
+	return this.ID
 }
 
 func (this *SubGraph) GetPort() Port {
-	port, err := NewPort(nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	return port
+	return NewPort(nil, nil)
 }
 
 func (this *SubGraph) String() string {
-	gName := this.Id.String()
+	gName := this.ID.String()
 	if strings.HasPrefix(gName, "anon") {
 		gName = ""
 	}
-	s := "subgraph " + this.Id.String() + " {\n"
+	s := "subgraph " + this.ID.String() + " {\n"
 	if this.StmtList != nil {
 		s += this.StmtList.String()
 	}
@@ -228,7 +218,7 @@ func (this *SubGraph) Walk(v Visitor) {
 		return
 	}
 	v = v.Visit(this)
-	this.Id.Walk(v)
+	this.ID.Walk(v)
 	this.StmtList.Walk(v)
 }
 
@@ -357,7 +347,7 @@ func PutMap(attrmap map[string]string) AttrList {
 	sort.Strings(keys)
 	for _, name := range keys {
 		value := attrmap[name]
-		attrlist[0] = append(attrlist[0], &Attr{Id(name), Id(value)})
+		attrlist[0] = append(attrlist[0], &Attr{ID(name), ID(value)})
 	}
 	return attrlist
 }
@@ -406,16 +396,16 @@ func (this AList) Walk(v Visitor) {
 }
 
 type Attr struct {
-	Field Id
-	Value Id
+	Field ID
+	Value ID
 }
 
 func NewAttr(f, v Attrib) (*Attr, error) {
-	a := &Attr{Field: f.(Id)}
-	a.Value = Id("true")
+	a := &Attr{Field: f.(ID)}
+	a.Value = ID("true")
 	if v != nil {
 		ok := false
-		a.Value, ok = v.(Id)
+		a.Value, ok = v.(ID)
 		if !ok {
 			return nil, errors.New(fmt.Sprintf("value = %v", v))
 		}
@@ -440,13 +430,13 @@ type Location interface {
 	Elem
 	Walkable
 	isLocation()
-	GetId() Id
+	GetID() ID
 	GetPort() Port
 	IsNode() bool
 }
 
-func (this *NodeId) isLocation()    {}
-func (this *NodeId) IsNode() bool   { return true }
+func (this *NodeID) isLocation()    {}
+func (this *NodeID) IsNode() bool   { return true }
 func (this *SubGraph) isLocation()  {}
 func (this *SubGraph) IsNode() bool { return false }
 
@@ -533,12 +523,12 @@ func (this *EdgeRH) Walk(v Visitor) {
 }
 
 type NodeStmt struct {
-	NodeId *NodeId
+	NodeID *NodeID
 	Attrs  AttrList
 }
 
 func NewNodeStmt(id, attrs Attrib) (*NodeStmt, error) {
-	nid := id.(*NodeId)
+	nid := id.(*NodeID)
 	var a AttrList = nil
 	var err error = nil
 	if attrs == nil {
@@ -553,7 +543,7 @@ func NewNodeStmt(id, attrs Attrib) (*NodeStmt, error) {
 }
 
 func (this NodeStmt) String() string {
-	return strings.TrimSpace(this.NodeId.String() + ` ` + this.Attrs.String())
+	return strings.TrimSpace(this.NodeID.String() + ` ` + this.Attrs.String())
 }
 
 func (this NodeStmt) Walk(v Visitor) {
@@ -561,7 +551,7 @@ func (this NodeStmt) Walk(v Visitor) {
 		return
 	}
 	v = v.Visit(this)
-	this.NodeId.Walk(v)
+	this.NodeID.Walk(v)
 	this.Attrs.Walk(v)
 }
 
@@ -573,13 +563,10 @@ const (
 )
 
 func (this EdgeOp) String() string {
-	switch this {
-	case DIRECTED:
+	if this == DIRECTED {
 		return "->"
-	case UNDIRECTED:
-		return "--"
 	}
-	panic("unreachable")
+	return "--"
 }
 
 func (this EdgeOp) Walk(v Visitor) {
@@ -589,75 +576,75 @@ func (this EdgeOp) Walk(v Visitor) {
 	v.Visit(this)
 }
 
-type NodeId struct {
-	Id   Id
+type NodeID struct {
+	ID   ID
 	Port Port
 }
 
-func NewNodeId(id, port Attrib) (*NodeId, error) {
+func NewNodeID(id, port Attrib) (*NodeID, error) {
 	if port == nil {
-		return &NodeId{id.(Id), Port{"", ""}}, nil
+		return &NodeID{id.(ID), Port{"", ""}}, nil
 	}
-	return &NodeId{id.(Id), port.(Port)}, nil
+	return &NodeID{id.(ID), port.(Port)}, nil
 }
 
-func MakeNodeId(id string, port string) *NodeId {
+func MakeNodeID(id string, port string) *NodeID {
 	p := Port{"", ""}
 	if len(port) > 0 {
 		ps := strings.Split(port, ":")
-		p.Id1 = Id(ps[1])
+		p.ID1 = ID(ps[1])
 		if len(ps) > 2 {
-			p.Id2 = Id(ps[2])
+			p.ID2 = ID(ps[2])
 		}
 	}
-	return &NodeId{Id(id), p}
+	return &NodeID{ID(id), p}
 }
 
-func (this *NodeId) String() string {
-	return this.Id.String() + this.Port.String()
+func (this *NodeID) String() string {
+	return this.ID.String() + this.Port.String()
 }
 
-func (this *NodeId) GetId() Id {
-	return this.Id
+func (this *NodeID) GetID() ID {
+	return this.ID
 }
 
-func (this *NodeId) GetPort() Port {
+func (this *NodeID) GetPort() Port {
 	return this.Port
 }
 
-func (this *NodeId) Walk(v Visitor) {
+func (this *NodeID) Walk(v Visitor) {
 	if v == nil {
 		return
 	}
 	v = v.Visit(this)
-	this.Id.Walk(v)
+	this.ID.Walk(v)
 	this.Port.Walk(v)
 }
 
-//TODO semantic analysis should decide which Id is an Id and which is a Compass Point
+//TODO semantic analysis should decide which ID is an ID and which is a Compass Point
 type Port struct {
-	Id1 Id
-	Id2 Id
+	ID1 ID
+	ID2 ID
 }
 
-func NewPort(id1, id2 Attrib) (Port, error) {
-	port := Port{Id(""), Id("")}
+func NewPort(id1, id2 Attrib) Port {
+	port := Port{ID(""), ID("")}
 	if id1 != nil {
-		port.Id1 = id1.(Id)
+		port.ID1 = id1.(ID)
 	}
 	if id2 != nil {
-		port.Id2 = id2.(Id)
+		port.ID2 = id2.(ID)
 	}
-	return port, nil
+	return port
 }
 
 func (this Port) String() string {
-	if len(this.Id1) == 0 {
+	if len(this.ID1) == 0 {
 		return ""
 	}
-	s := ":" + this.Id1.String()
-	if len(this.Id2) > 0 {
-		s += ":" + this.Id2.String()
+	s := ":" + this.ID1.String()
+	if len(this.ID2) > 0 {
+		s += ":" + this.ID2.String()
 	}
 	return s
 }
@@ -667,25 +654,25 @@ func (this Port) Walk(v Visitor) {
 		return
 	}
 	v = v.Visit(this)
-	this.Id1.Walk(v)
-	this.Id2.Walk(v)
+	this.ID1.Walk(v)
+	this.ID2.Walk(v)
 }
 
-type Id string
+type ID string
 
-func NewId(id Attrib) (Id, error) {
+func NewID(id Attrib) (ID, error) {
 	if id == nil {
-		return Id(""), nil
+		return ID(""), nil
 	}
 	id_lit := string(id.(*token.Token).Lit)
-	return Id(id_lit), nil
+	return ID(id_lit), nil
 }
 
-func (this Id) String() string {
+func (this ID) String() string {
 	return string(this)
 }
 
-func (this Id) Walk(v Visitor) {
+func (this ID) Walk(v Visitor) {
 	if v == nil {
 		return
 	}
