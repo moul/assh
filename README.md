@@ -540,10 +540,7 @@ includes:
 ASSHBinaryPath: ~/bin/assh  # optionally set the path of assh
 ```
 
----
-
-A *HOST* and the `defaults` section may
-
+For further inspiration, these [`assh.yml` files on public GitHub projects](https://github.com/search?utf8=%E2%9C%93&q=in%3Apath+assh.yml+extension%3Ayml&type=Code) can educate you on how people are using assh
 
 
 ## Usage
