@@ -20,7 +20,7 @@ func (daemon *Daemon) getLayerRefs(platform string) map[layer.ChainID]int {
 	layerRefs := map[layer.ChainID]int{}
 	for id, img := range tmpImages {
 		dgst := digest.Digest(id)
-		if len(daemon.stores[platform].referenceStore.References(dgst)) == 0 && len(daemon.stores[platform].imageStore.Children(id)) != 0 {
+		if len(daemon.referenceStore.References(dgst)) == 0 && len(daemon.stores[platform].imageStore.Children(id)) != 0 {
 			continue
 		}
 
@@ -99,7 +99,6 @@ func (daemon *Daemon) SystemDiskUsage(ctx context.Context) (*types.DiskUsage, er
 	for platform := range daemon.stores {
 		layerRefs := daemon.getLayerRefs(platform)
 		allLayers := daemon.stores[platform].layerStore.Map()
-		var allLayersSize int64
 		for _, l := range allLayers {
 			select {
 			case <-ctx.Done():

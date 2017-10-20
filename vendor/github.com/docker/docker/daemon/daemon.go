@@ -19,7 +19,6 @@ import (
 	"time"
 
 	containerd "github.com/containerd/containerd/api/grpc/types"
-	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/swarm"
@@ -29,7 +28,7 @@ import (
 	"github.com/docker/docker/daemon/events"
 	"github.com/docker/docker/daemon/exec"
 	"github.com/docker/docker/daemon/logger"
-	"github.com/docker/docker/opts"
+	"github.com/docker/docker/daemon/network"
 	"github.com/sirupsen/logrus"
 	// register graph drivers
 	_ "github.com/docker/docker/daemon/graphdriver/register"
@@ -42,12 +41,14 @@ import (
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/libcontainerd"
 	"github.com/docker/docker/migrate/v1"
+	"github.com/docker/docker/pkg/containerfs"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/docker/pkg/sysinfo"
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/docker/pkg/truncindex"
 	"github.com/docker/docker/plugin"
+	pluginexec "github.com/docker/docker/plugin/executor/containerd"
 	refstore "github.com/docker/docker/reference"
 	"github.com/docker/docker/registry"
 	"github.com/docker/docker/runconfig"
@@ -66,7 +67,7 @@ var (
 	// containerd if none is specified
 	DefaultRuntimeBinary = "docker-runc"
 
-	errSystemNotSupported = errors.New("The Docker daemon is not supported on this platform.")
+	errSystemNotSupported = errors.New("the Docker daemon is not supported on this platform")
 )
 
 type daemonStore struct {
@@ -75,7 +76,6 @@ type daemonStore struct {
 	imageStore                image.Store
 	layerStore                layer.Store
 	distributionMetadataStore dmetadata.Store
-	referenceStore            refstore.Store
 }
 
 // Daemon holds information about the Docker daemon.
@@ -103,7 +103,8 @@ type Daemon struct {
 	shutdown              bool
 	idMappings            *idtools.IDMappings
 	stores                map[string]daemonStore // By container target platform
-	PluginStore           *plugin.Store          // todo: remove
+	referenceStore        refstore.Store
+	PluginStore           *plugin.Store // todo: remove
 	pluginManager         *plugin.Manager
 	linkIndex             *linkIndex
 	containerd            libcontainerd.Client
@@ -123,6 +124,8 @@ type Daemon struct {
 	pruneRunning     int32
 	hosts            map[string]bool // hosts stores the addresses the daemon is listening on
 	startupDone      chan struct{}
+
+	lbAttachmentStore network.LBAttachmentStore
 }
 
 // StoreHosts stores the addresses the daemon is listening on
@@ -490,6 +493,8 @@ func (daemon *Daemon) DaemonLeavesCluster() {
 	} else {
 		logrus.Warnf("failed to initiate ingress network removal: %v", err)
 	}
+
+	daemon.lbAttachmentStore.ClearLBAttachments()
 }
 
 // setClusterProvider sets a component for querying the current cluster state.
@@ -642,12 +647,16 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	}
 	registerMetricsPluginCallback(d.PluginStore, metricsSockPath)
 
+	createPluginExec := func(m *plugin.Manager) (plugin.Executor, error) {
+		return pluginexec.New(containerdRemote, m)
+	}
+
 	// Plugin system initialization should happen before restore. Do not change order.
 	d.pluginManager, err = plugin.NewManager(plugin.ManagerConfig{
 		Root:               filepath.Join(config.Root, "plugins"),
 		ExecRoot:           getPluginExecRoot(config.Root),
 		Store:              d.PluginStore,
-		Executor:           containerdRemote,
+		CreateExecutor:     createPluginExec,
 		RegistryService:    registryService,
 		LiveRestoreEnabled: config.LiveRestoreEnabled,
 		LogPluginEvent:     d.LogPluginEvent, // todo: make private
@@ -691,7 +700,6 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	d.downloadManager = xfer.NewLayerDownloadManager(lsMap, *config.MaxConcurrentDownloads)
 	logrus.Debugf("Max Concurrent Uploads: %d", *config.MaxConcurrentUploads)
 	d.uploadManager = xfer.NewLayerUploadManager(*config.MaxConcurrentUploads)
-
 	for platform, ds := range d.stores {
 		imageRoot := filepath.Join(config.Root, "image", ds.graphDriver)
 		ifs, err := image.NewFSStoreBackend(filepath.Join(imageRoot, "imagedb"))
@@ -715,7 +723,7 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 		return nil, err
 	}
 
-	trustKey, err := api.LoadOrCreateTrustKey(config.TrustKeyPath)
+	trustKey, err := loadOrCreateTrustKey(config.TrustKeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -728,18 +736,30 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 
 	eventsService := events.New()
 
+	// We have a single tag/reference store for the daemon globally. However, it's
+	// stored under the graphdriver. On host platforms which only support a single
+	// container OS, but multiple selectable graphdrivers, this means depending on which
+	// graphdriver is chosen, the global reference store is under there. For
+	// platforms which support multiple container operating systems, this is slightly
+	// more problematic as where does the global ref store get located? Fortunately,
+	// for Windows, which is currently the only daemon supporting multiple container
+	// operating systems, the list of graphdrivers available isn't user configurable.
+	// For backwards compatibility, we just put it under the windowsfilter
+	// directory regardless.
+	refStoreLocation := filepath.Join(d.stores[runtime.GOOS].imageRoot, `repositories.json`)
+	rs, err := refstore.NewReferenceStore(refStoreLocation)
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't create reference store repository: %s", err)
+	}
+	d.referenceStore = rs
+
 	for platform, ds := range d.stores {
 		dms, err := dmetadata.NewFSMetadataStore(filepath.Join(ds.imageRoot, "distribution"), platform)
 		if err != nil {
 			return nil, err
 		}
 
-		rs, err := refstore.NewReferenceStore(filepath.Join(ds.imageRoot, "repositories.json"), platform)
-		if err != nil {
-			return nil, fmt.Errorf("Couldn't create Tag store repositories: %s", err)
-		}
 		ds.distributionMetadataStore = dms
-		ds.referenceStore = rs
 		d.stores[platform] = ds
 
 		// No content-addressability migration on Windows as it never supported pre-CA
@@ -850,7 +870,7 @@ func (daemon *Daemon) shutdownContainer(c *container.Container) error {
 
 	// Wait without timeout for the container to exit.
 	// Ignore the result.
-	_ = <-c.Wait(context.Background(), container.WaitConditionNotRunning)
+	<-c.Wait(context.Background(), container.WaitConditionNotRunning)
 	return nil
 }
 
@@ -957,11 +977,11 @@ func (daemon *Daemon) Mount(container *container.Container) error {
 	}
 	logrus.Debugf("container mounted via layerStore: %v", dir)
 
-	if container.BaseFS != dir {
+	if container.BaseFS != nil && container.BaseFS.Path() != dir.Path() {
 		// The mount path reported by the graph driver should always be trusted on Windows, since the
 		// volume path for a given mounted layer may change over time.  This should only be an error
 		// on non-Windows operating systems.
-		if container.BaseFS != "" && runtime.GOOS != "windows" {
+		if runtime.GOOS != "windows" {
 			daemon.Unmount(container)
 			return fmt.Errorf("Error: driver %s is returning inconsistent paths for container %s ('%s' then '%s')",
 				daemon.GraphDriverName(container.Platform), container.ID, container.BaseFS, dir)
@@ -1036,13 +1056,13 @@ func prepareTempDir(rootDir string, rootIDs idtools.IDPair) (string, error) {
 	return tmpDir, idtools.MkdirAllAndChown(tmpDir, 0700, rootIDs)
 }
 
-func (daemon *Daemon) setupInitLayer(initPath string) error {
+func (daemon *Daemon) setupInitLayer(initPath containerfs.ContainerFS) error {
 	rootIDs := daemon.idMappings.RootPair()
 	return initlayer.Setup(initPath, rootIDs)
 }
 
 func (daemon *Daemon) setGenericResources(conf *config.Config) error {
-	genericResources, err := opts.ParseGenericResources(conf.NodeGenericResources)
+	genericResources, err := config.ParseGenericResources(conf.NodeGenericResources)
 	if err != nil {
 		return err
 	}
@@ -1232,4 +1252,9 @@ func fixMemorySwappiness(resources *containertypes.Resources) {
 	if resources.MemorySwappiness != nil && *resources.MemorySwappiness == -1 {
 		resources.MemorySwappiness = nil
 	}
+}
+
+// GetLBAttachmentStore returns current load balancer store associated with the daemon
+func (daemon *Daemon) GetLBAttachmentStore() *network.LBAttachmentStore {
+	return &daemon.lbAttachmentStore
 }

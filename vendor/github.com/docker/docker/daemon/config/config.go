@@ -103,7 +103,6 @@ type CommonConfig struct {
 	Root                 string                    `json:"data-root,omitempty"`
 	SocketGroup          string                    `json:"group,omitempty"`
 	CorsHeaders          string                    `json:"api-cors-header,omitempty"`
-	EnableCors           bool                      `json:"api-enable-cors,omitempty"`
 
 	// TrustKeyPath is used to generate the daemon ID and for signing schema 1 manifests
 	// when pushing to a registry which does not support schema 2. This field is marked as
@@ -502,7 +501,7 @@ func Validate(config *Config) error {
 		}
 	}
 
-	if _, err := opts.ParseGenericResources(config.NodeGenericResources); err != nil {
+	if _, err := ParseGenericResources(config.NodeGenericResources); err != nil {
 		return err
 	}
 
@@ -511,6 +510,11 @@ func Validate(config *Config) error {
 		if _, ok := runtimes[defaultRuntime]; !ok {
 			return fmt.Errorf("specified default runtime '%s' does not exist", defaultRuntime)
 		}
+	}
+
+	// validate platform-specific settings
+	if err := config.ValidatePlatformConfig(); err != nil {
+		return err
 	}
 
 	return nil

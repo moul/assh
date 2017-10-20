@@ -33,9 +33,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion1
 
 type HatType int32
 
@@ -185,14 +183,14 @@ type Request struct {
 	Hat *HatType       `protobuf:"varint,4,opt,name=hat,enum=my.test.HatType,def=1" json:"hat,omitempty"`
 	//  optional imp.ImportedMessage.Owner owner = 6;
 	Deadline  *float32           `protobuf:"fixed32,7,opt,name=deadline,def=inf" json:"deadline,omitempty"`
-	Somegroup *Request_SomeGroup `protobuf:"group,8,opt,name=SomeGroup,json=somegroup" json:"somegroup,omitempty"`
+	Somegroup *Request_SomeGroup `protobuf:"group,8,opt,name=SomeGroup" json:"somegroup,omitempty"`
 	// This is a map field. It will generate map[int32]string.
-	NameMapping map[int32]string `protobuf:"bytes,14,rep,name=name_mapping,json=nameMapping" json:"name_mapping,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	NameMapping map[int32]string `protobuf:"bytes,14,rep,name=name_mapping" json:"name_mapping,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// This is a map field whose value type is a message.
-	MsgMapping map[int64]*Reply `protobuf:"bytes,15,rep,name=msg_mapping,json=msgMapping" json:"msg_mapping,omitempty" protobuf_key:"zigzag64,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	MsgMapping map[int64]*Reply `protobuf:"bytes,15,rep,name=msg_mapping" json:"msg_mapping,omitempty" protobuf_key:"zigzag64,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Reset_     *int32           `protobuf:"varint,12,opt,name=reset" json:"reset,omitempty"`
 	// This field should not conflict with any getters.
-	GetKey_          *string `protobuf:"bytes,16,opt,name=get_key,json=getKey" json:"get_key,omitempty"`
+	GetKey_          *string `protobuf:"bytes,16,opt,name=get_key" json:"get_key,omitempty"`
 	XXX_unrecognized []byte  `json:"-"`
 }
 
@@ -268,7 +266,7 @@ func (m *Request) GetGetKey_() string {
 }
 
 type Request_SomeGroup struct {
-	GroupField       *int32 `protobuf:"varint,9,opt,name=group_field,json=groupField" json:"group_field,omitempty"`
+	GroupField       *int32 `protobuf:"varint,9,opt,name=group_field" json:"group_field,omitempty"`
 	XXX_unrecognized []byte `json:"-"`
 }
 
@@ -284,10 +282,10 @@ func (m *Request_SomeGroup) GetGroupField() int32 {
 }
 
 type Reply struct {
-	Found                        []*Reply_Entry `protobuf:"bytes,1,rep,name=found" json:"found,omitempty"`
-	CompactKeys                  []int32        `protobuf:"varint,2,rep,packed,name=compact_keys,json=compactKeys" json:"compact_keys,omitempty"`
-	proto.XXX_InternalExtensions `json:"-"`
-	XXX_unrecognized             []byte `json:"-"`
+	Found            []*Reply_Entry            `protobuf:"bytes,1,rep,name=found" json:"found,omitempty"`
+	CompactKeys      []int32                   `protobuf:"varint,2,rep,packed,name=compact_keys" json:"compact_keys,omitempty"`
+	XXX_extensions   map[int32]proto.Extension `json:"-"`
+	XXX_unrecognized []byte                    `json:"-"`
 }
 
 func (m *Reply) Reset()         { *m = Reply{} }
@@ -300,6 +298,12 @@ var extRange_Reply = []proto.ExtensionRange{
 
 func (*Reply) ExtensionRangeArray() []proto.ExtensionRange {
 	return extRange_Reply
+}
+func (m *Reply) ExtensionMap() map[int32]proto.Extension {
+	if m.XXX_extensions == nil {
+		m.XXX_extensions = make(map[int32]proto.Extension)
+	}
+	return m.XXX_extensions
 }
 
 func (m *Reply) GetFound() []*Reply_Entry {
@@ -317,9 +321,9 @@ func (m *Reply) GetCompactKeys() []int32 {
 }
 
 type Reply_Entry struct {
-	KeyThatNeeds_1234Camel_CasIng *int64 `protobuf:"varint,1,req,name=key_that_needs_1234camel_CasIng,json=keyThatNeeds1234camelCasIng" json:"key_that_needs_1234camel_CasIng,omitempty"`
+	KeyThatNeeds_1234Camel_CasIng *int64 `protobuf:"varint,1,req,name=key_that_needs_1234camel_CasIng" json:"key_that_needs_1234camel_CasIng,omitempty"`
 	Value                         *int64 `protobuf:"varint,2,opt,name=value,def=7" json:"value,omitempty"`
-	XMyFieldName_2                *int64 `protobuf:"varint,3,opt,name=_my_field_name_2,json=myFieldName2" json:"_my_field_name_2,omitempty"`
+	XMyFieldName_2                *int64 `protobuf:"varint,3,opt,name=_my_field_name_2" json:"_my_field_name_2,omitempty"`
 	XXX_unrecognized              []byte `json:"-"`
 }
 
@@ -351,9 +355,9 @@ func (m *Reply_Entry) GetXMyFieldName_2() int64 {
 }
 
 type OtherBase struct {
-	Name                         *string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	proto.XXX_InternalExtensions `json:"-"`
-	XXX_unrecognized             []byte `json:"-"`
+	Name             *string                   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	XXX_extensions   map[int32]proto.Extension `json:"-"`
+	XXX_unrecognized []byte                    `json:"-"`
 }
 
 func (m *OtherBase) Reset()         { *m = OtherBase{} }
@@ -366,6 +370,12 @@ var extRange_OtherBase = []proto.ExtensionRange{
 
 func (*OtherBase) ExtensionRangeArray() []proto.ExtensionRange {
 	return extRange_OtherBase
+}
+func (m *OtherBase) ExtensionMap() map[int32]proto.Extension {
+	if m.XXX_extensions == nil {
+		m.XXX_extensions = make(map[int32]proto.Extension)
+	}
+	return m.XXX_extensions
 }
 
 func (m *OtherBase) GetName() string {
@@ -424,8 +434,8 @@ func (m *OtherReplyExtensions) GetKey() int32 {
 }
 
 type OldReply struct {
-	proto.XXX_InternalExtensions `json:"-"`
-	XXX_unrecognized             []byte `json:"-"`
+	XXX_extensions   map[int32]proto.Extension `json:"-"`
+	XXX_unrecognized []byte                    `json:"-"`
 }
 
 func (m *OldReply) Reset()         { *m = OldReply{} }
@@ -433,16 +443,16 @@ func (m *OldReply) String() string { return proto.CompactTextString(m) }
 func (*OldReply) ProtoMessage()    {}
 
 func (m *OldReply) Marshal() ([]byte, error) {
-	return proto.MarshalMessageSet(&m.XXX_InternalExtensions)
+	return proto.MarshalMessageSet(m.ExtensionMap())
 }
 func (m *OldReply) Unmarshal(buf []byte) error {
-	return proto.UnmarshalMessageSet(buf, &m.XXX_InternalExtensions)
+	return proto.UnmarshalMessageSet(buf, m.ExtensionMap())
 }
 func (m *OldReply) MarshalJSON() ([]byte, error) {
-	return proto.MarshalMessageSetJSON(&m.XXX_InternalExtensions)
+	return proto.MarshalMessageSetJSON(m.XXX_extensions)
 }
 func (m *OldReply) UnmarshalJSON(buf []byte) error {
-	return proto.UnmarshalMessageSetJSON(buf, &m.XXX_InternalExtensions)
+	return proto.UnmarshalMessageSetJSON(buf, m.XXX_extensions)
 }
 
 // ensure OldReply satisfies proto.Marshaler and proto.Unmarshaler
@@ -456,9 +466,15 @@ var extRange_OldReply = []proto.ExtensionRange{
 func (*OldReply) ExtensionRangeArray() []proto.ExtensionRange {
 	return extRange_OldReply
 }
+func (m *OldReply) ExtensionMap() map[int32]proto.Extension {
+	if m.XXX_extensions == nil {
+		m.XXX_extensions = make(map[int32]proto.Extension)
+	}
+	return m.XXX_extensions
+}
 
 type Communique struct {
-	MakeMeCry *bool `protobuf:"varint,1,opt,name=make_me_cry,json=makeMeCry" json:"make_me_cry,omitempty"`
+	MakeMeCry *bool `protobuf:"varint,1,opt,name=make_me_cry" json:"make_me_cry,omitempty"`
 	// This is a oneof, called "union".
 	//
 	// Types that are valid to be assigned to Union:
@@ -494,7 +510,7 @@ type Communique_Data struct {
 	Data []byte `protobuf:"bytes,7,opt,name=data,oneof"`
 }
 type Communique_TempC struct {
-	TempC float64 `protobuf:"fixed64,8,opt,name=temp_c,json=tempC,oneof"`
+	TempC float64 `protobuf:"fixed64,8,opt,name=temp_c,oneof"`
 }
 type Communique_Height struct {
 	Height float32 `protobuf:"fixed32,9,opt,name=height,oneof"`
@@ -512,7 +528,7 @@ type Communique_Msg struct {
 	Msg *Reply `protobuf:"bytes,13,opt,name=msg,oneof"`
 }
 type Communique_Somegroup struct {
-	Somegroup *Communique_SomeGroup `protobuf:"group,14,opt,name=SomeGroup,json=somegroup,oneof"`
+	Somegroup *Communique_SomeGroup `protobuf:"group,14,opt,name=SomeGroup,oneof"`
 }
 
 func (*Communique_Number) isCommunique_Union()    {}

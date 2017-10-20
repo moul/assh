@@ -1,14 +1,8 @@
 // Package assertions contains the implementations for all assertions which
 // are referenced in goconvey's `convey` package
-// (github.com/smartystreets/goconvey/convey) and gunit (github.com/smartystreets/gunit)
-// for use with the So(...) method.
+// (github.com/smartystreets/goconvey/convey) for use with the So(...) method.
 // They can also be used in traditional Go test functions and even in
-// applications.
-//
-// Many of the assertions lean heavily on work done by Aaron Jacobs in his excellent oglematchers library.
-// (https://github.com/jacobsa/oglematchers)
-// The ShouldResemble assertion leans heavily on work done by Daniel Jacques in his very helpful go-render library.
-// (https://github.com/luci/go-render)
+// applicaitons.
 package assertions
 
 import (
@@ -26,7 +20,7 @@ var serializer Serializer = new(noopSerializer)
 // are very helpful and can be rendered in a DIFF view. In that case, this function
 // will be called with a true value to enable the JSON serialization. By default,
 // the assertions in this package will not serializer a JSON result, making
-// standalone usage more convenient.
+// standalone ussage more convenient.
 func GoConveyMode(yes bool) {
 	if yes {
 		serializer = newSerializer()

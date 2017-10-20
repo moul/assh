@@ -4,7 +4,9 @@
 
 package agent
 
-import "testing"
+import (
+	"testing"
+)
 
 func addTestKey(t *testing.T, a Agent, keyName string) {
 	err := a.Add(AddedKey{

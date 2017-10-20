@@ -98,6 +98,8 @@ var genericMap = map[string]interface{}{
 	"htmlDateInZone": htmlDateInZone,
 	"dateInZone":     dateInZone,
 	"dateModify":     dateModify,
+	"ago":            dateAgo,
+	"toDate":         toDate,
 
 	// Strings
 	"abbrev":     abbrev,
@@ -137,6 +139,7 @@ var genericMap = map[string]interface{}{
 	"squote":    squote,
 	"cat":       cat,
 	"indent":    indent,
+	"nindent":   nindent,
 	"replace":   replace,
 	"plural":    plural,
 	"sha256sum": sha256sum,
@@ -263,10 +266,10 @@ var genericMap = map[string]interface{}{
 	"fail": func(msg string) (string, error) { return "", errors.New(msg) },
 
 	// Regex
-	"regexMatch": regexMatch,
-	"regexFindAll": regexFindAll,
-	"regexFind": regexFind,
-	"regexReplaceAll": regexReplaceAll,
+	"regexMatch":             regexMatch,
+	"regexFindAll":           regexFindAll,
+	"regexFind":              regexFind,
+	"regexReplaceAll":        regexReplaceAll,
 	"regexReplaceAllLiteral": regexReplaceAllLiteral,
-	"regexSplit": regexSplit,
+	"regexSplit":             regexSplit,
 }

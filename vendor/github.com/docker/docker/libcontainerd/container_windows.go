@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/Microsoft/hcsshim"
-	"github.com/docker/docker/pkg/system"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
@@ -26,6 +25,7 @@ type container struct {
 	// otherwise have access to the Spec
 	ociSpec specs.Spec
 
+	isWindows           bool
 	manualStopRequested bool
 	hcsContainer        hcsshim.Container
 }
@@ -44,19 +44,13 @@ func (ctr *container) newProcess(friendlyName string) *process {
 // Caller needs to lock container ID before calling this method.
 func (ctr *container) start(attachStdio StdioCallback) error {
 	var err error
-	isServicing := false
-
-	for _, option := range ctr.options {
-		if s, ok := option.(*ServicingOption); ok && s.IsServicing {
-			isServicing = true
-		}
-	}
 
 	// Start the container.  If this is a servicing container, this call will block
 	// until the container is done with the servicing execution.
 	logrus.Debugln("libcontainerd: starting container ", ctr.containerID)
 	if err = ctr.hcsContainer.Start(); err != nil {
 		logrus.Errorf("libcontainerd: failed to start container: %s", err)
+		ctr.debugGCS() // Before terminating!
 		if err := ctr.terminate(); err != nil {
 			logrus.Errorf("libcontainerd: failed to cleanup after a failed Start. %s", err)
 		} else {
@@ -65,24 +59,38 @@ func (ctr *container) start(attachStdio StdioCallback) error {
 		return err
 	}
 
+	defer ctr.debugGCS()
+
 	// Note we always tell HCS to
 	// create stdout as it's required regardless of '-i' or '-t' options, so that
 	// docker can always grab the output through logs. We also tell HCS to always
 	// create stdin, even if it's not used - it will be closed shortly. Stderr
 	// is only created if it we're not -t.
-	createProcessParms := &hcsshim.ProcessConfig{
-		EmulateConsole:   ctr.ociSpec.Process.Terminal,
-		WorkingDirectory: ctr.ociSpec.Process.Cwd,
-		CreateStdInPipe:  !isServicing,
-		CreateStdOutPipe: !isServicing,
-		CreateStdErrPipe: !ctr.ociSpec.Process.Terminal && !isServicing,
+	var (
+		emulateConsole   bool
+		createStdErrPipe bool
+	)
+	if ctr.ociSpec.Process != nil {
+		emulateConsole = ctr.ociSpec.Process.Terminal
+		createStdErrPipe = !ctr.ociSpec.Process.Terminal && !ctr.ociSpec.Windows.Servicing
 	}
-	createProcessParms.ConsoleSize[0] = uint(ctr.ociSpec.Process.ConsoleSize.Height)
-	createProcessParms.ConsoleSize[1] = uint(ctr.ociSpec.Process.ConsoleSize.Width)
+
+	createProcessParms := &hcsshim.ProcessConfig{
+		EmulateConsole:   emulateConsole,
+		WorkingDirectory: ctr.ociSpec.Process.Cwd,
+		CreateStdInPipe:  !ctr.ociSpec.Windows.Servicing,
+		CreateStdOutPipe: !ctr.ociSpec.Windows.Servicing,
+		CreateStdErrPipe: createStdErrPipe,
+	}
+
+	if ctr.ociSpec.Process != nil && ctr.ociSpec.Process.ConsoleSize != nil {
+		createProcessParms.ConsoleSize[0] = uint(ctr.ociSpec.Process.ConsoleSize.Height)
+		createProcessParms.ConsoleSize[1] = uint(ctr.ociSpec.Process.ConsoleSize.Width)
+	}
 
 	// Configure the environment for the process
 	createProcessParms.Environment = setupEnvironmentVariables(ctr.ociSpec.Process.Env)
-	if ctr.ociSpec.Platform.OS == "windows" {
+	if ctr.isWindows {
 		createProcessParms.CommandLine = strings.Join(ctr.ociSpec.Process.Args, " ")
 	} else {
 		createProcessParms.CommandArgs = ctr.ociSpec.Process.Args
@@ -90,7 +98,7 @@ func (ctr *container) start(attachStdio StdioCallback) error {
 	createProcessParms.User = ctr.ociSpec.Process.User.Username
 
 	// LCOW requires the raw OCI spec passed through HCS and onwards to GCS for the utility VM.
-	if system.LCOWSupported() && ctr.ociSpec.Platform.OS == "linux" {
+	if !ctr.isWindows {
 		ociBuf, err := json.Marshal(ctr.ociSpec)
 		if err != nil {
 			return err
@@ -119,7 +127,7 @@ func (ctr *container) start(attachStdio StdioCallback) error {
 
 	// If this is a servicing container, wait on the process synchronously here and
 	// if it succeeds, wait for it cleanly shutdown and merge into the parent container.
-	if isServicing {
+	if ctr.ociSpec.Windows.Servicing {
 		exitCode := ctr.waitProcessExitCode(&ctr.process)
 
 		if exitCode != 0 {
@@ -245,7 +253,7 @@ func (ctr *container) waitExit(process *process, isFirstProcessToStart bool) err
 		si.State = StateExitProcess
 	} else {
 		// Pending updates is only applicable for WCOW
-		if ctr.ociSpec.Platform.OS == "windows" {
+		if ctr.isWindows {
 			updatePending, err := ctr.hcsContainer.HasPendingUpdates()
 			if err != nil {
 				logrus.Warnf("libcontainerd: HasPendingUpdates() failed (container may have been killed): %s", err)

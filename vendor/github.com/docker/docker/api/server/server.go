@@ -2,12 +2,10 @@ package server
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
 
-	"github.com/docker/docker/api/errors"
 	"github.com/docker/docker/api/server/httputils"
 	"github.com/docker/docker/api/server/middleware"
 	"github.com/docker/docker/api/server/router"
@@ -25,7 +23,6 @@ const versionMatcher = "/v{version:[0-9.]+}"
 // Config provides the configuration for the API server
 type Config struct {
 	Logging     bool
-	EnableCors  bool
 	CorsHeaders string
 	Version     string
 	SocketGroup string
@@ -158,6 +155,14 @@ func (s *Server) InitRouter(routers ...router.Router) {
 	}
 }
 
+type pageNotFoundError struct{}
+
+func (pageNotFoundError) Error() string {
+	return "page not found"
+}
+
+func (pageNotFoundError) NotFound() {}
+
 // createMux initializes the main router the server uses.
 func (s *Server) createMux() *mux.Router {
 	m := mux.NewRouter()
@@ -180,8 +185,7 @@ func (s *Server) createMux() *mux.Router {
 		m.Path("/debug" + r.Path()).Handler(f)
 	}
 
-	err := errors.NewRequestNotFoundError(fmt.Errorf("page not found"))
-	notFoundHandler := httputils.MakeErrorHandler(err)
+	notFoundHandler := httputils.MakeErrorHandler(pageNotFoundError{})
 	m.HandleFunc(versionMatcher+"/{path:.*}", notFoundHandler)
 	m.NotFoundHandler = notFoundHandler
 
