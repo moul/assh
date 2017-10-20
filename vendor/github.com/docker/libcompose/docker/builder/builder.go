@@ -42,6 +42,7 @@ type DaemonBuilder struct {
 	ForceRemove      bool
 	Pull             bool
 	BuildArgs        map[string]*string
+	CacheFrom        []string
 	LoggerFactory    logger.Factory
 }
 
@@ -96,6 +97,7 @@ func (d *DaemonBuilder) Build(ctx context.Context, imageName string) error {
 		Dockerfile:  d.Dockerfile,
 		AuthConfigs: d.AuthConfigs,
 		BuildArgs:   d.BuildArgs,
+		CacheFrom:   d.CacheFrom,
 	})
 	if err != nil {
 		return err

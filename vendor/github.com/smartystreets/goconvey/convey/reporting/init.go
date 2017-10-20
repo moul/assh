@@ -1,13 +1,14 @@
 package reporting
 
 import (
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
 )
 
 func init() {
-	if !isColorableTerminal() {
+	if !isXterm() {
 		monochrome()
 	}
 
@@ -42,7 +43,7 @@ func BuildSilentReporter() Reporter {
 	out := NewPrinter(NewConsole())
 	return NewReporters(
 		NewGoTestReporter(),
-		NewSilentProblemReporter(out))
+		NewProblemReporter(out))
 }
 
 var (
@@ -82,8 +83,10 @@ func monochrome() {
 	greenColor, yellowColor, redColor, resetColor = "", "", "", ""
 }
 
-func isColorableTerminal() bool {
-	return strings.Contains(os.Getenv("TERM"), "color")
+func isXterm() bool {
+	env := fmt.Sprintf("%v", os.Environ())
+	return strings.Contains(env, " TERM=isXterm") ||
+		strings.Contains(env, " TERM=xterm")
 }
 
 // This interface allows us to pass the *testing.T struct

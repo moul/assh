@@ -21,7 +21,6 @@ import (
 	dclient "github.com/docker/docker/client"
 	"github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/ioutils"
-	"github.com/docker/docker/pkg/testutil"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
 	"github.com/pkg/errors"
@@ -130,7 +129,11 @@ func New(host, endpoint string, modifiers ...func(*http.Request) error) (*http.R
 		return nil, fmt.Errorf("could not create new request: %v", err)
 	}
 
-	req.URL.Scheme = "http"
+	if os.Getenv("DOCKER_TLS_VERIFY") != "" {
+		req.URL.Scheme = "https"
+	} else {
+		req.URL.Scheme = "http"
+	}
 	req.URL.Host = addr
 
 	for _, config := range modifiers {
@@ -166,7 +169,11 @@ func NewHTTPClient(host string) (*http.Client, error) {
 
 // NewClient returns a new Docker API client
 func NewClient() (dclient.APIClient, error) {
-	host := DaemonHost()
+	return NewClientForHost(DaemonHost())
+}
+
+// NewClientForHost returns a Docker API client for the host
+func NewClientForHost(host string) (dclient.APIClient, error) {
 	httpClient, err := NewHTTPClient(host)
 	if err != nil {
 		return nil, err
@@ -214,8 +221,14 @@ func SockRequest(method, endpoint string, data interface{}, daemon string, modif
 	if err != nil {
 		return -1, nil, err
 	}
-	b, err := testutil.ReadBody(body)
+	b, err := ReadBody(body)
 	return res.StatusCode, b, err
+}
+
+// ReadBody read the specified ReadCloser content and returns it
+func ReadBody(b io.ReadCloser) ([]byte, error) {
+	defer b.Close()
+	return ioutil.ReadAll(b)
 }
 
 // SockRequestRaw create a request against the specified host (with method, endpoint and other request modifier) and
@@ -309,4 +322,36 @@ func DaemonHost() string {
 		daemonURLStr = daemonHostVar
 	}
 	return daemonURLStr
+}
+
+// NewEnvClientWithVersion returns a docker client with a specified version.
+// See: github.com/docker/docker/client `NewEnvClient()`
+func NewEnvClientWithVersion(version string) (*dclient.Client, error) {
+	if version == "" {
+		return nil, errors.New("version not specified")
+	}
+
+	var httpClient *http.Client
+	if os.Getenv("DOCKER_CERT_PATH") != "" {
+		tlsConfig, err := getTLSConfig()
+		if err != nil {
+			return nil, err
+		}
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: tlsConfig,
+			},
+		}
+	}
+
+	host := os.Getenv("DOCKER_HOST")
+	if host == "" {
+		host = dclient.DefaultDockerHost
+	}
+
+	cli, err := dclient.NewClient(host, version, httpClient, nil)
+	if err != nil {
+		return cli, err
+	}
+	return cli, nil
 }

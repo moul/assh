@@ -1,16 +1,9 @@
 package ansi
 
-import (
-	"fmt"
-	"sort"
-
-	colorable "github.com/mattn/go-colorable"
-)
-
 // PrintStyles prints all style combinations to the terminal.
 func PrintStyles() {
-	// for compatibility with Windows, not needed for *nix
-	stdout := colorable.NewColorableStdout()
+	oldPlain := plain
+	plain = false
 
 	bgColors := []string{
 		"",
@@ -23,22 +16,14 @@ func PrintStyles() {
 		":cyan",
 		":white",
 	}
-
-	keys := make([]string, 0, len(Colors))
-	for k := range Colors {
-		keys = append(keys, k)
-	}
-
-	sort.Sort(sort.StringSlice(keys))
-
-	for _, fg := range keys {
+	for fg := range Colors {
 		for _, bg := range bgColors {
-			fmt.Fprintln(stdout, padColor(fg, []string{"" + bg, "+b" + bg, "+bh" + bg, "+u" + bg}))
-			fmt.Fprintln(stdout, padColor(fg, []string{"+s" + bg, "+i" + bg}))
-			fmt.Fprintln(stdout, padColor(fg, []string{"+uh" + bg, "+B" + bg, "+Bb" + bg /* backgrounds */, "" + bg + "+h"}))
-			fmt.Fprintln(stdout, padColor(fg, []string{"+b" + bg + "+h", "+bh" + bg + "+h", "+u" + bg + "+h", "+uh" + bg + "+h"}))
+			println(padColor(fg, []string{"" + bg, "+b" + bg, "+bh" + bg, "+u" + bg}))
+			println(padColor(fg, []string{"+uh" + bg, "+B" + bg, "+Bb" + bg /* backgrounds */, "" + bg + "+h"}))
+			println(padColor(fg, []string{"+b" + bg + "+h", "+bh" + bg + "+h", "+u" + bg + "+h", "+uh" + bg + "+h"}))
 		}
 	}
+	plain = oldPlain
 }
 
 func pad(s string, length int) string {
@@ -48,10 +33,10 @@ func pad(s string, length int) string {
 	return s
 }
 
-func padColor(color string, styles []string) string {
+func padColor(s string, styles []string) string {
 	buffer := ""
 	for _, style := range styles {
-		buffer += Color(pad(color+style, 20), color+style)
+		buffer += Color(pad(s+style, 20), s+style)
 	}
 	return buffer
 }

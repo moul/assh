@@ -41,8 +41,8 @@ type containerAdapter struct {
 	dependencies exec.DependencyGetter
 }
 
-func newContainerAdapter(b executorpkg.Backend, task *api.Task, dependencies exec.DependencyGetter) (*containerAdapter, error) {
-	ctnr, err := newContainerConfig(task)
+func newContainerAdapter(b executorpkg.Backend, task *api.Task, node *api.NodeDescription, dependencies exec.DependencyGetter) (*containerAdapter, error) {
+	ctnr, err := newContainerConfig(task, node)
 	if err != nil {
 		return nil, err
 	}
@@ -451,7 +451,7 @@ func (c *containerAdapter) logs(ctx context.Context, options api.LogSubscription
 			}
 		}
 	}
-	msgs, err := c.backend.ContainerLogs(ctx, c.container.name(), apiOptions)
+	msgs, _, err := c.backend.ContainerLogs(ctx, c.container.name(), apiOptions)
 	if err != nil {
 		return nil, err
 	}

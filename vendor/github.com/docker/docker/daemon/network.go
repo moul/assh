@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	apierrors "github.com/docker/docker/api/errors"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
 	clustertypes "github.com/docker/docker/daemon/cluster/provider"
@@ -57,10 +56,10 @@ func (daemon *Daemon) GetNetworkByID(partialID string) (libnetwork.Network, erro
 	list := daemon.GetNetworksByID(partialID)
 
 	if len(list) == 0 {
-		return nil, libnetwork.ErrNoSuchNetwork(partialID)
+		return nil, errors.WithStack(networkNotFound(partialID))
 	}
 	if len(list) > 1 {
-		return nil, libnetwork.ErrInvalidID(partialID)
+		return nil, errors.WithStack(invalidIdentifier(partialID))
 	}
 	return list[0], nil
 }
@@ -116,6 +115,7 @@ var (
 func (daemon *Daemon) startIngressWorker() {
 	ingressJobsChannel = make(chan *ingressJob, 100)
 	go func() {
+		// nolint: gosimple
 		for {
 			select {
 			case r := <-ingressJobsChannel:
@@ -182,27 +182,8 @@ func (daemon *Daemon) setupIngress(create *clustertypes.NetworkCreateRequest, ip
 		logrus.Errorf("Failed getting ingress network by id after creating: %v", err)
 	}
 
-	sb, err := controller.NewSandbox("ingress-sbox", libnetwork.OptionIngress())
-	if err != nil {
-		if _, ok := err.(networktypes.ForbiddenError); !ok {
-			logrus.Errorf("Failed creating ingress sandbox: %v", err)
-		}
-		return
-	}
-
-	ep, err := n.CreateEndpoint("ingress-endpoint", libnetwork.CreateOptionIpam(ip, nil, nil, nil))
-	if err != nil {
-		logrus.Errorf("Failed creating ingress endpoint: %v", err)
-		return
-	}
-
-	if err := ep.Join(sb, nil); err != nil {
-		logrus.Errorf("Failed joining ingress sandbox to ingress endpoint: %v", err)
-		return
-	}
-
-	if err := sb.EnableService(); err != nil {
-		logrus.Errorf("Failed enabling service for ingress sandbox")
+	if err = daemon.createLoadBalancerSandbox("ingress", create.ID, ip, n, libnetwork.OptionIngress()); err != nil {
+		logrus.Errorf("Failed creating load balancer sandbox for ingress network: %v", err)
 	}
 }
 
@@ -233,7 +214,6 @@ func (daemon *Daemon) releaseIngress(id string) {
 		logrus.Errorf("Failed to delete ingress network %s: %v", n.ID(), err)
 		return
 	}
-	return
 }
 
 // SetNetworkBootstrapKeys sets the bootstrap keys.
@@ -284,10 +264,38 @@ func (daemon *Daemon) CreateNetwork(create types.NetworkCreateRequest) (*types.N
 	return resp, err
 }
 
+func (daemon *Daemon) createLoadBalancerSandbox(prefix, id string, ip net.IP, n libnetwork.Network, options ...libnetwork.SandboxOption) error {
+	c := daemon.netController
+	sandboxName := prefix + "-sbox"
+	sb, err := c.NewSandbox(sandboxName, options...)
+	if err != nil {
+		if _, ok := err.(networktypes.ForbiddenError); !ok {
+			return errors.Wrapf(err, "Failed creating %s sandbox", sandboxName)
+		}
+		return nil
+	}
+
+	endpointName := prefix + "-endpoint"
+	ep, err := n.CreateEndpoint(endpointName, libnetwork.CreateOptionIpam(ip, nil, nil, nil), libnetwork.CreateOptionLoadBalancer())
+	if err != nil {
+		return errors.Wrapf(err, "Failed creating %s in sandbox %s", endpointName, sandboxName)
+	}
+
+	if err := ep.Join(sb, nil); err != nil {
+		return errors.Wrapf(err, "Failed joining %s to sandbox %s", endpointName, sandboxName)
+	}
+
+	if err := sb.EnableService(); err != nil {
+		return errors.Wrapf(err, "Failed enabling service in %s sandbox", sandboxName)
+	}
+
+	return nil
+}
+
 func (daemon *Daemon) createNetwork(create types.NetworkCreateRequest, id string, agent bool) (*types.NetworkCreateResponse, error) {
 	if runconfig.IsPreDefinedNetwork(create.Name) && !agent {
 		err := fmt.Errorf("%s is a pre-defined network and cannot be created", create.Name)
-		return nil, apierrors.NewRequestForbiddenError(err)
+		return nil, notAllowedError{err}
 	}
 
 	var warning string
@@ -349,6 +357,7 @@ func (daemon *Daemon) createNetwork(create types.NetworkCreateRequest, id string
 	n, err := c.NewNetwork(driver, create.Name, id, nwOptions...)
 	if err != nil {
 		if _, ok := err.(libnetwork.ErrDataStoreNotInitialized); ok {
+			// nolint: golint
 			return nil, errors.New("This node is not a swarm manager. Use \"docker swarm init\" or \"docker swarm join\" to connect this node to swarm and try again.")
 		}
 		return nil, err
@@ -359,6 +368,18 @@ func (daemon *Daemon) createNetwork(create types.NetworkCreateRequest, id string
 		daemon.pluginRefCount(create.IPAM.Driver, ipamapi.PluginEndpointType, plugingetter.Acquire)
 	}
 	daemon.LogNetworkEvent(n, "create")
+
+	if agent && !n.Info().Ingress() && n.Type() == "overlay" {
+		nodeIP, exists := daemon.GetLBAttachmentStore().GetLBIPForNetwork(id)
+		if !exists {
+			return nil, fmt.Errorf("Failed to find a load balancer IP to use for network: %v", id)
+		}
+
+		if err := daemon.createLoadBalancerSandbox(create.Name, id, nodeIP, n); err != nil {
+			return nil, err
+		}
+
+	}
 
 	return &types.NetworkCreateResponse{
 		ID:      n.ID(),
@@ -496,6 +517,31 @@ func (daemon *Daemon) DeleteNetwork(networkID string) error {
 	return daemon.deleteNetwork(networkID, false)
 }
 
+func (daemon *Daemon) deleteLoadBalancerSandbox(n libnetwork.Network) {
+	controller := daemon.netController
+
+	//The only endpoint left should be the LB endpoint (nw.Name() + "-endpoint")
+	endpoints := n.Endpoints()
+	if len(endpoints) == 1 {
+		sandboxName := n.Name() + "-sbox"
+
+		if err := endpoints[0].Info().Sandbox().DisableService(); err != nil {
+			logrus.Errorf("Failed to disable service on sandbox %s: %v", sandboxName, err)
+			//Ignore error and attempt to delete the load balancer endpoint
+		}
+
+		if err := endpoints[0].Delete(true); err != nil {
+			logrus.Errorf("Failed to delete endpoint %s (%s) in %s: %v", endpoints[0].Name(), endpoints[0].ID(), sandboxName, err)
+			//Ignore error and attempt to delete the sandbox.
+		}
+
+		if err := controller.SandboxDestroy(sandboxName); err != nil {
+			logrus.Errorf("Failed to delete %s sandbox: %v", sandboxName, err)
+			//Ignore error and attempt to delete the network.
+		}
+	}
+}
+
 func (daemon *Daemon) deleteNetwork(networkID string, dynamic bool) error {
 	nw, err := daemon.FindNetwork(networkID)
 	if err != nil {
@@ -504,7 +550,7 @@ func (daemon *Daemon) deleteNetwork(networkID string, dynamic bool) error {
 
 	if runconfig.IsPreDefinedNetwork(nw.Name()) && !dynamic {
 		err := fmt.Errorf("%s is a pre-defined network and cannot be removed", nw.Name())
-		return apierrors.NewRequestForbiddenError(err)
+		return notAllowedError{err}
 	}
 
 	if dynamic && !nw.Info().Dynamic() {
@@ -514,7 +560,11 @@ func (daemon *Daemon) deleteNetwork(networkID string, dynamic bool) error {
 			return nil
 		}
 		err := fmt.Errorf("%s is not a dynamic network", nw.Name())
-		return apierrors.NewRequestForbiddenError(err)
+		return notAllowedError{err}
+	}
+
+	if !nw.Info().Ingress() && nw.Type() == "overlay" {
+		daemon.deleteLoadBalancerSandbox(nw)
 	}
 
 	if err := nw.Delete(); err != nil {
