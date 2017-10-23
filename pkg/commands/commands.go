@@ -45,6 +45,16 @@ var Commands = []cli.Command{
 			},
 		},
 	},
+	{
+		Name:   "ping",
+		Action: cmdPing,
+		Flags: []cli.Flag{
+			cli.IntFlag{
+				Name:  "port, p",
+				Usage: "SSH destination port",
+			},
+		},
+	},
 	/*
 		{
 			Name:        "info",
