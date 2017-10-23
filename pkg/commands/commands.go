@@ -47,6 +47,7 @@ var Commands = []cli.Command{
 	},
 	{
 		Name:   "ping",
+		Usage:  "Send packets to the SSH server and display statistics",
 		Action: cmdPing,
 		Flags: []cli.Flag{
 			cli.IntFlag{
