@@ -53,6 +53,10 @@ var Commands = []cli.Command{
 				Name:  "port, p",
 				Usage: "SSH destination port",
 			},
+			cli.UintFlag{
+				Name:  "count, c",
+				Usage: "Stop after sending 'count' packets.",
+			},
 		},
 	},
 	/*
