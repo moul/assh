@@ -66,6 +66,11 @@ var Commands = []cli.Command{
 				Name:  "o",
 				Usage: "Exit successfully after receiving one reply packet",
 			},
+			cli.Float64Flag{
+				Name:  "waittime, W",
+				Usage: "Time in seconds to wait for a reply for each packet sent",
+				Value: 1,
+			},
 		},
 	},
 	/*
