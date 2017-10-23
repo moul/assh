@@ -55,7 +55,12 @@ var Commands = []cli.Command{
 			},
 			cli.UintFlag{
 				Name:  "count, c",
-				Usage: "Stop after sending 'count' packets.",
+				Usage: "Stop after sending 'count' packets",
+			},
+			cli.Float64Flag{
+				Name:  "wait, i",
+				Usage: "Wait 'wait' seconds between sending each packet",
+				Value: 1,
 			},
 		},
 	},
