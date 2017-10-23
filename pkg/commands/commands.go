@@ -62,6 +62,10 @@ var Commands = []cli.Command{
 				Usage: "Wait 'wait' seconds between sending each packet",
 				Value: 1,
 			},
+			cli.BoolFlag{
+				Name:  "o",
+				Usage: "Exit successfully after receiving one reply packet",
+			},
 		},
 	},
 	/*

@@ -71,6 +71,9 @@ func cmdPing(c *cli.Context) error {
 		if err == nil {
 			receivedPackets++
 			fmt.Printf("Connected to %s: seq=%d time=%v protocol=%s port=%s\n", host.HostName, seq, duration, proto, host.Port)
+			if c.Bool("o") {
+				goto stats
+			}
 		} else {
 			// FIXME: switch on error type
 			fmt.Printf("Request timeout for seq %d (%v)\n", seq, err)
@@ -79,6 +82,7 @@ func cmdPing(c *cli.Context) error {
 
 	// FIXME: catch Ctrl+C
 
+stats:
 	fmt.Printf("\n--- %s assh ping statistics ---\n", target)
 	packetLossRatio := float64(transmittedPackets-receivedPackets) / float64(transmittedPackets) * 100
 	fmt.Printf("%d packets transmitted, %d packets received, %.2f%% packet loss\n", transmittedPackets, receivedPackets, packetLossRatio)
