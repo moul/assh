@@ -55,7 +55,7 @@ func cmdPing(c *cli.Context) error {
 			time.Sleep(time.Duration(c.Float64("wait")) * time.Second)
 		}
 		start := time.Now()
-		conn, err := net.DialTimeout(proto, dest, time.Second)
+		conn, err := net.DialTimeout(proto, dest, time.Second*time.Duration(c.Float64("waittime")))
 		transmittedPackets++
 		duration := time.Now().Sub(start)
 		totalRoundtrip += duration
