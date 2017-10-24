@@ -829,6 +829,12 @@ Host *
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.7.0...master)
+
 ### v2.7.0 (2017-10-24)
 
 * Automatically detect available shell when using the 'exec' hook ([#254](https://github.com/moul/advanced-ssh-config/issues/254))
