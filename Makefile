@@ -89,5 +89,16 @@ release:
 	GOOS=linux   GOARCH=arm   go build -i -v -o .release/assh_linux_arm     ./cmd/assh
 	GOOS=openbsd GOARCH=amd64 go build -i -v -o .release/assh_openbsd_amd64 ./cmd/assh
 	GOOS=openbsd GOARCH=386   go build -i -v -o .release/assh_openbsd_386   ./cmd/assh
-	GOOS=darwin GOARCH=amd64  go build -i -v -o .release/assh_darwin_amd64  ./cmd/assh
-	GOOS=darwin GOARCH=386    go build -i -v -o .release/assh_darwin_386    ./cmd/assh
+	GOOS=openbsd GOARCH=arm   go build -i -v -o .release/assh_openbsd_arm   ./cmd/assh
+	GOOS=darwin  GOARCH=amd64 go build -i -v -o .release/assh_darwin_amd64  ./cmd/assh
+	GOOS=darwin  GOARCH=386   go build -i -v -o .release/assh_darwin_386    ./cmd/assh
+	#GOOS=darwin  GOARCH=arm   go build -i -v -o .release/assh_darwin_arm    ./cmd/assh
+	GOOS=netbsd  GOARCH=amd64 go build -i -v -o .release/assh_netbsd_amd64  ./cmd/assh
+	GOOS=netbsd  GOARCH=386   go build -i -v -o .release/assh_netbsd_386    ./cmd/assh
+	GOOS=netbsd  GOARCH=arm   go build -i -v -o .release/assh_netbsd_arm    ./cmd/assh
+	GOOS=freebsd GOARCH=amd64 go build -i -v -o .release/assh_freebsd_amd64 ./cmd/assh
+	GOOS=freebsd GOARCH=386   go build -i -v -o .release/assh_freebsd_386   ./cmd/assh
+	GOOS=freebsd GOARCH=arm   go build -i -v -o .release/assh_freebsd_arm   ./cmd/assh
+	GOOS=windows GOARCH=amd64 go build -i -v -o .release/assh_windows_amd64.exe ./cmd/assh
+	GOOS=windows GOARCH=386   go build -i -v -o .release/assh_windows_386.exe   ./cmd/assh
+	#GOOS=windows GOARCH=arm   go build -i -v -o .release/assh_windows_arm.exe   ./cmd/assh
