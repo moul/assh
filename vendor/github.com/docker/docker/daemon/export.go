@@ -13,13 +13,13 @@ import (
 // ContainerExport writes the contents of the container to the given
 // writer. An error is returned if the container cannot be found.
 func (daemon *Daemon) ContainerExport(name string, out io.Writer) error {
-	if runtime.GOOS == "windows" {
-		return fmt.Errorf("the daemon on this platform does not support export of a container")
-	}
-
 	container, err := daemon.GetContainer(name)
 	if err != nil {
 		return err
+	}
+
+	if runtime.GOOS == "windows" && container.Platform == "windows" {
+		return fmt.Errorf("the daemon on this platform does not support exporting Windows containers")
 	}
 
 	data, err := daemon.containerExport(container)
@@ -40,7 +40,7 @@ func (daemon *Daemon) containerExport(container *container.Container) (io.ReadCl
 		return nil, err
 	}
 
-	archive, err := archive.TarWithOptions(container.BaseFS, &archive.TarOptions{
+	archive, err := archivePath(container.BaseFS, container.BaseFS.Path(), &archive.TarOptions{
 		Compression: archive.Uncompressed,
 		UIDMaps:     daemon.idMappings.UIDs(),
 		GIDMaps:     daemon.idMappings.GIDs(),

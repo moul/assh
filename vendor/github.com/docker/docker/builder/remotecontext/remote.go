@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"net/url"
 	"regexp"
 
 	"github.com/docker/docker/builder"
@@ -68,20 +70,37 @@ func MakeRemoteContext(remoteURL string, contentTypeHandlers map[string]func(io.
 
 // GetWithStatusError does an http.Get() and returns an error if the
 // status code is 4xx or 5xx.
-func GetWithStatusError(url string) (resp *http.Response, err error) {
-	if resp, err = http.Get(url); err != nil {
-		return nil, err
+func GetWithStatusError(address string) (resp *http.Response, err error) {
+	if resp, err = http.Get(address); err != nil {
+		if uerr, ok := err.(*url.Error); ok {
+			if derr, ok := uerr.Err.(*net.DNSError); ok && !derr.IsTimeout {
+				return nil, dnsError{err}
+			}
+		}
+		return nil, systemError{err}
 	}
 	if resp.StatusCode < 400 {
 		return resp, nil
 	}
-	msg := fmt.Sprintf("failed to GET %s with status %s", url, resp.Status)
+	msg := fmt.Sprintf("failed to GET %s with status %s", address, resp.Status)
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return nil, errors.Wrapf(err, msg+": error reading body")
+		return nil, errors.Wrap(systemError{err}, msg+": error reading body")
 	}
-	return nil, errors.Errorf(msg+": %s", bytes.TrimSpace(body))
+
+	msg += ": " + string(bytes.TrimSpace(body))
+	switch resp.StatusCode {
+	case http.StatusNotFound:
+		return nil, notFoundError(msg)
+	case http.StatusBadRequest:
+		return nil, requestError(msg)
+	case http.StatusUnauthorized:
+		return nil, unauthorizedError(msg)
+	case http.StatusForbidden:
+		return nil, forbiddenError(msg)
+	}
+	return nil, unknownError{errors.New(msg)}
 }
 
 // inspectResponse looks into the http response data at r to determine whether its
@@ -91,19 +110,19 @@ func GetWithStatusError(url string) (resp *http.Response, err error) {
 //    - an io.Reader for the response body
 //    - an error value which will be non-nil either when something goes wrong while
 //      reading bytes from r or when the detected content-type is not acceptable.
-func inspectResponse(ct string, r io.ReadCloser, clen int64) (string, io.ReadCloser, error) {
+func inspectResponse(ct string, r io.Reader, clen int64) (string, io.ReadCloser, error) {
 	plen := clen
 	if plen <= 0 || plen > maxPreambleLength {
 		plen = maxPreambleLength
 	}
 
-	preamble := make([]byte, plen, plen)
+	preamble := make([]byte, plen)
 	rlen, err := r.Read(preamble)
 	if rlen == 0 {
-		return ct, r, errors.New("empty response")
+		return ct, ioutil.NopCloser(r), errors.New("empty response")
 	}
 	if err != nil && err != io.EOF {
-		return ct, r, err
+		return ct, ioutil.NopCloser(r), err
 	}
 
 	preambleR := bytes.NewReader(preamble[:rlen])

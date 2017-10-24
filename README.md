@@ -561,6 +561,7 @@ AUTHOR(S):
    Manfred Touron <https://github.com/moul/advanced-ssh-config>
 
 COMMANDS:
+   ping          Send packets to the SSH server and display statistics
    info          Display system-wide information
    config        Manage ssh and assh configuration
    sockets       Manage control sockets
@@ -713,6 +714,23 @@ Create a master control sockets.
 $ assh sockets master
 ```
 
+#### `assh ping`
+
+Send packets to the SSH server and display stats.
+
+```console
+$ assh ping -c 4 localhost
+PING localhost (127.0.0.1) PORT 22 (ssh) PROTO tcp
+Connected to 127.0.0.1: seq=0 time=321µs protocol=tcp port=22
+Connected to 127.0.0.1: seq=1 time=501µs protocol=tcp port=22
+Connected to 127.0.0.1: seq=2 time=550µs protocol=tcp port=22
+Connected to 127.0.0.1: seq=3 time=641µs protocol=tcp port=22
+
+--- localhost assh ping statistics ---
+4 packets transmitted, 4 packets received, 0.00% packet loss
+round-trip min/avg/max = 321µs/503.25µs/641µs
+```
+
 ## Install
 
 Get the latest version using GO (recommended way):
@@ -827,6 +845,7 @@ Host *
 * Add possibility to disable automatic configuration rewrite ([#239](https://github.com/moul/advanced-ssh-config/issues/239))
 * Add `BeforeConfigWrite` and `AfterConfigWrite` new hooks ([#239](https://github.com/moul/advanced-ssh-config/issues/239))
 * Generate full assh binary path in ~/.ssh/config ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
+* Initial version of `assh ping` command
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.6.0...master)
 

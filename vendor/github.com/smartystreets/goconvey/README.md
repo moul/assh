@@ -27,7 +27,7 @@ You can ask questions about how to use GoConvey on [StackOverflow](http://stacko
 - [Quick start](#quick-start)
 - [Documentation](#documentation)
 - [Screenshots](#screenshots)
-- [Contributors](#contributors)
+- [Contributors](#contributors-thanks)
 
 
 
@@ -105,6 +105,7 @@ Or if you want the output to include the story:
 
 
 [Documentation](https://github.com/smartystreets/goconvey/wiki)
+
 -----------
 
 Check out the
@@ -114,11 +115,12 @@ Check out the
 - and the *_test.go files scattered throughout this project.
 
 [Screenshots](http://goconvey.co)
+
 -----------
 
 For web UI and terminal screenshots, check out [the full feature tour](http://goconvey.co).
 
-Contributors
+
 ----------------------
 
 GoConvey is brought to you by [SmartyStreets](https://github.com/smartystreets) and [several contributors](https://github.com/smartystreets/goconvey/graphs/contributors) (Thanks!).

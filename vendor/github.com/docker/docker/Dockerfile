@@ -9,7 +9,7 @@
 # docker run -v `pwd`:/go/src/github.com/docker/docker --privileged -i -t docker bash
 #
 # # Run the test suite:
-# docker run -e DOCKER_GITCOMMIT=foo --privileged docker hack/make.sh test-unit test-integration-cli test-docker-py
+# docker run -e DOCKER_GITCOMMIT=foo --privileged docker hack/make.sh test-unit test-integration test-docker-py
 #
 # # Publish a release:
 # docker run --privileged \
@@ -23,7 +23,7 @@
 # the case. Therefore, you don't have to disable it anymore.
 #
 
-FROM debian:jessie
+FROM debian:stretch
 
 # allow replacing httpredir or deb mirror
 ARG APT_MIRROR=deb.debian.org
@@ -51,42 +51,34 @@ RUN apt-get update && apt-get install -y \
 	less \
 	libapparmor-dev \
 	libcap-dev \
+	libdevmapper-dev \
 	libnl-3-dev \
 	libprotobuf-c0-dev \
 	libprotobuf-dev \
-	libsystemd-journal-dev \
+	libsystemd-dev \
 	libtool \
+	libudev-dev \
 	mercurial \
 	net-tools \
 	pkg-config \
 	protobuf-compiler \
 	protobuf-c-compiler \
+	python-backports.ssl-match-hostname \
 	python-dev \
 	python-mock \
 	python-pip \
+	python-requests \
+	python-setuptools \
 	python-websocket \
+	python-wheel \
 	tar \
+	thin-provisioning-tools \
 	vim \
 	vim-common \
 	xfsprogs \
 	zip \
 	--no-install-recommends \
 	&& pip install awscli==1.10.15
-# Get lvm2 source for compiling statically
-ENV LVM2_VERSION 2.02.103
-RUN mkdir -p /usr/local/lvm2 \
-	&& curl -fsSL "https://mirrors.kernel.org/sourceware/lvm2/LVM2.${LVM2_VERSION}.tgz" \
-		| tar -xzC /usr/local/lvm2 --strip-components=1
-# See https://git.fedorahosted.org/cgit/lvm2.git/refs/tags for release tags
-
-# Compile and install lvm2
-RUN cd /usr/local/lvm2 \
-	&& ./configure \
-		--build="$(gcc -print-multiarch)" \
-		--enable-static_link \
-	&& make device-mapper \
-	&& make install_device-mapper
-# See https://git.fedorahosted.org/cgit/lvm2.git/tree/INSTALL
 
 # Install seccomp: the version shipped upstream is too old
 ENV SECCOMP_VERSION 2.3.2
@@ -114,17 +106,6 @@ RUN curl -fsSL "https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz" \
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
-
-# Dependency for golint
-ENV GO_TOOLS_COMMIT 823804e1ae08dbb14eb807afc7db9993bc9e3cc3
-RUN git clone https://github.com/golang/tools.git /go/src/golang.org/x/tools \
-	&& (cd /go/src/golang.org/x/tools && git checkout -q $GO_TOOLS_COMMIT)
-
-# Grab Go's lint tool
-ENV GO_LINT_COMMIT 32a87160691b3c96046c0c678fe57c5bef761456
-RUN git clone https://github.com/golang/lint.git /go/src/github.com/golang/lint \
-	&& (cd /go/src/github.com/golang/lint && git checkout -q $GO_LINT_COMMIT) \
-	&& go install -v github.com/golang/lint/golint
 
 # Install CRIU for checkpoint/restore support
 ENV CRIU_VERSION 2.12.1
@@ -168,9 +149,6 @@ RUN set -x \
 # Get the "docker-py" source so we can run their integration tests
 ENV DOCKER_PY_COMMIT a962578e515185cf06506050b2200c0b81aa84ef
 # To run integration tests docker-pycreds is required.
-# Before running the integration tests conftest.py is
-# loaded which results in loads auth.py that
-# imports the docker-pycreds module.
 RUN git clone https://github.com/docker/docker-py.git /docker-py \
 	&& cd /docker-py \
 	&& git checkout -q $DOCKER_PY_COMMIT \
@@ -215,7 +193,7 @@ RUN ./contrib/download-frozen-image-v2.sh /docker-frozen-images \
 # Please edit hack/dockerfile/install-binaries.sh to update them.
 COPY hack/dockerfile/binaries-commits /tmp/binaries-commits
 COPY hack/dockerfile/install-binaries.sh /tmp/install-binaries.sh
-RUN /tmp/install-binaries.sh tomlv vndr runc containerd tini proxy dockercli
+RUN /tmp/install-binaries.sh tomlv vndr runc containerd tini proxy dockercli gometalinter
 ENV PATH=/usr/local/cli:$PATH
 
 # Activate bash completion and include Docker's completion if mounted with DOCKER_BASH_COMPLETION_PATH
@@ -227,3 +205,6 @@ ENTRYPOINT ["hack/dind"]
 
 # Upload docker source
 COPY . /go/src/github.com/docker/docker
+
+# Options for hack/validate/gometalinter
+ENV GOMETALINTER_OPTS="--deadline 2m"

@@ -16,6 +16,7 @@ func validatePSArgs(psArgs string) error {
 	// NOTE: \\s does not detect unicode whitespaces.
 	// So we use fieldsASCII instead of strings.Fields in parsePSOutput.
 	// See https://github.com/docker/docker/pull/24358
+	// nolint: gosimple
 	re := regexp.MustCompile("\\s+([^\\s]*)=\\s*(PID[^\\s]*)")
 	for _, group := range re.FindAllStringSubmatch(psArgs, -1) {
 		if len(group) >= 3 {
@@ -130,7 +131,7 @@ func (daemon *Daemon) ContainerTop(name string, psArgs string) (*container.Conta
 	}
 
 	if !container.IsRunning() {
-		return nil, errNotRunning{container.ID}
+		return nil, errNotRunning(container.ID)
 	}
 
 	if container.IsRestarting() {

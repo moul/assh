@@ -19,7 +19,6 @@ type Watcher struct {
 	paused          bool
 	stopped         bool
 	watchSuffixes   []string
-	excludedDirs    []string
 
 	input  chan messaging.WatcherCommand
 	output chan messaging.Folders
@@ -28,7 +27,7 @@ type Watcher struct {
 }
 
 func NewWatcher(rootFolder string, folderDepth int, nap time.Duration,
-	input chan messaging.WatcherCommand, output chan messaging.Folders, watchSuffixes string, excludedDirs []string) *Watcher {
+	input chan messaging.WatcherCommand, output chan messaging.Folders, watchSuffixes string) *Watcher {
 
 	return &Watcher{
 		nap:           nap,
@@ -37,7 +36,6 @@ func NewWatcher(rootFolder string, folderDepth int, nap time.Duration,
 		input:         input,
 		output:        output,
 		watchSuffixes: strings.Split(watchSuffixes, ","),
-		excludedDirs:  excludedDirs,
 
 		ignoredFolders: make(map[string]struct{}),
 	}
@@ -126,7 +124,7 @@ func (this *Watcher) scan() {
 }
 
 func (this *Watcher) gather() (folders messaging.Folders, checksum int64) {
-	items := YieldFileSystemItems(this.rootFolder, this.excludedDirs)
+	items := YieldFileSystemItems(this.rootFolder)
 	folderItems, profileItems, goFileItems := Categorize(items, this.rootFolder, this.watchSuffixes)
 
 	for _, item := range profileItems {

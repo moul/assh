@@ -59,8 +59,7 @@ func dial(handler serverType, t *testing.T) *Client {
 	}()
 
 	config := &ClientConfig{
-		User:            "testuser",
-		HostKeyCallback: InsecureIgnoreHostKey(),
+		User: "testuser",
 	}
 
 	conn, chans, reqs, err := NewClientConn(c2, "", config)
@@ -298,6 +297,7 @@ func TestUnknownExitSignal(t *testing.T) {
 	}
 }
 
+// Test WaitMsg is not returned if the channel closes abruptly.
 func TestExitWithoutStatusOrSignal(t *testing.T) {
 	conn := dial(exitWithoutSignalOrStatus, t)
 	defer conn.Close()
@@ -313,8 +313,11 @@ func TestExitWithoutStatusOrSignal(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected command to fail but it didn't")
 	}
-	if _, ok := err.(*ExitMissingError); !ok {
-		t.Fatalf("got %T want *ExitMissingError", err)
+	_, ok := err.(*ExitError)
+	if ok {
+		// you can't actually test for errors.errorString
+		// because it's not exported.
+		t.Fatalf("expected *errorString but got %T", err)
 	}
 }
 
@@ -642,8 +645,7 @@ func TestSessionID(t *testing.T) {
 	}
 	serverConf.AddHostKey(testSigners["ecdsa"])
 	clientConf := &ClientConfig{
-		HostKeyCallback: InsecureIgnoreHostKey(),
-		User:            "user",
+		User: "user",
 	}
 
 	go func() {
@@ -749,9 +751,7 @@ func TestHostKeyAlgorithms(t *testing.T) {
 
 	// By default, we get the preferred algorithm, which is ECDSA 256.
 
-	clientConf := &ClientConfig{
-		HostKeyCallback: InsecureIgnoreHostKey(),
-	}
+	clientConf := &ClientConfig{}
 	connect(clientConf, KeyAlgoECDSA256)
 
 	// Client asks for RSA explicitly.
