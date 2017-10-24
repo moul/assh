@@ -276,54 +276,6 @@ func TestValidTerminalMode(t *testing.T) {
 	}
 }
 
-func TestWindowChange(t *testing.T) {
-	server := newServer(t)
-	defer server.Shutdown()
-	conn := server.Dial(clientConfig())
-	defer conn.Close()
-
-	session, err := conn.NewSession()
-	if err != nil {
-		t.Fatalf("session failed: %v", err)
-	}
-	defer session.Close()
-
-	stdout, err := session.StdoutPipe()
-	if err != nil {
-		t.Fatalf("unable to acquire stdout pipe: %s", err)
-	}
-
-	stdin, err := session.StdinPipe()
-	if err != nil {
-		t.Fatalf("unable to acquire stdin pipe: %s", err)
-	}
-
-	tm := ssh.TerminalModes{ssh.ECHO: 0}
-	if err = session.RequestPty("xterm", 80, 40, tm); err != nil {
-		t.Fatalf("req-pty failed: %s", err)
-	}
-
-	if err := session.WindowChange(100, 100); err != nil {
-		t.Fatalf("window-change failed: %s", err)
-	}
-
-	err = session.Shell()
-	if err != nil {
-		t.Fatalf("session failed: %s", err)
-	}
-
-	stdin.Write([]byte("stty size && exit\n"))
-
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, stdout); err != nil {
-		t.Fatalf("reading failed: %s", err)
-	}
-
-	if sttyOutput := buf.String(); !strings.Contains(sttyOutput, "100 100") {
-		t.Fatalf("terminal WindowChange failure: expected \"100 100\" stty output, got %s", sttyOutput)
-	}
-}
-
 func TestCiphers(t *testing.T) {
 	var config ssh.Config
 	config.SetDefaults()
@@ -337,7 +289,7 @@ func TestCiphers(t *testing.T) {
 		defer server.Shutdown()
 		conf := clientConfig()
 		conf.Ciphers = []string{ciph}
-		// Don't fail if sshd doesn't have the cipher.
+		// Don't fail if sshd doesnt have the cipher.
 		conf.Ciphers = append(conf.Ciphers, cipherOrder...)
 		conn, err := server.TryDial(conf)
 		if err == nil {
@@ -358,7 +310,7 @@ func TestMACs(t *testing.T) {
 		defer server.Shutdown()
 		conf := clientConfig()
 		conf.MACs = []string{mac}
-		// Don't fail if sshd doesn't have the MAC.
+		// Don't fail if sshd doesnt have the MAC.
 		conf.MACs = append(conf.MACs, macOrder...)
 		if conn, err := server.TryDial(conf); err == nil {
 			conn.Close()
@@ -376,7 +328,7 @@ func TestKeyExchanges(t *testing.T) {
 		server := newServer(t)
 		defer server.Shutdown()
 		conf := clientConfig()
-		// Don't fail if sshd doesn't have the kex.
+		// Don't fail if sshd doesnt have the kex.
 		conf.KeyExchanges = append([]string{kex}, kexOrder...)
 		conn, err := server.TryDial(conf)
 		if err == nil {

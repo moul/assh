@@ -1,4 +1,4 @@
-.PHONY: all binary dynbinary build cross deb help init-go-pkg-cache install manpages rpm run shell test test-docker-py test-integration-cli test-unit tgz validate win
+.PHONY: all binary dynbinary build cross deb help init-go-pkg-cache install manpages rpm run shell test test-docker-py test-integration test-unit tgz validate win
 
 # set the graph driver as the current graphdriver if not set
 DOCKER_GRAPHDRIVER := $(if $(DOCKER_GRAPHDRIVER),$(DOCKER_GRAPHDRIVER),$(shell docker info 2>&1 | grep "Storage Driver" | sed 's/.*: //'))
@@ -35,6 +35,7 @@ DOCKER_ENVS := \
 	-e DOCKER_REMAP_ROOT \
 	-e DOCKER_STORAGE_OPTS \
 	-e DOCKER_USERLANDPROXY \
+	-e TEST_INTEGRATION_DIR \
 	-e TESTDIRS \
 	-e TESTFLAGS \
 	-e TIMEOUT \
@@ -43,7 +44,8 @@ DOCKER_ENVS := \
 	-e NO_PROXY \
 	-e http_proxy \
 	-e https_proxy \
-	-e no_proxy
+	-e no_proxy \
+	-e VERSION
 # note: we _cannot_ add "-e DOCKER_BUILDTAGS" here because even if it's unset in the shell, that would shadow the "ENV DOCKER_BUILDTAGS" set in our Dockerfile, which is very important for our official builds
 
 # to allow `make BIND_DIR=. shell` or `make BIND_DIR= test`
@@ -110,7 +112,7 @@ dynbinary: build ## build the linux dynbinaries
 	$(DOCKER_RUN_DOCKER) hack/make.sh dynbinary
 
 build: bundles init-go-pkg-cache
-	$(warning The docker client CLI has moved to github.com/docker/cli. By default, it is built from the git sha specified in hack/dockerfile/binaries-commits. For a dev-test cycle involving the CLI, run:${\n} DOCKER_CLI_PATH=/host/path/to/cli/binary make shell ${\n} then change the cli and compile into a binary at the same location.${\n})
+	$(warning The docker client CLI has moved to github.com/docker/cli. For a dev-test cycle involving the CLI, run:${\n} DOCKER_CLI_PATH=/host/path/to/cli/binary make shell ${\n} then change the cli and compile into a binary at the same location.${\n})
 	docker build ${BUILD_APT_MIRROR} ${DOCKER_BUILD_ARGS} -t "$(DOCKER_IMAGE)" -f "$(DOCKERFILE)" .
 
 bundles:
@@ -149,16 +151,18 @@ shell: build ## start a shell inside the build env
 	$(DOCKER_RUN_DOCKER) bash
 
 test: build ## run the unit, integration and docker-py tests
-	$(DOCKER_RUN_DOCKER) hack/make.sh dynbinary cross test-unit test-integration-cli test-docker-py
+	$(DOCKER_RUN_DOCKER) hack/make.sh dynbinary cross test-unit test-integration test-docker-py
 
 test-docker-py: build ## run the docker-py tests
 	$(DOCKER_RUN_DOCKER) hack/make.sh dynbinary test-docker-py
 
-test-integration-cli: build ## run the integration tests
-	$(DOCKER_RUN_DOCKER) hack/make.sh build-integration-test-binary dynbinary test-integration-cli
+test-integration-cli: test-integration ## (DEPRECATED) use test-integration
+
+test-integration: build ## run the integration tests
+	$(DOCKER_RUN_DOCKER) hack/make.sh dynbinary test-integration
 
 test-unit: build ## run the unit tests
-	$(DOCKER_RUN_DOCKER) hack/make.sh test-unit
+	$(DOCKER_RUN_DOCKER) hack/test/unit
 
 tgz: build ## build the archives (.zip on windows and .tgz\notherwise) containing the binaries
 	$(DOCKER_RUN_DOCKER) hack/make.sh dynbinary binary cross tgz

@@ -2,10 +2,16 @@
 package gls
 
 import (
+	"runtime"
 	"sync"
 )
 
+const (
+	maxCallers = 64
+)
+
 var (
+	stackTagPool   = &idPool{}
 	mgrRegistry    = make(map[*ContextManager]bool)
 	mgrRegistryMtx sync.RWMutex
 )
@@ -14,13 +20,18 @@ var (
 // set multiple values at once.
 type Values map[interface{}]interface{}
 
+func currentStack(skip int) []uintptr {
+	stack := make([]uintptr, maxCallers)
+	return stack[:runtime.Callers(2+skip, stack)]
+}
+
 // ContextManager is the main entrypoint for interacting with
 // Goroutine-local-storage. You can have multiple independent ContextManagers
 // at any given time. ContextManagers are usually declared globally for a given
 // class of context variables. You should use NewContextManager for
 // construction.
 type ContextManager struct {
-	mtx    sync.Mutex
+	mtx    sync.RWMutex
 	values map[uint]Values
 }
 
@@ -57,77 +68,63 @@ func (m *ContextManager) SetValues(new_values Values, context_call func()) {
 		return
 	}
 
-	mutated_keys := make([]interface{}, 0, len(new_values))
-	mutated_vals := make(Values, len(new_values))
+	tags := readStackTags(currentStack(1))
 
-	EnsureGoroutineId(func(gid uint) {
+	m.mtx.Lock()
+	values := new_values
+	for _, tag := range tags {
+		if existing_values, ok := m.values[tag]; ok {
+			// oh, we found existing values, let's make a copy
+			values = make(Values, len(existing_values)+len(new_values))
+			for key, val := range existing_values {
+				values[key] = val
+			}
+			for key, val := range new_values {
+				values[key] = val
+			}
+			break
+		}
+	}
+	new_tag := stackTagPool.Acquire()
+	m.values[new_tag] = values
+	m.mtx.Unlock()
+	defer func() {
 		m.mtx.Lock()
-		state, found := m.values[gid]
-		if !found {
-			state = make(Values, len(new_values))
-			m.values[gid] = state
-		}
+		delete(m.values, new_tag)
 		m.mtx.Unlock()
+		stackTagPool.Release(new_tag)
+	}()
 
-		for key, new_val := range new_values {
-			mutated_keys = append(mutated_keys, key)
-			if old_val, ok := state[key]; ok {
-				mutated_vals[key] = old_val
-			}
-			state[key] = new_val
-		}
-
-		defer func() {
-			if !found {
-				m.mtx.Lock()
-				delete(m.values, gid)
-				m.mtx.Unlock()
-				return
-			}
-
-			for _, key := range mutated_keys {
-				if val, ok := mutated_vals[key]; ok {
-					state[key] = val
-				} else {
-					delete(state, key)
-				}
-			}
-		}()
-
-		context_call()
-	})
+	addStackTag(new_tag, context_call)
 }
 
 // GetValue will return a previously set value, provided that the value was set
 // by SetValues somewhere higher up the stack. If the value is not found, ok
 // will be false.
-func (m *ContextManager) GetValue(key interface{}) (
-	value interface{}, ok bool) {
-	gid, ok := GetGoroutineId()
-	if !ok {
-		return nil, false
-	}
+func (m *ContextManager) GetValue(key interface{}) (value interface{}, ok bool) {
 
-	m.mtx.Lock()
-	state, found := m.values[gid]
-	m.mtx.Unlock()
-
-	if !found {
-		return nil, false
+	tags := readStackTags(currentStack(1))
+	m.mtx.RLock()
+	defer m.mtx.RUnlock()
+	for _, tag := range tags {
+		if values, ok := m.values[tag]; ok {
+			value, ok := values[key]
+			return value, ok
+		}
 	}
-	value, ok = state[key]
-	return value, ok
+	return "", false
 }
 
 func (m *ContextManager) getValues() Values {
-	gid, ok := GetGoroutineId()
-	if !ok {
-		return nil
+	tags := readStackTags(currentStack(2))
+	m.mtx.RLock()
+	defer m.mtx.RUnlock()
+	for _, tag := range tags {
+		if values, ok := m.values[tag]; ok {
+			return values
+		}
 	}
-	m.mtx.Lock()
-	state, _ := m.values[gid]
-	m.mtx.Unlock()
-	return state
+	return nil
 }
 
 // Go preserves ContextManager values and Goroutine-local-storage across new
@@ -140,12 +137,12 @@ func Go(cb func()) {
 	mgrRegistryMtx.RLock()
 	defer mgrRegistryMtx.RUnlock()
 
-	for mgr := range mgrRegistry {
+	for mgr, _ := range mgrRegistry {
 		values := mgr.getValues()
 		if len(values) > 0 {
-			cb = func(mgr *ContextManager, cb func()) func() {
-				return func() { mgr.SetValues(values, cb) }
-			}(mgr, cb)
+			mgr_copy := mgr
+			cb_copy := cb
+			cb = func() { mgr_copy.SetValues(values, cb_copy) }
 		}
 	}
 

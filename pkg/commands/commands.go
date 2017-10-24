@@ -45,6 +45,35 @@ var Commands = []cli.Command{
 			},
 		},
 	},
+	{
+		Name:   "ping",
+		Usage:  "Send packets to the SSH server and display statistics",
+		Action: cmdPing,
+		Flags: []cli.Flag{
+			cli.IntFlag{
+				Name:  "port, p",
+				Usage: "SSH destination port",
+			},
+			cli.UintFlag{
+				Name:  "count, c",
+				Usage: "Stop after sending 'count' packets",
+			},
+			cli.Float64Flag{
+				Name:  "wait, i",
+				Usage: "Wait 'wait' seconds between sending each packet",
+				Value: 1,
+			},
+			cli.BoolFlag{
+				Name:  "o",
+				Usage: "Exit successfully after receiving one reply packet",
+			},
+			cli.Float64Flag{
+				Name:  "waittime, W",
+				Usage: "Time in seconds to wait for a reply for each packet sent",
+				Value: 1,
+			},
+		},
+	},
 	/*
 		{
 			Name:        "info",

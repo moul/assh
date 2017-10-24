@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -25,24 +24,13 @@ type FileSystemItem struct {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-func YieldFileSystemItems(root string, excludedDirs []string) chan *FileSystemItem {
+func YieldFileSystemItems(root string) chan *FileSystemItem {
 	items := make(chan *FileSystemItem)
 
 	go func() {
 		filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return filepath.SkipDir
-			}
-
-			if info.IsDir() && strings.HasPrefix(info.Name(), ".") {
-				return filepath.SkipDir
-			}
-
-			basePath := filepath.Base(path)
-			for _, item := range excludedDirs {
-				if item == basePath && info.IsDir() && item != "" && basePath != "" {
-					return filepath.SkipDir
-				}
 			}
 
 			items <- &FileSystemItem{

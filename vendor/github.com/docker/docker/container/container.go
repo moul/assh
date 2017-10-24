@@ -28,6 +28,7 @@ import (
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/libcontainerd"
 	"github.com/docker/docker/opts"
+	"github.com/docker/docker/pkg/containerfs"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/docker/docker/pkg/signal"
@@ -43,6 +44,7 @@ import (
 	"github.com/docker/libnetwork/options"
 	"github.com/docker/libnetwork/types"
 	agentexec "github.com/docker/swarmkit/agent/exec"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
@@ -55,18 +57,18 @@ const (
 )
 
 var (
-	errInvalidEndpoint = fmt.Errorf("invalid endpoint while building port map info")
-	errInvalidNetwork  = fmt.Errorf("invalid network settings while building port map info")
+	errInvalidEndpoint = errors.New("invalid endpoint while building port map info")
+	errInvalidNetwork  = errors.New("invalid network settings while building port map info")
 )
 
 // Container holds the structure defining a container object.
 type Container struct {
 	StreamConfig *stream.Config
 	// embed for Container to support states directly.
-	*State          `json:"State"` // Needed for Engine API version <= 1.11
-	Root            string         `json:"-"` // Path to the "home" of the container, including metadata.
-	BaseFS          string         `json:"-"` // Path to the graphdriver mountpoint
-	RWLayer         layer.RWLayer  `json:"-"`
+	*State          `json:"State"`          // Needed for Engine API version <= 1.11
+	Root            string                  `json:"-"` // Path to the "home" of the container, including metadata.
+	BaseFS          containerfs.ContainerFS `json:"-"` // interface containing graphdriver mount
+	RWLayer         layer.RWLayer           `json:"-"`
 	ID              string
 	Created         time.Time
 	Managed         bool
@@ -167,7 +169,7 @@ func (container *Container) toDisk() (*Container, error) {
 	}
 
 	// Save container settings
-	f, err := ioutils.NewAtomicFileWriter(pth, 0644)
+	f, err := ioutils.NewAtomicFileWriter(pth, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -260,12 +262,17 @@ func (container *Container) WriteHostConfig() (*containertypes.HostConfig, error
 
 // SetupWorkingDirectory sets up the container's working directory as set in container.Config.WorkingDir
 func (container *Container) SetupWorkingDirectory(rootIDs idtools.IDPair) error {
+	// TODO @jhowardmsft, @gupta-ak LCOW Support. This will need revisiting.
+	// We will need to do remote filesystem operations here.
+	if container.Platform != runtime.GOOS {
+		return nil
+	}
+
 	if container.Config.WorkingDir == "" {
 		return nil
 	}
 
 	container.Config.WorkingDir = filepath.Clean(container.Config.WorkingDir)
-
 	pth, err := container.GetResourcePath(container.Config.WorkingDir)
 	if err != nil {
 		return err
@@ -274,7 +281,7 @@ func (container *Container) SetupWorkingDirectory(rootIDs idtools.IDPair) error 
 	if err := idtools.MkdirAllAndChownNew(pth, 0755, rootIDs); err != nil {
 		pthInfo, err2 := os.Stat(pth)
 		if err2 == nil && pthInfo != nil && !pthInfo.IsDir() {
-			return fmt.Errorf("Cannot mkdir: %s is not a directory", container.Config.WorkingDir)
+			return errors.Errorf("Cannot mkdir: %s is not a directory", container.Config.WorkingDir)
 		}
 
 		return err
@@ -299,15 +306,13 @@ func (container *Container) SetupWorkingDirectory(rootIDs idtools.IDPair) error 
 func (container *Container) GetResourcePath(path string) (string, error) {
 	// IMPORTANT - These are paths on the OS where the daemon is running, hence
 	// any filepath operations must be done in an OS agnostic way.
-
-	cleanPath := cleanResourcePath(path)
-	r, e := symlink.FollowSymlinkInScope(filepath.Join(container.BaseFS, cleanPath), container.BaseFS)
+	r, e := container.BaseFS.ResolveScopedPath(path, false)
 
 	// Log this here on the daemon side as there's otherwise no indication apart
 	// from the error being propagated all the way back to the client. This makes
 	// debugging significantly easier and clearly indicates the error comes from the daemon.
 	if e != nil {
-		logrus.Errorf("Failed to FollowSymlinkInScope BaseFS %s cleanPath %s path %s %s\n", container.BaseFS, cleanPath, path, e)
+		logrus.Errorf("Failed to ResolveScopedPath BaseFS %s path %s %s\n", container.BaseFS.Path(), path, e)
 	}
 	return r, e
 }
@@ -357,7 +362,7 @@ func (container *Container) StartLogger() (logger.Logger, error) {
 	cfg := container.HostConfig.LogConfig
 	initDriver, err := logger.GetLogDriver(cfg.Type)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get logging factory: %v", err)
+		return nil, errors.Wrap(err, "failed to get logging factory")
 	}
 	info := logger.Info{
 		Config:              cfg.Config,
@@ -429,6 +434,11 @@ func (container *Container) ShouldRestart() bool {
 
 // AddMountPointWithVolume adds a new mount point configured with a volume to the container.
 func (container *Container) AddMountPointWithVolume(destination string, vol volume.Volume, rw bool) {
+	operatingSystem := container.Platform
+	if operatingSystem == "" {
+		operatingSystem = runtime.GOOS
+	}
+	volumeParser := volume.NewParser(operatingSystem)
 	container.MountPoints[destination] = &volume.MountPoint{
 		Type:        mounttypes.TypeVolume,
 		Name:        vol.Name(),
@@ -436,7 +446,7 @@ func (container *Container) AddMountPointWithVolume(destination string, vol volu
 		Destination: destination,
 		RW:          rw,
 		Volume:      vol,
-		CopyData:    volume.DefaultCopyMode,
+		CopyData:    volumeParser.DefaultCopyMode(),
 	}
 }
 
@@ -649,8 +659,12 @@ func (container *Container) BuildEndpointInfo(n libnetwork.Network, ep libnetwor
 	return nil
 }
 
+type named interface {
+	Name() string
+}
+
 // UpdateJoinInfo updates network settings when container joins network n with endpoint ep.
-func (container *Container) UpdateJoinInfo(n libnetwork.Network, ep libnetwork.Endpoint) error {
+func (container *Container) UpdateJoinInfo(n named, ep libnetwork.Endpoint) error {
 	if err := container.buildPortMapInfo(ep); err != nil {
 		return err
 	}
@@ -678,7 +692,7 @@ func (container *Container) UpdateSandboxNetworkSettings(sb libnetwork.Sandbox) 
 }
 
 // BuildJoinOptions builds endpoint Join options from a given network.
-func (container *Container) BuildJoinOptions(n libnetwork.Network) ([]libnetwork.EndpointOption, error) {
+func (container *Container) BuildJoinOptions(n named) ([]libnetwork.EndpointOption, error) {
 	var joinOptions []libnetwork.EndpointOption
 	if epConfig, ok := container.NetworkSettings.Networks[n.Name()]; ok {
 		for _, str := range epConfig.Links {
@@ -723,18 +737,18 @@ func (container *Container) BuildCreateEndpointOptions(n libnetwork.Network, epC
 
 			for _, ips := range ipam.LinkLocalIPs {
 				if linkip = net.ParseIP(ips); linkip == nil && ips != "" {
-					return nil, fmt.Errorf("Invalid link-local IP address:%s", ipam.LinkLocalIPs)
+					return nil, errors.Errorf("Invalid link-local IP address: %s", ipam.LinkLocalIPs)
 				}
 				ipList = append(ipList, linkip)
 
 			}
 
 			if ip = net.ParseIP(ipam.IPv4Address); ip == nil && ipam.IPv4Address != "" {
-				return nil, fmt.Errorf("Invalid IPv4 address:%s)", ipam.IPv4Address)
+				return nil, errors.Errorf("Invalid IPv4 address: %s)", ipam.IPv4Address)
 			}
 
 			if ip6 = net.ParseIP(ipam.IPv6Address); ip6 == nil && ipam.IPv6Address != "" {
-				return nil, fmt.Errorf("Invalid IPv6 address:%s)", ipam.IPv6Address)
+				return nil, errors.Errorf("Invalid IPv6 address: %s)", ipam.IPv6Address)
 			}
 
 			createOptions = append(createOptions,
@@ -838,7 +852,7 @@ func (container *Container) BuildCreateEndpointOptions(n libnetwork.Network, epC
 				portStart, portEnd, err = newP.Range()
 			}
 			if err != nil {
-				return nil, fmt.Errorf("Error parsing HostPort value(%s):%v", binding[i].HostPort, err)
+				return nil, errors.Wrapf(err, "Error parsing HostPort value (%s)", binding[i].HostPort)
 			}
 			pbCopy.HostPort = uint16(portStart)
 			pbCopy.HostPortEnd = uint16(portEnd)

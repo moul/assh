@@ -16,7 +16,6 @@ import (
 	"log"
 	"math/big"
 
-	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -155,44 +154,6 @@ func (s *server) processRequest(data []byte) (interface{}, error) {
 	return nil, fmt.Errorf("unknown opcode %d", data[0])
 }
 
-func parseConstraints(constraints []byte) (lifetimeSecs uint32, confirmBeforeUse bool, extensions []ConstraintExtension, err error) {
-	for len(constraints) != 0 {
-		switch constraints[0] {
-		case agentConstrainLifetime:
-			lifetimeSecs = binary.BigEndian.Uint32(constraints[1:5])
-			constraints = constraints[5:]
-		case agentConstrainConfirm:
-			confirmBeforeUse = true
-			constraints = constraints[1:]
-		case agentConstrainExtension:
-			var msg constrainExtensionAgentMsg
-			if err = ssh.Unmarshal(constraints, &msg); err != nil {
-				return 0, false, nil, err
-			}
-			extensions = append(extensions, ConstraintExtension{
-				ExtensionName:    msg.ExtensionName,
-				ExtensionDetails: msg.ExtensionDetails,
-			})
-			constraints = msg.Rest
-		default:
-			return 0, false, nil, fmt.Errorf("unknown constraint type: %d", constraints[0])
-		}
-	}
-	return
-}
-
-func setConstraints(key *AddedKey, constraintBytes []byte) error {
-	lifetimeSecs, confirmBeforeUse, constraintExtensions, err := parseConstraints(constraintBytes)
-	if err != nil {
-		return err
-	}
-
-	key.LifetimeSecs = lifetimeSecs
-	key.ConfirmBeforeUse = confirmBeforeUse
-	key.ConstraintExtensions = constraintExtensions
-	return nil
-}
-
 func parseRSAKey(req []byte) (*AddedKey, error) {
 	var k rsaKeyMsg
 	if err := ssh.Unmarshal(req, &k); err != nil {
@@ -211,25 +172,7 @@ func parseRSAKey(req []byte) (*AddedKey, error) {
 	}
 	priv.Precompute()
 
-	addedKey := &AddedKey{PrivateKey: priv, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
-}
-
-func parseEd25519Key(req []byte) (*AddedKey, error) {
-	var k ed25519KeyMsg
-	if err := ssh.Unmarshal(req, &k); err != nil {
-		return nil, err
-	}
-	priv := ed25519.PrivateKey(k.Priv)
-
-	addedKey := &AddedKey{PrivateKey: &priv, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
+	return &AddedKey{PrivateKey: priv, Comment: k.Comments}, nil
 }
 
 func parseDSAKey(req []byte) (*AddedKey, error) {
@@ -249,11 +192,7 @@ func parseDSAKey(req []byte) (*AddedKey, error) {
 		X: k.X,
 	}
 
-	addedKey := &AddedKey{PrivateKey: priv, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
+	return &AddedKey{PrivateKey: priv, Comment: k.Comments}, nil
 }
 
 func unmarshalECDSA(curveName string, keyBytes []byte, privScalar *big.Int) (priv *ecdsa.PrivateKey, err error) {
@@ -280,28 +219,6 @@ func unmarshalECDSA(curveName string, keyBytes []byte, privScalar *big.Int) (pri
 	return priv, nil
 }
 
-func parseEd25519Cert(req []byte) (*AddedKey, error) {
-	var k ed25519CertMsg
-	if err := ssh.Unmarshal(req, &k); err != nil {
-		return nil, err
-	}
-	pubKey, err := ssh.ParsePublicKey(k.CertBytes)
-	if err != nil {
-		return nil, err
-	}
-	priv := ed25519.PrivateKey(k.Priv)
-	cert, ok := pubKey.(*ssh.Certificate)
-	if !ok {
-		return nil, errors.New("agent: bad ED25519 certificate")
-	}
-
-	addedKey := &AddedKey{PrivateKey: &priv, Certificate: cert, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
-}
-
 func parseECDSAKey(req []byte) (*AddedKey, error) {
 	var k ecdsaKeyMsg
 	if err := ssh.Unmarshal(req, &k); err != nil {
@@ -313,11 +230,7 @@ func parseECDSAKey(req []byte) (*AddedKey, error) {
 		return nil, err
 	}
 
-	addedKey := &AddedKey{PrivateKey: priv, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
+	return &AddedKey{PrivateKey: &priv, Comment: k.Comments}, nil
 }
 
 func parseRSACert(req []byte) (*AddedKey, error) {
@@ -360,11 +273,7 @@ func parseRSACert(req []byte) (*AddedKey, error) {
 	}
 	priv.Precompute()
 
-	addedKey := &AddedKey{PrivateKey: &priv, Certificate: cert, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
+	return &AddedKey{PrivateKey: &priv, Certificate: cert, Comment: k.Comments}, nil
 }
 
 func parseDSACert(req []byte) (*AddedKey, error) {
@@ -402,11 +311,7 @@ func parseDSACert(req []byte) (*AddedKey, error) {
 		X: k.X,
 	}
 
-	addedKey := &AddedKey{PrivateKey: priv, Certificate: cert, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
+	return &AddedKey{PrivateKey: priv, Certificate: cert, Comment: k.Comments}, nil
 }
 
 func parseECDSACert(req []byte) (*AddedKey, error) {
@@ -439,11 +344,7 @@ func parseECDSACert(req []byte) (*AddedKey, error) {
 		return nil, err
 	}
 
-	addedKey := &AddedKey{PrivateKey: priv, Certificate: cert, Comment: k.Comments}
-	if err := setConstraints(addedKey, k.Constraints); err != nil {
-		return nil, err
-	}
-	return addedKey, nil
+	return &AddedKey{PrivateKey: priv, Certificate: cert, Comment: k.Comments}, nil
 }
 
 func (s *server) insertIdentity(req []byte) error {
@@ -465,17 +366,13 @@ func (s *server) insertIdentity(req []byte) error {
 	case ssh.KeyAlgoDSA:
 		addedKey, err = parseDSAKey(req)
 	case ssh.KeyAlgoECDSA256, ssh.KeyAlgoECDSA384, ssh.KeyAlgoECDSA521:
-		addedKey, err = parseECDSAKey(req)
-	case ssh.KeyAlgoED25519:
-		addedKey, err = parseEd25519Key(req)
+		addedKey, err = parseECDSACert(req)
 	case ssh.CertAlgoRSAv01:
 		addedKey, err = parseRSACert(req)
 	case ssh.CertAlgoDSAv01:
 		addedKey, err = parseDSACert(req)
 	case ssh.CertAlgoECDSA256v01, ssh.CertAlgoECDSA384v01, ssh.CertAlgoECDSA521v01:
 		addedKey, err = parseECDSACert(req)
-	case ssh.CertAlgoED25519v01:
-		addedKey, err = parseEd25519Cert(req)
 	default:
 		return fmt.Errorf("agent: not implemented: %q", record.Type)
 	}
