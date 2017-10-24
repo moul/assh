@@ -80,3 +80,14 @@ profile.out:	$(SOURCES)
 	echo "mode: count" > profile.out.tmp
 	cat `find . -name profile.out` | grep -v mode: | sort -r | awk '{if($$1 != last) {print $$0;last=$$1}}' >> profile.out.tmp
 	mv profile.out.tmp profile.out
+
+.PHONY: release
+release:
+	mkdir -p .release
+	GOOS=linux   GOARCH=amd64 go build -i -v -o .release/assh_linux_amd64   ./cmd/assh
+	GOOS=linux   GOARCH=386   go build -i -v -o .release/assh_linux_386     ./cmd/assh
+	GOOS=linux   GOARCH=arm   go build -i -v -o .release/assh_linux_arm     ./cmd/assh
+	GOOS=openbsd GOARCH=amd64 go build -i -v -o .release/assh_openbsd_amd64 ./cmd/assh
+	GOOS=openbsd GOARCH=386   go build -i -v -o .release/assh_openbsd_386   ./cmd/assh
+	GOOS=darwin GOARCH=amd64  go build -i -v -o .release/assh_darwin_amd64  ./cmd/assh
+	GOOS=darwin GOARCH=386    go build -i -v -o .release/assh_darwin_386    ./cmd/assh
