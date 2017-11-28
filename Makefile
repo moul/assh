@@ -5,7 +5,7 @@ PKG_BASE_DIR ?=	./pkg
 CONVEY_PORT ?=	9042
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
-SOURCES :=	$(call rwildcard,./cmd/ ./pkg/,*.go) glide.lock
+SOURCES :=	$(call rwildcard,./cmd/ ./pkg/,*.go) vendor/vendor.json
 COMMANDS :=	$(call uniq,$(dir $(call rwildcard,./cmd/,*.go)))
 PACKAGES :=	$(call uniq,$(dir $(call rwildcard,./pkg/,*.go)))
 GOENV ?=	GO15VENDOREXPERIMENT=1
@@ -37,7 +37,7 @@ test:
 
 
 .PHONY: examples
-examples:
+examples: assh
 	@for example in $(dir $(wildcard examples/*/assh.yml)); do                    \
 	  set -xe;                                                                    \
 	  ./assh -c $$example/assh.yml config build > $$example/ssh_config;           \
