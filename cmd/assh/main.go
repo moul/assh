@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/commands"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/version"
 )
 
@@ -45,7 +45,9 @@ func main() {
 
 	app.Commands = commands.Commands
 
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		logger.Logger.Fatalf("failed to run command: %v", err)
+	}
 }
 
 func BashComplete(c *cli.Context) {
@@ -61,14 +63,15 @@ func BashComplete(c *cli.Context) {
 
 func hookBefore(c *cli.Context) error {
 	if c.Bool("debug") {
-		os.Setenv("ASSH_DEBUG", "1")
+		if err := os.Setenv("ASSH_DEBUG", "1"); err != nil {
+			return err
+		}
 	}
-	initLogging(c.Bool("debug"), c.Bool("verbose"))
-	return nil
+	return initLogging(c.Bool("debug"), c.Bool("verbose"))
 }
 
-func initLogging(debug bool, verbose bool) {
-	options := LoggerOptions{}
+func initLogging(debug bool, verbose bool) error {
+	options := logger.Options{}
 
 	options.InspectParent = true
 
@@ -79,5 +82,6 @@ func initLogging(debug bool, verbose bool) {
 	} else {
 		options.Level = logrus.WarnLevel
 	}
-	SetupLogging(options)
+	logger.SetupLogging(options)
+	return nil
 }

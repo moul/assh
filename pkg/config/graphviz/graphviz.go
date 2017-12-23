@@ -19,8 +19,12 @@ type GraphSettings struct {
 
 func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
 	graph := gographviz.NewGraph()
-	graph.SetName("G")
-	graph.SetDir(true)
+	if err := graph.SetName("G"); err != nil {
+		return "", err
+	}
+	if err := graph.SetDir(true); err != nil {
+		return "", err
+	}
 
 	hostsToShow := map[string]bool{}
 
@@ -43,25 +47,33 @@ func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
 				if gw == nil {
 					continue
 				}
-				graph.AddEdge(nodename(host.Name()), nodename(gw.RawName()), true, map[string]string{"color": "red", "label": nodename(gateway)})
+				if err := graph.AddEdge(nodename(host.Name()), nodename(gw.RawName()), true, map[string]string{"color": "red", "label": nodename(gateway)}); err != nil {
+					return "", err
+				}
 				hostsToShow[nodename(gw.RawName())] = true
 				continue
 			}
 			idx++
 			hostsToShow[nodename(gateway)] = true
-			graph.AddEdge(nodename(host.Name()), nodename(gateway), true, map[string]string{"color": "red", "label": fmt.Sprintf("%d", idx)})
+			if err := graph.AddEdge(nodename(host.Name()), nodename(gateway), true, map[string]string{"color": "red", "label": fmt.Sprintf("%d", idx)}); err != nil {
+				return "", err
+			}
 		}
 
 		if !settings.NoInherits {
 			for _, inherit := range host.Inherits {
 				hostsToShow[nodename(inherit)] = true
-				graph.AddEdge(nodename(host.Name()), nodename(inherit), true, map[string]string{"color": "black", "style": "dashed"})
+				if err := graph.AddEdge(nodename(host.Name()), nodename(inherit), true, map[string]string{"color": "black", "style": "dashed"}); err != nil {
+					return "", err
+				}
 			}
 		}
 	}
 
 	for hostname := range hostsToShow {
-		graph.AddNode("G", hostname, map[string]string{"color": "blue"})
+		if err := graph.AddNode("G", hostname, map[string]string{"color": "blue"}); err != nil {
+			return "", err
+		}
 	}
 
 	return graph.String(), nil

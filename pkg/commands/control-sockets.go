@@ -6,30 +6,30 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/docker/go-units"
+	units "github.com/docker/go-units"
 	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	"github.com/moul/advanced-ssh-config/pkg/control-sockets"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdCsList(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Errorf("%v", err)
+		logger.Logger.Errorf("%v", err)
 		os.Exit(-1)
 	}
 
 	controlPath := conf.Defaults.ControlPath
 	if controlPath == "" {
-		Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
+		logger.Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
 		return nil
 	}
 
 	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
 	if err != nil {
-		Logger.Errorf("%v", err)
+		logger.Logger.Errorf("%v", err)
 		os.Exit(-1)
 	}
 
@@ -43,7 +43,7 @@ func cmdCsList(c *cli.Context) error {
 	for _, socket := range activeSockets {
 		createdAt, err := socket.CreatedAt()
 		if err != nil {
-			Logger.Warnf("%v", err)
+			logger.Logger.Warnf("%v", err)
 		}
 
 		fmt.Printf("- %s (%v)\n", socket.RelativePath(), units.HumanDuration(now.Sub(createdAt)))
@@ -54,13 +54,13 @@ func cmdCsList(c *cli.Context) error {
 
 func cmdCsMaster(c *cli.Context) error {
 	if len(c.Args()) < 1 {
-		Logger.Fatalf("assh: \"sockets master\" requires 1 argument. See 'assh sockets master --help'.")
+		logger.Logger.Fatalf("assh: \"sockets master\" requires 1 argument. See 'assh sockets master --help'.")
 	}
 
 	for _, target := range c.Args() {
-		Logger.Debugf("Opening master control socket for %q", target)
+		logger.Logger.Debugf("Opening master control socket for %q", target)
 
-		cmd := exec.Command("ssh", target, "-M", "-N", "-f")
+		cmd := exec.Command("ssh", target, "-M", "-N", "-f") // #nosec
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
@@ -72,19 +72,19 @@ func cmdCsMaster(c *cli.Context) error {
 func cmdCsFlush(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Errorf("%v", err)
+		logger.Logger.Errorf("%v", err)
 		os.Exit(-1)
 	}
 
 	controlPath := conf.Defaults.ControlPath
 	if controlPath == "" {
-		Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
+		logger.Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
 		return nil
 	}
 
 	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
 	if err != nil {
-		Logger.Errorf("%v", err)
+		logger.Logger.Errorf("%v", err)
 		os.Exit(-1)
 	}
 
@@ -95,7 +95,7 @@ func cmdCsFlush(c *cli.Context) error {
 	success := 0
 	for _, socket := range activeSockets {
 		if err := os.Remove(socket.Path()); err != nil {
-			Logger.Warnf("Failed to close control socket %q: %v", socket.Path(), err)
+			logger.Logger.Warnf("Failed to close control socket %q: %v", socket.Path(), err)
 		} else {
 			success++
 		}

@@ -4,18 +4,21 @@ import "github.com/Sirupsen/logrus"
 
 var Logger = logrus.New()
 
-func LoggerSetLevel(level logrus.Level) {
+// SetLevel sets the logging level
+func SetLevel(level logrus.Level) {
 	// Logger.mu.Lock()
 	// defer Logger.mu.Unlock()
 	Logger.Level = level
 }
 
-type LoggerOptions struct {
+// Options allows to customize logger behavior
+type Options struct {
 	Level         logrus.Level
 	InspectParent bool
 }
 
-func SetupLogging(options LoggerOptions) {
+// SetupLogging configures the logger based on user input and parent process configuration (looks for `ssh -v`)
+func SetupLogging(options Options) {
 	level := options.Level
 
 	if options.InspectParent {
@@ -27,5 +30,5 @@ func SetupLogging(options LoggerOptions) {
 		}
 	}
 
-	LoggerSetLevel(level)
+	SetLevel(level)
 }

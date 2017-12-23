@@ -20,7 +20,7 @@ func TestSetupLogging(t *testing.T) {
 		})
 		Convey("InspectParent=false", func() {
 			So(Logger.Level, ShouldEqual, logrus.InfoLevel)
-			options := LoggerOptions{
+			options := Options{
 				Level:         logrus.WarnLevel,
 				InspectParent: false,
 			}
@@ -29,7 +29,7 @@ func TestSetupLogging(t *testing.T) {
 		})
 		Convey("InspectParent=true", func() {
 			So(Logger.Level, ShouldEqual, logrus.InfoLevel)
-			options := LoggerOptions{
+			options := Options{
 				Level:         logrus.WarnLevel,
 				InspectParent: true,
 			}
