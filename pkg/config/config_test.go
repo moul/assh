@@ -231,7 +231,7 @@ func dummyConfig() *Config {
 		GSSAPIServerIdentity:            "gssapi.example.com",
 		GSSAPIDelegateCredentials:       "no",
 		GSSAPIRenewalForcesRekey:        "no",
-		GSSAPITrustDns:                  "no",
+		GSSAPITrustDNS:                  "no",
 		HashKnownHosts:                  "no",
 		HostbasedAuthentication:         "no",
 		HostbasedKeyTypes:               "*",
@@ -372,8 +372,8 @@ func TestConfig_LoadConfig(t *testing.T) {
 	})
 }
 
-func TestConfig_JsonString(t *testing.T) {
-	Convey("Testing Config.JsonString", t, func() {
+func TestConfig_JSONString(t *testing.T) {
+	Convey("Testing Config.JSONString", t, func() {
 		Convey("dummyConfig", func() {
 			config := dummyConfig()
 			expected := `{
@@ -505,7 +505,7 @@ func TestConfig_JsonString(t *testing.T) {
       "GSSAPIKeyExchange": "no",
       "GSSAPIRenewalForcesRekey": "no",
       "GSSAPIServerIdentity": "gssapi.example.com",
-      "GSSAPITrustDns": "no",
+      "GSSAPITrustDNS": "no",
       "HashKnownHosts": "no",
       "HostbasedAuthentication": "no",
       "HostbasedKeyTypes": "*",
@@ -607,7 +607,7 @@ func TestConfig_JsonString(t *testing.T) {
   },
   "asshknownhostfile": "~/.ssh/assh_known_hosts"
 }`
-			json, err := config.JsonString()
+			json, err := config.JSONString()
 			So(err, ShouldBeNil)
 			So(string(json), ShouldEqual, expected)
 		})
@@ -740,7 +740,7 @@ func TestConfig_JsonString(t *testing.T) {
   ],
   "asshknownhostfile": "~/.ssh/assh_known_hosts"
 }`
-			json, err := config.JsonString()
+			json, err := config.JSONString()
 			So(err, ShouldBeNil)
 			So(string(json), ShouldEqual, expected)
 		})
@@ -793,11 +793,11 @@ func TestComputeHost(t *testing.T) {
 			So(host.LocalCommand, ShouldEqual, "${ENV_VAR_LOCALCOMMAND:-hello}")
 			So(host.User, ShouldEqual, "user-$ENV_VAR_USER-user")
 
-			os.Setenv("ENV_VAR_HOSTNAME", "aaa")
-			os.Setenv("ENV_VAR_PORT", "42")
-			os.Unsetenv("NON_EXISTING_ENV_VAR")
+			So(os.Setenv("ENV_VAR_HOSTNAME", "aaa"), ShouldBeNil)
+			So(os.Setenv("ENV_VAR_PORT", "42"), ShouldBeNil)
+			So(os.Unsetenv("NON_EXISTING_ENV_VAR"), ShouldBeNil)
 			//os.Setenv("ENV_VAR_LOCALCOMMAND", "bbb")
-			os.Setenv("ENV_VAR_USER", "ccc")
+			So(os.Setenv("ENV_VAR_USER", "ccc"), ShouldBeNil)
 
 			computed, err := computeHost(host, config, "bbb", true)
 			So(err, ShouldBeNil)
@@ -953,15 +953,16 @@ func TestConfig_LoadFiles(t *testing.T) {
 		config := New()
 		file, err := ioutil.TempFile(os.TempDir(), "assh-tests")
 		So(err, ShouldBeNil)
-		defer os.Remove(file.Name())
-		file.Write([]byte(yamlConfig))
+		defer func() {
+			So(os.Remove(file.Name()), ShouldBeNil)
+		}()
+		_, err = file.Write([]byte(yamlConfig))
+		So(err, ShouldBeNil)
 
 		Convey("Loading a simple file", func() {
 			err = config.LoadFiles(file.Name())
-
-			So(config.IncludedFiles(), ShouldResemble, []string{file.Name()})
-
 			So(err, ShouldBeNil)
+			So(config.IncludedFiles(), ShouldResemble, []string{file.Name()})
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
 			So(len(config.Hosts), ShouldEqual, 17)
@@ -986,9 +987,8 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.Templates["kkk"].User, ShouldEqual, "kkkk")
 		})
 		Convey("Loading the same file again", func() {
-			config.LoadFiles(file.Name())
+			So(config.LoadFiles(file.Name()), ShouldBeNil)
 			err = config.LoadFiles(file.Name())
-
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
@@ -1017,21 +1017,22 @@ func TestConfig_LoadFiles(t *testing.T) {
 			config := New()
 			file, err := ioutil.TempFile(os.TempDir(), "assh-tests")
 			So(err, ShouldBeNil)
-			defer os.Remove(file.Name())
-			file.Write([]byte(`
+			defer func() { So(os.Remove(file.Name()), ShouldBeNil) }()
+			_, err = file.Write([]byte(`
 includes:
 - $DUMMY_ENV_VAR/assh-tests*
 `))
+			So(err, ShouldBeNil)
 			tempDir, err := ioutil.TempDir(os.TempDir(), "assh-tests")
 			So(err, ShouldBeNil)
-			defer os.RemoveAll(tempDir)
+			defer func() { So(os.RemoveAll(tempDir), ShouldBeNil) }()
 
 			file2, err := ioutil.TempFile(tempDir, "assh-tests")
 			So(err, ShouldBeNil)
-			defer os.Remove(file2.Name())
-			os.Setenv("DUMMY_ENV_VAR", tempDir)
+			defer func() { So(os.Remove(file2.Name()), ShouldBeNil) }()
+			So(os.Setenv("DUMMY_ENV_VAR", tempDir), ShouldBeNil)
 
-			config.LoadFiles(file.Name())
+			So(config.LoadFiles(file.Name()), ShouldBeNil)
 
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
@@ -1278,7 +1279,7 @@ func TestConfig_GetHostSafe(t *testing.T) {
 func TestConfig_String(t *testing.T) {
 	Convey("Testing Config.String", t, func() {
 		config := dummyConfig()
-		So(config.String(), ShouldEqual, `{"hosts":{"*.ddd":{"PasswordAuthentication":"yes","HostName":"1.3.5.7"},"empty":{},"nnn":{"Port":"26","Inherits":["mmm"]},"ooo1":{"Port":"23","Aliases":["ooo11","ooo12"]},"ooo2":{"Port":"24","Aliases":["ooo21","ooo22"]},"tata":{"Inherits":["tutu","titi","toto","tutu"]},"titi":{"Port":"23","User":"moul","HostName":"tata","ProxyCommand":"nc -v 4242","ControlMasterMkdir":"true","Comment":["Hello World"]},"tonton":{"ResolveNameservers":["a.com","1.2.3.4"],"Comment":["AAA","BBB"]},"toto":{"HostName":"1.2.3.4"},"toto[1-5]toto":{"User":"toto1"},"toto[7-9]toto":{"User":"toto2"},"toutou":{"ResolveCommand":"dig -t %h","Comment":["First line Second line Third line\n"]},"tutu":{"Inherits":["toto","tutu","*.ddd"],"Gateways":["titi","direct","1.2.3.4"]},"zzz":{"AddressFamily":"any","AskPassGUI":"yes","BatchMode":"no","CanonicalDomains":"42.am","CanonicalizeFallbackLocal":"no","CanonicalizeHostname":"yes","CanonicalizeMaxDots":"1","CanonicalizePermittedCNAMEs":"*.a.example.com:*.b.example.com:*.c.example.com","ChallengeResponseAuthentication":"yes","CheckHostIP":"yes","Cipher":"blowfish","Ciphers":["aes128-ctr,aes192-ctr","aes256-ctr"],"ClearAllForwardings":"yes","Compression":"yes","CompressionLevel":6,"ConnectionAttempts":"1","ConnectTimeout":10,"ControlMaster":"yes","ControlPath":"/tmp/%L-%l-%n-%p-%u-%r-%C-%h","ControlPersist":"yes","DynamicForward":["0.0.0.0:4242","0.0.0.0:4343"],"EnableSSHKeysign":"yes","EscapeChar":"~","ExitOnForwardFailure":"yes","FingerprintHash":"sha256","ForwardAgent":"yes","ForwardX11":"yes","ForwardX11Timeout":42,"ForwardX11Trusted":"yes","GatewayPorts":"yes","GlobalKnownHostsFile":["/etc/ssh/ssh_known_hosts","/tmp/ssh_known_hosts"],"GSSAPIAuthentication":"no","GSSAPIClientIdentity":"moul","GSSAPIDelegateCredentials":"no","GSSAPIKeyExchange":"no","GSSAPIRenewalForcesRekey":"no","GSSAPIServerIdentity":"gssapi.example.com","GSSAPITrustDns":"no","HashKnownHosts":"no","HostbasedAuthentication":"no","HostbasedKeyTypes":"*","HostKeyAlgorithms":"ecdsa-sha2-nistp256-cert-v01@openssh.com","HostKeyAlias":"z","IdentitiesOnly":"yes","IdentityFile":["~/.ssh/identity","~/.ssh/identity2"],"IgnoreUnknown":"testtest","IPQoS":["lowdelay","highdelay"],"KbdInteractiveAuthentication":"yes","KbdInteractiveDevices":["bsdauth","test"],"KexAlgorithms":["curve25519-sha256@libssh.org","test"],"KeychainIntegration":"yes","LocalCommand":"echo %h \u003e /tmp/logs","LocalForward":["0.0.0.0:1234","0.0.0.0:1235"],"LogLevel":"DEBUG3","MACs":["umac-64-etm@openssh.com,umac-128-etm@openssh.com","test"],"Match":"all","NoHostAuthenticationForLocalhost":"yes","NumberOfPasswordPrompts":"3","PasswordAuthentication":"yes","PermitLocalCommand":"yes","PKCS11Provider":"/a/b/c/pkcs11.so","Port":"22","PreferredAuthentications":"gssapi-with-mic,hostbased,publickey","Protocol":["2","3"],"ProxyUseFdpass":"no","PubkeyAuthentication":"yes","RekeyLimit":"default none","RemoteForward":["0.0.0.0:1234","0.0.0.0:1255"],"RequestTTY":"yes","RevokedHostKeys":"/a/revoked-keys","RhostsRSAAuthentication":"no","RSAAuthentication":"yes","SendEnv":["CUSTOM_*,TEST","TEST2"],"ServerAliveCountMax":3,"StreamLocalBindMask":"0177","StreamLocalBindUnlink":"no","StrictHostKeyChecking":"ask","TCPKeepAlive":"yes","Tunnel":"yes","TunnelDevice":"any:any","UpdateHostKeys":"ask","UseKeychain":"no","UsePrivilegedPort":"no","User":"moul","UserKnownHostsFile":["~/.ssh/known_hosts ~/.ssh/known_hosts2","/tmp/known_hosts"],"VerifyHostKeyDNS":"no","VisualHostKey":"yes","XAuthLocation":"xauth","HostName":"zzz.com","ProxyCommand":"nc %h %p"}},"templates":{"mmm":{"Port":"25","User":"mmmm","HostName":"5.5.5.5","Inherits":["tata"]}},"defaults":{"Port":"22","User":"root","Hooks":{}},"asshknownhostfile":"~/.ssh/assh_known_hosts"}`)
+		So(config.String(), ShouldEqual, `{"hosts":{"*.ddd":{"PasswordAuthentication":"yes","HostName":"1.3.5.7"},"empty":{},"nnn":{"Port":"26","Inherits":["mmm"]},"ooo1":{"Port":"23","Aliases":["ooo11","ooo12"]},"ooo2":{"Port":"24","Aliases":["ooo21","ooo22"]},"tata":{"Inherits":["tutu","titi","toto","tutu"]},"titi":{"Port":"23","User":"moul","HostName":"tata","ProxyCommand":"nc -v 4242","ControlMasterMkdir":"true","Comment":["Hello World"]},"tonton":{"ResolveNameservers":["a.com","1.2.3.4"],"Comment":["AAA","BBB"]},"toto":{"HostName":"1.2.3.4"},"toto[1-5]toto":{"User":"toto1"},"toto[7-9]toto":{"User":"toto2"},"toutou":{"ResolveCommand":"dig -t %h","Comment":["First line Second line Third line\n"]},"tutu":{"Inherits":["toto","tutu","*.ddd"],"Gateways":["titi","direct","1.2.3.4"]},"zzz":{"AddressFamily":"any","AskPassGUI":"yes","BatchMode":"no","CanonicalDomains":"42.am","CanonicalizeFallbackLocal":"no","CanonicalizeHostname":"yes","CanonicalizeMaxDots":"1","CanonicalizePermittedCNAMEs":"*.a.example.com:*.b.example.com:*.c.example.com","ChallengeResponseAuthentication":"yes","CheckHostIP":"yes","Cipher":"blowfish","Ciphers":["aes128-ctr,aes192-ctr","aes256-ctr"],"ClearAllForwardings":"yes","Compression":"yes","CompressionLevel":6,"ConnectionAttempts":"1","ConnectTimeout":10,"ControlMaster":"yes","ControlPath":"/tmp/%L-%l-%n-%p-%u-%r-%C-%h","ControlPersist":"yes","DynamicForward":["0.0.0.0:4242","0.0.0.0:4343"],"EnableSSHKeysign":"yes","EscapeChar":"~","ExitOnForwardFailure":"yes","FingerprintHash":"sha256","ForwardAgent":"yes","ForwardX11":"yes","ForwardX11Timeout":42,"ForwardX11Trusted":"yes","GatewayPorts":"yes","GlobalKnownHostsFile":["/etc/ssh/ssh_known_hosts","/tmp/ssh_known_hosts"],"GSSAPIAuthentication":"no","GSSAPIClientIdentity":"moul","GSSAPIDelegateCredentials":"no","GSSAPIKeyExchange":"no","GSSAPIRenewalForcesRekey":"no","GSSAPIServerIdentity":"gssapi.example.com","GSSAPITrustDNS":"no","HashKnownHosts":"no","HostbasedAuthentication":"no","HostbasedKeyTypes":"*","HostKeyAlgorithms":"ecdsa-sha2-nistp256-cert-v01@openssh.com","HostKeyAlias":"z","IdentitiesOnly":"yes","IdentityFile":["~/.ssh/identity","~/.ssh/identity2"],"IgnoreUnknown":"testtest","IPQoS":["lowdelay","highdelay"],"KbdInteractiveAuthentication":"yes","KbdInteractiveDevices":["bsdauth","test"],"KexAlgorithms":["curve25519-sha256@libssh.org","test"],"KeychainIntegration":"yes","LocalCommand":"echo %h \u003e /tmp/logs","LocalForward":["0.0.0.0:1234","0.0.0.0:1235"],"LogLevel":"DEBUG3","MACs":["umac-64-etm@openssh.com,umac-128-etm@openssh.com","test"],"Match":"all","NoHostAuthenticationForLocalhost":"yes","NumberOfPasswordPrompts":"3","PasswordAuthentication":"yes","PermitLocalCommand":"yes","PKCS11Provider":"/a/b/c/pkcs11.so","Port":"22","PreferredAuthentications":"gssapi-with-mic,hostbased,publickey","Protocol":["2","3"],"ProxyUseFdpass":"no","PubkeyAuthentication":"yes","RekeyLimit":"default none","RemoteForward":["0.0.0.0:1234","0.0.0.0:1255"],"RequestTTY":"yes","RevokedHostKeys":"/a/revoked-keys","RhostsRSAAuthentication":"no","RSAAuthentication":"yes","SendEnv":["CUSTOM_*,TEST","TEST2"],"ServerAliveCountMax":3,"StreamLocalBindMask":"0177","StreamLocalBindUnlink":"no","StrictHostKeyChecking":"ask","TCPKeepAlive":"yes","Tunnel":"yes","TunnelDevice":"any:any","UpdateHostKeys":"ask","UseKeychain":"no","UsePrivilegedPort":"no","User":"moul","UserKnownHostsFile":["~/.ssh/known_hosts ~/.ssh/known_hosts2","/tmp/known_hosts"],"VerifyHostKeyDNS":"no","VisualHostKey":"yes","XAuthLocation":"xauth","HostName":"zzz.com","ProxyCommand":"nc %h %p"}},"templates":{"mmm":{"Port":"25","User":"mmmm","HostName":"5.5.5.5","Inherits":["tata"]}},"defaults":{"Port":"22","User":"root","Hooks":{}},"asshknownhostfile":"~/.ssh/assh_known_hosts"}`)
 	})
 }
 
@@ -1438,7 +1439,7 @@ Host zzz
   GSSAPIKeyExchange no
   GSSAPIRenewalForcesRekey no
   GSSAPIServerIdentity gssapi.example.com
-  GSSAPITrustDns no
+  GSSAPITrustDNS no
   HashKnownHosts no
   HostbasedAuthentication no
   HostbasedKeyTypes *

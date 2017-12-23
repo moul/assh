@@ -8,32 +8,32 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdPing(c *cli.Context) error {
 	if len(c.Args()) < 1 {
-		Logger.Fatalf("assh: \"ping\" requires exactly 1 argument. See 'assh ping --help'.")
+		logger.Logger.Fatalf("assh: \"ping\" requires exactly 1 argument. See 'assh ping --help'.")
 	}
 
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Fatalf("Cannot open configuration file: %v", err)
+		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 	if err = conf.LoadKnownHosts(); err != nil {
-		Logger.Debugf("Failed to load assh known_hosts: %v", err)
+		logger.Logger.Debugf("Failed to load assh known_hosts: %v", err)
 	}
 	target := c.Args()[0]
 	host, err := computeHost(target, c.Int("port"), conf)
 	if err != nil {
-		Logger.Fatalf("Cannot get host '%s': %v", target, err)
+		logger.Logger.Fatalf("Cannot get host '%s': %v", target, err)
 	}
 
 	if len(host.Gateways) > 0 {
-		Logger.Fatalf("assh \"ping\" is not working with gateways (yet).")
+		logger.Logger.Fatalf("assh \"ping\" is not working with gateways (yet).")
 	}
 	if host.ProxyCommand != "" {
-		Logger.Fatalf("assh \"ping\" is not working with custom ProxyCommand (yet).")
+		logger.Logger.Fatalf("assh \"ping\" is not working with custom ProxyCommand (yet).")
 	}
 
 	portName := "ssh"
@@ -57,7 +57,7 @@ func cmdPing(c *cli.Context) error {
 		start := time.Now()
 		conn, err := net.DialTimeout(proto, dest, time.Second*time.Duration(c.Float64("waittime")))
 		transmittedPackets++
-		duration := time.Now().Sub(start)
+		duration := time.Since(start)
 		totalRoundtrip += duration
 		if minRoundtrip == 0 || minRoundtrip > duration {
 			minRoundtrip = duration
@@ -66,7 +66,11 @@ func cmdPing(c *cli.Context) error {
 			maxRoundtrip = duration
 		}
 		if err == nil {
-			defer conn.Close()
+			defer func() {
+				if err2 := conn.Close(); err2 != nil {
+					logger.Logger.Errorf("failed to close connection: %v", err2)
+				}
+			}()
 		}
 		if err == nil {
 			receivedPackets++

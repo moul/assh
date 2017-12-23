@@ -53,7 +53,7 @@ type Host struct {
 	GSSAPIKeyExchange                string                    `yaml:"gssapikeyexchange,omitempty,flow" json:"GSSAPIKeyExchange,omitempty"`
 	GSSAPIRenewalForcesRekey         string                    `yaml:"gssapirenewalforcesrekey,omitempty,flow" json:"GSSAPIRenewalForcesRekey,omitempty"`
 	GSSAPIServerIdentity             string                    `yaml:"gssapiserveridentity,omitempty,flow" json:"GSSAPIServerIdentity,omitempty"`
-	GSSAPITrustDns                   string                    `yaml:"gssapitrustdns,omitempty,flow" json:"GSSAPITrustDns,omitempty"`
+	GSSAPITrustDNS                   string                    `yaml:"gssapitrustdns,omitempty,flow" json:"GSSAPITrustDNS,omitempty"`
 	HashKnownHosts                   string                    `yaml:"hashknownhosts,omitempty,flow" json:"HashKnownHosts,omitempty"`
 	HostbasedAuthentication          string                    `yaml:"hostbasedauthentication,omitempty,flow" json:"HostbasedAuthentication,omitempty"`
 	HostbasedKeyTypes                string                    `yaml:"hostbasedkeytypes,omitempty,flow" json:"HostbasedKeyTypes,omitempty"`
@@ -346,8 +346,8 @@ func (h *Host) Options() OptionsList {
 	if h.GSSAPIServerIdentity != "" {
 		options = append(options, Option{Name: "GSSAPIServerIdentity", Value: h.GSSAPIServerIdentity})
 	}
-	if h.GSSAPITrustDns != "" {
-		options = append(options, Option{Name: "GSSAPITrustDns", Value: h.GSSAPITrustDns})
+	if h.GSSAPITrustDNS != "" {
+		options = append(options, Option{Name: "GSSAPITrustDNS", Value: h.GSSAPITrustDNS})
 	}
 	if h.HashKnownHosts != "" {
 		options = append(options, Option{Name: "HashKnownHosts", Value: h.HashKnownHosts})
@@ -740,10 +740,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.GSSAPIServerIdentity = utils.ExpandField(h.GSSAPIServerIdentity)
 
-	if h.GSSAPITrustDns == "" {
-		h.GSSAPITrustDns = defaults.GSSAPITrustDns
+	if h.GSSAPITrustDNS == "" {
+		h.GSSAPITrustDNS = defaults.GSSAPITrustDNS
 	}
-	h.GSSAPITrustDns = utils.ExpandField(h.GSSAPITrustDns)
+	h.GSSAPITrustDNS = utils.ExpandField(h.GSSAPITrustDNS)
 
 	if h.HashKnownHosts == "" {
 		h.HashKnownHosts = defaults.HashKnownHosts
@@ -1216,8 +1216,8 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.GSSAPIServerIdentity != "" {
 			fmt.Fprintf(w, "  GSSAPIServerIdentity %s\n", h.GSSAPIServerIdentity)
 		}
-		if h.GSSAPITrustDns != "" {
-			fmt.Fprintf(w, "  GSSAPITrustDns %s\n", h.GSSAPITrustDns)
+		if h.GSSAPITrustDNS != "" {
+			fmt.Fprintf(w, "  GSSAPITrustDNS %s\n", h.GSSAPITrustDNS)
 		}
 		if h.HashKnownHosts != "" {
 			fmt.Fprintf(w, "  HashKnownHosts %s\n", h.HashKnownHosts)
@@ -1451,7 +1451,7 @@ func (h *Host) ExpandString(input string, gateway string) string {
 	output = strings.Replace(output, "%h", h.HostName, -1)
 
 	// port
-	output = strings.Replace(output, "%p", fmt.Sprintf("%s", h.Port), -1)
+	output = strings.Replace(output, "%p", h.Port, -1)
 
 	// gateway
 	output = strings.Replace(output, "%g", gateway, -1)

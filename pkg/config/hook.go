@@ -30,6 +30,9 @@ func (hh *HostHooks) Length() int {
 
 // String returns the JSON output
 func (hh *HostHooks) String() string {
-	s, _ := json.Marshal(hh)
+	s, err := json.Marshal(hh)
+	if err != nil {
+		return err.Error()
+	}
 	return string(s)
 }

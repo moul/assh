@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/moul/advanced-ssh-config/pkg/flexyaml"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/utils"
 	"github.com/moul/advanced-ssh-config/pkg/version"
 )
@@ -59,18 +59,21 @@ func (c *Config) SaveNewKnownHost(target string) {
 
 	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
 	if err != nil {
-		Logger.Errorf("Cannot append host %q, unknown ASSH known_hosts file: %v", target, err)
+		logger.Logger.Errorf("Cannot append host %q, unknown ASSH known_hosts file: %v", target, err)
 	}
 
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
-		Logger.Errorf("Cannot append host %q to %q (performance degradation): %v", target, c.ASSHKnownHostFile, err)
+		logger.Logger.Errorf("Cannot append host %q to %q (performance degradation): %v", target, c.ASSHKnownHostFile, err)
 		return
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	fmt.Fprintln(file, target)
-
-	file.Close()
 }
 
 func (c *Config) addKnownHost(target string) {
@@ -103,7 +106,11 @@ func (c *Config) LoadKnownHosts() error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -122,8 +129,8 @@ func (c *Config) IncludedFiles() []string {
 	return includedFiles
 }
 
-// JsonString returns a string representing the JSON of a Config object
-func (c *Config) JsonString() ([]byte, error) {
+// JSONString returns a string representing the JSON of a Config object
+func (c *Config) JSONString() ([]byte, error) {
 	return json.MarshalIndent(c, "", "  ")
 }
 
@@ -137,7 +144,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 
 	// name internal field
 	computedHost.name = name
-	computedHost.inherited = make(map[string]bool, 0)
+	computedHost.inherited = make(map[string]bool)
 	// self is already inherited
 	computedHost.inherited[name] = true
 
@@ -149,14 +156,14 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	for _, name := range host.Inherits {
 		_, found := computedHost.inherited[name]
 		if found {
-			Logger.Debugf("Detected circular loop inheritance, skiping...")
+			logger.Logger.Debugf("Detected circular loop inheritance, skiping...")
 			continue
 		}
 		computedHost.inherited[name] = true
 
 		target, err := config.getHostByPath(name, false, false, true)
 		if err != nil {
-			Logger.Warnf("Cannot inherits from %q: %v", name, err)
+			logger.Logger.Warnf("Cannot inherits from %q: %v", name, err)
 			continue
 		}
 		computedHost.ApplyDefaults(target)
@@ -193,7 +200,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 
 func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
-		Logger.Debugf("getHostByName direct matching: %q", name)
+		logger.Logger.Debugf("getHostByName direct matching: %q", name)
 		return computeHost(host, c, name, compute)
 	}
 
@@ -206,7 +213,7 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 				return nil, err
 			}
 			if matched {
-				Logger.Debugf("getHostByName pattern matching: %q => %q", pattern, name)
+				logger.Logger.Debugf("getHostByName pattern matching: %q => %q", pattern, name)
 				return computeHost(host, c, name, compute)
 			}
 		}
@@ -410,18 +417,22 @@ func (c *Config) SaveSSHConfig() error {
 	}
 
 	// validate hosts
-	if err := c.ValidateSummary(); err != nil {
+	if err = c.ValidateSummary(); err != nil {
 		return err
 	}
 
-	Logger.Debugf("Writing SSH config file to %q", configPath)
+	logger.Logger.Debugf("Writing SSH config file to %q", configPath)
 
 	tmpDir := filepath.Dir(configPath)
 	tmpFile, err := ioutil.TempFile(tmpDir, "config")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() {
+		if err := os.Remove(tmpFile.Name()); err != nil {
+			panic(err)
+		}
+	}()
 
 	if err := c.WriteSSHConfigTo(tmpFile); err != nil {
 		return err
@@ -449,7 +460,7 @@ func (c *Config) LoadFile(filename string) error {
 	}
 	c.includedFiles[filepath] = false
 
-	Logger.Debugf("Loading config file '%s'", filepath)
+	logger.Logger.Debugf("Loading config file '%s'", filepath)
 
 	// Read file
 	source, err := os.Open(filepath)
@@ -467,7 +478,7 @@ func (c *Config) LoadFile(filename string) error {
 	c.includedFiles[filepath] = true
 	afterHostsCount := len(c.Hosts)
 	diffHostsCount := afterHostsCount - beforeHostsCount
-	Logger.Debugf("Loaded config file '%s' (%d + %d => %d hosts)", filepath, beforeHostsCount, afterHostsCount, diffHostsCount)
+	logger.Logger.Debugf("Loaded config file '%s' (%d + %d => %d hosts)", filepath, beforeHostsCount, afterHostsCount, diffHostsCount)
 
 	// Handling includes
 	for _, include := range c.Includes {
@@ -496,7 +507,7 @@ func (c *Config) LoadFiles(pattern string) error {
 	// Load files iteratively
 	for _, filepath := range filepaths {
 		if err := c.LoadFile(filepath); err != nil {
-			Logger.Warnf("Cannot include %q: %v", filepath, err)
+			logger.Logger.Warnf("Cannot include %q: %v", filepath, err)
 		}
 	}
 
@@ -574,9 +585,7 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 
 	fmt.Fprintln(w, "# global configuration")
 	c.Defaults.name = "*"
-	c.Defaults.WriteSSHConfigTo(w)
-
-	return nil
+	return c.Defaults.WriteSSHConfigTo(w)
 }
 
 // SSHConfigPath returns the ~/.ssh/config file path

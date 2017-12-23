@@ -9,13 +9,13 @@ import (
 
 	"github.com/mgutz/ansi"
 	"github.com/moul/advanced-ssh-config/pkg/config"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdList(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Fatalf("Cannot load configuration: %v", err)
+		logger.Logger.Fatalf("Cannot load configuration: %v", err)
 		return nil
 	}
 
@@ -37,7 +37,7 @@ func cmdList(c *cli.Context) error {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {
-				Logger.Fatalf("Error while trying to expand hosts: %v", err)
+				logger.Logger.Fatalf("Error while trying to expand hosts: %v", err)
 			}
 		}
 	}
@@ -56,13 +56,10 @@ func cmdList(c *cli.Context) error {
 			switch {
 			case defaultValue == "":
 				fmt.Printf("        %s %s %s\n", yellowColorize(opt.Name), opt.Value, yellowColorize("[custom option]"))
-				break
 			case defaultValue == opt.Value:
 				fmt.Printf("        %s: %s\n", redColorize(opt.Name), opt.Value)
-				break
 			default:
 				fmt.Printf("        %s %s %s\n", cyanColorize(opt.Name), opt.Value, cyanColorize("[override]"))
-				break
 			}
 		}
 		fmt.Println()

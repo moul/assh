@@ -10,11 +10,17 @@ import (
 
 var funcMap = template.FuncMap{
 	"json": func(v interface{}) string {
-		a, _ := json.Marshal(v)
+		a, err := json.Marshal(v)
+		if err != nil {
+			return err.Error()
+		}
 		return string(a)
 	},
 	"prettyjson": func(v interface{}) string {
-		a, _ := json.MarshalIndent(v, "", "  ")
+		a, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			return err.Error()
+		}
 		return string(a)
 	},
 	"join":  strings.Join,

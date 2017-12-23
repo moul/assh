@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/templates"
 )
 
@@ -34,7 +34,7 @@ func (d DaemonDriver) Run(args RunArgs) error {
 		return err
 	}
 
-	d.cmd = exec.Command("/bin/sh", "-c", buff.String())
+	d.cmd = exec.Command("/bin/sh", "-c", buff.String()) // #nosec
 	d.cmd.Stdout = os.Stderr
 	d.cmd.Stderr = os.Stderr
 	d.cmd.Stdin = os.Stdin
@@ -43,8 +43,10 @@ func (d DaemonDriver) Run(args RunArgs) error {
 	}
 
 	go func() {
-		d.cmd.Wait()
-		Logger.Infof("daemon %q exited", d.line)
+		if err := d.cmd.Wait(); err != nil {
+			logger.Logger.Errorf("daemon driver error: %v", err)
+		}
+		logger.Logger.Infof("daemon %q exited", d.line)
 	}()
 
 	return nil
@@ -58,7 +60,7 @@ func (d DaemonDriver) Close() error {
 
 	err := d.cmd.Process.Kill()
 	if err != nil {
-		Logger.Warnf("daemon %q failed to stop: %v", d.line, err)
+		logger.Logger.Warnf("daemon %q failed to stop: %v", d.line, err)
 	}
 	return err
 }

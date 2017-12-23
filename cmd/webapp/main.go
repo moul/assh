@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -20,7 +21,9 @@ func main() {
 		},
 	}
 	app.Action = server
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		log.Fatalf("cannot run app: %v", err)
+	}
 }
 
 func server(c *cli.Context) error {
@@ -65,6 +68,5 @@ func server(c *cli.Context) error {
 			})
 		}
 	})
-	router.Run(c.String("bind-address"))
-	return nil
+	return router.Run(c.String("bind-address"))
 }

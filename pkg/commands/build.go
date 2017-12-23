@@ -8,20 +8,20 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdBuild(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Fatalf("Cannot open configuration file: %v", err)
+		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
 	if c.Bool("expand") {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {
-				Logger.Fatalf("Error while trying to expand hosts: %v", err)
+				logger.Logger.Fatalf("Error while trying to expand hosts: %v", err)
 			}
 		}
 	}
@@ -29,7 +29,7 @@ func cmdBuild(c *cli.Context) error {
 	if !c.Bool("ignore-known-hosts") {
 		if conf.KnownHostsFileExists() == nil {
 			if err := conf.LoadKnownHosts(); err != nil {
-				Logger.Errorf("Failed to load known-hosts file: %v", err)
+				logger.Logger.Errorf("Failed to load known-hosts file: %v", err)
 			}
 		}
 	}
@@ -37,29 +37,27 @@ func cmdBuild(c *cli.Context) error {
 	if c.Bool("no-automatic-rewrite") {
 		conf.DisableAutomaticRewrite()
 	}
-	conf.WriteSSHConfigTo(os.Stdout)
-
-	return nil
+	return conf.WriteSSHConfigTo(os.Stdout)
 }
 
 func cmdBuildJSON(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Fatalf("Cannot open configuration file: %v", err)
+		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
 	}
 
 	if c.Bool("expand") {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {
-				Logger.Fatalf("Error while trying to expand hosts: %v", err)
+				logger.Logger.Fatalf("Error while trying to expand hosts: %v", err)
 			}
 		}
 	}
 
 	s, err := json.MarshalIndent(conf, "", "  ")
 	if err != nil {
-		Logger.Fatalf("JSON encoding error: %v", err)
+		logger.Logger.Fatalf("JSON encoding error: %v", err)
 	}
 	fmt.Println(string(s))
 
