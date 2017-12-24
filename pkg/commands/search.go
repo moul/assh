@@ -6,18 +6,18 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 )
 
 func cmdSearch(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Fatalf("Cannot load configuration: %v", err)
+		logger.Logger.Fatalf("Cannot load configuration: %v", err)
 		return nil
 	}
 
 	if len(c.Args()) != 1 {
-		Logger.Fatalf("assh config search requires 1 argument. See 'assh config search --help'.")
+		logger.Logger.Fatalf("assh config search requires 1 argument. See 'assh config search --help'.")
 	}
 
 	needle := c.Args()[0]
