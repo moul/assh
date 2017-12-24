@@ -52,7 +52,7 @@ func (d ExecDriver) Run(args RunArgs) error {
 		return fmt.Errorf("No available shell found. (tried %s)", strings.Join(availableShells, ", "))
 	}
 
-	cmd := exec.Command(selectedShell, "-c", buff.String())
+	cmd := exec.Command(selectedShell, "-c", buff.String()) // #nosec
 	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

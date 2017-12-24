@@ -81,6 +81,9 @@ profile.out:	$(SOURCES)
 	cat `find . -name profile.out` | grep -v mode: | sort -r | awk '{if($$1 != last) {print $$0;last=$$1}}' >> profile.out.tmp
 	mv profile.out.tmp profile.out
 
+lint:
+	gometalinter --disable-all --enable=errcheck --enable=vet --enable=vetshadow --enable=golint --enable=gas --enable=ineffassign --enable=goconst --enable=goimports --enable=gofmt --exclude="Binds to all network interfaces" --exclude="should have comment" --enable=staticcheck --enable=gosimple --enable=misspell --deadline=120s ./pkg/... ./cmd/...
+
 .PHONY: release
 release:
 	mkdir -p .release

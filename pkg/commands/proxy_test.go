@@ -34,24 +34,28 @@ func TestComputeHost(t *testing.T) {
 		config := config.New()
 
 		err := config.LoadConfig(strings.NewReader(configExample))
+		So(err, ShouldBeNil)
 		host, err := computeHost("aaa", 0, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "1.2.3.4")
 		So(host.Port, ShouldEqual, "22")
 
 		err = config.LoadConfig(strings.NewReader(configExample))
+		So(err, ShouldBeNil)
 		host, err = computeHost("aaa", 42, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "1.2.3.4")
 		So(host.Port, ShouldEqual, "42")
 
 		err = config.LoadConfig(strings.NewReader(configExample))
+		So(err, ShouldBeNil)
 		host, err = computeHost("eee", 0, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "eee")
 		So(host.Port, ShouldEqual, "22")
 
 		err = config.LoadConfig(strings.NewReader(configExample))
+		So(err, ShouldBeNil)
 		host, err = computeHost("eee", 42, config)
 		So(err, ShouldBeNil)
 		So(host.HostName, ShouldEqual, "eee")
@@ -64,6 +68,7 @@ func Test_proxyCommand(t *testing.T) {
 		// FIXME: test stdout
 		config := config.New()
 		err := config.LoadConfig(strings.NewReader(configExample))
+		So(err, ShouldBeNil)
 		host, err := computeHost("aaa", 0, config)
 		So(err, ShouldBeNil)
 
@@ -85,6 +90,7 @@ func Test_hostPrepare(t *testing.T) {
 	Convey("Testing hostPrepare()", t, func() {
 		config := config.New()
 		err := config.LoadConfig(strings.NewReader(configExample))
+		So(err, ShouldBeNil)
 
 		host, err := computeHost("aaa", 0, config)
 		So(err, ShouldBeNil)

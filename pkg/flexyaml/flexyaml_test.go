@@ -153,9 +153,8 @@ func TestUnmarshal(t *testing.T) {
 			SomeKey string
 		}
 		var out C
-		var err error
 
-		err = Unmarshal([]byte("somekey: ok"), &out)
+		err := Unmarshal([]byte("somekey: ok"), &out)
 		So(err, ShouldBeNil)
 		So(out.SomeKey, ShouldEqual, "ok")
 		out = C{}

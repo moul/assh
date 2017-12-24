@@ -17,7 +17,9 @@ go:
 before_install:
 - go get -u github.com/axw/gocov/gocov
 - go get -u github.com/mattn/goveralls
-- go get golang.org/x/tools/cmd/cover
+- go get -u golang.org/x/tools/cmd/cover
+- go get -u github.com/alecthomas/gometalinter
+- gometalinter --install
 
 addons:
   apt:
@@ -32,6 +34,7 @@ matrix:
 script:
 - make build
 - make test
+- make lint
 - make examples
 - make cover
 - goveralls -service=travis-ci -v -covermode=count -coverprofile=profile.out

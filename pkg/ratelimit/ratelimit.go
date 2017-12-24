@@ -1,4 +1,4 @@
-// ratelimit based on http://hustcat.github.io/rate-limit-example-in-go/
+// Package ratelimit based on http://hustcat.github.io/rate-limit-example-in-go/
 package ratelimit
 
 import (

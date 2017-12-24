@@ -10,19 +10,22 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/moul/advanced-ssh-config/pkg/config"
-	. "github.com/moul/advanced-ssh-config/pkg/logger"
+	"github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/utils"
 )
 
 func cmdInfo(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		Logger.Fatalf("Cannot load configuration: %v", err)
+		logger.Logger.Fatalf("Cannot load configuration: %v", err)
 		return nil
 	}
 
 	fmt.Printf("Debug mode (client): %v\n", os.Getenv("ASSH_DEBUG") == "1")
-	cliPath, _ := osext.Executable()
+	cliPath, err := osext.Executable()
+	if err != nil {
+		return err
+	}
 	fmt.Printf("CLI Path: %s\n", cliPath)
 	fmt.Printf("Go version: %s\n", runtime.Version())
 	fmt.Printf("OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
