@@ -13,7 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/moul/advanced-ssh-config/pkg/flexyaml"
+	"github.com/moul/flexyaml"
+
 	"github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/utils"
 	"github.com/moul/advanced-ssh-config/pkg/version"
