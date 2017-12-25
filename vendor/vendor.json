@@ -193,6 +193,12 @@
 			"revision": "c286dcecd19ff979eeb73ea444e479b903f2cfcb"
 		},
 		{
+			"checksumSHA1": "8TYRR3u6GmHc44Zz1eBvpJ7JIrw=",
+			"path": "github.com/moul/flexyaml",
+			"revision": "f67944914b43d3b0dc5dbbfc9e3e249cfb1dcae6",
+			"revisionTime": "2017-12-25T15:17:15Z"
+		},
+		{
 			"checksumSHA1": "1myjT8gKwUI3WNE5a/85jNPL8Fo=",
 			"path": "github.com/satori/go.uuid",
 			"revision": "879c5887cd475cd7864858769793b2ceb0d44feb"
