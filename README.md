@@ -831,7 +831,7 @@ Host *
 
 ### master (unreleased)
 
-* No entry
+* Add more shell propositions for the 'exec' hook ([#254](https://github.com/moul/advanced-ssh-config/issues/254))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.7.0...master)
 

@@ -35,8 +35,12 @@ func (d ExecDriver) Run(args RunArgs) error {
 	}
 
 	var (
-		availableShells = []string{"/bin/sh", "/bin/bash", "/bin/zsh"}
-		selectedShell   = ""
+		availableShells = []string{
+			"/bin/sh", "/bin/bash", "/bin/zsh",
+			"/usr/bin/sh", "/usr/bin/bash", "/usr/bin/zsh",
+			"/usr/local/bin/sh", "/usr/local/bin/bash", "/usr/local/bin/zsh",
+		}
+		selectedShell = ""
 	)
 	for _, shell := range availableShells {
 		info, err := os.Stat(shell)
