@@ -178,7 +178,7 @@ func expandSSHTokens(tokenized string, host *config.Host, gateway *config.Host) 
 	result = strings.Replace(result, "%i", strconv.Itoa(os.Geteuid()), -1)
 	result = strings.Replace(result, "%p", host.Port, -1)
 
-	if hostname, err := os.Hostname() ; err == nil {
+	if hostname, err := os.Hostname(); err == nil {
 		result = strings.Replace(result, "%L", hostname, -1)
 	} else {
 		result = strings.Replace(result, "%L", "hostname", -1)
@@ -187,7 +187,7 @@ func expandSSHTokens(tokenized string, host *config.Host, gateway *config.Host) 
 	if host.User != "" {
 		result = strings.Replace(result, "%r", host.User, -1)
 	} else {
-		if userdata, err := user.Current() ; err == nil {
+		if userdata, err := user.Current(); err == nil {
 			result = strings.Replace(result, "%r", userdata.Username, -1)
 		} else {
 			result = strings.Replace(result, "%r", "username", -1)
@@ -198,7 +198,7 @@ func expandSSHTokens(tokenized string, host *config.Host, gateway *config.Host) 
 }
 
 func prepareHostControlPath(host, gateway *config.Host) error {
-	if ! config.BoolVal(host.ControlMasterMkdir) && ("none" == host.ControlPath) {
+	if !config.BoolVal(host.ControlMasterMkdir) && ("none" == host.ControlPath) {
 		return nil
 	}
 
@@ -210,7 +210,7 @@ func prepareHostControlPath(host, gateway *config.Host) error {
 
 func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 
-	emptygw := config.Host {}
+	emptygw := config.Host{}
 	prepareHostControlPath(host.Clone(), emptygw.Clone())
 
 	if len(host.Gateways) > 0 {
