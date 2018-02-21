@@ -211,13 +211,16 @@ func prepareHostControlPath(host, gateway *config.Host) error {
 func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 
 	emptygw := config.Host{}
-	prepareHostControlPath(host.Clone(), emptygw.Clone())
+	err := prepareHostControlPath(host.Clone(), emptygw.Clone())
+	if err != nil {
+		return err
+	}
 
 	if len(host.Gateways) > 0 {
 		logger.Logger.Debugf("Trying gateways: %s", host.Gateways)
 		for _, gateway := range host.Gateways {
 			if gateway == "direct" {
-				err := proxyDirect(host, dryRun)
+				err = proxyDirect(host, dryRun)
 				if err != nil {
 					logger.Logger.Errorf("Failed to use 'direct' connection: %v", err)
 				}
@@ -225,7 +228,7 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				hostCopy := host.Clone()
 				gatewayHost := conf.GetGatewaySafe(gateway)
 
-				err := prepareHostControlPath(hostCopy, gatewayHost)
+				err = prepareHostControlPath(hostCopy, gatewayHost)
 				if err != nil {
 					return err
 				}
