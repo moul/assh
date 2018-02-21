@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"os/user"
 	"path"
 	"strconv"
 	"strings"
@@ -141,16 +142,77 @@ func computeHost(dest string, portOverride int, conf *config.Config) (*config.Ho
 	return host, nil
 }
 
-func prepareHostControlPath(host, gateway *config.Host) error {
-	controlPathDir := path.Dir(os.ExpandEnv(strings.Replace(host.ControlPath, "~", "$HOME", -1)))
-	gatewayControlPath := path.Join(controlPathDir, gateway.Name())
-	if config.BoolVal(host.ControlMasterMkdir) {
-		return os.MkdirAll(gatewayControlPath, 0700)
+func expandSSHTokens(tokenized string, host *config.Host, gateway *config.Host) string {
+	result := tokenized
+
+	// OpenSSH Token Cheatsheet (stolen directly from the man pages)
+	//
+	// %%    A literal `%'.
+	// %C    Shorthand for %l%h%p%r.
+	// %d    Local user's home directory.
+	// %h    The remote hostname.
+	// %i    The local user ID.
+	// %L    The local hostname.
+	// %l    The local hostname, including the domain name.
+	// %n    The original remote hostname, as given on the command line.
+	// %p    The remote port.
+	// %r    The remote username.
+	// %u    The local username.
+
+	// TODO: Expansion of strings like "%%C" and "%C" are equivalent due to the
+	//       order that tokens are evaluated.  Should look at how OpenSSH implements
+	//       the tokenization behavior.
+
+	// Expand a home directory ~.  Assume nobody is using
+	// the ~otheruser syntax.
+	homedir := os.ExpandEnv("$HOME")
+
+	if result[0] == '~' {
+		result = strings.Replace(result, "~", homedir, 1)
 	}
-	return nil
+	result = strings.Replace(result, "%d", homedir, -1)
+
+	result = strings.Replace(result, "%%", "%", -1)
+	result = strings.Replace(result, "%C", "%l%h%p%r", -1)
+	result = strings.Replace(result, "%h", path.Join(host.Name(), gateway.Name()), -1)
+	result = strings.Replace(result, "%i", strconv.Itoa(os.Geteuid()), -1)
+	result = strings.Replace(result, "%p", host.Port, -1)
+
+	if hostname, err := os.Hostname() ; err == nil {
+		result = strings.Replace(result, "%L", hostname, -1)
+	} else {
+		result = strings.Replace(result, "%L", "hostname", -1)
+	}
+
+	if host.User != "" {
+		result = strings.Replace(result, "%r", host.User, -1)
+	} else {
+		if userdata, err := user.Current() ; err == nil {
+			result = strings.Replace(result, "%r", userdata.Username, -1)
+		} else {
+			result = strings.Replace(result, "%r", "username", -1)
+		}
+	}
+
+	return result
+}
+
+func prepareHostControlPath(host, gateway *config.Host) error {
+	if ! config.BoolVal(host.ControlMasterMkdir) && ("none" == host.ControlPath) {
+		return nil
+	}
+
+	controlPath := expandSSHTokens(host.ControlPath, host, gateway)
+	controlPathDir := path.Dir(controlPath)
+	logger.Logger.Debugf("Creating control path: %s", controlPathDir)
+	return os.MkdirAll(controlPathDir, 0700)
 }
 
 func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
+
+	emptygw := config.Host {}
+	prepareHostControlPath(host.Clone(), emptygw.Clone())
+
 	if len(host.Gateways) > 0 {
 		logger.Logger.Debugf("Trying gateways: %s", host.Gateways)
 		for _, gateway := range host.Gateways {
