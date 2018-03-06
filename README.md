@@ -832,6 +832,10 @@ Host *
 ### master (unreleased)
 
 * Add more shell propositions for the 'exec' hook ([#254](https://github.com/moul/advanced-ssh-config/issues/254))
+* Support SSH tokens and ~ expansion in ControlPaths ([#276](https://github.com/moul/advanced-ssh-config/pull/276)) by [@stk0vrfl0w](https://github.com/stk0vrfl0w)
+* Ensure ControlPath directories are properly created when using syntax such as "ssh host1/host2" ([#276](https://github.com/moul/advanced-ssh-config/pull/276)) by [@stk0vrfl0w](https://github.com/stk0vrfl0w)
+* Change panic() to a warning statement when removing the temporary file. Since delete is deferred,
+the config file should have already been renamed and would no longer exist ([#276](https://github.com/moul/advanced-ssh-config/pull/276)) by [@stk0vrfl0w](https://github.com/stk0vrfl0w)
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.7.0...master)
 
