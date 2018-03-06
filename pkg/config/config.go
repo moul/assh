@@ -431,7 +431,8 @@ func (c *Config) SaveSSHConfig() error {
 	}
 	defer func() {
 		if err := os.Remove(tmpFile.Name()); err != nil {
-			panic(err)
+			logger.Logger.Warnf("Unable to remove tempfile: %s", tmpFile.Name())
+			// panic(err)
 		}
 	}()
 
