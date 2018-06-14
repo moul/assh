@@ -223,6 +223,8 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				err = proxyDirect(host, dryRun)
 				if err != nil {
 					logger.Logger.Errorf("Failed to use 'direct' connection: %v", err)
+				} else {
+					return nil
 				}
 			} else {
 				hostCopy := host.Clone()
