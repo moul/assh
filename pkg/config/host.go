@@ -186,11 +186,11 @@ func (h *Host) Prototype() string {
 			hostname = h.name
 		}
 	}
-
+//REX: disabling for now, this *CAN* be correct, but does it consider defaults?
 	port := h.Port
-	if port == "" {
-		port = "22"
-	}
+	//if port == "" {
+	//	port = "22"
+	//}
 	return fmt.Sprintf("%s@%s:%s", username, hostname, port)
 }
 
@@ -1074,8 +1074,9 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	h.inputName = utils.ExpandField(h.inputName)
 
 	// Extra defaults
+//REX: why does this have special treatment?
 	if h.Port == "" {
-		h.Port = "22"
+		h.Port = defaults.Port
 	}
 }
 
