@@ -3,15 +3,7 @@ language: go
 sudo: false
 
 go:
-#- 1.3
-#- 1.4
-#- 1.5
-#- 1.5.1
-#- 1.5.2
-#- 1.5.3
-#- 1.6
-#- 1.7
-- 1.8.x
+- "1.10"
 - tip
 
 before_install:
@@ -28,7 +20,6 @@ addons:
 
 matrix:
   allow_failures:
-#  - go: 1.5.3
   - go: tip
 
 script:
