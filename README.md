@@ -829,6 +829,12 @@ Host *
 
 ## Changelog
 
+### master (unreleased)
+
+* No entry.
+
+[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.8.0...master)
+
 ### v2.8.0 (2018-07-03)
 
 * Add more shell propositions for the 'exec' hook ([#254](https://github.com/moul/advanced-ssh-config/issues/254))
