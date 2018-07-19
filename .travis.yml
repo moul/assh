@@ -10,8 +10,9 @@ before_install:
 - go get -u github.com/axw/gocov/gocov
 - go get -u github.com/mattn/goveralls
 - go get -u golang.org/x/tools/cmd/cover
-- go get -u github.com/alecthomas/gometalinter
-- gometalinter --install
+- go get -u gopkg.in/alecthomas/gometalinter.v2
+- gometalinter.v2 --install || true
+- go get honnef.co/go/tools/cmd/megacheck # use alternative megacheck install URL
 
 addons:
   apt:

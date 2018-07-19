@@ -50,6 +50,7 @@ func main() {
 	}
 }
 
+// BashComplete is used bu urfave/cli to allow dynamic bash completion.
 func BashComplete(c *cli.Context) {
 	if len(c.Args()) == 0 {
 		for _, option := range []string{"--debug", "--verbose", "--help", "--version"} {

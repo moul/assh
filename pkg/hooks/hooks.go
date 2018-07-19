@@ -55,8 +55,8 @@ func (hd *HookDrivers) Close() []error {
 
 // New returns an HookDriver instance
 func New(expr string) (HookDriver, error) {
-	driverName := strings.Split(string(expr), " ")[0]
-	param := strings.Join(strings.Split(string(expr), " ")[1:], " ")
+	driverName := strings.Split(expr, " ")[0]
+	param := strings.Join(strings.Split(expr, " ")[1:], " ")
 	switch driverName {
 	case "write":
 		driver, err := NewWriteDriver(param)

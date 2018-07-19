@@ -2,6 +2,7 @@ package logger
 
 import "github.com/Sirupsen/logrus"
 
+// Logger is a global logger
 var Logger = logrus.New()
 
 // SetLevel sets the logging level
