@@ -434,15 +434,15 @@ func (c *Config) SaveSSHConfig() error {
 		if !shouldRemoveTempfile {
 			return
 		}
-		if err := os.Remove(tmpFile.Name()); err != nil {
+		if err = os.Remove(tmpFile.Name()); err != nil {
 			logger.Logger.Debugf("Unable to remove tempfile: %s", tmpFile.Name())
 		}
 	}()
 
-	if err := c.WriteSSHConfigTo(tmpFile); err != nil {
+	if err = c.WriteSSHConfigTo(tmpFile); err != nil {
 		return err
 	}
-	if err := tmpFile.Close(); err != nil {
+	if err = tmpFile.Close(); err != nil {
 		return err
 	}
 

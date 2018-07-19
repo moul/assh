@@ -11,12 +11,14 @@ func nodename(input string) string {
 	return fmt.Sprintf(`"%s"`, input)
 }
 
+// GraphSettings are used to change the Graph() function behavior.
 type GraphSettings struct {
 	ShowIsolatedHosts bool
 	NoResolveWildcard bool
 	NoInherits        bool
 }
 
+// Graph computes and returns a dot-compatible graph representation of the config.
 func Graph(cfg *config.Config, settings *GraphSettings) (string, error) {
 	graph := gographviz.NewGraph()
 	if err := graph.SetName("G"); err != nil {
