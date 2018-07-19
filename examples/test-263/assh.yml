@@ -1,0 +1,20 @@
+hosts:
+  a: # should not work
+    hostname: 1.2.3.4
+  b: # should work directly
+  c: # should work directly
+    gateways: [direct]
+  d: # should fail via a, then work via b
+    gateways: [a, b]
+  e: # should work via b, should not test a
+    gateways: [b, a]
+  f: # should work via b, only once
+    gateways: [b, b]
+  g: # should work directly, only once
+    gateways: [direct, b]
+  h: # should work via a, should not try direct
+    gateways: [a, direct]
+
+defaults:
+  hostname: 127.0.0.1 # should work
+  connecttimeout: 1
