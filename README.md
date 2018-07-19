@@ -831,7 +831,7 @@ Host *
 
 ### master (unreleased)
 
-* No entry.
+* Remove invalid warn ([#283](https://github.com/moul/advanced-ssh-config/issues/283))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.8.0...master)
 

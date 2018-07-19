@@ -82,7 +82,7 @@ profile.out:	$(SOURCES)
 	mv profile.out.tmp profile.out
 
 lint:
-	gometalinter --disable-all --enable=errcheck --enable=vet --enable=vetshadow --enable=golint --enable=gas --enable=ineffassign --enable=goconst --enable=goimports --enable=gofmt --exclude="Binds to all network interfaces" --exclude="should have comment" --enable=staticcheck --enable=gosimple --enable=misspell --deadline=120s ./pkg/... ./cmd/...
+	gometalinter.v2 ./...
 
 .PHONY: release
 release:

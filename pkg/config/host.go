@@ -1438,6 +1438,7 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 	return nil
 }
 
+// ExpandString replaces elements in a format string with host variables.
 func (h *Host) ExpandString(input string, gateway string) string {
 	output := input
 

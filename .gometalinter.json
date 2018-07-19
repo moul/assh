@@ -1,0 +1,30 @@
+{
+  "Vendor": true,
+  "Deadline": "2m",
+  "Sort": [
+    "linter",
+    "severity",
+    "path",
+    "line"
+  ],
+  "Exclude": [
+    "error return value not checked \\(defer"
+  ],
+  "EnableGC": true,
+  "Enable": [
+    "deadcode",
+    "misspell",
+    "structcheck",
+    "errcheck",
+    "varcheck",
+    "unconvert",
+    "gofmt",
+    "goimports",
+    "golint",
+    "ineffassign",
+    "vet",
+    "vetshadow",
+    "gas",
+    "megacheck"
+  ]
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
+// GetLoggingLevelByInspectingParent inspects parent ssh process for eventual passed `-v` flags.
 func GetLoggingLevelByInspectingParent() (logrus.Level, error) {
 	ppid := os.Getppid()
 	process, err := process.NewProcess(int32(ppid))
