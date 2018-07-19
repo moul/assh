@@ -832,6 +832,7 @@ Host *
 ### master (unreleased)
 
 * Remove invalid warn ([#283](https://github.com/moul/advanced-ssh-config/issues/283))
+* Avoid double-connection when having chained gateways ([#285](https://github.com/moul/advanced-ssh-config/pull/285)) by [@4wrxb](https://github.com/4wrxb)
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.8.0...master)
 
