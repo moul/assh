@@ -429,10 +429,13 @@ func (c *Config) SaveSSHConfig() error {
 	if err != nil {
 		return err
 	}
+	shouldRemoveTempfile := true
 	defer func() {
+		if !shouldRemoveTempfile {
+			return
+		}
 		if err := os.Remove(tmpFile.Name()); err != nil {
-			logger.Logger.Warnf("Unable to remove tempfile: %s", tmpFile.Name())
-			// panic(err)
+			logger.Logger.Debugf("Unable to remove tempfile: %s", tmpFile.Name())
 		}
 	}()
 
@@ -443,7 +446,11 @@ func (c *Config) SaveSSHConfig() error {
 		return err
 	}
 
-	return os.Rename(tmpFile.Name(), configPath)
+	err = os.Rename(tmpFile.Name(), configPath)
+	if err != nil {
+		shouldRemoveTempfile = false
+	}
+	return err
 }
 
 // LoadFile loads the content of a configuration file in the Config object
