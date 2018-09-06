@@ -12,6 +12,7 @@ import (
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	"github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/utils"
+	"github.com/moul/advanced-ssh-config/pkg/version"
 )
 
 func cmdInfo(c *cli.Context) error {
@@ -29,6 +30,7 @@ func cmdInfo(c *cli.Context) error {
 	fmt.Printf("CLI Path: %s\n", cliPath)
 	fmt.Printf("Go version: %s\n", runtime.Version())
 	fmt.Printf("OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+	fmt.Printf("Version: %s (%s)\n", version.VERSION, version.GITCOMMIT)
 	fmt.Println("")
 	fmt.Printf("RC files:\n")
 	homeDir := utils.GetHomeDir()
