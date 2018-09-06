@@ -134,6 +134,7 @@ hosts:
 
   hostd:
     Hostname: 13.14.15.16
+    GatewayConnectTimeout: 2
     Gateways:
     - direct
     - hosta
@@ -833,6 +834,7 @@ Host *
 
 * Remove invalid warn ([#283](https://github.com/moul/advanced-ssh-config/issues/283))
 * Avoid double-connection when having chained gateways ([#285](https://github.com/moul/advanced-ssh-config/pull/285)) by [@4wrxb](https://github.com/4wrxb)
+* Add `GatewayConnectTimeout` option ([#289](https://github.com/moul/advanced-ssh-config/issues/289))
 
 [Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.8.0...master)
 

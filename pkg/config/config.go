@@ -74,7 +74,7 @@ func (c *Config) SaveNewKnownHost(target string) {
 		}
 	}()
 
-	fmt.Fprintln(file, target)
+	_, _ = fmt.Fprintln(file, target)
 }
 
 func (c *Config) addKnownHost(target string) {
@@ -575,11 +575,11 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 `)
 	header = strings.Replace(header, "%VERSION", version.VERSION, -1)
 	header = strings.Replace(header, "%BUILD_DATE", time.Now().Format("2006-01-02 15:04:05 -0700 MST"), -1)
-	fmt.Fprintln(w, header)
+	_, _ = fmt.Fprintln(w, header)
 	// FIXME: add version
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
-	fmt.Fprintln(w, "# host-based configuration")
+	_, _ = fmt.Fprintln(w, "# host-based configuration")
 	for _, name := range c.sortedNames() {
 		host := c.Hosts[name]
 		computedHost, err := computeHost(host, c, name, false)
@@ -589,10 +589,10 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 		if err = computedHost.WriteSSHConfigTo(w); err != nil {
 			return err
 		}
-		fmt.Fprintln(w)
+		_, _ = fmt.Fprintln(w)
 	}
 
-	fmt.Fprintln(w, "# global configuration")
+	_, _ = fmt.Fprintln(w, "# global configuration")
 	c.Defaults.name = "*"
 	return c.Defaults.WriteSSHConfigTo(w)
 }
