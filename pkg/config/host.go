@@ -112,25 +112,26 @@ type Host struct {
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
-	noAutomaticRewrite bool
-	Inherits           composeyaml.Stringorslice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
-	Gateways           composeyaml.Stringorslice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
-	ResolveNameservers composeyaml.Stringorslice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
-	ResolveCommand     string                    `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
-	ControlMasterMkdir string                    `yaml:"controlmastermkdir,omitempty,flow" json:"ControlMasterMkdir,omitempty"`
-	Aliases            composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
-	Hooks              *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
-	Comment            composeyaml.Stringorslice `yaml:"comment,omitempty,flow" json:"Comment,omitempty"`
-	RateLimit          string                    `yaml:"ratelimit,omitempty,flow" json:"RateLimit,omitempty"`
+	Inherits              composeyaml.Stringorslice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
+	Gateways              composeyaml.Stringorslice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
+	ResolveNameservers    composeyaml.Stringorslice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
+	ResolveCommand        string                    `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
+	ControlMasterMkdir    string                    `yaml:"controlmastermkdir,omitempty,flow" json:"ControlMasterMkdir,omitempty"`
+	Aliases               composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
+	Hooks                 *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
+	Comment               composeyaml.Stringorslice `yaml:"comment,omitempty,flow" json:"Comment,omitempty"`
+	RateLimit             string                    `yaml:"ratelimit,omitempty,flow" json:"RateLimit,omitempty"`
+	GatewayConnectTimeout int                       `yaml:"gatewayconnecttimeout,omitempty,flow" json:"GatewayConnectTimeout,omitempty"`
 
 	// private assh fields
-	knownHosts []string
-	pattern    string
-	name       string
-	inputName  string
-	isDefault  bool
-	isTemplate bool
-	inherited  map[string]bool
+	noAutomaticRewrite bool
+	knownHosts         []string
+	pattern            string
+	name               string
+	inputName          string
+	isDefault          bool
+	isTemplate         bool
+	inherited          map[string]bool
 }
 
 // NewHost returns a host with name
@@ -1054,6 +1055,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.RateLimit = defaults.RateLimit
 	}
 
+	if h.GatewayConnectTimeout == 0 {
+		h.GatewayConnectTimeout = defaults.GatewayConnectTimeout
+	}
+
 	if h.Hooks == nil {
 		h.Hooks = defaults.Hooks
 		if h.Hooks == nil {
@@ -1404,6 +1409,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		}
 		if len(h.Comment) > 0 {
 			fmt.Fprint(w, sliceComment("Comment", h.Comment))
+		}
+		if h.GatewayConnectTimeout > 0 {
+			fmt.Fprint(w, stringComment("GatewayConnectTimeout", fmt.Sprintf("%d", h.GatewayConnectTimeout)))
 		}
 		if len(h.Aliases) > 0 {
 			if aliasIdx == 0 {

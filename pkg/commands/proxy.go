@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net"
 	"os"
@@ -219,13 +220,13 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 	if len(host.Gateways) > 0 {
 		logger.Logger.Debugf("Trying gateways: %s", host.Gateways)
 		for _, gateway := range host.Gateways {
+			log.Println(gateway)
 			if gateway == "direct" {
 				err = proxyDirect(host, dryRun)
-				if err != nil {
-					logger.Logger.Errorf("Failed to use 'direct' connection: %v", err)
-				} else {
+				if err == nil {
 					return nil
 				}
+				logger.Logger.Errorf("Failed to use 'direct' connection: %v", err)
 			} else {
 				hostCopy := host.Clone()
 				gatewayHost := conf.GetGatewaySafe(gateway)
@@ -388,7 +389,16 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	defer beforeConnectDrivers.Close()
 
 	logger.Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port), time.Duration(host.ConnectTimeout)*time.Second)
+
+	// use GatewayConnectTimeout, fallback on ConnectTimeout
+	timeout := host.GatewayConnectTimeout
+	if host.ConnectTimeout != 0 {
+		timeout = host.ConnectTimeout
+	}
+	if timeout < 0 { // set to 0 to disable
+		timeout = 0
+	}
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port), time.Duration(timeout)*time.Second)
 	if err != nil {
 		// OnConnectError hook
 		connectHookArgs.Error = err
