@@ -5,6 +5,7 @@
 [![GitHub release](https://img.shields.io/github/release/moul/advanced-ssh-config.svg)](https://github.com/moul/advanced-ssh-config/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/moul/advanced-ssh-config)](https://goreportcard.com/report/github.com/moul/advanced-ssh-config)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config?ref=badge_shield)
+[![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 
 <img src="https://raw.githubusercontent.com/moul/advanced-ssh-config/master/resources/assh.png" width="400" />
 
