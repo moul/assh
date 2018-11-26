@@ -520,7 +520,7 @@ defaults:
 
     OnConnect:
       # Log internal information to a file
-      - 'exec echo {{.}} | jq . >> ~/.ssh/last_connected_host.txt'
+      - exec printf '{{.}}' | jq . >> ~/.ssh/last_connected_host.txt
 
       # Alert me with a Desktop notification
       - notify New SSH connection to {{.Host.Prototype}} at {{.Stats.ConnectedAt}}
