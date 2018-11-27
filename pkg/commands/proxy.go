@@ -21,13 +21,12 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	shlex "github.com/flynn/go-shlex"
-	"github.com/urfave/cli"
-	"golang.org/x/net/context"
-	"golang.org/x/time/rate"
-
 	"github.com/moul/advanced-ssh-config/pkg/config"
 	"github.com/moul/advanced-ssh-config/pkg/logger"
 	"github.com/moul/advanced-ssh-config/pkg/ratelimit"
+	"github.com/urfave/cli"
+	"golang.org/x/net/context"
+	"golang.org/x/time/rate"
 )
 
 type contextKey string
@@ -355,11 +354,29 @@ type ConnectionStats struct {
 	AverageSpeedHuman       string
 }
 
+func (c *ConnectionStats) String() string {
+	b, err := json.Marshal(c)
+	if err != nil {
+		logger.Logger.Errorf("failed to marshal ConnectionStats: %v", err)
+		return ""
+	}
+	return string(b)
+}
+
 // ConnectHookArgs is the struture sent to the hooks and used in Go templates by the hook drivers
 type ConnectHookArgs struct {
 	Host  *config.Host
 	Stats *ConnectionStats
-	Error error
+	Error string
+}
+
+func (c ConnectHookArgs) String() string {
+	b, err := json.Marshal(c)
+	if err != nil {
+		logger.Logger.Errorf("failed to marshal ConnectHookArgs: %v", err)
+		return ""
+	}
+	return string(b)
 }
 
 func proxyGo(host *config.Host, dryRun bool) error {
@@ -401,7 +418,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port), time.Duration(timeout)*time.Second)
 	if err != nil {
 		// OnConnectError hook
-		connectHookArgs.Error = err
+		connectHookArgs.Error = err.Error()
 		logger.Logger.Debugf("Calling OnConnectError hooks")
 		onConnectErrorDrivers, err2 := host.Hooks.OnConnectError.InvokeAll(connectHookArgs)
 		if err2 != nil {
