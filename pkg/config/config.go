@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/imdario/mergo"
 	"io"
 	"io/ioutil"
 	"os"
@@ -378,7 +379,28 @@ func (c *Config) LoadConfig(source io.Reader) error {
 		return err
 	}
 	c.applyMissingNames()
+	c.mergeWildCardEntries()
 	return nil
+}
+
+func (c *Config) mergeWildCardEntries() {
+	for k, host := range c.Hosts {
+		if strings.Contains(k, "*") {
+			continue
+		}
+
+		for key, subHost := range c.Hosts {
+			if strings.Contains(key, "*") {
+				tempKey := strings.Replace(key, "*", "", -1)
+				// if the wildcard matches
+				if strings.Contains(k, tempKey) {
+					if err := mergo.Merge(host, subHost); err != nil {
+						fmt.Println(err.Error())
+					}
+				}
+			}
+		}
+	}
 }
 
 func (c *Config) applyMissingNames() {
