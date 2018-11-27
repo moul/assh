@@ -391,11 +391,22 @@ func (c *Config) mergeWildCardEntries() {
 
 		for key, subHost := range c.Hosts {
 			if strings.Contains(key, "*") {
-				tempKey := strings.Replace(key, "*", "", -1)
-				// if the wildcard matches
-				if strings.Contains(k, tempKey) {
-					if err := mergo.Merge(host, subHost); err != nil {
-						fmt.Println(err.Error())
+				keyParts := strings.Split(key, "*")
+				// if * is in the middle
+				if keyParts[0] != "" && keyParts[1] != "" {
+					// if the wildcard matches
+					if strings.Contains(k, keyParts[0]) && strings.Contains(k, keyParts[1]) {
+						if err := mergo.Merge(host, subHost); err != nil {
+							fmt.Println(err.Error())
+						}
+					}
+				} else {
+					tempKey := strings.Replace(key, "*", "", -1)
+					// if the wildcard matches
+					if strings.Contains(k, tempKey) {
+						if err := mergo.Merge(host, subHost); err != nil {
+							fmt.Println(err.Error())
+						}
 					}
 				}
 			}
