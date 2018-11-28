@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/imdario/mergo"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/imdario/mergo"
 
 	"github.com/moul/flexyaml"
 
