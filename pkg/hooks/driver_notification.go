@@ -9,7 +9,7 @@ import (
 	"bytes"
 
 	"github.com/haklop/gnotifier"
-	"github.com/moul/advanced-ssh-config/pkg/templates"
+	"moul.io/assh/pkg/templates"
 )
 
 // NotificationDriver is a driver that notifications some texts to the terminal

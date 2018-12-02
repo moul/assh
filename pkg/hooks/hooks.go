@@ -1,4 +1,4 @@
-package hooks
+package hooks // import "moul.io/assh/pkg/hooks"
 
 import (
 	"fmt"
@@ -71,6 +71,6 @@ func New(expr string) (HookDriver, error) {
 		driver, err := NewDaemonDriver(param)
 		return driver, err
 	default:
-		return nil, fmt.Errorf("No such driver %q", driverName)
+		return nil, fmt.Errorf("no such driver %q", driverName)
 	}
 }

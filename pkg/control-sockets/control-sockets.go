@@ -1,4 +1,4 @@
-package controlsockets
+package controlsockets // import "moul.io/assh/pkg/control-sockets"
 
 import (
 	"fmt"
@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/mattn/go-zglob"
-	"github.com/moul/advanced-ssh-config/pkg/utils"
+
+	"moul.io/assh/pkg/utils"
 )
 
 // ControlSocket defines a unix-domain socket controlled by a master SSH process
