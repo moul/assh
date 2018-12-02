@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mgutz/ansi"
 	"github.com/urfave/cli"
 	"golang.org/x/crypto/ssh/terminal"
 
-	"github.com/mgutz/ansi"
-	"github.com/moul/advanced-ssh-config/pkg/config"
-	"github.com/moul/advanced-ssh-config/pkg/logger"
+	"moul.io/assh/pkg/config"
+	"moul.io/assh/pkg/logger"
 )
 
 func cmdList(c *cli.Context) error {

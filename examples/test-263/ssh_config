@@ -4,7 +4,31 @@
 # more info: https://github.com/moul/assh
 
 # host-based configuration
+Host a
+  # HostName: 1.2.3.4
+
+Host b
+
+Host c
+  # Gateways: [direct]
+
+Host d
+  # Gateways: [a, b]
+
+Host e
+  # Gateways: [b, a]
+
+Host f
+  # Gateways: [b, b]
+
+Host g
+  # Gateways: [direct, b]
+
+Host h
+  # Gateways: [a, direct]
+
 # global configuration
 Host *
+  ConnectTimeout 1
   ProxyCommand /Users/moul/go/bin/assh connect --port=%p %h
-  # ResolveCommand: echo h=%h p=%p name=%name n=%n g=%g
+  # HostName: 127.0.0.1

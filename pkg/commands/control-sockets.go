@@ -9,9 +9,9 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/urfave/cli"
 
-	"github.com/moul/advanced-ssh-config/pkg/config"
-	"github.com/moul/advanced-ssh-config/pkg/control-sockets"
-	"github.com/moul/advanced-ssh-config/pkg/logger"
+	"moul.io/assh/pkg/config"
+	"moul.io/assh/pkg/control-sockets"
+	"moul.io/assh/pkg/logger"
 )
 
 func cmdCsList(c *cli.Context) error {

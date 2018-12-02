@@ -1299,7 +1299,7 @@ func TestConfig_WriteSSHConfig(t *testing.T) {
 		err := config.WriteSSHConfigTo(&buffer)
 		So(err, ShouldBeNil)
 
-		expected := `# more info: https://github.com/moul/advanced-ssh-config
+		expected := `# more info: https://github.com/moul/assh
 
 # host-based configuration
 Host *.ddd
@@ -1516,7 +1516,7 @@ Host *
 		asshBinaryPath = "assh"
 		err := config.WriteSSHConfigTo(&buffer)
 		So(err, ShouldBeNil)
-		expected := `# more info: https://github.com/moul/advanced-ssh-config
+		expected := `# more info: https://github.com/moul/assh
 
 # host-based configuration
 Host toto
@@ -1553,7 +1553,7 @@ Host *
 		asshBinaryPath = "assh"
 		err := config.WriteSSHConfigTo(&buffer)
 		So(err, ShouldBeNil)
-		expected := `# more info: https://github.com/moul/advanced-ssh-config
+		expected := `# more info: https://github.com/moul/assh
 
 # host-based configuration
 Host toto

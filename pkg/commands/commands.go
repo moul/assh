@@ -1,13 +1,13 @@
-package commands
+package commands // import "moul.io/assh/pkg/commands"
 
 import (
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/moul/advanced-ssh-config/pkg/config"
 	"github.com/urfave/cli"
-	// . "github.com/moul/advanced-ssh-config/pkg/logger"
+
+	"moul.io/assh/pkg/config"
 )
 
 func init() {

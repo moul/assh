@@ -1,4 +1,4 @@
-# based on https://github.com/moul/advanced-ssh-config/issues/248
+# based on https://github.com/moul/assh/issues/248
 
 defaults:
   ControlMaster: auto

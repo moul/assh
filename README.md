@@ -1,34 +1,12 @@
-# assh - *Advanced SSH config*
-[![Travis](https://img.shields.io/travis/moul/advanced-ssh-config.svg)](https://travis-ci.org/moul/advanced-ssh-config)
-[![GoDoc](https://godoc.org/github.com/moul/advanced-ssh-config?status.svg)](https://godoc.org/github.com/moul/advanced-ssh-config)
-![License](https://img.shields.io/github/license/moul/advanced-ssh-config.svg)
-[![GitHub release](https://img.shields.io/github/release/moul/advanced-ssh-config.svg)](https://github.com/moul/advanced-ssh-config/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/moul/advanced-ssh-config)](https://goreportcard.com/report/github.com/moul/advanced-ssh-config)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config?ref=badge_shield)
+# assh - *formerly, Advanced SSH config*
+[![Travis](https://img.shields.io/travis/moul/assh.svg)](https://travis-ci.org/moul/assh)
+[![GoDoc](https://godoc.org/moul.io/assh?status.svg)](https://godoc.org/moul.io/assh)
+![License](https://img.shields.io/github/license/moul/assh.svg)
+[![GitHub release](https://img.shields.io/github/release/moul/assh.svg)](https://github.com/moul/assh/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/moul/assh)](https://goreportcard.com/report/github.com/moul/assh)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fassh.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fassh?ref=badge_shield)
 
-<img src="https://raw.githubusercontent.com/moul/advanced-ssh-config/master/resources/assh.png" width="400" />
-
-#### Table of Contents
-
-1. [Overview](#overview)
-2. [Features](#features)
-  * [Configuration features](#configuration-features)
-  * [Using Gateway from command line](#using-gateway-from-command-line)
-  * [Using Gateway from configuration file](#using-gateways-from-configuration-file)
-  * [Under the hood features](#under-the-hood-features)
-  * [Hooks](#hooks)
-3. [Configuration](#configuration)
-4. [Usage](#usage)
-  * [Usage Examples](#usage-examples)
-5. [Install](#install)
-  * [Register the wrapper (optional)](#register-the-wrapper-optional)
-6. [Getting started](#getting-started)
-7. [Webapp](#webapp)
-8. [Changelog](#changelog)
-9. [Alternative version](#alternative-version)
-10. [Troubleshooting](#troubleshooting)
-11. [3rd Party Integration](#3rd-party-integration)
-12. [License](#license)
+<img src="https://raw.githubusercontent.com/moul/assh/master/resources/assh.png" width="400" />
 
 ## Overview
 
@@ -169,7 +147,7 @@ Note: `BeforeConnect` will be called for each SSH connection; if you use multipl
 Example of Golang template variables:
 
 ```golang
-// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+// Host: http://godoc.org/moul.io/assh/pkg/config/#Host
 {{.Host.Name}}                                  //  localhost
 {{.Host.HostName}}                              //  127.0.0.1
 {{.Host.Port}}                                  //  22
@@ -190,7 +168,7 @@ Note: `OnConnect` is not aware of the authentication process and will always be 
 Example of Golang template variables:
 
 ```golang
-// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+// Host: http://godoc.org/moul.io/assh/pkg/config/#Host
 {{.Host.Name}}                                  //  localhost
 {{.Host.HostName}}                              //  127.0.0.1
 {{.Host.Port}}                                  //  22
@@ -199,7 +177,7 @@ Example of Golang template variables:
 {{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
 {{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
 
-// Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
+// Stats: http://godoc.org/moul.io/assh/pkg/commands/#ConnectionStats
 {{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
 ```
 
@@ -212,7 +190,7 @@ Example of Golang template variables:
 Example of Golang template variables:
 
 ```golang
-// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+// Host: http://godoc.org/moul.io/assh/pkg/config/#Host
 {{.Host.Name}}                                  //  localhost
 {{.Host.HostName}}                              //  127.0.0.1
 {{.Host.Port}}                                  //  22
@@ -236,7 +214,7 @@ Example of Golang template variables:
 Example of Golang template variables:
 
 ```golang
-// Host: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/config/#Host
+// Host: http://godoc.org/moul.io/assh/pkg/config/#Host
 {{.Host.Name}}                                  //  localhost
 {{.Host.HostName}}                              //  127.0.0.1
 {{.Host.Port}}                                  //  22
@@ -245,7 +223,7 @@ Example of Golang template variables:
 {{.Host}}                                       //  {"HostName":"localhost","Port":22","User":"moul","ControlPersist":"yes",...}
 {{printf "%s:%s" .Host.HostName .Host.Port}}    //  localhost:22
 
-// Stats: http://godoc.org/github.com/moul/advanced-ssh-config/pkg/commands/#ConnectionStats
+// Stats: http://godoc.org/moul.io/assh/pkg/commands/#ConnectionStats
 {{.Stats.ConnectedAt}}                           //  2016-07-20 11:19:23.467900594 +0200 CEST
 {{.Stats.WrittenBytes}}                          //  3613
 {{.Stats.WrittenBytesHuman}}                     //  3.6kb
@@ -371,7 +349,7 @@ defaults:
     OnConnect: notify New SSH connection to {{.Host.Prototype}}.
 ```
 
-![](https://github.com/moul/advanced-ssh-config/raw/master/resources/new_connection_notification.png)
+![](https://github.com/moul/assh/raw/master/resources/new_connection_notification.png)
 
 ```yaml
 defaults:
@@ -380,7 +358,7 @@ defaults:
     - "notify SSH connection to {{.Host.Name}} closed, {{ .Stats.WrittenBytes }} bytes written in {{ .Stats.ConnectionDuration }} ({{ .Stats.AverageSpeed }})"
 ```
 
-![](https://github.com/moul/advanced-ssh-config/raw/master/resources/closed_connection_notification.png)
+![](https://github.com/moul/assh/raw/master/resources/closed_connection_notification.png)
 
 ## Configuration
 
@@ -559,7 +537,7 @@ VERSION:
 2.8.0 (HEAD)
 
 AUTHOR(S):
-   Manfred Touron <https://github.com/moul/advanced-ssh-config>
+   Manfred Touron <https://github.com/moul/assh>
 
 COMMANDS:
    ping          Send packets to the SSH server and display statistics
@@ -648,7 +626,7 @@ Generate a [graphviz](http://www.graphviz.org/) graph of the hosts
 $ assh config graphviz | dot -Tpng > assh-hosts.png
 ```
 
-![](https://github.com/moul/advanced-ssh-config/raw/master/resources/graphviz.png)
+![](https://github.com/moul/assh/raw/master/resources/graphviz.png)
 
 ##### `assh config search <keyword>`
 
@@ -737,7 +715,7 @@ round-trip min/avg/max = 321µs/503.25µs/641µs
 Get the latest version using GO (recommended way):
 
 ```bash
-go get -u github.com/moul/advanced-ssh-config/cmd/assh
+go get -u moul.io/assh
 ```
 
 **note**: tested with Go1.7 or above
@@ -758,7 +736,7 @@ brew install assh --HEAD
 
 ---
 
-Get a released version on: https://github.com/moul/advanced-ssh-config/releases
+Get a released version on: https://github.com/moul/assh/releases
 
 ---
 
@@ -801,7 +779,7 @@ $ http --form POST https://assh-dev.herokuapp.com/assh-to-ssh assh_config=@~/.ss
 # This file was automatically generated by assh v2.8.0
 # on 2018-07-03 21:06:56 +0000 UTC, based on ~/.ssh/assh.yml
 #
-# more info: https://github.com/moul/advanced-ssh-config
+# more info: https://github.com/moul/assh
 
 # host-based configuration
 Host *.scw
@@ -828,169 +806,6 @@ Host *
 
 * [Apiary Documentation](http://docs.assh.apiary.io/)
 
-## Changelog
-
-### master (unreleased)
-
-* Remove invalid warn ([#283](https://github.com/moul/advanced-ssh-config/issues/283))
-* Avoid double-connection when having chained gateways ([#285](https://github.com/moul/advanced-ssh-config/pull/285)) by [@4wrxb](https://github.com/4wrxb)
-* Add `GatewayConnectTimeout` option ([#289](https://github.com/moul/advanced-ssh-config/issues/289))
-* Print version in `assh info`
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.8.0...master)
-
-### v2.8.0 (2018-07-03)
-
-* Add more shell propositions for the 'exec' hook ([#254](https://github.com/moul/advanced-ssh-config/issues/254))
-* Support SSH tokens and ~ expansion in ControlPaths ([#276](https://github.com/moul/advanced-ssh-config/pull/276)) by [@stk0vrfl0w](https://github.com/stk0vrfl0w)
-* Ensure ControlPath directories are properly created when using syntax such as "ssh host1/host2" ([#276](https://github.com/moul/advanced-ssh-config/pull/276)) by [@stk0vrfl0w](https://github.com/stk0vrfl0w)
-* Change panic() to a warning statement when removing the temporary file. Since delete is deferred,
-the config file should have already been renamed and would no longer exist ([#276](https://github.com/moul/advanced-ssh-config/pull/276)) by [@stk0vrfl0w](https://github.com/stk0vrfl0w)
-* Fix check when ControlPath is empty, to avoid creating control socket directory in some cases ([#281](https://github.com/moul/advanced-ssh-config/pull/281)) by [@frezbo](https://github.com/frezbo)
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.7.0...v2.8.0)
-
-### v2.7.0 (2017-10-24)
-
-* Automatically detect available shell when using the 'exec' hook ([#254](https://github.com/moul/advanced-ssh-config/issues/254))
-* Automatically detect if `-q` is passed to the parent ssh process to disable logging ([#253](https://github.com/moul/advanced-ssh-config/pull/253)) by [@cao](https://github.com/cao)
-* Add a new `%g` (gateway) parameter to `ResolveCommand` and `ProxyCommand` ([#247](https://github.com/moul/advanced-ssh-config/pull/247)
-* Fix panic on particular `assh.yml` files
-* Fix build issue on OSX ([#238](https://github.com/moul/advanced-ssh-config/pull/238) by [@jcftang](https://github.com/jcftang))
-* Rewrite .ssh/config file atomically ([#215](https://github.com/moul/advanced-ssh-config/issues/215))
-* Support inheritance links in Graphviz ([#235](https://github.com/moul/advanced-ssh-config/issues/235))
-* Support wildcards in Graphviz config export ([#228](https://github.com/moul/advanced-ssh-config/issues/228))
-* Fix error message on first config build ([#230](https://github.com/moul/advanced-ssh-config/issues/230))
-* Fix NetBSD, FreeBSD and Windows builds ([#182](https://github.com/moul/advanced-ssh-config/issues/182))
-* Add RateLimit support ([#65](https://github.com/moul/advanced-ssh-config/issues/65))
-* Add possibility to disable automatic configuration rewrite ([#239](https://github.com/moul/advanced-ssh-config/issues/239))
-* Add `BeforeConfigWrite` and `AfterConfigWrite` new hooks ([#239](https://github.com/moul/advanced-ssh-config/issues/239))
-* Generate full assh binary path in ~/.ssh/config ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
-* Initial version of `assh ping` command
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.6.0...v2.7.0)
-
-### v2.6.0 (2017-02-03)
-
-* Support `UseKeychain` option ([#189](https://github.com/moul/advanced-ssh-config/pull/189)) ([@ocean90](https://github.com/ocean90))
-* Support `ConnectTimeout` option ([#132](https://github.com/moul/advanced-ssh-config/issues/132))
-* `.ssh/config`: Wrap long comments to avoid syntax errors ([#191](https://github.com/moul/advanced-ssh-config/issues/191))
-* Fix integers output in `assh config list` ([#181](https://github.com/moul/advanced-ssh-config/issues/181))
-* Initial graphviz support ([#32](https://github.com/moul/advanced-ssh-config/issues/32))
-* Remove case-sensitivity for `Inherits` and `Gateways` ([#178](https://github.com/moul/advanced-ssh-config/issues/178))
-* Loads hosts from `~/.ssh/assh_known_hosts` file when calling `assh config build`, can be ignored using `--ignore-known-hosts` ([#178](https://github.com/moul/advanced-ssh-config/issues/178))
-* Add `assh config graphviz --show-isolated-hosts` flag
-* Fix nil dereference when calling `assh config serach` without providing needle
-* Add [sprig](https://github.com/Masterminds/sprig) helpers to the template engine ([#206](https://github.com/moul/advanced-ssh-config/issues/206))
-* Improve readability of `assh config list` ([#203](https://github.com/moul/advanced-ssh-config/issues/203))
-* Add support for the `AddKeysToAgent` key ([#210](https://github.com/moul/advanced-ssh-config/pull/210)) ([@bachya](https://github.com/bachya))
-* OpenBSD support ([#182](https://github.com/moul/advanced-ssh-config/issues/182))
-* Improve hostname output in `assh config list` ([#204](https://github.com/moul/advanced-ssh-config/issues/204))
-* Support for inline comments ([#34](https://github.com/moul/advanced-ssh-config/issues/34))
-* Initial support of values validation to avoid writing invalid .ssh/config file ([#92](https://github.com/moul/advanced-ssh-config/issues/92))
-* Alpha version of the webapp ([#69](https://github.com/moul/advanced-ssh-config/issues/69))
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.5.0...v2.6.0)
-
-### v2.5.0 (2017-01-04)
-
-* Support multiple string arguments of the same type on `assh wrapper ssh` ([#185](https://github.com/moul/advanced-ssh-config/issues/185))
-* Remove the `NoControlMasterMkdir` option, and add the `ControlMasterMkdir` option instead ([#173](https://github.com/moul/advanced-ssh-config/issues/173))
-* Accepting string or slices for list options ([#119](https://github.com/moul/advanced-ssh-config/issues/119))
-* Add new `PubkeyAcceptedKeyTypes` OpenSSH 7+ field ([#175](https://github.com/moul/advanced-ssh-config/issues/175))
-* Gracefully report an error when calling assh without configuration file ([#171](https://github.com/moul/advanced-ssh-config/issues/171))
-* Fix `written bytes` calculation ([@quentinperez](https://github.com/quentinperez))
-* Add template functions: `json`, `prettyjson`, `split`, `join`, `title`, `lower`, `upper`
-* Support of `BeforeConnect`, `OnConnect`, `OnConnectError` and `OnDisconnect` hooks
-* Support of `write`, `notify` and `exec` hook drivers
-* Add `assh config json` command
-* Add `assh config {build,json} --expand` option
-* Round the hook's `ConnectionDuration` variable value
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.1...v2.5.0)
-
-### v2.4.1 (2016-07-19)
-
-* Fix panic in `assh wrapper` ([#157](https://github.com/moul/advanced-ssh-config/issues/157))
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.4.0...v2.4.1)
-
-### v2.4.0 (2016-07-14)
-
-* Add a control socket manager `assh sockets {list,flush,master}` ([#152](https://github.com/moul/advanced-ssh-config/pull/152))
-* Add a `assh --config=/path/to/assh.yml` option
-* Add storm-like `assh config list` and `assh config search {keyword}` commands ([#151](https://github.com/moul/advanced-ssh-config/pull/151))
-* Add an optional `ASSHBinaryPath` variable in the `assh.yml` file ([#148](https://github.com/moul/advanced-ssh-config/issues/148))
-* Rename `assh proxy -> assh connect`
-* Hide `assh connect` and `assh wrapper` from the help
-* Support built-in ssh netcat mode, may fail with older SSH clients ([#146](https://github.com/moul/advanced-ssh-config/issues/146))
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.3.0...v2.4.0)
-
-### v2.3.0 (2016-04-27)
-
-* Add wrapper and `known_hosts` support to handle *advanced patterns* ([#122](https://github.com/moul/advanced-ssh-config/issues/122))
-* Add build information in .ssh/config header ([#49](https://github.com/moul/advanced-ssh-config/issues/49))
-* Add Autocomplete support ([#48](https://github.com/moul/advanced-ssh-config/issues/48))
-* Initial `Aliases` support ([#133](https://github.com/moul/advanced-ssh-config/issues/133))
-* Use args[0] as ProxyCommand ([#134](https://github.com/moul/advanced-ssh-config/issues/134))
-* Add `NoControlMasterMkdir` option to disable automatic creation of directories for gateways ([#124](https://github.com/moul/advanced-ssh-config/issues/124))
-* Fix: Allow `$(...)` syntax in the `ResolveCommand` function ([#117](https://github.com/moul/advanced-ssh-config/issues/117))
-* Printing the error of a failing `ResolveCommand` ([#117](https://github.com/moul/advanced-ssh-config/issues/117))
-* Fix: `Gateways` field is no longer ignored when the `HostName` field is present ([#102](https://github.com/moul/advanced-ssh-config/issues/102))
-* Ignore SIGHUP, close goroutines and export written bytes ([#112](https://github.com/moul/advanced-ssh-config/pull/112)) ([@QuentinPerez](https://github.com/QuentinPerez))
-* Various documentation improvements ([@ashmatadeen](https://github.com/ashmatadeen), [@loliee](https://github.com/loliee), [@cerisier](https://github.com/cerisier))
-* Support of new SSH configuration fields (`AskPassGUI`, `GSSAPIClientIdentity`, `GSSAPIKeyExchange`, `GSSAPIRenewalForcesRekey`, `GSSAPIServerIdentity`, `GSSAPITrustDns`, `KeychainIntegration`)
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.2.0...v2.3.0)
-
-### v2.2.0 (2016-02-03)
-
-* Avoid exiting when an included file contains errors ([#95](https://github.com/moul/advanced-ssh-config/issues/95))
-* Anonymize paths in `assh info`
-* Support of `assh proxy --dry-run` option
-* Fix: do not resolve variables in hostnames twice ([#103](https://github.com/moul/advanced-ssh-config/issues/103))
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.1.0...v2.2.0)
-
-### v2.1.0 (2015-10-05)
-
-* Expand environment variables ([#86](https://github.com/moul/advanced-ssh-config/issues/86))
-* Add homebrew support ([#73](https://github.com/moul/advanced-ssh-config/issues/73))
-* Add a 'ssh info' command ([#71](https://github.com/moul/advanced-ssh-config/issues/71))
-* Templates support ([#52](https://github.com/moul/advanced-ssh-config/issues/52))
-* Configuration is now case insensitive ([#51](https://github.com/moul/advanced-ssh-config/issues/51))
-* Fix: resolving host fields for gateways ([#79](https://github.com/moul/advanced-ssh-config/issues/79))
-* Fix: inheritance was not working for non assh-related fields ([#54](https://github.com/moul/advanced-ssh-config/issues/54))
-* Fix: expanding variables in HostName ([#56](https://github.com/moul/advanced-ssh-config/issues/56))
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/v2.0.0...v2.1.0)
-
-### v2.0.0 (2015-09-07)
-
-* First Golang version
-* Compatibility issue: complete switch from `.ini` file format to `.yml`, the `~/.ssh/assh.yml` file needs to be manually crafted
-* Features
-  * Parses `~/.ssh/assh.yml` and generates `~/.ssh/config` dynamically
-  * CLI: Use gateways from CLI without any configuration needed
-  * Config: Declares gateways in coniguration
-  * Config: Host inheritance
-  * Config: Support of `includes`
-  * Config: Support of Regex
-  * Config: Handling all sshconfig fields
-  * Config: Support of host `ProxyCommand` (inception)
-  * Under the hood: Inspecting parent process **verbose**/**debug** mode
-  * Under the hook: dynamic proxy using **raw TCP**, **netcat**
-
-[Full commits list](https://github.com/moul/advanced-ssh-config/compare/be4fea1632b1e9f8aa60585187338777baaf1210...v2.0.0)
-
-### [v1](https://github.com/moul/advanced-ssh-config/tree/v1.1.0) (2015-07-22)
-
-* Last Python version
-
-### [POC](https://github.com/moul/advanced-ssh-config/commit/550f86c225d30292728ad24bc883b6d3a3e3f1b1) (2010-08-26)
-
-* First Python version (POC)
 
 ## Docker
 
@@ -1007,7 +822,7 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 
 ## Alternative version
 
-* [v1](https://github.com/moul/advanced-ssh-config/tree/v1) (2009-2015) - The original implementation. It worked quite well, but was a lot slower, less portable, harder to install for the user and harder to work on to develop new features and fix bugs
+* [v1](https://github.com/moul/assh/tree/v1) (2009-2015) - The original implementation. It worked quite well, but was a lot slower, less portable, harder to install for the user and harder to work on to develop new features and fix bugs
 
 ## Troubleshooting
 

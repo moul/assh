@@ -1,5 +1,6 @@
+package ratelimit // import "moul.io/assh/pkg/ratelimit"
+
 // Package ratelimit based on http://hustcat.github.io/rate-limit-example-in-go/
-package ratelimit
 
 import (
 	"fmt"
@@ -33,7 +34,7 @@ func (r *reader) Read(buf []byte) (int, error) {
 	now := time.Now()
 	rv := r.limiter.ReserveN(now, n)
 	if !rv.OK() {
-		return 0, fmt.Errorf("Exceeds limiter's burst")
+		return 0, fmt.Errorf("exceeds limiter's burst")
 	}
 	delay := rv.DelayFrom(now)
 	//fmt.Printf("Read %d bytes, delay %d\n", n, delay)
@@ -65,7 +66,7 @@ func (w *writer) Write(buf []byte) (int, error) {
 	now := time.Now()
 	rv := w.limiter.ReserveN(now, n)
 	if !rv.OK() {
-		return 0, fmt.Errorf("Exceeds limiter's burst")
+		return 0, fmt.Errorf("exceeds limiter's burst")
 	}
 	delay := rv.DelayFrom(now)
 	//fmt.Printf("Write %d bytes, delay %d\n", n, delay)

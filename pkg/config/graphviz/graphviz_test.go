@@ -6,8 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/moul/advanced-ssh-config/pkg/config"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"moul.io/assh/pkg/config"
 )
 
 func TestGraph(t *testing.T) {
