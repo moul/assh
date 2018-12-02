@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/moul/advanced-ssh-config/pkg/templates"
+	"moul.io/assh/pkg/templates"
 )
 
 // ExecDriver is a driver that execs some texts to the terminal
@@ -53,7 +53,7 @@ func (d ExecDriver) Run(args RunArgs) error {
 		}
 	}
 	if selectedShell == "" {
-		return fmt.Errorf("No available shell found. (tried %s)", strings.Join(availableShells, ", "))
+		return fmt.Errorf("no available shell found. (tried %s)", strings.Join(availableShells, ", "))
 	}
 
 	cmd := exec.Command(selectedShell, "-c", buff.String()) // #nosec

@@ -5,9 +5,9 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/moul/advanced-ssh-config/pkg/config"
-	"github.com/moul/advanced-ssh-config/pkg/config/graphviz"
-	"github.com/moul/advanced-ssh-config/pkg/logger"
+	"moul.io/assh/pkg/config"
+	"moul.io/assh/pkg/config/graphviz"
+	"moul.io/assh/pkg/logger"
 )
 
 func cmdGraphviz(c *cli.Context) error {

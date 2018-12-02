@@ -21,12 +21,13 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	shlex "github.com/flynn/go-shlex"
-	"github.com/moul/advanced-ssh-config/pkg/config"
-	"github.com/moul/advanced-ssh-config/pkg/logger"
-	"github.com/moul/advanced-ssh-config/pkg/ratelimit"
 	"github.com/urfave/cli"
 	"golang.org/x/net/context"
 	"golang.org/x/time/rate"
+
+	"moul.io/assh/pkg/config"
+	"moul.io/assh/pkg/logger"
+	"moul.io/assh/pkg/ratelimit"
 )
 
 type contextKey string
@@ -83,7 +84,7 @@ func cmdProxy(c *cli.Context) error {
 
 			// Save
 			logger.Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
-			logger.Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/advanced-ssh-config/issues/122 for more information.")
+			logger.Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/assh/issues/122 for more information.")
 			logger.Logger.Debugf("Saving SSH config")
 			err3 = conf.SaveSSHConfig()
 			if err3 != nil {
@@ -260,7 +261,7 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				logger.Logger.Errorf("Cannot use gateway '%s': %v", gateway, err)
 			}
 		}
-		return fmt.Errorf("No such available gateway")
+		return fmt.Errorf("no such available gateway")
 	}
 
 	logger.Logger.Debugf("Connecting without gateway")

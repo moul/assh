@@ -1,0 +1,50 @@
+version: 2
+
+defaults: &defaults
+  working_directory: /go/src/moul.io/assh
+  docker:
+    - image: circleci/golang:1.11
+  environment:
+    GO111MODULE: "on"
+
+install_retry: &install_retry
+  run:
+    name: install retry
+    command: |
+      command -v wget &>/dev/null && wget -O /tmp/retry "https://github.com/moul/retry/releases/download/v0.5.0/retry_$(uname -s)_$(uname -m)" || true
+      if [ ! -f /tmp/retry ]; then command -v curl &>/dev/null && curl -L -o /tmp/retry "https://github.com/moul/retry/releases/download/v0.5.0/retry_$(uname -s)_$(uname -m)"; fi
+      chmod +x /tmp/retry
+      /tmp/retry --version
+
+jobs:
+  go.build:
+    <<: *defaults
+    steps:
+      - checkout
+      - *install_retry
+      - run: /tmp/retry -m 3 go mod download
+      - run: /tmp/retry -m 3 go mod vendor
+      - run: /tmp/retry -m 3 make install
+      - run: GO111MODULE=off /tmp/retry -m 3 make test
+      - run: /tmp/retry -m 3 curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.12.2
+      - run: PATH=$PATH:$(pwd)/bin /tmp/retry -m 3 make lint
+      - run: sudo apt update && sudo apt install graphviz
+      - run: /tmp/retry -m 3 make examples
+      - run: GO111MODULE=off /tmp/retry -m 3 make cover
+
+  docker.build:
+    <<: *defaults
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - *install_retry
+      - run: /tmp/retry -m 3 make docker.build
+
+
+workflows:
+  version: 2
+  build_and_integration:
+    jobs:
+      - go.build
+      - docker.build
