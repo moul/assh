@@ -9,6 +9,7 @@ level=info msg="  # ResolveCommand: echo h=%h p=%p name=%name n=%n g=%g"
 level=debug msg="Host: {"Port":"22","HostName":"a","Gateways":["b/c"],"ResolveCommand":"echo h=%h p=%p name=%name n=%n g=%g","Hooks":{}}" 
 level=debug msg=Proxying 
 level=debug msg="Trying gateways: [b/c]" 
+18:44:40 b/c
 level=debug msg="Resolving host: "a" using command: "echo h=%h p=%p name=%name n=%n g=%g"" 
 level=debug msg="Resolved host is: h=a p=22 name=a n=a g=b/c" 
 level=debug msg="Using gateway 'b/c': ssh -W h=a p=22 name=a n=a g=b/c:22 %name" 

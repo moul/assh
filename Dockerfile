@@ -1,5 +1,11 @@
-FROM golang:1.8.1
-COPY . /go/src/github.com/moul/advanced-ssh-config
-WORKDIR /go/src/github.com/moul/advanced-ssh-config
-RUN make
-ENTRYPOINT ["/go/src/github.com/moul/advanced-ssh-config/assh"]
+FROM            golang:1.11-alpine as build
+RUN             apk add --update --no-cache git gcc musl-dev make
+COPY            go.* /go/src/moul.io/assh/
+WORKDIR         /go/src/moul.io/assh
+RUN             GO111MODULE=on go get .
+COPY            . /go/src/moul.io/assh
+RUN             make install
+
+FROM            alpine
+COPY            --from=build /go/bin/assh /bin/assh
+ENTRYPOINT      ["/bin/assh"]

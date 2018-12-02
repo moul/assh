@@ -1,0 +1,20 @@
+digraph G {
+	"e"->"b"[ color=red, label=1 ];
+	"e"->"a"[ color=red, label=2 ];
+	"f"->"b"[ color=red, label=1 ];
+	"f"->"b"[ color=red, label=2 ];
+	"g"->"b"[ color=red, label=1 ];
+	"h"->"a"[ color=red, label=1 ];
+	"d"->"a"[ color=red, label=1 ];
+	"d"->"b"[ color=red, label=2 ];
+	"a" [ color=blue ];
+	"b" [ color=blue ];
+	"c" [ color=blue ];
+	"d" [ color=blue ];
+	"e" [ color=blue ];
+	"f" [ color=blue ];
+	"g" [ color=blue ];
+	"h" [ color=blue ];
+
+}
+
