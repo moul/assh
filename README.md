@@ -13,11 +13,11 @@ A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **dynami
 
 [lib-ssh](https://www.libssh.org) wraps `assh` as a [ProxyCommand](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat); it means that it works seamlessly with:
 
-* [ssh](http://www.openbsd.org/cgi-bin/man.cgi?query=ssh&sektion=1)
-* [scp](http://www.openbsd.org/cgi-bin/man.cgi?query=scp&sektion=1)
-* [rsync](http://linuxcommand.org/man_pages/rsync1.html)
-* [git](https://www.kernel.org/pub/software/scm/git/docs/)
-* Desktop applications depending on `lib-ssh` or `ssh` (i.e., [Tower](http://www.git-tower.com), [Atom.io](https://atom.io), [SSH Tunnel Manager](http://projects.tynsoe.org/fr/stm/))
+  * [ssh](http://www.openbsd.org/cgi-bin/man.cgi?query=ssh&sektion=1)
+  * [scp](http://www.openbsd.org/cgi-bin/man.cgi?query=scp&sektion=1)
+  * [rsync](http://linuxcommand.org/man_pages/rsync1.html)
+  * [git](https://www.kernel.org/pub/software/scm/git/docs/)
+  * Desktop applications depending on `lib-ssh` or `ssh` (i.e., [Tower](http://www.git-tower.com), [Atom.io](https://atom.io), [SSH Tunnel Manager](http://projects.tynsoe.org/fr/stm/))
 
 For specific examples, see [3rd Party Integration](#3rd-party-integration)
 
@@ -25,18 +25,18 @@ For specific examples, see [3rd Party Integration](#3rd-party-integration)
 
 ### Configuration features
 
-* **regex** support
-* **aliases** `gate` -> `gate.domain.tld`
-* **gateways** -> transparent ssh connection chaining
-* **includes**: split configuration in multiple files, note that OpenSSH as of v7.3 has [native support for this](https://www.openssh.com/txt/release-7.3)
-* **local command execution**: finally the reverse of **RemoteCommand**
-* **templates**: equivalent to host but you can't connect directly to a template, perfect for inheritance
-* **inheritance**: make hosts inherits from host hosts or templates
-* **variable expansion**: resolve variables from the environment
-* **smart proxycommand**: RAW tcp connection when possible with `netcat` and `socat` as default fallbacks
-* **rate limit**: configure a per-host or global rate-limiting
-* **JSON output**
-* **[Graphviz](http://www.graphviz.org/)**: graphviz reprensentation of the hosts
+  * **regex** support
+  * **aliases** `gate` -> `gate.domain.tld`
+  * **gateways** -> transparent ssh connection chaining
+  * **includes**: split configuration in multiple files, note that OpenSSH as of v7.3 has [native support for this](https://www.openssh.com/txt/release-7.3)
+  * **local command execution**: finally the reverse of **RemoteCommand**
+  * **templates**: equivalent to host but you can't connect directly to a template, perfect for inheritance
+  * **inheritance**: make hosts inherits from host hosts or templates
+  * **variable expansion**: resolve variables from the environment
+  * **smart proxycommand**: RAW tcp connection when possible with `netcat` and `socat` as default fallbacks
+  * **rate limit**: configure a per-host or global rate-limiting
+  * **JSON output**
+  * **[Graphviz](http://www.graphviz.org/)**: graphviz reprensentation of the hosts
 
 ### Using Gateway from command line
 
@@ -117,19 +117,19 @@ hosts:
     - hosta
 ```
 
-* `ssh hosta` -> `ssh 1.2.3.4`
-* `ssh hostb` -> `ssh -o ProxyCommand="ssh hostb nc %h %p" hosta`
-* `ssh hostc` -> `ssh -o ProxyCommand="ssh -o ProxyCommand='ssh hostc nc %h %p' hostb nc %h %p" hosta`
-* `ssh hostd` ->
-  * assh will try to `ssh 13.14.15.16`
-  * then, fallback on `ssh -o ProxyCommand="ssh hostd nc %h %p" hosta`
-  * this method allows you to have the best performances when it is possible, but ensure your commands will work if you are outside of your company for instance
+  * `ssh hosta` -> `ssh 1.2.3.4`
+  * `ssh hostb` -> `ssh -o ProxyCommand="ssh hostb nc %h %p" hosta`
+  * `ssh hostc` -> `ssh -o ProxyCommand="ssh -o ProxyCommand='ssh hostc nc %h %p' hostb nc %h %p" hosta`
+  * `ssh hostd` ->
+    * assh will try to `ssh 13.14.15.16`
+    * then, fallback on `ssh -o ProxyCommand="ssh hostd nc %h %p" hosta`
+    * this method allows you to have the best performances when it is possible, but ensure your commands will work if you are outside of your company for instance
 
 ### Under the hood features
 
-* Automatically regenerates `~/.ssh/config` file when needed
-* Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically run in debug mode)
-* Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be enabled with the `ControlMasterMkdir: true` configuration in host or globally.
+  * Automatically regenerates `~/.ssh/config` file when needed
+  * Inspect parent process to determine log level (if you use `ssh -vv`, **assh** will automatically run in debug mode)
+  * Automatically creates `ControlPath` directories so you can use *slashes* in your `ControlPath` option, can be enabled with the `ControlMasterMkdir: true` configuration in host or globally.
 
 ### Hooks
 
@@ -335,10 +335,10 @@ defaults:
 
 Notify driver uses [Golang's template system](https://golang.org/pkg/text/template/) to open Desktop notifications.
 
-**Mac OS X**: Built-in support
-**Linux**: Depends on [gnotifier](https://github.com/haklop/gnotifier)
-**Windows**: Not supported
-**BSD**: Not supported
+  * **Mac OS X**: Built-in support
+  * **Linux**: Depends on [gnotifier](https://github.com/haklop/gnotifier)
+  * **Windows**: Not supported
+  * **BSD**: Not supported
 
 Usage: `notify <line:string...>`
 
@@ -365,9 +365,9 @@ defaults:
 
 `~/.ssh/assh.yml` is a [YAML](http://www.yaml.org/spec/1.2/spec.html) file containing:
 
-* a `hosts` dictionary containing multiple *HOST* definitions
-* a `defaults` section containing global flags
-* and an `includes` section containing path to other configuration files
+  * a `hosts` dictionary containing multiple *HOST* definitions
+  * a `defaults` section containing global flags
+  * and an `includes` section containing path to other configuration files
 
 ```yaml
 hosts:
@@ -520,7 +520,6 @@ ASSHBinaryPath: ~/bin/assh  # optionally set the path of assh
 
 For further inspiration, these [`assh.yml` files on public GitHub projects](https://github.com/search?utf8=%E2%9C%93&q=in%3Apath+assh.yml+extension%3Ayml&type=Code) can educate you on how people are using assh
 
-
 ## Usage
 
 `assh` usage
@@ -555,7 +554,7 @@ GLOBAL OPTIONS:
 
 ### Usage examples
 
-##### `assh config build`
+#### `assh config build`
 
 Rewrites and replaces the existing ~/.ssh/config file.
 
@@ -566,7 +565,7 @@ Running this command is useful to set up assh or repair the configuration file.
 $ assh config build > ~/.ssh/config
 ```
 
-##### `assh config list`
+#### `assh config list`
 
 List hosts and options.
 
@@ -617,7 +616,7 @@ Listing entries
         User: bob
 ```
 
-##### `assh config graphviz`
+#### `assh config graphviz`
 
 Generate a [graphviz](http://www.graphviz.org/) graph of the hosts
 
@@ -627,7 +626,7 @@ $ assh config graphviz | dot -Tpng > assh-hosts.png
 
 ![](https://github.com/moul/assh/raw/master/resources/graphviz.png)
 
-##### `assh config search <keyword>`
+#### `assh config search <keyword>`
 
 Search for `<keyword>` in hosts and host options.
 
@@ -638,7 +637,7 @@ Listing results for bart:
     bart-access -> moul@[hostname_not_specified]:22
 ```
 
-##### `assh info`
+#### `assh info`
 
 Display system-wide information.
 
@@ -661,7 +660,7 @@ Statistics:
 - 4 included files
 ```
 
-##### `assh sockets list`
+#### `assh sockets list`
 
 List active control sockets.
 
@@ -675,7 +674,7 @@ $ assh sockets list
 - marge-22-bart.sock (1 hour)
 ```
 
-##### `assh sockets flush`
+#### `assh sockets flush`
 
 Close active control sockets.
 
@@ -684,7 +683,7 @@ $ assh sockets flush
 Closed 4 control sockets.
 ```
 
-##### `assh sockets master`
+#### `assh sockets master`
 
 Create a master control sockets.
 
@@ -739,7 +738,7 @@ Get a released version on: https://github.com/moul/assh/releases
 
 ---
 
-#### Register the wrapper (optional)
+### Register the wrapper (optional)
 
 To improve experience when using advanced pattern matching, add the following at the end of your .bashrc or .zshrc:
 
@@ -760,10 +759,10 @@ With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` 
 
 ## Getting started
 
-1. Backup your old `~/.ssh/config`: `cp ~/.ssh/config ~/.ssh/config.backup`
-2. Create a new `~/.ssh/assh.yml` file
-3. Run `assh config build > ~/.ssh/config` to validate the syntax of your `~/.ssh/assh.yml` file and automatically build your `~/.ssh/config` file
-4. You are ready!
+  1. Backup your old `~/.ssh/config`: `cp ~/.ssh/config ~/.ssh/config.backup`
+  2. Create a new `~/.ssh/assh.yml` file
+  3. Run `assh config build > ~/.ssh/config` to validate the syntax of your `~/.ssh/assh.yml` file and automatically build your `~/.ssh/config` file
+  4. You are ready!
 
 ## Webapp
 
@@ -810,8 +809,8 @@ Host *
 
 Experimental: `assh` may run in Docker, however you will have limitations:
 
-* The `assh` containers does not have any binaries except `assh`, you can't use `ProxyCommand`, `ResolveCommand`...
-* Docker may run on another host, `ssh localhost` will ssh to Docker host
+  * The `assh` containers does not have any binaries except `assh`, you can't use `ProxyCommand`, `ResolveCommand`...
+  * Docker may run on another host, `ssh localhost` will ssh to Docker host
 
 ```console
 docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
@@ -821,11 +820,11 @@ docker run -it --rm -v ~/.ssh:/.ssh moul/assh --help
 
 ## Alternative version
 
-* [v1](https://github.com/moul/assh/tree/v1) (2009-2015) - The original implementation. It worked quite well, but was a lot slower, less portable, harder to install for the user and harder to work on to develop new features and fix bugs
+  * [v1](https://github.com/moul/assh/tree/v1) (2009-2015) - The original implementation. It worked quite well, but was a lot slower, less portable, harder to install for the user and harder to work on to develop new features and fix bugs
 
 ## Troubleshooting
 
-#### I can't use gateways
+### I can't use gateways
 
 `assh` uses the [built-in netcat mode of OpenSSH (shipped with OpenSSH 5.4)](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#Passing_through_a_gateway_using_netcat_mode) by default.
 If your ssh client doesn't support this feature, you can configure a custom `ProxyCommand` configuration, i.e.,
@@ -855,15 +854,15 @@ defaults:
 
 Also, be sure to have netcat installed on your system, or use an alternative proxy binary, i.e., `socat`.
 
-#### How to Configure resolver to parse `/etc/hosts` and/or handle **mDNS** requests?
+### How to Configure resolver to parse `/etc/hosts` and/or handle **mDNS** requests
 
 **assh** resolves hostnames using the system built-in resolver, depending on the OS, you can enable new features and/or change modules order.
 
-* [Linux - nsswitch documentation](http://man7.org/linux/man-pages/man5/nsswitch.conf.5.html)
-* [Linux - mDNS support (nss-mdns)](http://0pointer.de/lennart/projects/nss-mdns/)
-* [Mac OS X - `/etc/resolv.conf` documentation](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/resolver.5.html)
+  * [Linux - nsswitch documentation](http://man7.org/linux/man-pages/man5/nsswitch.conf.5.html)
+  * [Linux - mDNS support (nss-mdns)](http://0pointer.de/lennart/projects/nss-mdns/)
+  * [Mac OS X - `/etc/resolv.conf` documentation](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/resolver.5.html)
 
-#### `unix_listener: "/Users/.../.ssh/cm/..." too long for Unix domain socket`
+### `unix_listener: "/Users/.../.ssh/cm/..." too long for Unix domain socket`
 
 Starting with `OpenSSH v6.7` the socket name can be shortened by configuring `%C` for the name expansion.
 
@@ -874,7 +873,7 @@ defaults:
 
 `%C` is a unique identifier based on a hash of the tuple of (local host, remote user, hostname, port).
 
-#### How to disable the automatic configuration rewrite?
+### How to disable the automatic configuration rewrite
 
 Each time you call `ssh`, `assh` will check if the generated `~/.ssh/config` file is outdated.
 
@@ -898,8 +897,8 @@ ansible_ssh_executable = '/usr/local/bin/assh wrapper ssh'
 
 ### 3rd Party Projects
 
-* [ansible-dotfiles-assh](https://github.com/wrboyce/ansible-dotfiles-assh): Ansible - Configure SSH with   ASSH
-* [appflow](https://github.com/ttssdev/appflow): Multitenant environment automation
+  * [ansible-dotfiles-assh](https://github.com/wrboyce/ansible-dotfiles-assh): Ansible - Configure SSH with   ASSH
+  * [appflow](https://github.com/ttssdev/appflow): Multitenant environment automation
 
 ## License
 
