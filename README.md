@@ -1,10 +1,9 @@
 # assh - *formerly, Advanced SSH config*
-[![Travis](https://img.shields.io/travis/moul/assh.svg)](https://travis-ci.org/moul/assh)
 [![GoDoc](https://godoc.org/moul.io/assh?status.svg)](https://godoc.org/moul.io/assh)
 ![License](https://img.shields.io/github/license/moul/assh.svg)
+[![CircleCI](https://circleci.com/gh/moul/assh.svg?style=svg)](https://circleci.com/gh/moul/assh)
 [![GitHub release](https://img.shields.io/github/release/moul/assh.svg)](https://github.com/moul/assh/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/moul/assh)](https://goreportcard.com/report/github.com/moul/assh)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fassh.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fassh?ref=badge_shield)
+[![Go Report Card](https://goreportcard.com/badge/moul.io/assh)](https://goreportcard.com/report/moul.io/assh)
 
 <img src="https://raw.githubusercontent.com/moul/assh/master/resources/assh.png" width="400" />
 
