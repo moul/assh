@@ -2,7 +2,7 @@
 
 package logger
 
-import "github.com/Sirupsen/logrus"
+import "github.com/sirupsen/logrus"
 
 func GetLoggingLevelByInspectingParent() (logrus.Level, error) {
 	return logrus.WarnLevel, nil
