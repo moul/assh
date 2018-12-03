@@ -1,6 +1,6 @@
 package logger // import "moul.io/assh/pkg/logger"
 
-import "github.com/Sirupsen/logrus"
+import "github.com/sirupsen/logrus"
 
 // Logger is a global logger
 var Logger = logrus.New()
