@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/shirou/gopsutil/process"
+	"github.com/sirupsen/logrus"
 )
 
 // GetLoggingLevelByInspectingParent inspects parent ssh process for eventual passed `-v` flags.

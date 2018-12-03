@@ -5,7 +5,16 @@
   * Remove invalid warn ([#283](https://github.com/moul/assh/issues/283))
   * Avoid double-connection when having chained gateways ([#285](https://github.com/moul/assh/pull/285)) by [@4wrxb](https://github.com/4wrxb)
   * Add `GatewayConnectTimeout` option ([#289](https://github.com/moul/assh/issues/289))
+  * Fix hook parsing to support `{{.}}` ([#297](https://github.com/moul/assh/issues/297)) by [@ahhx](https://github.com/ahhx)
+  * Support inherits on regex hosts ([#298](https://github.com/moul/assh/issues/298)) by [@alenn-m](https://github.com/alenn-m)
   * Print version in `assh info`
+  * Switch to go modules
+  * Switch go moul.io/assh canonical domain
+  * Move changelog to its own file
+  * Switch to golangci-lint for linting
+  * Move old webapp to contrib
+  * Cleanup old files
+  * Bump deps
 
 [Full commits list](https://github.com/moul/assh/compare/v2.8.0...master)
 
