@@ -9,28 +9,29 @@ import (
 	"strings"
 
 	"github.com/shirou/gopsutil/process"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap/zapcore"
 )
 
-// GetLoggingLevelByInspectingParent inspects parent ssh process for eventual passed `-v` flags.
-func GetLoggingLevelByInspectingParent() (logrus.Level, error) {
+// LogLevelFromParentSSHProcess inspects parent `ssh` process for eventual passed `-v` flags.
+func LogLevelFromParentSSHProcess() (zapcore.Level, error) {
+	// FIXME: check if parent process is `ssh`
 	ppid := os.Getppid()
 	process, err := process.NewProcess(int32(ppid))
 	if err != nil {
-		return logrus.WarnLevel, err
+		return zapcore.WarnLevel, err
 	}
 
 	cmdline, err := process.Cmdline()
 	if err != nil {
-		return logrus.WarnLevel, err
+		return zapcore.WarnLevel, err
 	}
 
 	if strings.Contains(cmdline, "-vv") {
-		return logrus.DebugLevel, nil
+		return zapcore.DebugLevel, nil
 	} else if strings.Contains(cmdline, "-v") {
-		return logrus.InfoLevel, nil
+		return zapcore.InfoLevel, nil
 	} else if strings.Contains(cmdline, "-q") {
-		return logrus.ErrorLevel, nil
+		return zapcore.ErrorLevel, nil
 	}
-	return logrus.WarnLevel, nil
+	return zapcore.WarnLevel, nil
 }

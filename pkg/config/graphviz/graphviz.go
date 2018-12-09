@@ -1,4 +1,4 @@
-package configviz // import "moul.io/assh/pkg/config/graphviz"
+package graphviz // import "moul.io/assh/pkg/config/graphviz"
 
 import (
 	"fmt"

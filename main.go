@@ -5,11 +5,13 @@ import (
 	"os"
 	"path"
 
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"moul.io/assh/pkg/commands"
-	"moul.io/assh/pkg/logger"
+	loggerpkg "moul.io/assh/pkg/logger"
 	"moul.io/assh/pkg/version"
 )
 
@@ -46,7 +48,8 @@ func main() {
 	app.Commands = commands.Commands
 
 	if err := app.Run(os.Args); err != nil {
-		logger.Logger.Fatalf("failed to run command: %v", err)
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
 }
 
@@ -72,17 +75,16 @@ func hookBefore(c *cli.Context) error {
 }
 
 func initLogging(debug bool, verbose bool) error {
-	options := logger.Options{}
-
-	options.InspectParent = true
-
-	if debug {
-		options.Level = logrus.DebugLevel
-	} else if verbose {
-		options.Level = logrus.InfoLevel
-	} else {
-		options.Level = logrus.WarnLevel
+	config := zap.NewDevelopmentConfig()
+	config.Level.SetLevel(loggerpkg.MustLogLevel(debug, verbose))
+	if !debug {
+		config.DisableStacktrace = true
 	}
-	logger.SetupLogging(options)
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	l, err := config.Build()
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize logger")
+	}
+	zap.ReplaceGlobals(l)
 	return nil
 }

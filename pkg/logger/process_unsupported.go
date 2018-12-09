@@ -2,8 +2,9 @@
 
 package logger
 
-import "github.com/sirupsen/logrus"
+import "go.uber.org/zap/zapcore"
 
-func GetLoggingLevelByInspectingParent() (logrus.Level, error) {
-	return logrus.WarnLevel, nil
+// LogLevelFromParentSSHProcess inspects parent `ssh` process for eventual passed `-v` flags.
+func LogLevelFromParentSSHProcess() (zapcore.Level, error) {
+	return zapcore.WarnLevel, nil
 }

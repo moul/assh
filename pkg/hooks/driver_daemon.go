@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"moul.io/assh/pkg/logger"
+	"go.uber.org/zap"
 	"moul.io/assh/pkg/templates"
 )
 
@@ -44,9 +44,9 @@ func (d DaemonDriver) Run(args RunArgs) error {
 
 	go func() {
 		if err := d.cmd.Wait(); err != nil {
-			logger.Logger.Errorf("daemon driver error: %v", err)
+			logger().Error("daemon driver error", zap.Error(err))
 		}
-		logger.Logger.Infof("daemon %q exited", d.line)
+		logger().Info("daemon exited", zap.String("line", d.line))
 	}()
 
 	return nil
@@ -60,7 +60,7 @@ func (d DaemonDriver) Close() error {
 
 	err := d.cmd.Process.Kill()
 	if err != nil {
-		logger.Logger.Warnf("daemon %q failed to stop: %v", d.line, err)
+		logger().Warn("daemon failed to stop", zap.String("line", d.line), zap.Error(err))
 	}
 	return err
 }

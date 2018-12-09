@@ -5,18 +5,17 @@ import (
 	"os"
 
 	"github.com/mgutz/ansi"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"golang.org/x/crypto/ssh/terminal"
 
 	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/logger"
 )
 
 func cmdList(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Fatalf("Cannot load configuration: %v", err)
-		return nil
+		return errors.Wrap(err, "failed to load config")
 	}
 
 	// ansi coloring
@@ -37,7 +36,7 @@ func cmdList(c *cli.Context) error {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {
-				logger.Logger.Fatalf("Error while trying to expand hosts: %v", err)
+				return errors.Wrap(err, "failed to expand hosts")
 			}
 		}
 	}

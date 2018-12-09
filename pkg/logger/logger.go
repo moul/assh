@@ -1,35 +1,22 @@
 package logger // import "moul.io/assh/pkg/logger"
 
-import "github.com/sirupsen/logrus"
+import "go.uber.org/zap/zapcore"
 
-// Logger is a global logger
-var Logger = logrus.New()
-
-// SetLevel sets the logging level
-func SetLevel(level logrus.Level) {
-	// Logger.mu.Lock()
-	// defer Logger.mu.Unlock()
-	Logger.Level = level
-}
-
-// Options allows to customize logger behavior
-type Options struct {
-	Level         logrus.Level
-	InspectParent bool
-}
-
-// SetupLogging configures the logger based on user input and parent process configuration (looks for `ssh -v`)
-func SetupLogging(options Options) {
-	level := options.Level
-
-	if options.InspectParent {
-		parentLevel, err := GetLoggingLevelByInspectingParent()
-		if err != nil {
-			Logger.Debugf("Failed to inspect parent process: %v", err)
-		} else if parentLevel > level {
-			level = parentLevel
-		}
+// MustLogLevel returns a log level based on both user input and parent SSH process
+func MustLogLevel(debug, verbose bool) zapcore.Level {
+	parentLevel, err := LogLevelFromParentSSHProcess()
+	if err != nil {
+		parentLevel = zapcore.WarnLevel
 	}
-
-	SetLevel(level)
+	asshLevel := zapcore.WarnLevel
+	switch {
+	case debug:
+		asshLevel = zapcore.DebugLevel
+	case verbose:
+		asshLevel = zapcore.InfoLevel
+	}
+	if parentLevel > asshLevel {
+		return parentLevel
+	}
+	return asshLevel
 }
