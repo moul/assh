@@ -6,15 +6,16 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/logger"
 )
 
 func cmdWrapper(c *cli.Context) error {
 	if len(c.Args()) < 1 {
-		logger.Logger.Fatalf("Missing <target> argument. See usage with 'assh wrapper %s -h'.", c.Command.Name)
+		return fmt.Errorf("missing <target> argument. See usage with 'assh wrapper %s -h'", c.Command.Name)
 	}
 
 	// prepare variables
@@ -38,30 +39,40 @@ func cmdWrapper(c *cli.Context) error {
 	args = append(args, command...)
 	bin, err := exec.LookPath(c.Command.Name)
 	if err != nil {
-		logger.Logger.Fatalf("Cannot find %q in $PATH", c.Command.Name)
+		return errors.Wrapf(err, "failed to lookup %q", c.Command.Name)
 	}
 
-	logger.Logger.Debugf("Wrapper called with bin=%v target=%v command=%v options=%v, args=%v", bin, target, command, options, args)
+	logger().Debug(
+		"Wrapper called",
+		zap.String("bin", bin),
+		zap.String("target", target),
+		zap.Any("command", command),
+		zap.Any("options", options),
+		zap.Any("args", args),
+	)
 
 	// check if config is up-to-date
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
+		return errors.Wrap(err, "failed to open config")
 	}
 
 	if err = conf.LoadKnownHosts(); err != nil {
-		logger.Logger.Debugf("Failed to load assh known_hosts: %v", err)
+		logger().Debug("Failed to load assh known_hosts", zap.Error(err))
 	}
 
 	// check if .ssh/config is outdated
 	isOutdated, err := conf.IsConfigOutdated(target)
 	if err != nil {
-		logger.Logger.Error(err)
+		logger().Error("failed to check if config is outdated", zap.Error(err))
 	}
 	if isOutdated {
-		logger.Logger.Debugf("The configuration file is outdated, rebuilding it before calling %s", c.Command.Name)
+		logger().Debug(
+			"The configuration file is outdated, rebuilding it before calling command",
+			zap.String("command", c.Command.Name),
+		)
 		if err = conf.SaveSSHConfig(); err != nil {
-			logger.Logger.Error(err)
+			logger().Error("failed to save ssh config file", zap.Error(err))
 		}
 	}
 

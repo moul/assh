@@ -1,4 +1,4 @@
-package controlsockets // import "moul.io/assh/pkg/control-sockets"
+package controlsockets // import "moul.io/assh/pkg/controlsockets"
 
 import (
 	"fmt"

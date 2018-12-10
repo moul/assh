@@ -15,8 +15,8 @@ import (
 
 	"github.com/imdario/mergo"
 	"github.com/moul/flexyaml"
+	"go.uber.org/zap"
 
-	"moul.io/assh/pkg/logger"
 	"moul.io/assh/pkg/utils"
 	"moul.io/assh/pkg/version"
 )
@@ -61,12 +61,21 @@ func (c *Config) SaveNewKnownHost(target string) {
 
 	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
 	if err != nil {
-		logger.Logger.Errorf("Cannot append host %q, unknown ASSH known_hosts file: %v", target, err)
+		logger().Error(
+			"Cannot append host, unknown assh_known_hosts file",
+			zap.String("host", target),
+			zap.Error(err),
+		)
 	}
 
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
 	if err != nil {
-		logger.Logger.Errorf("Cannot append host %q to %q (performance degradation): %v", target, c.ASSHKnownHostFile, err)
+		logger().Error(
+			"Cannot append host to assh_known_hosts file (perf. degradation)",
+			zap.String("host", target),
+			zap.String("file", c.ASSHKnownHostFile),
+			zap.Error(err),
+		)
 		return
 	}
 	defer func() {
@@ -158,14 +167,18 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	for _, name := range host.Inherits {
 		_, found := computedHost.inherited[name]
 		if found {
-			logger.Logger.Debugf("Detected circular loop inheritance, skiping...")
+			logger().Debug("Detected circular loop inheritance, skiping...")
 			continue
 		}
 		computedHost.inherited[name] = true
 
 		target, err := config.getHostByPath(name, false, false, true)
 		if err != nil {
-			logger.Logger.Warnf("Cannot inherits from %q: %v", name, err)
+			logger().Warn(
+				"Cannot inherits",
+				zap.String("name", name),
+				zap.Error(err),
+			)
 			continue
 		}
 		computedHost.ApplyDefaults(target)
@@ -202,7 +215,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 
 func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
-		logger.Logger.Debugf("getHostByName direct matching: %q", name)
+		logger().Debug("getHostByName direct matching", zap.String("name", name))
 		return computeHost(host, c, name, compute)
 	}
 
@@ -215,7 +228,7 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 				return nil, err
 			}
 			if matched {
-				logger.Logger.Debugf("getHostByName pattern matching: %q => %q", pattern, name)
+				logger().Debug("getHostByName pattern matching", zap.String("pattern", pattern), zap.String("name", name))
 				return computeHost(host, c, name, compute)
 			}
 		}
@@ -455,7 +468,7 @@ func (c *Config) SaveSSHConfig() error {
 		return err
 	}
 
-	logger.Logger.Debugf("Writing SSH config file to %q", configPath)
+	logger().Debug("Writing SSH config file", zap.String("file", configPath))
 
 	tmpDir := filepath.Dir(configPath)
 	tmpFile, err := ioutil.TempFile(tmpDir, "config")
@@ -468,7 +481,7 @@ func (c *Config) SaveSSHConfig() error {
 			return
 		}
 		if err = os.Remove(tmpFile.Name()); err != nil {
-			logger.Logger.Debugf("Unable to remove tempfile: %s", tmpFile.Name())
+			logger().Debug("Unable to remove tempfile", zap.String("file", tmpFile.Name()))
 		}
 	}()
 
@@ -502,7 +515,7 @@ func (c *Config) LoadFile(filename string) error {
 	}
 	c.includedFiles[filepath] = false
 
-	logger.Logger.Debugf("Loading config file '%s'", filepath)
+	logger().Debug("Loading config file", zap.String("file", filepath))
 
 	// Read file
 	source, err := os.Open(filepath)
@@ -520,7 +533,13 @@ func (c *Config) LoadFile(filename string) error {
 	c.includedFiles[filepath] = true
 	afterHostsCount := len(c.Hosts)
 	diffHostsCount := afterHostsCount - beforeHostsCount
-	logger.Logger.Debugf("Loaded config file '%s' (%d + %d => %d hosts)", filepath, beforeHostsCount, afterHostsCount, diffHostsCount)
+	logger().Debug(
+		"Loaded config file",
+		zap.String("file", filepath),
+		zap.Int("num-host-before", beforeHostsCount),
+		zap.Int("num-host-after", afterHostsCount),
+		zap.Int("num-host-diff", diffHostsCount),
+	)
 
 	// Handling includes
 	for _, include := range c.Includes {
@@ -549,7 +568,7 @@ func (c *Config) LoadFiles(pattern string) error {
 	// Load files iteratively
 	for _, filepath := range filepaths {
 		if err := c.LoadFile(filepath); err != nil {
-			logger.Logger.Warnf("Cannot include %q: %v", filepath, err)
+			logger().Warn("Cannot include file", zap.String("file", filepath), zap.Error(err))
 		}
 	}
 

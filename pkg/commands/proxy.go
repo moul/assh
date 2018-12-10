@@ -21,12 +21,13 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	shlex "github.com/flynn/go-shlex"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"golang.org/x/time/rate"
 
 	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/logger"
 	"moul.io/assh/pkg/ratelimit"
 )
 
@@ -35,38 +36,38 @@ type contextKey string
 var syncContextKey contextKey = "sync"
 
 func cmdProxy(c *cli.Context) error {
-	logger.Logger.Debugf("assh args: %s", c.Args())
-
 	if len(c.Args()) < 1 {
-		logger.Logger.Fatalf("assh: \"connect\" requires 1 argument. See 'assh connect --help'.")
+		return errors.New("assh: \"connect\" requires 1 argument. See 'assh connect --help'")
 	}
+
+	target := c.Args()[0]
+	logger().Debug("initializing proxy", zap.String("target", target))
 
 	// dry-run option
 	// Setting the 'ASSH_DRYRUN=1' environment variable,
 	// so 'assh' can use gateways using sub-SSH commands.
 	if c.Bool("dry-run") {
 		if err := os.Setenv("ASSH_DRYRUN", "1"); err != nil {
-			logger.Logger.Fatalf("Cannot set env var: %v", err)
+			return errors.Wrap(err, "failed to configure environment")
 		}
 	}
 	dryRun := os.Getenv("ASSH_DRYRUN") == "1"
 
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
+		return errors.Wrap(err, "failed to open config file")
 	}
 
 	if err = conf.LoadKnownHosts(); err != nil {
-		logger.Logger.Debugf("Failed to load assh known_hosts: %v", err)
+		logger().Debug("Failed to load assh known_hosts", zap.Error(err))
 	}
-
-	target := c.Args()[0]
 
 	automaticRewrite := !c.Bool("no-rewrite")
 	isOutdated, err2 := conf.IsConfigOutdated(target)
 	if err2 != nil {
-		logger.Logger.Warnf("Cannot check if ~/.ssh/config is outdated: %v", err)
-	} else if isOutdated {
+		logger().Warn("Cannot check if ~/.ssh/config is outdated", zap.Error(err))
+	}
+	if isOutdated {
 		if automaticRewrite {
 			// BeforeConfigWrite
 			type configWriteHookArgs struct {
@@ -75,32 +76,32 @@ func cmdProxy(c *cli.Context) error {
 			hookArgs := configWriteHookArgs{
 				SSHConfigPath: conf.SSHConfigPath(),
 			}
-			logger.Logger.Debugf("Calling BeforeConfigWrite hooks")
-			beforeConfigWriteDrivers, err3 := conf.Defaults.Hooks.BeforeConfigWrite.InvokeAll(hookArgs)
-			if err3 != nil {
-				logger.Logger.Errorf("BeforeConfigWrite hook failed: %v", err3)
+
+			logger().Debug("Calling BeforeConfigWrite hooks")
+			if drivers, err := conf.Defaults.Hooks.BeforeConfigWrite.InvokeAll(hookArgs); err != nil {
+				logger().Error("BeforeConfigWrite hook failed", zap.Error(err))
+			} else {
+				defer drivers.Close()
 			}
-			defer beforeConfigWriteDrivers.Close()
 
 			// Save
-			logger.Logger.Debugf("The configuration file is outdated, rebuilding it before calling ssh")
-			logger.Logger.Warnf("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/assh/issues/122 for more information.")
-			logger.Logger.Debugf("Saving SSH config")
-			err3 = conf.SaveSSHConfig()
-			if err3 != nil {
-				logger.Logger.Fatalf("Cannot save SSH config file: %v", err3)
+			logger().Debug("The configuration file is outdated, rebuilding it before calling ssh")
+			logger().Warn("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/assh/issues/122 for more information.")
+			logger().Debug("Saving SSH config")
+			if err := conf.SaveSSHConfig(); err != nil {
+				return errors.Wrap(err, "failed to save SSH config file")
 			}
 
 			// AfterConfigWrite
-			logger.Logger.Debugf("Calling AfterConfigWrite hooks")
-			afterConfigWriteDrivers, err3 := conf.Defaults.Hooks.AfterConfigWrite.InvokeAll(hookArgs)
-			if err3 != nil {
-				logger.Logger.Errorf("AfterConfigWrite hook failed: %v", err3)
+			logger().Debug("Calling AfterConfigWrite hooks")
+			if drivers, err := conf.Defaults.Hooks.AfterConfigWrite.InvokeAll(hookArgs); err != nil {
+				logger().Error("AfterConfigWrite hook failed", zap.Error(err))
+			} else {
+				defer drivers.Close()
 			}
-			defer afterConfigWriteDrivers.Close()
 
 		} else {
-			logger.Logger.Warnf("The configuration file is outdated; you need to run `assh config build --no-automatic-rewrite > ~/.ssh/config` to stay updated")
+			logger().Warn("The configuration file is outdated; you need to run `assh config build --no-automatic-rewrite > ~/.ssh/config` to stay updated")
 		}
 	}
 
@@ -108,29 +109,23 @@ func cmdProxy(c *cli.Context) error {
 
 	host, err := computeHost(target, c.Int("port"), conf)
 	if err != nil {
-		logger.Logger.Fatalf("Cannot get host '%s': %v", target, err)
+		return errors.Wrapf(err, "Failed to get host %q", target)
 	}
-	w := logger.Logger.Writer()
-	if err3 := host.WriteSSHConfigTo(w); err3 != nil {
-		logger.Logger.Fatalf("Cannot write ssh config: %v", err3)
+	var w bytes.Buffer
+	if err := host.WriteSSHConfigTo(&w); err != nil {
+		return errors.Wrap(err, "failed to write ssh config")
 	}
-	if err3 := w.Close(); err3 != nil {
-		logger.Logger.Fatalf("Failed to close file: %v", err3)
-	}
+	logger().Debug("generated ssh config file", zap.String("buffer", w.String()))
 
 	hostJSON, err2 := json.Marshal(host)
 	if err2 != nil {
-		logger.Logger.Warnf("Failed to marshal host: %v", err2)
-	}
-	logger.Logger.Debugf("Host: %s", hostJSON)
-
-	logger.Logger.Debugf("Proxying")
-	err = proxy(host, conf, dryRun)
-	if err != nil {
-		logger.Logger.Fatalf("Proxy error: %v", err)
+		logger().Warn("Failed to marshal host", zap.Error(err2))
+	} else {
+		logger().Debug("Host", zap.String("host", string(hostJSON)))
 	}
 
-	return nil
+	logger().Debug("Proxying")
+	return proxy(host, conf, dryRun)
 }
 
 func computeHost(dest string, portOverride int, conf *config.Config) (*config.Host, error) {
@@ -205,35 +200,33 @@ func prepareHostControlPath(host, gateway *config.Host) error {
 
 	controlPath := expandSSHTokens(host.ControlPath, host, gateway)
 	controlPathDir := path.Dir(controlPath)
-	logger.Logger.Debugf("Creating control path: %s", controlPathDir)
+	logger().Debug("Creating control path", zap.String("path", controlPathDir))
 	return os.MkdirAll(controlPathDir, 0700)
 }
 
 func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 
 	emptygw := config.Host{}
-	err := prepareHostControlPath(host.Clone(), emptygw.Clone())
-	if err != nil {
-		return err
+	if err := prepareHostControlPath(host.Clone(), emptygw.Clone()); err != nil {
+		return errors.Wrap(err, "failed to prepare host control-path")
 	}
 
 	if len(host.Gateways) > 0 {
-		logger.Logger.Debugf("Trying gateways: %s", host.Gateways)
+		logger().Debug("Trying gateways", zap.String("gateways", strings.Join(host.Gateways, ", ")))
 		for _, gateway := range host.Gateways {
 			log.Println(gateway)
 			if gateway == "direct" {
-				err = proxyDirect(host, dryRun)
-				if err == nil {
+				if err := proxyDirect(host, dryRun); err != nil {
+					logger().Error("Failed to use 'direct' connection", zap.Error(err))
+				} else {
 					return nil
 				}
-				logger.Logger.Errorf("Failed to use 'direct' connection: %v", err)
 			} else {
 				hostCopy := host.Clone()
 				gatewayHost := conf.GetGatewaySafe(gateway)
 
-				err = prepareHostControlPath(hostCopy, gatewayHost)
-				if err != nil {
-					return err
+				if err := prepareHostControlPath(hostCopy, gatewayHost); err != nil {
+					return errors.Wrap(err, "failed to prepare host control-path")
 				}
 
 				// FIXME: dynamically add "-v" flags
@@ -243,8 +236,8 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				// FIXME: detect ssh client version and use netcat if too old
 				// for now, the workaround is to configure the ProxyCommand of the host to "nc %h %p"
 
-				if err = hostPrepare(hostCopy, gateway); err != nil {
-					return err
+				if err := hostPrepare(hostCopy, gateway); err != nil {
+					return errors.Wrap(err, "failed to prepare host for gateway")
 				}
 
 				if hostCopy.ProxyCommand != "" {
@@ -253,18 +246,26 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 					command = hostCopy.ExpandString("ssh -W %h:%p ", "") + "%name"
 				}
 
-				logger.Logger.Debugf("Using gateway '%s': %s", gateway, command)
-				err = proxyCommand(gatewayHost, command, dryRun)
-				if err == nil {
+				logger().Debug(
+					"Using gateway",
+					zap.String("gateway", gateway),
+					zap.String("command", command),
+				)
+				if err := proxyCommand(gatewayHost, command, dryRun); err != nil {
+					logger().Error(
+						"Cannot use gateway",
+						zap.String("gateway", gateway),
+						zap.Error(err),
+					)
+				} else {
 					return nil
 				}
-				logger.Logger.Errorf("Cannot use gateway '%s': %v", gateway, err)
 			}
 		}
-		return fmt.Errorf("no such available gateway")
+		return errors.New("no such available gateway")
 	}
 
-	logger.Logger.Debugf("Connecting without gateway")
+	logger().Debug("Connecting without gateway")
 	return proxyDirect(host, dryRun)
 }
 
@@ -277,7 +278,7 @@ func proxyDirect(host *config.Host, dryRun bool) error {
 
 func proxyCommand(host *config.Host, command string, dryRun bool) error {
 	command = host.ExpandString(command, "")
-	logger.Logger.Debugf("ProxyCommand: %s", command)
+	logger().Debug("ProxyCommand", zap.String("command", command))
 	args, err := shlex.Split(command)
 	if err != nil {
 		return err
@@ -300,7 +301,11 @@ func hostPrepare(host *config.Host, gateway string) error {
 	}
 
 	if len(host.ResolveNameservers) > 0 {
-		logger.Logger.Debugf("Resolving host: '%s' using nameservers %s", host.HostName, host.ResolveNameservers)
+		logger().Debug(
+			"Resolving host",
+			zap.String("hostname", host.HostName),
+			zap.String("nameservers", strings.Join(host.ResolveNameservers, ", ")),
+		)
 		// FIXME: resolve using custom dns server
 		results, err := net.LookupAddr(host.HostName)
 		if err != nil {
@@ -309,12 +314,16 @@ func hostPrepare(host *config.Host, gateway string) error {
 		if len(results) > 0 {
 			host.HostName = results[0]
 		}
-		logger.Logger.Debugf("Resolved host is: %s", host.HostName)
+		logger().Debug("Resolved host", zap.String("hostname", host.HostName))
 	}
 
 	if host.ResolveCommand != "" {
 		command := host.ExpandString(host.ResolveCommand, gateway)
-		logger.Logger.Debugf("Resolving host: %q using command: %q", host.HostName, host.ResolveCommand)
+		logger().Debug(
+			"Resolving host",
+			zap.String("hostname", host.HostName),
+			zap.String("resolve-command", host.ResolveCommand),
+		)
 
 		args, err := shlex.Split(command)
 		if err != nil {
@@ -327,12 +336,11 @@ func hostPrepare(host *config.Host, gateway string) error {
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
 		if err := cmd.Run(); err != nil {
-			logger.Logger.Errorf("ResolveCommand failed: %s", stderr.String())
-			return err
+			return errors.Wrap(err, "failed to run resolve-command")
 		}
 
 		host.HostName = strings.TrimSpace(stdout.String())
-		logger.Logger.Debugf("Resolved host is: %s", host.HostName)
+		logger().Debug("Resolved host", zap.String("hostname", host.HostName))
 	}
 	return nil
 }
@@ -358,7 +366,7 @@ type ConnectionStats struct {
 func (c *ConnectionStats) String() string {
 	b, err := json.Marshal(c)
 	if err != nil {
-		logger.Logger.Errorf("failed to marshal ConnectionStats: %v", err)
+		logger().Error("failed to marshal ConnectionStats", zap.Error(err))
 		return ""
 	}
 	return string(b)
@@ -374,7 +382,7 @@ type ConnectHookArgs struct {
 func (c ConnectHookArgs) String() string {
 	b, err := json.Marshal(c)
 	if err != nil {
-		logger.Logger.Errorf("failed to marshal ConnectHookArgs: %v", err)
+		logger().Error("failed to marshal ConnectHookArgs", zap.Error(err))
 		return ""
 	}
 	return string(b)
@@ -389,9 +397,9 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		Stats: &stats,
 	}
 
-	logger.Logger.Debugf("Preparing host object")
+	logger().Debug("Preparing host object")
 	if err := hostPrepare(host, ""); err != nil {
-		return err
+		return errors.Wrap(err, "failed to prepare host")
 	}
 
 	if dryRun {
@@ -399,14 +407,14 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	}
 
 	// BeforeConnect hook
-	logger.Logger.Debugf("Calling BeforeConnect hooks")
-	beforeConnectDrivers, err := host.Hooks.BeforeConnect.InvokeAll(connectHookArgs)
-	if err != nil {
-		logger.Logger.Errorf("BeforeConnect hook failed: %v", err)
+	logger().Debug("Calling BeforeConnect hooks")
+	if drivers, err := host.Hooks.BeforeConnect.InvokeAll(connectHookArgs); err != nil {
+		logger().Error("BeforeConnect hook failed", zap.Error(err))
+	} else {
+		defer drivers.Close()
 	}
-	defer beforeConnectDrivers.Close()
 
-	logger.Logger.Debugf("Connecting to %s:%s", host.HostName, host.Port)
+	logger().Debug("Connecting to host", zap.String("hostname", host.HostName), zap.String("port", host.Port))
 
 	// use GatewayConnectTimeout, fallback on ConnectTimeout
 	timeout := host.GatewayConnectTimeout
@@ -416,29 +424,37 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	if timeout < 0 { // set to 0 to disable
 		timeout = 0
 	}
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", host.HostName, host.Port), time.Duration(timeout)*time.Second)
+	conn, err := net.DialTimeout(
+		"tcp",
+		fmt.Sprintf("%s:%s", host.HostName, host.Port),
+		time.Duration(timeout)*time.Second,
+	)
 	if err != nil {
 		// OnConnectError hook
 		connectHookArgs.Error = err.Error()
-		logger.Logger.Debugf("Calling OnConnectError hooks")
-		onConnectErrorDrivers, err2 := host.Hooks.OnConnectError.InvokeAll(connectHookArgs)
-		if err2 != nil {
-			logger.Logger.Errorf("OnConnectError hook failed: %v", err2)
+		logger().Debug("Calling OnConnectError hooks")
+		if drivers, err := host.Hooks.OnConnectError.InvokeAll(connectHookArgs); err != nil {
+			logger().Error("OnConnectError hook failed", zap.Error(err))
+		} else {
+			defer drivers.Close()
 		}
-		defer onConnectErrorDrivers.Close()
 
-		return err
+		return errors.Wrap(err, "failed to dial")
 	}
-	logger.Logger.Debugf("Connected to %s:%s", host.HostName, host.Port)
+	logger().Debug(
+		"Connected",
+		zap.String("hostname", host.HostName),
+		zap.String("port", host.Port),
+	)
 	stats.ConnectedAt = time.Now()
 
 	// OnConnect hook
-	logger.Logger.Debugf("Calling OnConnect hooks")
-	onConnectDrivers, err := host.Hooks.OnConnect.InvokeAll(connectHookArgs)
-	if err != nil {
-		logger.Logger.Errorf("OnConnect hook failed: %v", err)
+	logger().Debug("Calling OnConnect hooks")
+	if drivers, err := host.Hooks.OnConnect.InvokeAll(connectHookArgs); err != nil {
+		logger().Error("OnConnect hook failed", zap.Error(err))
+	} else {
+		defer drivers.Close()
 	}
-	defer onConnectDrivers.Close()
 
 	// Ignore SIGHUP
 	signal.Ignore(syscall.SIGHUP)
@@ -456,9 +472,9 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	reader = conn
 	writer = conn
 	if host.RateLimit != "" {
-		bytes, err2 := humanize.ParseBytes(host.RateLimit)
-		if err2 != nil {
-			return err2
+		bytes, err := humanize.ParseBytes(host.RateLimit)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse rate limit configuration")
 		}
 		limit := rate.Limit(float64(bytes))
 		limiter := rate.NewLimiter(limit, int(bytes))
@@ -477,8 +493,8 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		result.err = nil
 	}
 
-	if err2 := conn.Close(); err2 != nil {
-		return err2
+	if err := conn.Close(); err != nil {
+		return err
 	}
 	cancel()
 	waitGroup.Wait()
@@ -501,14 +517,18 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	stats.AverageSpeedHuman = humanize.Bytes(uint64(stats.AverageSpeed)) + "/s"
 
 	// OnDisconnect hook
-	logger.Logger.Debugf("Calling OnDisconnect hooks")
-	onDisconnectDrivers, err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs)
-	if err != nil {
-		logger.Logger.Errorf("OnDisconnect hook failed: %v", err)
+	logger().Debug("Calling OnDisconnect hooks")
+	if drivers, err := host.Hooks.OnDisconnect.InvokeAll(connectHookArgs); err != nil {
+		logger().Error("OnDisconnect hook failed", zap.Error(err))
+	} else {
+		defer drivers.Close()
 	}
-	defer onDisconnectDrivers.Close()
 
-	logger.Logger.Debugf("Byte written %v", stats.WrittenBytes)
+	logger().Debug(
+		"Connection finished",
+		zap.Uint64("bytes written", stats.WrittenBytes),
+		zap.Error(result.err),
+	)
 	return result.err
 }
 

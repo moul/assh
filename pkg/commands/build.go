@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 
 	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/logger"
 )
 
 func cmdBuild(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
+		return errors.Wrap(err, "failed to open config file")
 	}
 
 	if c.Bool("expand") {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {
-				logger.Logger.Fatalf("Error while trying to expand hosts: %v", err)
+				return errors.Wrap(err, "failed to expand hosts")
 			}
 		}
 	}
@@ -29,7 +29,7 @@ func cmdBuild(c *cli.Context) error {
 	if !c.Bool("ignore-known-hosts") {
 		if conf.KnownHostsFileExists() == nil {
 			if err := conf.LoadKnownHosts(); err != nil {
-				logger.Logger.Errorf("Failed to load known-hosts file: %v", err)
+				return errors.Wrap(err, "failed to load known-hosts file")
 			}
 		}
 	}
@@ -43,23 +43,23 @@ func cmdBuild(c *cli.Context) error {
 func cmdBuildJSON(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
+		return errors.Wrap(err, "failed to open configuration file")
 	}
 
 	if c.Bool("expand") {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {
-				logger.Logger.Fatalf("Error while trying to expand hosts: %v", err)
+				return errors.Wrap(err, "failed to expand hosts")
 			}
 		}
 	}
 
 	s, err := json.MarshalIndent(conf, "", "  ")
 	if err != nil {
-		logger.Logger.Fatalf("JSON encoding error: %v", err)
+		return errors.Wrap(err, "failed to marshal config")
 	}
-	fmt.Println(string(s))
 
+	fmt.Println(string(s))
 	return nil
 }

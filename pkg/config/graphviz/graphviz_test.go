@@ -1,4 +1,4 @@
-package configviz
+package graphviz
 
 import (
 	"fmt"
