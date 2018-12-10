@@ -15,6 +15,7 @@
   * Move old webapp to contrib
   * Cleanup old files
   * Bump deps
+  * Switch to go.uber.org/zap for logging
 
 [Full commits list](https://github.com/moul/assh/compare/v2.8.0...master)
 

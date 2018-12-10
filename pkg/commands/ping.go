@@ -5,35 +5,36 @@ import (
 	"net"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/logger"
 )
 
 func cmdPing(c *cli.Context) error {
 	if len(c.Args()) < 1 {
-		logger.Logger.Fatalf("assh: \"ping\" requires exactly 1 argument. See 'assh ping --help'.")
+		return errors.New("assh: \"ping\" requires exactly 1 argument. See 'assh ping --help'")
 	}
 
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Fatalf("Cannot open configuration file: %v", err)
+		return errors.Wrap(err, "failed to open configuration file")
 	}
 	if err = conf.LoadKnownHosts(); err != nil {
-		logger.Logger.Debugf("Failed to load assh known_hosts: %v", err)
+		return errors.Wrap(err, "failed to load known-hosts")
 	}
 	target := c.Args()[0]
 	host, err := computeHost(target, c.Int("port"), conf)
 	if err != nil {
-		logger.Logger.Fatalf("Cannot get host '%s': %v", target, err)
+		return errors.Wrapf(err, "failed to get host %q", target)
 	}
 
 	if len(host.Gateways) > 0 {
-		logger.Logger.Fatalf("assh \"ping\" is not working with gateways (yet).")
+		return errors.New("assh \"ping\" is not working with gateways (yet)")
 	}
 	if host.ProxyCommand != "" {
-		logger.Logger.Fatalf("assh \"ping\" is not working with custom ProxyCommand (yet).")
+		return errors.New("assh \"ping\" is not working with custom ProxyCommand (yet)")
 	}
 
 	portName := "ssh"
@@ -68,7 +69,7 @@ func cmdPing(c *cli.Context) error {
 		if err == nil {
 			defer func() {
 				if err2 := conn.Close(); err2 != nil {
-					logger.Logger.Errorf("failed to close connection: %v", err2)
+					logger().Error("Failed to close connection", zap.Error(err2))
 				}
 			}()
 		}

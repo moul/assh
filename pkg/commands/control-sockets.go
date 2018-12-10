@@ -7,30 +7,28 @@ import (
 	"time"
 
 	units "github.com/docker/go-units"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 
 	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/control-sockets"
-	"moul.io/assh/pkg/logger"
+	"moul.io/assh/pkg/controlsockets"
 )
 
 func cmdCsList(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Errorf("%v", err)
-		os.Exit(-1)
+		return errors.Wrap(err, "failed to open config")
 	}
 
 	controlPath := conf.Defaults.ControlPath
 	if controlPath == "" {
-		logger.Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
-		return nil
+		return errors.New("missing ControlPath in the configuration; Sockets features are disabled")
 	}
 
 	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
 	if err != nil {
-		logger.Logger.Errorf("%v", err)
-		os.Exit(-1)
+		return errors.Wrap(err, "failed to lookup control path")
 	}
 
 	if len(activeSockets) == 0 {
@@ -43,7 +41,7 @@ func cmdCsList(c *cli.Context) error {
 	for _, socket := range activeSockets {
 		createdAt, err := socket.CreatedAt()
 		if err != nil {
-			logger.Logger.Warnf("%v", err)
+			logger().Warn("failed to retrieve socket creation date", zap.Error(err))
 		}
 
 		fmt.Printf("- %s (%v)\n", socket.RelativePath(), units.HumanDuration(now.Sub(createdAt)))
@@ -54,11 +52,11 @@ func cmdCsList(c *cli.Context) error {
 
 func cmdCsMaster(c *cli.Context) error {
 	if len(c.Args()) < 1 {
-		logger.Logger.Fatalf("assh: \"sockets master\" requires 1 argument. See 'assh sockets master --help'.")
+		return errors.New("assh: \"sockets master\" requires 1 argument. See 'assh sockets master --help'")
 	}
 
 	for _, target := range c.Args() {
-		logger.Logger.Debugf("Opening master control socket for %q", target)
+		logger().Debug("Opening master control socket", zap.String("host", target))
 
 		cmd := exec.Command("ssh", target, "-M", "-N", "-f") // #nosec
 		cmd.Stdout = os.Stdout
@@ -72,30 +70,28 @@ func cmdCsMaster(c *cli.Context) error {
 func cmdCsFlush(c *cli.Context) error {
 	conf, err := config.Open(c.GlobalString("config"))
 	if err != nil {
-		logger.Logger.Errorf("%v", err)
-		os.Exit(-1)
+		return errors.Wrap(err, "failed to open config")
 	}
 
 	controlPath := conf.Defaults.ControlPath
 	if controlPath == "" {
-		logger.Logger.Errorf("Missing ControlPath in the configuration; Sockets features are disabled.")
-		return nil
+		return errors.New("missing ControlPath in the configuration; Sockets features are disabled")
 	}
 
 	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
 	if err != nil {
-		logger.Logger.Errorf("%v", err)
-		os.Exit(-1)
+		return errors.Wrap(err, "failed to lookup control path")
 	}
 
 	if len(activeSockets) == 0 {
 		fmt.Println("No active control sockets.")
+		return nil
 	}
 
 	success := 0
 	for _, socket := range activeSockets {
 		if err := os.Remove(socket.Path()); err != nil {
-			logger.Logger.Warnf("Failed to close control socket %q: %v", socket.Path(), err)
+			logger().Warn("Failed to close control socket", zap.String("path", socket.Path()), zap.Error(err))
 		} else {
 			success++
 		}
