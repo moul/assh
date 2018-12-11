@@ -79,6 +79,9 @@ func initLogging(debug bool, verbose bool) error {
 	config.Level.SetLevel(loggerpkg.MustLogLevel(debug, verbose))
 	if !debug {
 		config.DisableStacktrace = true
+		config.DisableCaller = true
+		config.EncoderConfig.TimeKey = ""
+		config.EncoderConfig.NameKey = ""
 	}
 	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	l, err := config.Build()

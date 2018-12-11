@@ -1,6 +1,6 @@
 rwildcard =	$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 uniq =		$(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
-SOURCES :=	$(call rwildcard,./cmd/ ./pkg/,*.go) go.*
+SOURCES :=	$(call rwildcard,./cmd/ ./pkg/,*.go) go.* *.go
 PACKAGES :=	$(call uniq,$(dir $(call rwildcard,./pkg/,*.go)))
 GOPATH ?=	$(HOME)/go
 GO ?=		GO111MODULE=on go
