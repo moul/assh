@@ -15,7 +15,7 @@ func MustLogLevel(debug, verbose bool) zapcore.Level {
 	case verbose:
 		asshLevel = zapcore.InfoLevel
 	}
-	if parentLevel > asshLevel {
+	if parentLevel < asshLevel {
 		return parentLevel
 	}
 	return asshLevel
