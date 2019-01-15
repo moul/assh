@@ -25,6 +25,7 @@ var commands = []*cobra.Command{
 	genCompletionsCommand,
 }
 
+// RootCmd is the root cobra command containing all commands for assh.
 var RootCmd = &cobra.Command{
 	Use:              "assh",
 	Short:            "assh - advanced ssh config",
