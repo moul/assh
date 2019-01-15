@@ -1,13 +1,37 @@
-autoload -U compinit && compinit
-autoload -U bashcompinit && bashcompinit
+#compdef assh
 
-_cli_bash_autocomplete() {
-     local cur opts base
-     COMPREPLY=()
-     cur="${COMP_WORDS[COMP_CWORD]}"
-     opts=$( ${COMP_WORDS[@]:0:$COMP_CWORD} --generate-bash-completion )
-     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-     return 0
- }
-
-complete -F _cli_bash_autocomplete assh
+_arguments \
+  '1: :->level1' \
+  '2: :->level2' \
+  '3: :_files'
+case $state in
+  level1)
+    case $words[1] in
+      assh)
+        _arguments '1: :(completion config connect help info ping sockets wrapper)'
+      ;;
+      *)
+        _arguments '*: :_files'
+      ;;
+    esac
+  ;;
+  level2)
+    case $words[2] in
+      config)
+        _arguments '2: :(build graphiz json list search)'
+      ;;
+      sockets)
+        _arguments '2: :(flush list master)'
+      ;;
+      wrapper)
+        _arguments '2: :(ssh)'
+      ;;
+      *)
+        _arguments '*: :_files'
+      ;;
+    esac
+  ;;
+  *)
+    _arguments '*: :_files'
+  ;;
+esac

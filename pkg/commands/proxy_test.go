@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-
 	"moul.io/assh/pkg/config"
 )
 
@@ -63,7 +62,7 @@ func TestComputeHost(t *testing.T) {
 	})
 }
 
-func Test_proxyCommand(t *testing.T) {
+func Test_runProxy(t *testing.T) {
 	Convey("Testing proxyCommand()", t, func() {
 		// FIXME: test stdout
 		config := config.New()
@@ -72,16 +71,16 @@ func Test_proxyCommand(t *testing.T) {
 		host, err := computeHost("aaa", 0, config)
 		So(err, ShouldBeNil)
 
-		err = proxyCommand(host, "echo test from proxyCommand", false)
+		err = runProxy(host, "echo test from proxyCommand", false)
 		So(err, ShouldBeNil)
 
-		err = proxyCommand(host, "/bin/sh -c 'echo test from proxyCommand'", false)
+		err = runProxy(host, "/bin/sh -c 'echo test from proxyCommand'", false)
 		So(err, ShouldBeNil)
 
-		err = proxyCommand(host, "/bin/sh -c 'exit 1'", false)
+		err = runProxy(host, "/bin/sh -c 'exit 1'", false)
 		So(err, ShouldNotBeNil)
 
-		err = proxyCommand(host, "blah", true)
+		err = runProxy(host, "blah", true)
 		So(err, ShouldResemble, fmt.Errorf("dry-run: Execute [blah]"))
 	})
 }

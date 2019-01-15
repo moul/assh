@@ -22,11 +22,11 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	shlex "github.com/flynn/go-shlex"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"golang.org/x/time/rate"
-
 	"moul.io/assh/pkg/config"
 	"moul.io/assh/pkg/ratelimit"
 )
@@ -35,25 +35,40 @@ type contextKey string
 
 var syncContextKey contextKey = "sync"
 
-func cmdProxy(c *cli.Context) error {
-	if len(c.Args()) < 1 {
+var proxyCommand = &cobra.Command{
+	Use:     "connect",
+	Short:   "Connect to host SSH socket, used by ProxyCommand",
+	Example: "Argument is a host.",
+	Hidden:  true,
+	RunE:    runProxyCommand,
+}
+
+func init() {
+	proxyCommand.Flags().BoolP("no-rewrite", "", false, "Do not automatically rewrite outdated configuration")
+	proxyCommand.Flags().IntP("port", "p", 0, "SSH destination port")
+	proxyCommand.Flags().BoolP("dry-run", "", false, "Only show how assh would connect but don't actually do it")
+	viper.BindPFlags(proxyCommand.Flags())
+}
+
+func runProxyCommand(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
 		return errors.New("assh: \"connect\" requires 1 argument. See 'assh connect --help'")
 	}
 
-	target := c.Args()[0]
+	target := args[0]
 	logger().Debug("initializing proxy", zap.String("target", target))
 
 	// dry-run option
 	// Setting the 'ASSH_DRYRUN=1' environment variable,
 	// so 'assh' can use gateways using sub-SSH commands.
-	if c.Bool("dry-run") {
+	if viper.GetBool("dry-run") {
 		if err := os.Setenv("ASSH_DRYRUN", "1"); err != nil {
 			return errors.Wrap(err, "failed to configure environment")
 		}
 	}
 	dryRun := os.Getenv("ASSH_DRYRUN") == "1"
 
-	conf, err := config.Open(c.GlobalString("config"))
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to open config file")
 	}
@@ -62,7 +77,7 @@ func cmdProxy(c *cli.Context) error {
 		logger().Debug("Failed to load assh known_hosts", zap.Error(err))
 	}
 
-	automaticRewrite := !c.Bool("no-rewrite")
+	automaticRewrite := !viper.GetBool("no-rewrite")
 	isOutdated, err2 := conf.IsConfigOutdated(target)
 	if err2 != nil {
 		logger().Warn("Cannot check if ~/.ssh/config is outdated", zap.Error(err))
@@ -107,7 +122,7 @@ func cmdProxy(c *cli.Context) error {
 
 	// FIXME: handle complete host with json
 
-	host, err := computeHost(target, c.Int("port"), conf)
+	host, err := computeHost(target, viper.GetInt("port"), conf)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to get host %q", target)
 	}
@@ -251,7 +266,7 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 					zap.String("gateway", gateway),
 					zap.String("command", command),
 				)
-				if err := proxyCommand(gatewayHost, command, dryRun); err != nil {
+				if err := runProxy(gatewayHost, command, dryRun); err != nil {
 					logger().Error(
 						"Cannot use gateway",
 						zap.String("gateway", gateway),
@@ -271,12 +286,12 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 
 func proxyDirect(host *config.Host, dryRun bool) error {
 	if host.ProxyCommand != "" {
-		return proxyCommand(host, host.ProxyCommand, dryRun)
+		return runProxy(host, host.ProxyCommand, dryRun)
 	}
 	return proxyGo(host, dryRun)
 }
 
-func proxyCommand(host *config.Host, command string, dryRun bool) error {
+func runProxy(host *config.Host, command string, dryRun bool) error {
 	command = host.ExpandString(command, "")
 	logger().Debug("ProxyCommand", zap.String("command", command))
 	args, err := shlex.Split(command)
