@@ -8,15 +8,21 @@ import (
 
 	"github.com/bugsnag/osext"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
-
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"moul.io/assh/pkg/config"
 	"moul.io/assh/pkg/utils"
 	"moul.io/assh/pkg/version"
 )
 
-func cmdInfo(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+var infoCommand = &cobra.Command{
+	Use:   "info",
+	Short: "Display system-wide information",
+	RunE:  runInfoCommand,
+}
+
+func runInfoCommand(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load config")
 	}

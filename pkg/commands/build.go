@@ -6,18 +6,40 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
-
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"moul.io/assh/pkg/config"
 )
 
-func cmdBuild(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+var buildConfigCommand = &cobra.Command{
+	Use:   "build",
+	Short: "Build .ssh/config",
+	RunE:  runBuildConfigCommand,
+}
+
+var buildJSONConfigCommand = &cobra.Command{
+	Use:   "json",
+	Short: "Returns the JSON output",
+	RunE:  runBuildJSONConfigCommand,
+}
+
+func init() {
+	buildConfigCommand.Flags().BoolP("no-automatic-rewrite", "", false, "Disable automatic ~/.ssh/config file regeneration")
+	buildConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
+	buildConfigCommand.Flags().BoolP("ignore-known-hosts", "", false, "Ignore known-hosts file")
+	viper.BindPFlags(buildConfigCommand.Flags())
+
+	buildJSONConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
+	viper.BindPFlags(buildJSONConfigCommand.Flags())
+}
+
+func runBuildConfigCommand(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to open config file")
 	}
 
-	if c.Bool("expand") {
+	if viper.GetBool("expand") {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {
@@ -26,7 +48,7 @@ func cmdBuild(c *cli.Context) error {
 		}
 	}
 
-	if !c.Bool("ignore-known-hosts") {
+	if !viper.GetBool("ignore-known-hosts") {
 		if conf.KnownHostsFileExists() == nil {
 			if err := conf.LoadKnownHosts(); err != nil {
 				return errors.Wrap(err, "failed to load known-hosts file")
@@ -34,19 +56,19 @@ func cmdBuild(c *cli.Context) error {
 		}
 	}
 
-	if c.Bool("no-automatic-rewrite") {
+	if viper.GetBool("no-automatic-rewrite") {
 		conf.DisableAutomaticRewrite()
 	}
 	return conf.WriteSSHConfigTo(os.Stdout)
 }
 
-func cmdBuildJSON(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+func runBuildJSONConfigCommand(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to open configuration file")
 	}
 
-	if c.Bool("expand") {
+	if viper.GetBool("expand") {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {

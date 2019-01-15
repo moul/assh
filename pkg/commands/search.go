@@ -4,22 +4,28 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
-
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"moul.io/assh/pkg/config"
 )
 
-func cmdSearch(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+var searchConfigCommand = &cobra.Command{
+	Use:   "search",
+	Short: "Search entries by given search text",
+	RunE:  searchConfig,
+}
+
+func searchConfig(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load config")
 	}
 
-	if len(c.Args()) != 1 {
+	if len(args) != 1 {
 		return errors.New("assh config search requires 1 argument. See 'assh config search --help'")
 	}
 
-	needle := c.Args()[0]
+	needle := args[0]
 
 	found := []*config.Host{}
 	for _, host := range conf.Hosts.SortedList() {

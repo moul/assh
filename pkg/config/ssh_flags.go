@@ -1,9 +1,9 @@
 package config
 
-import "github.com/urfave/cli"
+import "github.com/spf13/pflag"
 
-// SSHFlags is built at init(), it contains urfave/cli string & bool flags for SSH
-var SSHFlags = []cli.Flag{}
+// SSHFlags is built at init(), it contains cobra string & bool flags for SSH
+var SSHFlags = pflag.NewFlagSet("SSHFlags", pflag.PanicOnError)
 
 // SSHBoolFlags contains list of available SSH boolean options
 var SSHBoolFlags = []string{"1", "2", "4", "6", "A", "a", "C", "f", "G", "g", "K", "k", "M", "N", "n", "q", "s", "T", "t", "V", "v", "X", "x", "Y", "y"}
@@ -16,14 +16,9 @@ func init() {
 	// FIXME: support count flags (-vvv == -v -v -v)
 	// FIXME: support joined bool flags (-it == -i -t)
 	for _, flag := range SSHBoolFlags {
-		SSHFlags = append(SSHFlags, cli.BoolFlag{
-			Name: flag,
-		})
+		SSHFlags.Bool(flag, false, "")
 	}
 	for _, flag := range SSHStringFlags {
-		SSHFlags = append(SSHFlags, cli.StringSliceFlag{
-			Name: flag,
-			//Value: "",
-		})
+		SSHFlags.StringSlice(flag, nil, "")
 	}
 }

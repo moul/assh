@@ -6,26 +6,42 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
-
 	"moul.io/assh/pkg/config"
 )
 
-func cmdPing(c *cli.Context) error {
-	if len(c.Args()) < 1 {
+var pingCommand = &cobra.Command{
+	Use:   "ping",
+	Short: "Send packets to the SSH server and display statistics",
+	RunE:  runPingCommand,
+}
+
+func init() {
+	pingCommand.Flags().BoolP("no-rewrite", "", false, "Do not automatically rewrite outdated configuration")
+	pingCommand.Flags().IntP("port", "p", 0, "SSH destination port")
+	pingCommand.Flags().UintP("count", "c", 0, "Stop after sending 'count' packets")
+	pingCommand.Flags().Float64P("wait", "i", 1, "Wait 'wait' seconds between sending each packet")
+	pingCommand.Flags().BoolP("o", "", false, "Exit successfully after receiving one reply packet")
+	pingCommand.Flags().Float64P("waittime", "W", 1, "Time in seconds to wait for a reply for each packet sent")
+	viper.BindPFlags(pingCommand.Flags())
+}
+
+func runPingCommand(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
 		return errors.New("assh: \"ping\" requires exactly 1 argument. See 'assh ping --help'")
 	}
 
-	conf, err := config.Open(c.GlobalString("config"))
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to open configuration file")
 	}
 	if err = conf.LoadKnownHosts(); err != nil {
 		return errors.Wrap(err, "failed to load known-hosts")
 	}
-	target := c.Args()[0]
-	host, err := computeHost(target, c.Int("port"), conf)
+	target := args[0]
+	host, err := computeHost(target, viper.GetInt("port"), conf)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get host %q", target)
 	}
@@ -45,7 +61,7 @@ func cmdPing(c *cli.Context) error {
 	proto := "tcp"
 	fmt.Printf("PING %s (%s) PORT %s (%s) PROTO %s\n", target, host.HostName, host.Port, portName, proto)
 	dest := fmt.Sprintf("%s:%s", host.HostName, host.Port)
-	count := c.Uint("count")
+	count := uint(viper.GetInt("count"))
 	transmittedPackets := 0
 	receivedPackets := 0
 	minRoundtrip := time.Duration(0)
@@ -53,10 +69,10 @@ func cmdPing(c *cli.Context) error {
 	totalRoundtrip := time.Duration(0)
 	for seq := uint(0); count == 0 || seq < count; seq++ {
 		if seq > 0 {
-			time.Sleep(time.Duration(c.Float64("wait")) * time.Second)
+			time.Sleep(time.Duration(time.Duration(viper.GetFloat64("wait")) * time.Second))
 		}
 		start := time.Now()
-		conn, err := net.DialTimeout(proto, dest, time.Second*time.Duration(c.Float64("waittime")))
+		conn, err := net.DialTimeout(proto, dest, time.Second*time.Duration(viper.GetFloat64("waittime")))
 		transmittedPackets++
 		duration := time.Since(start)
 		totalRoundtrip += duration
@@ -76,7 +92,7 @@ func cmdPing(c *cli.Context) error {
 		if err == nil {
 			receivedPackets++
 			fmt.Printf("Connected to %s: seq=%d time=%v protocol=%s port=%s\n", host.HostName, seq, duration, proto, host.Port)
-			if c.Bool("o") {
+			if viper.GetBool("o") {
 				goto stats
 			}
 		} else {

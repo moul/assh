@@ -8,15 +8,44 @@ import (
 
 	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
-
 	"moul.io/assh/pkg/config"
 	"moul.io/assh/pkg/controlsockets"
 )
 
-func cmdCsList(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+var socketsCommand = &cobra.Command{
+	Use:   "sockets",
+	Short: "Manage control sockets",
+}
+
+var listSocketsCommand = &cobra.Command{
+	Use:   "list",
+	Short: "List active control sockets",
+	RunE:  runListSocketsCommand,
+}
+
+var flushSocketsCommand = &cobra.Command{
+	Use:   "flush",
+	Short: "Close control sockets",
+	RunE:  runFlushSocketsCommand,
+}
+
+var masterSocketCommand = &cobra.Command{
+	Use:   "master",
+	Short: "Open a master control socket",
+	RunE:  runMasterSocketCommand,
+}
+
+func init() {
+	socketsCommand.AddCommand(listSocketsCommand)
+	socketsCommand.AddCommand(flushSocketsCommand)
+	socketsCommand.AddCommand(masterSocketCommand)
+}
+
+func runListSocketsCommand(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to open config")
 	}
@@ -50,12 +79,12 @@ func cmdCsList(c *cli.Context) error {
 	return nil
 }
 
-func cmdCsMaster(c *cli.Context) error {
-	if len(c.Args()) < 1 {
+func runMasterSocketCommand(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
 		return errors.New("assh: \"sockets master\" requires 1 argument. See 'assh sockets master --help'")
 	}
 
-	for _, target := range c.Args() {
+	for _, target := range args {
 		logger().Debug("Opening master control socket", zap.String("host", target))
 
 		cmd := exec.Command("ssh", target, "-M", "-N", "-f") // #nosec
@@ -67,8 +96,8 @@ func cmdCsMaster(c *cli.Context) error {
 	return nil
 }
 
-func cmdCsFlush(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+func runFlushSocketsCommand(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to open config")
 	}
