@@ -14,7 +14,7 @@ all:	install
 install: $(TARGET)
 $(TARGET): $(SOURCES)
 	$(GO) install -v
-	assh completion
+	$(TARGET) completion
 
 
 .PHONY: docker.build
