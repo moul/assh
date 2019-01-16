@@ -22,7 +22,6 @@ var commands = []*cobra.Command{
 	configCommand,
 	socketsCommand,
 	wrapperCommand,
-	genCompletionsCommand,
 }
 
 // RootCmd is the root cobra command containing all commands for assh.

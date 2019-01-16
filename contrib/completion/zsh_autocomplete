@@ -8,7 +8,7 @@ case $state in
   level1)
     case $words[1] in
       assh)
-        _arguments '1: :(completion config connect help info ping sockets wrapper)'
+        _arguments '1: :(config connect info ping sockets wrapper)'
       ;;
       *)
         _arguments '*: :_files'
