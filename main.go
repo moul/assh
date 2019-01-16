@@ -1,3 +1,5 @@
+//go:generate sh -c "cd contrib/completion/gen && go run main.go"
+
 package main // import "moul.io/assh"
 
 import (
