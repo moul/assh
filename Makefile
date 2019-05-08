@@ -11,10 +11,13 @@ all:	install
 
 
 .PHONY: install
-install: $(TARGET)
+install: $(TARGET) generate
 $(TARGET): $(SOURCES)
 	$(GO) install -v
 
+.PHONY: generate
+generate:
+	$(GO) generate
 
 .PHONY: docker.build
 docker.build:
@@ -69,7 +72,7 @@ lint:
 
 
 .PHONY: release
-release:
+release: generate
 	mkdir -p .release
 	GOOS=linux   GOARCH=amd64 go build -i -v -o .release/assh_linux_amd64   .
 	GOOS=linux   GOARCH=386   go build -i -v -o .release/assh_linux_386     .
