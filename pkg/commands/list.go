@@ -6,14 +6,25 @@ import (
 
 	"github.com/mgutz/ansi"
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
-
 	"moul.io/assh/pkg/config"
 )
 
-func cmdList(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+var listConfigCommand = &cobra.Command{
+	Use:   "list",
+	Short: "List all hosts from assh config",
+	RunE:  runListConfigCommand,
+}
+
+func init() {
+	listConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
+	viper.BindPFlags(listConfigCommand.Flags())
+}
+
+func runListConfigCommand(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load config")
 	}
@@ -32,7 +43,7 @@ func cmdList(c *cli.Context) error {
 
 	fmt.Printf("Listing entries\n\n")
 
-	if c.Bool("expand") {
+	if viper.GetBool("expand") {
 		for name := range conf.Hosts {
 			conf.Hosts[name], err = conf.GetHost(name)
 			if err != nil {

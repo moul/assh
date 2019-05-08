@@ -4,22 +4,35 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
-
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"moul.io/assh/pkg/config"
 	"moul.io/assh/pkg/config/graphviz"
 )
 
-func cmdGraphviz(c *cli.Context) error {
-	conf, err := config.Open(c.GlobalString("config"))
+var graphizConfigCommand = &cobra.Command{
+	Use:   "graphiz",
+	Short: "Generate a Graphviz graph of the hosts",
+	RunE:  runGraphvizConfigCommand,
+}
+
+func init() {
+	graphizConfigCommand.Flags().BoolP("show-isolated-hosts", "", false, "Show isolated hosts")
+	graphizConfigCommand.Flags().BoolP("no-resolve-wildcard", "", false, "Do not resolve wildcards in Gateways")
+	graphizConfigCommand.Flags().BoolP("no-inheritance-links", "", false, "Do not show inheritance links")
+	viper.BindPFlags(graphizConfigCommand.Flags())
+}
+
+func runGraphvizConfigCommand(cmd *cobra.Command, args []string) error {
+	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load config")
 	}
 
 	settings := graphviz.GraphSettings{
-		ShowIsolatedHosts: c.Bool("show-isolated-hosts"),
-		NoResolveWildcard: c.Bool("no-resolve-wildcard"),
-		NoInherits:        c.Bool("no-inheritance-links"),
+		ShowIsolatedHosts: viper.GetBool("show-isolated-hosts"),
+		NoResolveWildcard: viper.GetBool("no-resolve-wildcard"),
+		NoInherits:        viper.GetBool("no-inheritance-links"),
 	}
 	graph, err := graphviz.Graph(conf, &settings)
 	if err != nil {
