@@ -9,7 +9,7 @@ require (
 	github.com/awalterschulze/gographviz v0.0.0-20181013152038-b2885df04310
 	github.com/bugsnag/osext v0.0.0-20130617224835-0dd3f918b21b
 	github.com/deckarep/gosx-notifier v0.0.0-20180201035817-e127226297fb // indirect
-	github.com/docker/docker v0.7.3-0.20181024220401-bc4c1c238b55 // indirect
+	github.com/docker/docker v1.13.1 // indirect
 	github.com/docker/go-units v0.3.3
 	github.com/docker/libcompose v0.0.0-20170915135206-b2c0c6e70069
 	github.com/dustin/go-humanize v1.0.0
