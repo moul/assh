@@ -11,6 +11,6 @@ func init() {
 	configCommand.AddCommand(buildConfigCommand)
 	configCommand.AddCommand(buildJSONConfigCommand)
 	configCommand.AddCommand(listConfigCommand)
-	configCommand.AddCommand(graphizConfigCommand)
+	configCommand.AddCommand(graphvizConfigCommand)
 	configCommand.AddCommand(searchConfigCommand)
 }

@@ -10,17 +10,17 @@ import (
 	"moul.io/assh/pkg/config/graphviz"
 )
 
-var graphizConfigCommand = &cobra.Command{
-	Use:   "graphiz",
+var graphvizConfigCommand = &cobra.Command{
+	Use:   "graphviz",
 	Short: "Generate a Graphviz graph of the hosts",
 	RunE:  runGraphvizConfigCommand,
 }
 
 func init() {
-	graphizConfigCommand.Flags().BoolP("show-isolated-hosts", "", false, "Show isolated hosts")
-	graphizConfigCommand.Flags().BoolP("no-resolve-wildcard", "", false, "Do not resolve wildcards in Gateways")
-	graphizConfigCommand.Flags().BoolP("no-inheritance-links", "", false, "Do not show inheritance links")
-	viper.BindPFlags(graphizConfigCommand.Flags())
+	graphvizConfigCommand.Flags().BoolP("show-isolated-hosts", "", false, "Show isolated hosts")
+	graphvizConfigCommand.Flags().BoolP("no-resolve-wildcard", "", false, "Do not resolve wildcards in Gateways")
+	graphvizConfigCommand.Flags().BoolP("no-inheritance-links", "", false, "Do not show inheritance links")
+	viper.BindPFlags(graphvizConfigCommand.Flags())
 }
 
 func runGraphvizConfigCommand(cmd *cobra.Command, args []string) error {

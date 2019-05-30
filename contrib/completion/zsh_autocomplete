@@ -17,14 +17,14 @@ case $state in
   ;;
   level2)
     case $words[2] in
-      wrapper)
-        _arguments '2: :(ssh)'
-      ;;
       config)
-        _arguments '2: :(build graphiz json list search)'
+        _arguments '2: :(build graphviz json list search)'
       ;;
       sockets)
         _arguments '2: :(flush list master)'
+      ;;
+      wrapper)
+        _arguments '2: :(ssh)'
       ;;
       *)
         _arguments '*: :_files'
