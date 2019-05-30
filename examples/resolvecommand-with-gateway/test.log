@@ -1,18 +1,55 @@
-level=debug msg="assh args: [a/b/c]" 
-level=debug msg="Loading config file './assh.yml'" 
-level=debug msg="Loaded config file './assh.yml' (0 + 0 => 0 hosts)" 
-level=info msg="Host a" 
-level=info msg="  Port 22" 
-level=info msg="  # HostName: a" 
-level=info msg="  # Gateways: [b/c]" 
-level=info msg="  # ResolveCommand: echo h=%h p=%p name=%name n=%n g=%g" 
-level=debug msg="Host: {"Port":"22","HostName":"a","Gateways":["b/c"],"ResolveCommand":"echo h=%h p=%p name=%name n=%n g=%g","Hooks":{}}" 
-level=debug msg=Proxying 
-level=debug msg="Trying gateways: [b/c]" 
-18:44:40 b/c
-level=debug msg="Resolving host: "a" using command: "echo h=%h p=%p name=%name n=%n g=%g"" 
-level=debug msg="Resolved host is: h=a p=22 name=a n=a g=b/c" 
-level=debug msg="Using gateway 'b/c': ssh -W h=a p=22 name=a n=a g=b/c:22 %name" 
-level=debug msg="ProxyCommand: ssh -W h=a p=22 name=a n=a g=b/c:22 b/c" 
-level=error msg="Cannot use gateway 'b/c': dry-run: Execute [ssh -W h=a p=22 name=a n=a g=b/c:22 b/c]" 
-level=fatal msg="Proxy error: No such available gateway" 
+proxy	{"target": "a/b/c"}
+config file	{"file": "./assh.yml"}
+config file	{"file": "./assh.yml", "num-host-before": 0, "num-host-after": 0, "num-host-diff": 0}
+to load assh known_hosts	{"error": "open /home/moul/.ssh/assh_known_hosts: no such file or directory"}
+check if ~/.ssh/config is outdated	{"error": "open /home/moul/.ssh/assh_known_hosts: no such file or directory"}
+moul.io/assh/pkg/commands.runProxyCommand
+	/home/moul/go/src/moul.io/assh/pkg/commands/proxy.go:83
+github.com/spf13/cobra.(*Command).execute
+	/home/moul/go/pkg/mod/github.com/spf13/cobra@v0.0.4/command.go:762
+github.com/spf13/cobra.(*Command).ExecuteC
+	/home/moul/go/pkg/mod/github.com/spf13/cobra@v0.0.4/command.go:850
+github.com/spf13/cobra.(*Command).Execute
+	/home/moul/go/pkg/mod/github.com/spf13/cobra@v0.0.4/command.go:800
+main.main
+	/home/moul/go/src/moul.io/assh/main.go:13
+runtime.main
+	/usr/lib/go1.12/src/runtime/proc.go:200
+ssh config file	{"buffer": "Host a\n  Port 22\n  # HostName: a\n  # Gateways: [b/c]\n  # ResolveCommand: echo h=%h p=%p name=%name n=%n g=%g\n"}
+"{\"Port\":\"22\",\"HostName\":\"a\",\"Gateways\":[\"b/c\"],\"ResolveCommand\":\"echo h=%h p=%p name=%name n=%n g=%g\",\"Hooks\":{}}"}
+2019-05-30T20:35:24.286+0200	[35mDEBUG[0m	assh.pkg.commands	commands/proxy.go:142	Proxying
+gateways	{"gateways": "b/c"}
+20:35:24 b/c
+host	{"hostname": "a", "resolve-command": "echo h=%h p=%p name=%name n=%n g=%g"}
+host	{"hostname": "h=a p=22 name=a n=a g=b/c"}
+gateway	{"gateway": "b/c", "command": "ssh -W h=a p=22 name=a n=a g=b/c:22 %name"}
+"ssh -W h=a p=22 name=a n=a g=b/c:22 b/c"}
+use gateway	{"gateway": "b/c", "error": "dry-run: Execute [ssh -W h=a p=22 name=a n=a g=b/c:22 b/c]"}
+moul.io/assh/pkg/commands.proxy
+	/home/moul/go/src/moul.io/assh/pkg/commands/proxy.go:270
+moul.io/assh/pkg/commands.runProxyCommand
+	/home/moul/go/src/moul.io/assh/pkg/commands/proxy.go:143
+github.com/spf13/cobra.(*Command).execute
+	/home/moul/go/pkg/mod/github.com/spf13/cobra@v0.0.4/command.go:762
+github.com/spf13/cobra.(*Command).ExecuteC
+	/home/moul/go/pkg/mod/github.com/spf13/cobra@v0.0.4/command.go:850
+github.com/spf13/cobra.(*Command).Execute
+	/home/moul/go/pkg/mod/github.com/spf13/cobra@v0.0.4/command.go:800
+main.main
+	/home/moul/go/src/moul.io/assh/main.go:13
+runtime.main
+	/usr/lib/go1.12/src/runtime/proc.go:200
+no such available gateway
+Usage:
+ assh connect [flags]
+
+Examples:
+is a host.
+
+Flags:
+     --dry-run      Only show how assh would connect but don't actually do it
+ -h, --help         help for connect
+     --no-rewrite   Do not automatically rewrite outdated configuration
+ -p, --port int     SSH destination port
+
+such available gateway
