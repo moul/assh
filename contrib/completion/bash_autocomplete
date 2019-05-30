@@ -107,7 +107,13 @@ __assh_handle_reply()
     fi
 
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
-        declare -F __custom_func >/dev/null && __custom_func
+		if declare -F __assh_custom_func >/dev/null; then
+			# try command name qualified custom func
+			__assh_custom_func
+		else
+			# otherwise fall back to unqualified for compatibility
+			declare -F __custom_func >/dev/null && __custom_func
+		fi
     fi
 
     # available in bash-completion >= 2, not always present on macOS
@@ -171,7 +177,8 @@ __assh_handle_flag()
     fi
 
     # skip the argument to a two word flag
-    if __assh_contains_word "${words[c]}" "${two_word_flags[@]}"; then
+    if [[ ${words[c]} != *"="* ]] && __assh_contains_word "${words[c]}" "${two_word_flags[@]}"; then
+			  __assh_debug "${FUNCNAME[0]}: found a flag ${words[c]}, skip the next argument"
         c=$((c+1))
         # if we are looking for a flags value, don't show commands
         if [[ $c -eq $cword ]]; then
@@ -270,9 +277,9 @@ _assh_config_build()
     noun_aliases=()
 }
 
-_assh_config_graphiz()
+_assh_config_graphviz()
 {
-    last_command="assh_config_graphiz"
+    last_command="assh_config_graphviz"
 
     command_aliases=()
 
@@ -370,7 +377,7 @@ _assh_config()
 
     commands=()
     commands+=("build")
-    commands+=("graphiz")
+    commands+=("graphviz")
     commands+=("json")
     commands+=("list")
     commands+=("search")
@@ -422,6 +429,7 @@ _assh_ping()
     flags_completion=()
 
     flags+=("--count=")
+    two_word_flags+=("--count")
     two_word_flags+=("-c")
     local_nonpersistent_flags+=("--count=")
     flags+=("--no-rewrite")
@@ -429,12 +437,15 @@ _assh_ping()
     flags+=("--o")
     local_nonpersistent_flags+=("--o")
     flags+=("--port=")
+    two_word_flags+=("--port")
     two_word_flags+=("-p")
     local_nonpersistent_flags+=("--port=")
     flags+=("--wait=")
+    two_word_flags+=("--wait")
     two_word_flags+=("-i")
     local_nonpersistent_flags+=("--wait=")
     flags+=("--waittime=")
+    two_word_flags+=("--waittime")
     two_word_flags+=("-W")
     local_nonpersistent_flags+=("--waittime=")
 
@@ -545,6 +556,7 @@ _assh_root_command()
     flags_completion=()
 
     flags+=("--config=")
+    two_word_flags+=("--config")
     two_word_flags+=("-c")
     local_nonpersistent_flags+=("--config=")
     flags+=("--debug")
