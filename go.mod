@@ -28,7 +28,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 // indirect
-	github.com/smartystreets/assertions v0.0.0-20190530172153-f487f9de1cd3 // indirect
+	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190530172153-68dc04aab96a
 	github.com/spf13/cobra v0.0.4
 	github.com/spf13/pflag v1.0.3
