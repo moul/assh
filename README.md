@@ -1,6 +1,6 @@
 # assh - *formerly, Advanced SSH config*
 [![GoDoc](https://godoc.org/moul.io/assh?status.svg)](https://godoc.org/moul.io/assh)
-![License](https://img.shields.io/github/license/moul/assh.svg)
+[![Financial Contributors on Open Collective](https://opencollective.com/assh/all/badge.svg?label=financial+contributors)](https://opencollective.com/assh) ![License](https://img.shields.io/github/license/moul/assh.svg)
 [![CircleCI](https://circleci.com/gh/moul/assh.svg?style=svg)](https://circleci.com/gh/moul/assh)
 [![GitHub release](https://img.shields.io/github/release/moul/assh.svg)](https://github.com/moul/assh/releases)
 [![Go Report Card](https://goreportcard.com/badge/moul.io/assh)](https://goreportcard.com/report/moul.io/assh)
@@ -899,6 +899,36 @@ ansible_ssh_executable = '/usr/local/bin/assh wrapper ssh'
 
   * [ansible-dotfiles-assh](https://github.com/wrboyce/ansible-dotfiles-assh): Ansible - Configure SSH with   ASSH
   * [appflow](https://github.com/ttssdev/appflow): Multitenant environment automation
+
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/moul/assh/graphs/contributors"><img src="https://opencollective.com/assh/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/assh/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/assh"><img src="https://opencollective.com/assh/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/assh/contribute)]
+
+<a href="https://opencollective.com/assh/organization/0/website"><img src="https://opencollective.com/assh/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/1/website"><img src="https://opencollective.com/assh/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/2/website"><img src="https://opencollective.com/assh/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/3/website"><img src="https://opencollective.com/assh/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/4/website"><img src="https://opencollective.com/assh/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/5/website"><img src="https://opencollective.com/assh/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/6/website"><img src="https://opencollective.com/assh/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/7/website"><img src="https://opencollective.com/assh/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/8/website"><img src="https://opencollective.com/assh/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/assh/organization/9/website"><img src="https://opencollective.com/assh/organization/9/avatar.svg"></a>
 
 ## License
 
