@@ -46,6 +46,14 @@ func runSSHWrapperCommand(cmd *cobra.Command, args []string) error {
 	}
 	for _, flag := range config.SSHStringFlags {
 		for _, val := range viper.GetStringSlice(flag) {
+			if (flag == "o" || flag == "O") && val == "false" {
+				logger().Debug(
+					"Skip invalid option:",
+					zap.String("flag", flag),
+					zap.String("val", val),
+				)
+				continue
+			}
 			options = append(options, fmt.Sprintf("-%s", flag))
 			options = append(options, val)
 		}
