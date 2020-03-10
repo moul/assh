@@ -1,4 +1,4 @@
-FROM golang:1.12-alpine as build
+FROM golang:1.14-alpine as build
 RUN             apk add --update --no-cache git gcc musl-dev make
 COPY            contrib go.* /go/src/moul.io/assh/
 WORKDIR         /go/src/moul.io/assh
