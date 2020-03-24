@@ -25,7 +25,7 @@ func init() {
 	pingCommand.Flags().Float64P("wait", "i", 1, "Wait 'wait' seconds between sending each packet")
 	pingCommand.Flags().BoolP("o", "", false, "Exit successfully after receiving one reply packet")
 	pingCommand.Flags().Float64P("waittime", "W", 1, "Time in seconds to wait for a reply for each packet sent")
-	viper.BindPFlags(pingCommand.Flags())
+	_ = viper.BindPFlags(pingCommand.Flags())
 }
 
 func runPingCommand(cmd *cobra.Command, args []string) error {
@@ -69,7 +69,7 @@ func runPingCommand(cmd *cobra.Command, args []string) error {
 	totalRoundtrip := time.Duration(0)
 	for seq := uint(0); count == 0 || seq < count; seq++ {
 		if seq > 0 {
-			time.Sleep(time.Duration(time.Duration(viper.GetFloat64("wait")) * time.Second))
+			time.Sleep(time.Duration(viper.GetFloat64("wait")) * time.Second)
 		}
 		start := time.Now()
 		conn, err := net.DialTimeout(proto, dest, time.Second*time.Duration(viper.GetFloat64("waittime")))

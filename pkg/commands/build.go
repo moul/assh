@@ -27,10 +27,10 @@ func init() {
 	buildConfigCommand.Flags().BoolP("no-automatic-rewrite", "", false, "Disable automatic ~/.ssh/config file regeneration")
 	buildConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
 	buildConfigCommand.Flags().BoolP("ignore-known-hosts", "", false, "Ignore known-hosts file")
-	viper.BindPFlags(buildConfigCommand.Flags())
+	_ = viper.BindPFlags(buildConfigCommand.Flags())
 
 	buildJSONConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
-	viper.BindPFlags(buildJSONConfigCommand.Flags())
+	_ = viper.BindPFlags(buildJSONConfigCommand.Flags())
 }
 
 func runBuildConfigCommand(cmd *cobra.Command, args []string) error {

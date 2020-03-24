@@ -48,9 +48,9 @@ func init() {
 	RootCmd.Flags().BoolP("debug", "D", false, "Enable debug mode")
 	RootCmd.Flags().BoolP("verbose", "V", false, "Enable verbose mode")
 
-	viper.BindEnv("debug", "ASSH_DEBUG")
-	viper.BindEnv("config", "ASSH_CONFIG")
-	viper.BindPFlags(RootCmd.Flags())
+	_ = viper.BindEnv("debug", "ASSH_DEBUG")
+	_ = viper.BindEnv("config", "ASSH_CONFIG")
+	_ = viper.BindPFlags(RootCmd.Flags())
 
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if viper.GetBool("debug") {
