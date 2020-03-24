@@ -1,4 +1,4 @@
-package config // import "moul.io/assh/pkg/config"
+package config
 
 import (
 	"bufio"
@@ -16,9 +16,8 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/moul/flexyaml"
 	"go.uber.org/zap"
-
-	"moul.io/assh/pkg/utils"
-	"moul.io/assh/pkg/version"
+	"moul.io/assh/v2/pkg/utils"
+	"moul.io/assh/v2/pkg/version"
 )
 
 var asshBinaryPath = "assh"
@@ -201,7 +200,7 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 		// ssh resolve '%h' in hostnames
 		// -> we bypass the string expansion if the input matches
 		//    an already resolved hostname
-		// See https://moul.io/assh/issues/103
+		// See https://github.com/moul/assh/issues/103
 		pattern := strings.Replace(hostname, "%n", "*", -1)
 		if match, _ := path.Match(pattern, computedHost.inputName); match {
 			computedHost.HostName = computedHost.inputName

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"moul.io/assh/pkg/config"
+	"moul.io/assh/v2/pkg/config"
 )
 
 var pingCommand = &cobra.Command{

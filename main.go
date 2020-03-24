@@ -1,12 +1,12 @@
 //go:generate sh -c "cd contrib/completion/gen && go run main.go"
 
-package main // import "moul.io/assh"
+package main
 
 import (
 	"fmt"
 	"os"
 
-	"moul.io/assh/pkg/commands"
+	"moul.io/assh/v2/pkg/commands"
 )
 
 func main() {

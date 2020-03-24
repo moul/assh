@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"moul.io/assh/pkg/config"
+	"moul.io/assh/v2/pkg/config"
 )
 
 var buildConfigCommand = &cobra.Command{
