@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/controlsockets"
+	"moul.io/assh/v2/pkg/config"
+	"moul.io/assh/v2/pkg/controlsockets"
 )
 
 var socketsCommand = &cobra.Command{

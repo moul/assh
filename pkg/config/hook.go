@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 
-	"moul.io/assh/pkg/hooks"
+	"moul.io/assh/v2/pkg/hooks"
 )
 
 // HostHooks represents a static list of Hooks

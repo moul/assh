@@ -1,5 +1,6 @@
-# assh - *formerly, Advanced SSH config*
-[![GoDoc](https://godoc.org/moul.io/assh?status.svg)](https://godoc.org/moul.io/assh)
+# assh
+
+[![GoDoc](https://img/shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/moul.io/assh/v2)
 [![Financial Contributors on Open Collective](https://opencollective.com/assh/all/badge.svg?label=financial+contributors)](https://opencollective.com/assh) ![License](https://img.shields.io/github/license/moul/assh.svg)
 [![CircleCI](https://circleci.com/gh/moul/assh.svg?style=svg)](https://circleci.com/gh/moul/assh)
 [![GitHub release](https://img.shields.io/github/release/moul/assh.svg)](https://github.com/moul/assh/releases)
@@ -9,7 +10,7 @@
 
 ## Overview
 
-A *transparent wrapper* that adds **regex**, **aliases**, **gateways**, **dynamic hostnames**, **graphviz**, **json output**, **yaml configuration** to **SSH**.
+A *transparent wrapper* that adds support for **regex**, **aliases**, **gateways**, **dynamic hostnames**, **graphviz**, **json output**, **yaml configuration**, and more to **SSH**.
 
 [lib-ssh](https://www.libssh.org) wraps `assh` as a [ProxyCommand](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts#ProxyCommand_with_Netcat); it means that it works seamlessly with:
 
@@ -713,7 +714,7 @@ round-trip min/avg/max = 321µs/503.25µs/641µs
 Get the latest version using GO (recommended way):
 
 ```bash
-go get -u moul.io/assh
+go get -u moul.io/assh/v2
 ```
 
 **note**: tested with Go1.7 or above

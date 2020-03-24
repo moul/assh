@@ -3,7 +3,7 @@ package hooks
 import (
 	"os"
 
-	"moul.io/assh/pkg/templates"
+	"moul.io/assh/v2/pkg/templates"
 )
 
 // WriteDriver is a driver that writes some texts to the terminal

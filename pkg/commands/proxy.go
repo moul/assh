@@ -27,8 +27,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"golang.org/x/time/rate"
-	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/ratelimit"
+	"moul.io/assh/v2/pkg/config"
+	"moul.io/assh/v2/pkg/ratelimit"
 )
 
 type contextKey string
@@ -47,7 +47,7 @@ func init() {
 	proxyCommand.Flags().BoolP("no-rewrite", "", false, "Do not automatically rewrite outdated configuration")
 	proxyCommand.Flags().IntP("port", "p", 0, "SSH destination port")
 	proxyCommand.Flags().BoolP("dry-run", "", false, "Only show how assh would connect but don't actually do it")
-	viper.BindPFlags(proxyCommand.Flags())
+	_ = viper.BindPFlags(proxyCommand.Flags())
 }
 
 func runProxyCommand(cmd *cobra.Command, args []string) error {

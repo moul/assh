@@ -1,37 +1,168 @@
-#compdef assh
+#compdef _assh assh
 
-_arguments \
-  '1: :->level1' \
-  '2: :->level2' \
-  '3: :_files'
-case $state in
-  level1)
-    case $words[1] in
-      assh)
-        _arguments '1: :(config connect info ping sockets wrapper)'
-      ;;
-      *)
-        _arguments '*: :_files'
-      ;;
-    esac
-  ;;
-  level2)
-    case $words[2] in
-      config)
-        _arguments '2: :(build graphviz json list search)'
-      ;;
-      sockets)
-        _arguments '2: :(flush list master)'
-      ;;
-      wrapper)
-        _arguments '2: :(ssh)'
-      ;;
-      *)
-        _arguments '*: :_files'
-      ;;
-    esac
-  ;;
-  *)
-    _arguments '*: :_files'
-  ;;
-esac
+
+function _assh {
+  local -a commands
+
+  _arguments -C \
+    '(-c --config)'{-c,--config}'[Location of config file]:' \
+    '(-D --debug)'{-D,--debug}'[Enable debug mode]' \
+    '(-h --help)'{-h,--help}'[print usage]' \
+    '(-V --verbose)'{-V,--verbose}'[Enable verbose mode]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "config:Manage ssh and assh configuration"
+      "info:Display system-wide information"
+      "ping:Send packets to the SSH server and display statistics"
+      "sockets:Manage control sockets"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  config)
+    _assh_config
+    ;;
+  info)
+    _assh_info
+    ;;
+  ping)
+    _assh_ping
+    ;;
+  sockets)
+    _assh_sockets
+    ;;
+  esac
+}
+
+
+function _assh_config {
+  local -a commands
+
+  _arguments -C \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "build:Build .ssh/config"
+      "graphviz:Generate a Graphviz graph of the hosts"
+      "json:Returns the JSON output"
+      "list:List all hosts from assh config"
+      "search:Search entries by given search text"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  build)
+    _assh_config_build
+    ;;
+  graphviz)
+    _assh_config_graphviz
+    ;;
+  json)
+    _assh_config_json
+    ;;
+  list)
+    _assh_config_list
+    ;;
+  search)
+    _assh_config_search
+    ;;
+  esac
+}
+
+function _assh_config_build {
+  _arguments \
+    '(-e --expand)'{-e,--expand}'[Expand all fields]' \
+    '--ignore-known-hosts[Ignore known-hosts file]' \
+    '--no-automatic-rewrite[Disable automatic ~/.ssh/config file regeneration]'
+}
+
+function _assh_config_graphviz {
+  _arguments \
+    '--no-inheritance-links[Do not show inheritance links]' \
+    '--no-resolve-wildcard[Do not resolve wildcards in Gateways]' \
+    '--show-isolated-hosts[Show isolated hosts]'
+}
+
+function _assh_config_json {
+  _arguments \
+    '(-e --expand)'{-e,--expand}'[Expand all fields]'
+}
+
+function _assh_config_list {
+  _arguments \
+    '(-e --expand)'{-e,--expand}'[Expand all fields]'
+}
+
+function _assh_config_search {
+  _arguments
+}
+
+function _assh_info {
+  _arguments
+}
+
+function _assh_ping {
+  _arguments \
+    '(-c --count)'{-c,--count}'[Stop after sending '\''count'\'' packets]:' \
+    '--no-rewrite[Do not automatically rewrite outdated configuration]' \
+    '--o[Exit successfully after receiving one reply packet]' \
+    '(-p --port)'{-p,--port}'[SSH destination port]:' \
+    '(-i --wait)'{-i,--wait}'[Wait '\''wait'\'' seconds between sending each packet]:' \
+    '(-W --waittime)'{-W,--waittime}'[Time in seconds to wait for a reply for each packet sent]:'
+}
+
+
+function _assh_sockets {
+  local -a commands
+
+  _arguments -C \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "flush:Close control sockets"
+      "list:List active control sockets"
+      "master:Open a master control socket"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  flush)
+    _assh_sockets_flush
+    ;;
+  list)
+    _assh_sockets_list
+    ;;
+  master)
+    _assh_sockets_master
+    ;;
+  esac
+}
+
+function _assh_sockets_flush {
+  _arguments
+}
+
+function _assh_sockets_list {
+  _arguments
+}
+
+function _assh_sockets_master {
+  _arguments
+}
+

@@ -1,4 +1,4 @@
-package logger // import "moul.io/assh/pkg/logger"
+package logger
 
 import "go.uber.org/zap/zapcore"
 
