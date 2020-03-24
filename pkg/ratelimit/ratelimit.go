@@ -1,4 +1,4 @@
-package ratelimit // import "moul.io/assh/pkg/ratelimit"
+package ratelimit
 
 // Package ratelimit based on http://hustcat.github.io/rate-limit-example-in-go/
 

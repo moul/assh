@@ -1,4 +1,4 @@
-module moul.io/assh
+module moul.io/assh/v2
 
 go 1.14
 

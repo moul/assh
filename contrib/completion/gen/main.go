@@ -1,9 +1,9 @@
-package main // import "moul.io/assh/contrib/completion/gen"
+package main // import "moul.io/assh/v2/contrib/completion/gen"
 
 import (
 	"log"
 
-	"moul.io/assh/pkg/commands"
+	"moul.io/assh/v2/pkg/commands"
 )
 
 func main() {

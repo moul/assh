@@ -1,4 +1,4 @@
-package commands // import "moul.io/assh/pkg/commands"
+package commands
 
 import (
 	"log"
@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"moul.io/assh/pkg/config"
-	loggerpkg "moul.io/assh/pkg/logger"
-	"moul.io/assh/pkg/version"
+	"moul.io/assh/v2/pkg/config"
+	loggerpkg "moul.io/assh/v2/pkg/logger"
+	"moul.io/assh/v2/pkg/version"
 )
 
 var commands = []*cobra.Command{

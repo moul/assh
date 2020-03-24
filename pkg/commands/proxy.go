@@ -27,8 +27,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
 	"golang.org/x/time/rate"
-	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/ratelimit"
+	"moul.io/assh/v2/pkg/config"
+	"moul.io/assh/v2/pkg/ratelimit"
 )
 
 type contextKey string

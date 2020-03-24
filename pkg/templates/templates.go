@@ -1,4 +1,4 @@
-package templates // import "moul.io/assh/pkg/templates"
+package templates
 
 import (
 	"encoding/json"

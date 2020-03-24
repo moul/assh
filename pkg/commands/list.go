@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
-	"moul.io/assh/pkg/config"
+	"moul.io/assh/v2/pkg/config"
 )
 
 var listConfigCommand = &cobra.Command{
