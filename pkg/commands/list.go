@@ -20,7 +20,7 @@ var listConfigCommand = &cobra.Command{
 
 func init() {
 	listConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
-	viper.BindPFlags(listConfigCommand.Flags())
+	_ = viper.BindPFlags(listConfigCommand.Flags())
 }
 
 func runListConfigCommand(cmd *cobra.Command, args []string) error {
