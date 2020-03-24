@@ -10,9 +10,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"moul.io/assh/pkg/config"
-	"moul.io/assh/pkg/utils"
-	"moul.io/assh/pkg/version"
+	"moul.io/assh/v2/pkg/config"
+	"moul.io/assh/v2/pkg/utils"
+	"moul.io/assh/v2/pkg/version"
 )
 
 var infoCommand = &cobra.Command{

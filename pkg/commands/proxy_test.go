@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"moul.io/assh/pkg/config"
+	"moul.io/assh/v2/pkg/config"
 )
 
 const configExample string = `

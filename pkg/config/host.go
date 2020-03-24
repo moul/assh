@@ -8,8 +8,7 @@ import (
 	"strings"
 
 	composeyaml "github.com/docker/libcompose/yaml"
-
-	"moul.io/assh/pkg/utils"
+	"moul.io/assh/v2/pkg/utils"
 )
 
 // Host defines the configuration flags of a host

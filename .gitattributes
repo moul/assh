@@ -1,0 +1,17 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Collapse vendored and generated files on GitHub
+AUTHORS linguist-generated
+vendor/* linguist-vendored
+rules.mk linguist-vendored
+*/vendor/* linguist-vendored
+*.gen.* linguist-generated
+*.pb.go linguist-generated
+go.sum linguist-generated
+go.mod linguist-generated
+gen.sum linguist-generated
+contrib/completion/*_autocomplete linguist-generated
+
+# Reduce conflicts on markdown files
+*.md merge=union

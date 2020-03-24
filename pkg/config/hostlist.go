@@ -1,7 +1,9 @@
 package config
 
-import "strings"
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 // HostsMap is a map of **Host).Name -> *Host
 type HostsMap map[string]*Host

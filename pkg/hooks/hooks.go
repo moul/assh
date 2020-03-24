@@ -1,4 +1,4 @@
-package hooks // import "moul.io/assh/pkg/hooks"
+package hooks
 
 import (
 	"fmt"

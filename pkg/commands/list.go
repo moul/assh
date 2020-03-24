@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
-	"moul.io/assh/pkg/config"
+	"moul.io/assh/v2/pkg/config"
 )
 
 var listConfigCommand = &cobra.Command{
@@ -20,7 +20,7 @@ var listConfigCommand = &cobra.Command{
 
 func init() {
 	listConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
-	viper.BindPFlags(listConfigCommand.Flags())
+	_ = viper.BindPFlags(listConfigCommand.Flags())
 }
 
 func runListConfigCommand(cmd *cobra.Command, args []string) error {
