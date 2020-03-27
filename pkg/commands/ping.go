@@ -18,6 +18,7 @@ var pingCommand = &cobra.Command{
 	RunE:  runPingCommand,
 }
 
+// nolint:gochecknoinits
 func init() {
 	pingCommand.Flags().BoolP("no-rewrite", "", false, "Do not automatically rewrite outdated configuration")
 	pingCommand.Flags().IntP("port", "p", 0, "SSH destination port")

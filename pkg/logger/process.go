@@ -26,12 +26,14 @@ func LogLevelFromParentSSHProcess() (zapcore.Level, error) {
 		return zapcore.WarnLevel, err
 	}
 
-	if strings.Contains(cmdline, "-vv") {
+	switch {
+	case strings.Contains(cmdline, "-vv"):
 		return zapcore.DebugLevel, nil
-	} else if strings.Contains(cmdline, "-v") {
+	case strings.Contains(cmdline, "-v"):
 		return zapcore.InfoLevel, nil
-	} else if strings.Contains(cmdline, "-q") {
+	case strings.Contains(cmdline, "-q"):
 		return zapcore.ErrorLevel, nil
+	default:
+		return zapcore.WarnLevel, nil
 	}
-	return zapcore.WarnLevel, nil
 }

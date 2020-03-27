@@ -16,6 +16,7 @@ var graphvizConfigCommand = &cobra.Command{
 	RunE:  runGraphvizConfigCommand,
 }
 
+// nolint:gochecknoinits
 func init() {
 	graphvizConfigCommand.Flags().BoolP("show-isolated-hosts", "", false, "Show isolated hosts")
 	graphvizConfigCommand.Flags().BoolP("no-resolve-wildcard", "", false, "Do not resolve wildcards in Gateways")

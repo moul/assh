@@ -23,6 +23,7 @@ var buildJSONConfigCommand = &cobra.Command{
 	RunE:  runBuildJSONConfigCommand,
 }
 
+// nolint:gochecknoinits
 func init() {
 	buildConfigCommand.Flags().BoolP("no-automatic-rewrite", "", false, "Disable automatic ~/.ssh/config file regeneration")
 	buildConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")

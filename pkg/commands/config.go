@@ -7,6 +7,7 @@ var configCommand = &cobra.Command{
 	Short: "Manage ssh and assh configuration",
 }
 
+// nolint:gochecknoinits
 func init() {
 	configCommand.AddCommand(buildConfigCommand)
 	configCommand.AddCommand(buildJSONConfigCommand)

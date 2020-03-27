@@ -25,8 +25,9 @@ var sshWrapperCommand = &cobra.Command{
 	RunE:  runSSHWrapperCommand,
 }
 
+// nolint:gochecknoinits
 func init() {
-	sshWrapperCommand.Flags().AddFlagSet(config.SSHFlags)
+	sshWrapperCommand.Flags().AddFlagSet(config.SSHFlags())
 	wrapperCommand.AddCommand(sshWrapperCommand)
 }
 

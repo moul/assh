@@ -226,6 +226,7 @@ func (h *Host) Matches(needle string) bool {
 }
 
 // Options returns a map of set options
+// nolint:gocyclo
 func (h *Host) Options() OptionsList {
 	options := make(OptionsList, 0)
 
@@ -544,6 +545,7 @@ func (h *Host) prepare() {
 }
 
 // ApplyDefaults ensures a Host is valid by filling the missing fields with defaults
+// nolint:gocyclo
 func (h *Host) ApplyDefaults(defaults *Host) {
 	// ssh-config fields
 	if h.AddKeysToAgent == "" {
@@ -1090,6 +1092,7 @@ func (h *Host) AddKnownHost(target string) {
 }
 
 // WriteSSHConfigTo writes an ~/.ssh/config file compatible host definition to a writable stream
+// nolint:gocyclo
 func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 	aliases := append([]string{h.Name()}, h.Aliases...)
 	aliases = append(aliases, h.knownHosts...)
