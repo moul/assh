@@ -1,8 +1,10 @@
 run:
   deadline: 1m
   tests: false
-  #skip-files:
-  #  - ".*\\.gen\\.go"
+  skip-files:
+    - "testing.go"
+    - ".*\\.pb\\.go"
+    - ".*\\.gen\\.go"
 
 linters-settings:
   golint:
@@ -18,17 +20,36 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - goconst
-    - misspell
+    - bodyclose
     - deadcode
-    - misspell
-    - structcheck
+    - depguard
+    - dogsled
+    - dupl
     - errcheck
-    - unused
-    - varcheck
-    - staticcheck
-    - unconvert
+    #- funlen
+    - gochecknoinits
+    #- gocognit
+    - goconst
+    - gocritic
+    - gocyclo
     - gofmt
     - goimports
     - golint
+    - gosimple
+    - govet
     - ineffassign
+    - interfacer
+    #- maligned
+    - misspell
+    - nakedret
+    - prealloc
+    - scopelint
+    - staticcheck
+    - structcheck
+    #- stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
