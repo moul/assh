@@ -741,10 +741,10 @@ Get a released version on: https://github.com/moul/assh/releases
 
 ### Register the wrapper (optional)
 
-To improve experience when using advanced pattern matching, add the following at the end of your .bashrc or .zshrc:
+To improve experience when using advanced pattern matching, add the following at the end of your `.bashrc` / `.zshrc` / `config.fish`:
 
 ```bash
-alias ssh="assh wrapper ssh"
+alias ssh="assh wrapper ssh --"
 ```
 
 This step is not *mandatory* but highly *recommended*.
