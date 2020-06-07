@@ -35,7 +35,7 @@ func runInfoCommand(cmd *cobra.Command, args []string) error {
 	fmt.Printf("CLI Path: %s\n", cliPath)
 	fmt.Printf("Go version: %s\n", runtime.Version())
 	fmt.Printf("OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-	fmt.Printf("Version: %s (%s)\n", version.VERSION, version.GITCOMMIT)
+	fmt.Printf("Version: %s (%s)\n", version.Version, version.VcsRef)
 	fmt.Println("")
 	fmt.Printf("RC files:\n")
 	homeDir := utils.GetHomeDir()
