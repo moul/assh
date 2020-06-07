@@ -102,6 +102,10 @@ go.unittest:
 	  fi); done
 	@mv /tmp/gocoverage $(GOCOVERAGE_FILE)
 
+.PHONY: go.checkdoc
+go.checkdoc:
+	go doc $(GOMOD_DIR)
+
 .PHONY: go.coverfunc
 go.coverfunc: go.unittest
 	go tool cover -func=$(GOCOVERAGE_FILE) | grep -v .pb.go: | grep -v .pb.gw.go:
@@ -176,6 +180,12 @@ endif
 ## Docker
 ##
 
+docker_build = 	docker build \
+	  --build-arg VCS_REF=`git rev-parse --short HEAD` \
+	  --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
+	  --build-arg VERSION=`git describe --tags --always` \
+	  -t "$2" -f "$1" "$(dir $1)"
+
 ifndef DOCKERFILE_PATH
 DOCKERFILE_PATH = ./Dockerfile
 endif
@@ -188,11 +198,7 @@ ifdef DOCKER_IMAGE
 ifneq ($(DOCKER_IMAGE),none)
 .PHONY: docker.build
 docker.build:
-	docker build \
-	  --build-arg VCS_REF=`git rev-parse --short HEAD` \
-	  --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-	  --build-arg VERSION=`git describe --tags --always` \
-	  -t $(DOCKER_IMAGE) -f $(DOCKERFILE_PATH) $(dir $(DOCKERFILE_PATH))
+	$(call docker_build,$(DOCKERFILE_PATH),$(DOCKER_IMAGE))
 
 BUILD_STEPS += docker.build
 endif
@@ -257,7 +263,7 @@ generate: $(PRE_GENERATE_STEPS) $(GENERATE_STEPS)
 endif
 
 .PHONY: help
-help:
+help::
 	@echo "General commands:"
 	@[ "$(BUILD_STEPS)" != "" ]     && echo "  build"     || true
 	@[ "$(BUMPDEPS_STEPS)" != "" ]  && echo "  bumpdeps"  || true

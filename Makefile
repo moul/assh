@@ -10,6 +10,11 @@ PRE_LINT_STEPS += generate
 PRE_TIDY_STEPS += generate
 PRE_BUMPDEPS_STEPS += generate
 
+VERSION ?= `git describe --tags --always`
+VCS_REF ?= `git rev-parse --short HEAD`
+
+GO_INSTALL_OPTS = -ldflags="-X 'moul.io/assh/v2/pkg/version.Version=$(VERSION)' -X 'moul.io/assh/v2/pkg/version.VcsRef=$(VCS_REF)' "
+
 include rules.mk
 
 .PHONY: generate
