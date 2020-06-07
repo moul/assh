@@ -28,7 +28,7 @@ var commands = []*cobra.Command{
 var RootCmd = &cobra.Command{
 	Use:              "assh",
 	Short:            "assh - advanced ssh config",
-	Version:          version.VERSION + " (" + version.GITCOMMIT + ")",
+	Version:          version.Version + " (" + version.VcsRef + ")",
 	TraverseChildren: true,
 }
 
