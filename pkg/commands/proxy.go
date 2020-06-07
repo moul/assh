@@ -33,6 +33,11 @@ import (
 
 type contextKey string
 
+type gatewayErrorMsg struct {
+	gateway string
+	err zap.Field
+}
+
 var syncContextKey contextKey = "sync"
 
 var proxyCommand = &cobra.Command{
@@ -228,11 +233,13 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 
 	if len(host.Gateways) > 0 {
 		logger().Debug("Trying gateways", zap.String("gateways", strings.Join(host.Gateways, ", ")))
+		var gatewayErrors []gatewayErrorMsg
 		for _, gateway := range host.Gateways {
 			log.Println(gateway)
 			if gateway == "direct" {
 				if err := proxyDirect(host, dryRun); err != nil {
-					logger().Error("Failed to use 'direct' connection", zap.Error(err))
+					gatewayErrors = append(gatewayErrors, gatewayErrorMsg{
+						gateway: "direct", err: zap.Error(err)})
 				} else {
 					return nil
 				}
@@ -267,14 +274,22 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 					zap.String("command", command),
 				)
 				if err := runProxy(gatewayHost, command, dryRun); err != nil {
-					logger().Error(
-						"Cannot use gateway",
-						zap.String("gateway", gateway),
-						zap.Error(err),
-					)
+					gatewayErrors = append(gatewayErrors, gatewayErrorMsg{
+						gateway: gateway, err: zap.Error(err)})
 				} else {
 					return nil
 				}
+			}
+		}
+		if len(gatewayErrors) > 0 {
+			for _, errMsg := range gatewayErrors{
+				conType := "gateway"
+				if errMsg.gateway == "direct" {
+					conType = "connection"
+				}
+				logger().Error(
+					fmt.Sprintf("Failed to use '%s' %s with error:",
+					errMsg.gateway, conType), errMsg.err)
 			}
 		}
 		return errors.New("no such available gateway")
