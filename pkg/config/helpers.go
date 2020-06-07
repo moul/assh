@@ -80,7 +80,7 @@ func splitSubN(s string, n int) []string {
 	runes := bytes.Runes([]byte(s))
 	l := len(runes)
 	for i, r := range runes {
-		sub = sub + string(r)
+		sub += string(r)
 		if (i+1)%n == 0 {
 			subs = append(subs, sub)
 			sub = ""

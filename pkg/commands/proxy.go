@@ -35,7 +35,7 @@ type contextKey string
 
 type gatewayErrorMsg struct {
 	gateway string
-	err zap.Field
+	err     zap.Field
 }
 
 var syncContextKey contextKey = "sync"
@@ -48,6 +48,7 @@ var proxyCommand = &cobra.Command{
 	RunE:    runProxyCommand,
 }
 
+// nolint:gochecknoinits
 func init() {
 	proxyCommand.Flags().BoolP("no-rewrite", "", false, "Do not automatically rewrite outdated configuration")
 	proxyCommand.Flags().IntP("port", "p", 0, "SSH destination port")
@@ -119,7 +120,6 @@ func runProxyCommand(cmd *cobra.Command, args []string) error {
 			} else {
 				defer drivers.Close()
 			}
-
 		} else {
 			logger().Warn("The configuration file is outdated; you need to run `assh config build --no-automatic-rewrite > ~/.ssh/config` to stay updated")
 		}
@@ -148,6 +148,7 @@ func runProxyCommand(cmd *cobra.Command, args []string) error {
 	return proxy(host, conf, dryRun)
 }
 
+// nolint:unparam
 func computeHost(dest string, portOverride int, conf *config.Config) (*config.Host, error) {
 	host := conf.GetHostSafe(dest)
 
@@ -225,7 +226,6 @@ func prepareHostControlPath(host, gateway *config.Host) error {
 }
 
 func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
-
 	emptygw := config.Host{}
 	if err := prepareHostControlPath(host.Clone(), emptygw.Clone()); err != nil {
 		return errors.Wrap(err, "failed to prepare host control-path")
@@ -282,14 +282,14 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 			}
 		}
 		if len(gatewayErrors) > 0 {
-			for _, errMsg := range gatewayErrors{
+			for _, errMsg := range gatewayErrors {
 				conType := "gateway"
 				if errMsg.gateway == "direct" {
 					conType = "connection"
 				}
 				logger().Error(
 					fmt.Sprintf("Failed to use '%s' %s with error:",
-					errMsg.gateway, conType), errMsg.err)
+						errMsg.gateway, conType), errMsg.err)
 			}
 		}
 		return errors.New("no such available gateway")

@@ -221,7 +221,6 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 	for origPattern, host := range c.Hosts {
 		patterns := append([]string{origPattern}, host.Aliases...)
 		for _, pattern := range patterns {
-
 			matched, err := path.Match(pattern, name)
 			if err != nil {
 				return nil, err

@@ -38,6 +38,7 @@ var masterSocketCommand = &cobra.Command{
 	RunE:  runMasterSocketCommand,
 }
 
+// nolint:gochecknoinits
 func init() {
 	socketsCommand.AddCommand(listSocketsCommand)
 	socketsCommand.AddCommand(flushSocketsCommand)
