@@ -51,7 +51,7 @@ Connect to `hosta` using `hostb` as a gateway.
   └─────┘         │
      ┃            ▽
      ┃         ┌─────┐
- firewall      │hostb│
+ firewall       │hostb│
      ┃         └─────┘
      ▼            │
   ┌─────┐
