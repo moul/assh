@@ -18,6 +18,7 @@ var listConfigCommand = &cobra.Command{
 	RunE:  runListConfigCommand,
 }
 
+// nolint:gochecknoinits
 func init() {
 	listConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
 	_ = viper.BindPFlags(listConfigCommand.Flags())

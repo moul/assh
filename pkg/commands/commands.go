@@ -32,6 +32,7 @@ var RootCmd = &cobra.Command{
 	TraverseChildren: true,
 }
 
+// nolint:gochecknoinits
 func init() {
 	ex, err := os.Executable()
 	if err != nil {
