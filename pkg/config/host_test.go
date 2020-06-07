@@ -255,6 +255,7 @@ func dummyHost() *Host {
 		PubkeyAcceptedKeyTypes:   "+ssh-dss",
 		PubkeyAuthentication:     "yes",
 		RekeyLimit:               "default none",
+		RemoteCommand:             "echo %h > /tmp/logs",
 		RemoteForward:            []string{"0.0.0.0:1234", "0.0.0.0:1235"},
 		RequestTTY:               "yes",
 		RevokedHostKeys:          "/a/revoked-keys",
