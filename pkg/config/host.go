@@ -68,6 +68,7 @@ type Host struct {
 	KexAlgorithms                    composeyaml.Stringorslice `yaml:"kexalgorithms,omitempty,flow" json:"KexAlgorithms,omitempty"`
 	KeychainIntegration              string                    `yaml:"keychainintegration,omitempty,flow" json:"KeychainIntegration,omitempty"`
 	LocalCommand                     string                    `yaml:"localcommand,omitempty,flow" json:"LocalCommand,omitempty"`
+	RemoteCommand                    string                    `yaml:"remotecommand,omitempty,flow" json:"RemoteCommand,omitempty"`
 	LocalForward                     composeyaml.Stringorslice `yaml:"localforward,omitempty,flow" json:"LocalForward,omitempty"`
 	LogLevel                         string                    `yaml:"loglevel,omitempty,flow" json:"LogLevel,omitempty"`
 	MACs                             composeyaml.Stringorslice `yaml:"macs,omitempty,flow" json:"MACs,omitempty"`
@@ -392,6 +393,9 @@ func (h *Host) Options() OptionsList {
 	}
 	if h.LocalCommand != "" {
 		options = append(options, Option{Name: "LocalCommand", Value: h.LocalCommand})
+	}
+	if h.RemoteCommand != "" {
+		options = append(options, Option{Name: "RemoteCommand", Value: h.RemoteCommand})
 	}
 	for _, entry := range h.LocalForward {
 		options = append(options, Option{Name: "LocalForward", Value: entry})
@@ -822,6 +826,10 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.LocalCommand = defaults.LocalCommand
 	}
 	h.LocalCommand = utils.ExpandField(h.LocalCommand)
+	if h.RemoteCommand == "" {
+		h.RemoteCommand = defaults.RemoteCommand
+	}
+	h.RemoteCommand = utils.ExpandField(h.RemoteCommand)
 
 	if len(h.LocalForward) == 0 {
 		h.LocalForward = defaults.LocalForward
