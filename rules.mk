@@ -72,14 +72,26 @@ GO_INSTALL_OPTS ?=
 GO_TEST_OPTS ?= -test.timeout=30s
 GOMOD_DIR ?= .
 GOCOVERAGE_FILE ?= ./coverage.txt
+GOTESTJSON_FILE ?= ./go-test.json
+GOBUILDLOG_FILE ?= ./go-build.log
+GOINSTALLLOG_FILE ?= ./go-install.log
 
 ifdef GOBINS
 .PHONY: go.install
 go.install:
+ifeq ($(CI),true)
+	@rm -f /tmp/goinstall.log
+	@set -e; for dir in $(GOBINS); do ( set -xe; \
+	  cd $$dir; \
+	  $(GO) install -v $(GO_INSTALL_OPTS) .; \
+	); done 2>&1 | tee $(GOINSTALLLOG_FILE)
+
+else
 	@set -e; for dir in $(GOBINS); do ( set -xe; \
 	  cd $$dir; \
 	  $(GO) install $(GO_INSTALL_OPTS) .; \
 	); done
+endif
 INSTALL_STEPS += go.install
 
 .PHONY: go.release
@@ -92,15 +104,29 @@ endif
 
 .PHONY: go.unittest
 go.unittest:
+ifeq ($(CI),true)
+	@echo "mode: atomic" > /tmp/gocoverage
+	@rm -f $(GOTESTJSON_FILE)
+	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do (set -e; (set -euf pipefail; \
+	    cd $$dir; \
+	    ($(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race -json | tee -a $(GOTESTJSON_FILE) 3>&1 1>&2 2>&3 | tee -a $(GOBUILDLOG_FILE); \
+	  ); \
+	  if [ -f /tmp/profile.out ]; then \
+	    cat /tmp/profile.out | sed "/mode: atomic/d" >> /tmp/gocoverage; \
+	    rm -f /tmp/profile.out; \
+	  fi)); done
+	@mv /tmp/gocoverage $(GOCOVERAGE_FILE)
+else
 	@echo "mode: atomic" > /tmp/gocoverage
 	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do (set -e; (set -xe; \
 	  cd $$dir; \
-	  $(GO) test $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race ./...); \
+	  $(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race); \
 	  if [ -f /tmp/profile.out ]; then \
 	    cat /tmp/profile.out | sed "/mode: atomic/d" >> /tmp/gocoverage; \
 	    rm -f /tmp/profile.out; \
 	  fi); done
 	@mv /tmp/gocoverage $(GOCOVERAGE_FILE)
+endif
 
 .PHONY: go.checkdoc
 go.checkdoc:
@@ -152,6 +178,20 @@ TIDY_STEPS += go.tidy
 LINT_STEPS += go.lint
 UNITTEST_STEPS += go.unittest
 FMT_STEPS += go.fmt
+endif
+
+##
+## Gitattributes
+##
+
+ifneq ($(wildcard .gitattributes),)
+.PHONY: _linguist-ignored
+_linguist-kept:
+	@git check-attr linguist-vendored $(shell git check-attr linguist-generated $(shell find . -type f | grep -v .git/) | grep unspecified | cut -d: -f1) | grep unspecified | cut -d: -f1 | sort
+
+.PHONY: _linguist-kept
+_linguist-ignored:
+	@git check-attr linguist-vendored linguist-ignored `find . -not -path './.git/*' -type f` | grep '\ set$$' | cut -d: -f1 | sort -u
 endif
 
 ##
