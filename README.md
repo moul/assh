@@ -931,9 +931,12 @@ Support this project with your organization. Your logo will show up here with a 
 <a href="https://opencollective.com/assh/organization/8/website"><img src="https://opencollective.com/assh/organization/8/avatar.svg"></a>
 <a href="https://opencollective.com/assh/organization/9/website"><img src="https://opencollective.com/assh/organization/9/avatar.svg"></a>
 
+
+### Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/moul/assh.svg)](https://starchart.cc/moul/assh)
+      
+
 ## License
 
-© 2009-2016 Manfred Touron - MIT License
-
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config.svg?type=large)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fmoul%2Fadvanced-ssh-config?ref=badge_large)
+© 2009-2020 Manfred Touron - MIT License
