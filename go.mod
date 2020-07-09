@@ -27,7 +27,7 @@ require (
 	github.com/imdario/mergo v0.3.9
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-zglob v0.0.2
-	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
+	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
@@ -44,8 +44,8 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/urfave/cli v1.22.4
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/net v0.0.0-20200625001655-4c5254603344
+	golang.org/x/crypto v0.0.0-20200707235045-ab33eee955e0
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	google.golang.org/protobuf v1.24.0 // indirect
