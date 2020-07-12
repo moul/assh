@@ -30,6 +30,7 @@ all: help
 ##
 
 rwildcard = $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+check-program = $(foreach exec,$(1),$(if $(shell PATH="$(PATH)" which $(exec)),,$(error "No $(exec) in PATH")))
 
 ##
 ## rules.mk
@@ -96,6 +97,7 @@ INSTALL_STEPS += go.install
 
 .PHONY: go.release
 go.release:
+	$(call check-program, goreleaser)
 	goreleaser --snapshot --skip-publish --rm-dist
 	@echo -n "Do you want to release? [y/N] " && read ans && \
 	  if [ $${ans:-N} = y ]; then set -xe; goreleaser --rm-dist; fi
@@ -238,6 +240,7 @@ ifdef DOCKER_IMAGE
 ifneq ($(DOCKER_IMAGE),none)
 .PHONY: docker.build
 docker.build:
+	$(call check-program, docker)
 	$(call docker_build,$(DOCKERFILE_PATH),$(DOCKER_IMAGE))
 
 BUILD_STEPS += docker.build
