@@ -34,7 +34,7 @@ require (
 	github.com/moul/flexyaml v0.0.0-20171225152558-f458bfa8afe2
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/shirou/gopsutil v2.20.8+incompatible
+	github.com/shirou/gopsutil v2.20.9+incompatible
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -44,9 +44,8 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/urfave/cli v1.22.4
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20200927032502-5d4f70055728
-	golang.org/x/sys v0.0.0-20200602225109-6fdc65e7d980 // indirect
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	golang.org/x/net v0.0.0-20201002202402-0a1ea396d57c
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/ini.v1 v1.57.0 // indirect
