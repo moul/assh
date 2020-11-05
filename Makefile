@@ -37,6 +37,7 @@ gen-release: generate
 	GOOS=linux   GOARCH=amd64 go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_linux_amd64   .
 	GOOS=linux   GOARCH=386   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_linux_386     .
 	GOOS=linux   GOARCH=arm   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_linux_arm     .
+	GOOS=linux   GOARCH=arm64 go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_linux_arm64   .
 	GOOS=openbsd GOARCH=amd64 go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_openbsd_amd64 .
 	GOOS=openbsd GOARCH=386   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_openbsd_386   .
 	GOOS=openbsd GOARCH=arm   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_openbsd_arm   .
