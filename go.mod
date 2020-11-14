@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/awalterschulze/gographviz v2.0.1+incompatible
+	github.com/awalterschulze/gographviz v2.0.3+incompatible
 	github.com/bugsnag/osext v0.0.0-20130617224835-0dd3f918b21b
 	github.com/deckarep/gosx-notifier v0.0.0-20180201035817-e127226297fb // indirect
 	github.com/docker/docker v1.13.1 // indirect
