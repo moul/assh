@@ -23,7 +23,8 @@
 # ||  |       |  |    | |                   /_/_/_/\___/\_,_/_/  |
 # +--------------------------------------------------------------+
 
-all: help
+.PHONY: _default_entrypoint
+_default_entrypoint: help
 
 ##
 ## Common helpers
@@ -31,6 +32,8 @@ all: help
 
 rwildcard = $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 check-program = $(foreach exec,$(1),$(if $(shell PATH="$(PATH)" which $(exec)),,$(error "No $(exec) in PATH")))
+my-filter-out = $(foreach v,$(2),$(if $(findstring $(1),$(v)),,$(v)))
+novendor = $(call my-filter-out,vendor/,$(1))
 
 ##
 ## rules.mk
@@ -71,7 +74,7 @@ GO ?= go
 GOPATH ?= $(HOME)/go
 GO_INSTALL_OPTS ?=
 GO_TEST_OPTS ?= -test.timeout=30s
-GOMOD_DIR ?= .
+GOMOD_DIRS ?= $(sort $(call novendor,$(dir $(call rwildcard,*,*/go.mod go.mod))))
 GOCOVERAGE_FILE ?= ./coverage.txt
 GOTESTJSON_FILE ?= ./go-test.json
 GOBUILDLOG_FILE ?= ./go-build.log
@@ -109,10 +112,11 @@ go.unittest:
 ifeq ($(CI),true)
 	@echo "mode: atomic" > /tmp/gocoverage
 	@rm -f $(GOTESTJSON_FILE)
-	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do (set -e; (set -euf pipefail; \
+	@set -e; for dir in $(GOMOD_DIRS); do (set -e; (set -euf pipefail; \
 	    cd $$dir; \
-	    ($(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race -json | tee -a $(GOTESTJSON_FILE) 3>&1 1>&2 2>&3 | tee -a $(GOBUILDLOG_FILE); \
+	    (($(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race -json && touch $@.ok) | tee -a $(GOTESTJSON_FILE) 3>&1 1>&2 2>&3 | tee -a $(GOBUILDLOG_FILE); \
 	  ); \
+	  rm $@.ok 2>/dev/null || exit 1; \
 	  if [ -f /tmp/profile.out ]; then \
 	    cat /tmp/profile.out | sed "/mode: atomic/d" >> /tmp/gocoverage; \
 	    rm -f /tmp/profile.out; \
@@ -120,7 +124,7 @@ ifeq ($(CI),true)
 	@mv /tmp/gocoverage $(GOCOVERAGE_FILE)
 else
 	@echo "mode: atomic" > /tmp/gocoverage
-	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do (set -e; (set -xe; \
+	@set -e; for dir in $(GOMOD_DIRS); do (set -e; (set -xe; \
 	  cd $$dir; \
 	  $(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race); \
 	  if [ -f /tmp/profile.out ]; then \
@@ -132,7 +136,7 @@ endif
 
 .PHONY: go.checkdoc
 go.checkdoc:
-	go doc $(GOMOD_DIR)
+	go doc $(first $(GOMOD_DIRS))
 
 .PHONY: go.coverfunc
 go.coverfunc: go.unittest
@@ -140,46 +144,74 @@ go.coverfunc: go.unittest
 
 .PHONY: go.lint
 go.lint:
-	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do ( set -xe; \
+	@set -e; for dir in $(GOMOD_DIRS); do ( set -xe; \
 	  cd $$dir; \
 	  golangci-lint run --verbose ./...; \
 	); done
 
 .PHONY: go.tidy
 go.tidy:
-	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do ( set -xe; \
+	@# tidy dirs with go.mod files
+	@set -e; for dir in $(GOMOD_DIRS); do ( set -xe; \
 	  cd $$dir; \
 	  $(GO)	mod tidy; \
 	); done
 
+.PHONY: go.depaware-update
+go.depaware-update: go.tidy
+	@# gen depaware for bins
+	@set -e; for dir in $(GOBINS); do ( set -xe; \
+	  cd $$dir; \
+	  $(GO) run github.com/tailscale/depaware --update .; \
+	); done
+	@# tidy unused depaware deps if not in a tools_test.go file
+	@set -e; for dir in $(GOMOD_DIRS); do ( set -xe; \
+	  cd $$dir; \
+	  $(GO)	mod tidy; \
+	); done
+
+.PHONY: go.depaware-check
+go.depaware-check: go.tidy
+	@# gen depaware for bins
+	@set -e; for dir in $(GOBINS); do ( set -xe; \
+	  cd $$dir; \
+	  $(GO) run github.com/tailscale/depaware --check .; \
+	); done
+
+
 .PHONY: go.build
 go.build:
-	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do ( set -xe; \
+	@set -e; for dir in $(GOMOD_DIRS); do ( set -xe; \
 	  cd $$dir; \
 	  $(GO)	build ./...; \
 	); done
 
 .PHONY: go.bump-deps
 go.bumpdeps:
-	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do ( set -xe; \
+	@set -e; for dir in $(GOMOD_DIRS); do ( set -xe; \
 	  cd $$dir; \
 	  $(GO)	get -u ./...; \
 	); done
 
 .PHONY: go.bump-deps
 go.fmt:
-	if ! command -v goimports &>/dev/null; then GO111MODULE=off go get golang.org/x/tools/cmd/goimports; fi
-	@set -e; for dir in `find $(GOMOD_DIR) -type f -name "go.mod" | grep -v /vendor/ | sed 's@/[^/]*$$@@' | sort | uniq`; do ( set -xe; \
+	@set -e; for dir in $(GOMOD_DIRS); do ( set -xe; \
 	  cd $$dir; \
-	  goimports -w `go list -f '{{.Dir}}' ./...)` \
+	  $(GO) run golang.org/x/tools/cmd/goimports -w `go list -f '{{.Dir}}' ./...` \
 	); done
 
+VERIFY_STEPS += go.depaware-check
 BUILD_STEPS += go.build
-BUMPDEPS_STEPS += go.bumpdeps
+BUMPDEPS_STEPS += go.bumpdeps go.depaware-update
 TIDY_STEPS += go.tidy
 LINT_STEPS += go.lint
 UNITTEST_STEPS += go.unittest
 FMT_STEPS += go.fmt
+
+# FIXME: disabled, because currently slow
+# new rule that is manually run sometimes, i.e. `make pre-release` or `make maintenance`.
+# alternative: run it each time the go.mod is changed
+#GENERATE_STEPS += go.depaware-update
 endif
 
 ##
@@ -285,6 +317,11 @@ ifdef BUILD_STEPS
 build: $(PRE_BUILD_STEPS) $(BUILD_STEPS)
 endif
 
+ifdef VERIFY_STEPS
+.PHONY: verify
+verify: $(PRE_VERIFY_STEPS) $(VERIFY_STEPS)
+endif
+
 ifdef RELEASE_STEPS
 .PHONY: release
 release: $(PRE_RELEASE_STEPS) $(RELEASE_STEPS)
@@ -318,4 +355,7 @@ help::
 	@[ "$(TEST_STEPS)" != "" ]      && echo "  test"      || true
 	@[ "$(TIDY_STEPS)" != "" ]      && echo "  tidy"      || true
 	@[ "$(UNITTEST_STEPS)" != "" ]  && echo "  unittest"  || true
+	@[ "$(VERIFY_STEPS)" != "" ]    && echo "  verify"    || true
 	@# FIXME: list other commands
+
+print-% : ; $(info $* is a $(flavor $*) variable set to [$($*)]) @true
