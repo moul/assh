@@ -241,7 +241,6 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 		}
 	}
 
-
 	if allowTemplate {
 		for pattern, template := range c.Templates {
 			matched, _ := path.Match(pattern, name)

@@ -92,7 +92,7 @@ func splitSubN(s string, n int) []string {
 	return subs
 }
 
-func regexpMatchHost(pattern string, name string, ) (match bool, captureGroups map[string]string) {
+func regexpMatchHost(pattern string, name string) (match bool, captureGroups map[string]string) {
 	if !strings.HasPrefix(pattern, "^") && !strings.HasSuffix(pattern, "$") {
 		pattern = fmt.Sprintf("^%s$", pattern)
 	}
