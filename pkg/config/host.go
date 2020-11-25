@@ -1480,14 +1480,10 @@ func (h *Host) ExpandString(input string, gateway string) string {
 
 	// regexp capture groups, numeric and named
 	if len(h.captureGroups) > 0 {
-		numericPattern, _ := regexp.Compile("{[0-9]+}")
-		output = numericPattern.ReplaceAllStringFunc(output, func(s string) string {
+		const regexExpr = "{[0-9]+}"
+		pattern, _ := regexp.Compile(regexExpr)
+		output = pattern.ReplaceAllStringFunc(output, func(s string) string {
 			return h.captureGroups[s]
-		})
-
-		namedGroupPattern, _ := regexp.Compile("{(.+?)}")
-		output = namedGroupPattern.ReplaceAllStringFunc(output, func(s string) string {
-			return h.captureGroups[s[2:len(s)-1]]
 		})
 	}
 
