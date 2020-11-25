@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -89,4 +90,23 @@ func splitSubN(s string, n int) []string {
 		}
 	}
 	return subs
+}
+
+func regexpMatchHost(pattern string, name string, ) (match bool, captureGroups map[string]string) {
+	if !strings.HasPrefix(pattern, "^") && !strings.HasSuffix(pattern, "$") {
+		pattern = fmt.Sprintf("^%s$", pattern)
+	}
+
+	regexpPattern, err := regexp.Compile(pattern)
+	if err == nil && regexpPattern.MatchString(name) {
+		captureGroups = map[string]string{}
+
+		for i, match := range regexpPattern.FindStringSubmatch(name) {
+			captureGroups[fmt.Sprintf("{%d}", i+1)] = match
+		}
+
+		return true, captureGroups
+	}
+
+	return false, nil
 }

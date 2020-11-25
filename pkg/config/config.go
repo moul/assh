@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -228,24 +227,14 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 	for origPattern, host := range c.Hosts {
 		patterns := append([]string{origPattern}, host.Aliases...)
 		for _, pattern := range patterns {
-			matched, err := path.Match(pattern, name)
+			matched, _ := path.Match(pattern, name)
 			if matched {
 				logger().Debug("getHostByName pattern matching", zap.String("pattern", pattern), zap.String("name", name))
 				return computeHost(host, c, name, compute)
 			}
 
-			if !strings.HasPrefix(pattern, "^") && !strings.HasSuffix(pattern, "$") {
-				pattern = fmt.Sprintf("^%s$", pattern)
-			}
-
-			regexpPattern, err := regexp.Compile(pattern)
-			if err == nil && regexpPattern.MatchString(name) {
-				var captureGroups = map[string]string{}
-
-				for i, match := range regexpPattern.FindStringSubmatch(name) {
-					captureGroups[fmt.Sprintf("{%d}", i+1)] = match
-				}
-
+			matched, captureGroups := regexpMatchHost(pattern, name)
+			if matched {
 				logger().Debug("getHostByName regexp pattern matching", zap.String("pattern", pattern), zap.String("name", name))
 				return computeHostRegexp(host, c, name, compute, captureGroups)
 			}
@@ -260,18 +249,9 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 				return computeHost(template, c, name, compute)
 			}
 
-			if !strings.HasPrefix(pattern, "^") && !strings.HasSuffix(pattern, "$") {
-				pattern = fmt.Sprintf("^%s$", pattern)
-			}
-
-			regexpPattern, err := regexp.Compile(pattern)
-			if err == nil && regexpPattern.MatchString(name) {
-				var captureGroups = map[string]string{}
-
-				for i, match := range regexpPattern.FindStringSubmatch(name) {
-					captureGroups[fmt.Sprintf("{%d}", i+1)] = match
-				}
-
+			matched, captureGroups := regexpMatchHost(pattern, name)
+			if matched {
+				logger().Debug("getHostByName regexp pattern matching", zap.String("pattern", pattern), zap.String("name", name))
 				return computeHostRegexp(template, c, name, compute, captureGroups)
 			}
 		}
