@@ -70,6 +70,9 @@ hosts:
   jjj:
     HostName: "%h.jjjjj"
 
+  "([a-z0-9])\\.regexx":
+      HostName: "{1}.xxrege"
+
   "*.kkk":
     HostName: "%h.kkkkk"
 
@@ -352,7 +355,7 @@ func TestConfig_LoadConfig(t *testing.T) {
 			config := New()
 			err := config.LoadConfig(strings.NewReader(yamlConfig))
 			So(err, ShouldBeNil)
-			So(len(config.Hosts), ShouldEqual, 17)
+			So(len(config.Hosts), ShouldEqual, 18)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -620,6 +623,9 @@ func TestConfig_JSONString(t *testing.T) {
 			So(err, ShouldBeNil)
 			expected := `{
   "hosts": {
+    "([a-z0-9])\\.regexx": {
+      "HostName": "{1}.xxrege"
+    },
     "*.ddd": {
       "HostName": "1.3.5.7"
     },
@@ -813,6 +819,20 @@ func TestComputeHost(t *testing.T) {
 			So(computed.LocalCommand, ShouldEqual, "") // FIXME: it should be "hello"
 			So(computed.User, ShouldEqual, "user-ccc-user")
 		})
+		Convey("Expand regex capture groups in HostName", func() {
+			const regexName = "([a-z0-9])\\.regexx"
+
+			var captureGroups = map[string]string{"{1}": "beef"}
+
+			host := config.Hosts[regexName]
+			computed, err := computeHostRegexp(host, config, regexName, false, captureGroups)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "{1}.xxrege")
+
+			computed, err = computeHostRegexp(host, config, regexName, true, captureGroups)
+			So(err, ShouldBeNil)
+			So(computed.HostName, ShouldEqual, "beef.xxrege")
+		})
 	})
 }
 
@@ -878,6 +898,12 @@ func TestConfig_getHostByName(t *testing.T) {
 			So(host.Name(), ShouldEqual, "regex.ddd/gateway")
 			So(host.HostName, ShouldNotEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
+		})
+		Convey("With regexp pattern", func() {
+			host, err = config.getHostByName("noodles.regexx", true, true, false)
+			So(err, ShouldBeNil)
+			So(host.Name(), ShouldEqual, "noodles.regexx")
+			So(host.HostName, ShouldNotEqual, "noodles.xxrege")
 		})
 	})
 }
@@ -969,7 +995,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(config.IncludedFiles(), ShouldResemble, []string{file.Name()})
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 17)
+			So(len(config.Hosts), ShouldEqual, 18)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")
@@ -996,7 +1022,7 @@ func TestConfig_LoadFiles(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(config.includedFiles[file.Name()], ShouldEqual, true)
 			So(len(config.includedFiles), ShouldEqual, 1)
-			So(len(config.Hosts), ShouldEqual, 17)
+			So(len(config.Hosts), ShouldEqual, 18)
 			So(config.Hosts["aaa"].HostName, ShouldEqual, "1.2.3.4")
 			So(config.Hosts["aaa"].Port, ShouldEqual, "")
 			So(config.Hosts["aaa"].User, ShouldEqual, "")

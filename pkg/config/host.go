@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os/user"
+	"regexp"
 	"strings"
 
 	composeyaml "github.com/docker/libcompose/yaml"
@@ -133,6 +134,7 @@ type Host struct {
 	isDefault          bool
 	isTemplate         bool
 	inherited          map[string]bool
+	captureGroups      map[string]string
 }
 
 // NewHost returns a host with name
@@ -1475,6 +1477,19 @@ func (h *Host) ExpandString(input string, gateway string) string {
 
 	// gateway
 	output = strings.Replace(output, "%g", gateway, -1)
+
+	// regexp capture groups, numeric and named
+	if len(h.captureGroups) > 0 {
+		numericPattern, _ := regexp.Compile("{[0-9]+}")
+		output = numericPattern.ReplaceAllStringFunc(output, func(s string) string {
+			return h.captureGroups[s]
+		})
+
+		namedGroupPattern, _ := regexp.Compile("{(.+?)}")
+		output = namedGroupPattern.ReplaceAllStringFunc(output, func(s string) string {
+			return h.captureGroups[s[2:len(s)-1]]
+		})
+	}
 
 	// FIXME: add
 	//   %L -> first component of the local host name

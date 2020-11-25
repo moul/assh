@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -144,8 +145,12 @@ func (c *Config) JSONString() ([]byte, error) {
 	return json.MarshalIndent(c, "", "  ")
 }
 
-// computeHost returns a copy of the host with applied defaults, resolved inheritances and configured internal fields
 func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Host, error) {
+	return computeHostRegexp(host, config, name, fullCompute, nil)
+}
+
+// computeHost returns a copy of the host with applied defaults, resolved inheritances and configured internal fields
+func computeHostRegexp(host *Host, config *Config, name string, fullCompute bool, captureGroups map[string]string) (*Host, error) {
 	computedHost := NewHost(name)
 	computedHost.pattern = name
 	if host != nil {
@@ -157,6 +162,8 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	computedHost.inherited = make(map[string]bool)
 	// self is already inherited
 	computedHost.inherited[name] = true
+	// add regexp match capture groups
+	computedHost.captureGroups = captureGroups
 
 	// Inheritance
 	// FIXME: allow deeper inheritance:
@@ -222,24 +229,50 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 		patterns := append([]string{origPattern}, host.Aliases...)
 		for _, pattern := range patterns {
 			matched, err := path.Match(pattern, name)
-			if err != nil {
-				return nil, err
-			}
 			if matched {
 				logger().Debug("getHostByName pattern matching", zap.String("pattern", pattern), zap.String("name", name))
 				return computeHost(host, c, name, compute)
 			}
+
+			if !strings.HasPrefix(pattern, "^") && !strings.HasSuffix(pattern, "$") {
+				pattern = fmt.Sprintf("^%s$", pattern)
+			}
+
+			regexpPattern, err := regexp.Compile(pattern)
+			if err == nil && regexpPattern.MatchString(name) {
+				var captureGroups = map[string]string{}
+
+				for i, match := range regexpPattern.FindStringSubmatch(name) {
+					captureGroups[fmt.Sprintf("{%d}", i+1)] = match
+				}
+
+				logger().Debug("getHostByName regexp pattern matching", zap.String("pattern", pattern), zap.String("name", name))
+				return computeHostRegexp(host, c, name, compute, captureGroups)
+			}
 		}
 	}
 
+
 	if allowTemplate {
 		for pattern, template := range c.Templates {
-			matched, err := path.Match(pattern, name)
-			if err != nil {
-				return nil, err
-			}
+			matched, _ := path.Match(pattern, name)
 			if matched {
 				return computeHost(template, c, name, compute)
+			}
+
+			if !strings.HasPrefix(pattern, "^") && !strings.HasSuffix(pattern, "$") {
+				pattern = fmt.Sprintf("^%s$", pattern)
+			}
+
+			regexpPattern, err := regexp.Compile(pattern)
+			if err == nil && regexpPattern.MatchString(name) {
+				var captureGroups = map[string]string{}
+
+				for i, match := range regexpPattern.FindStringSubmatch(name) {
+					captureGroups[fmt.Sprintf("{%d}", i+1)] = match
+				}
+
+				return computeHostRegexp(template, c, name, compute, captureGroups)
 			}
 		}
 	}

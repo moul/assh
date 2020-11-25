@@ -10,3 +10,4 @@ dist/
 docker/assh
 docker/[0-9]*
 /.release
+.idea
