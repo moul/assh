@@ -939,4 +939,4 @@ Support this project with your organization. Your logo will show up here with a 
 
 ## License
 
-© 2009-2020 Manfred Touron - MIT License
+© 2009-2021 Manfred Touron - MIT License
