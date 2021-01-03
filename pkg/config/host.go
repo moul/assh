@@ -24,6 +24,8 @@ type Host struct {
 	CanonicalizeHostname             string                    `yaml:"canonicalizehostname,omitempty,flow" json:"CanonicalizeHostname,omitempty"`
 	CanonicalizeMaxDots              string                    `yaml:"canonicalizemaxDots,omitempty,flow" json:"CanonicalizeMaxDots,omitempty"`
 	CanonicalizePermittedCNAMEs      string                    `yaml:"canonicalizepermittedcnames,omitempty,flow" json:"CanonicalizePermittedCNAMEs,omitempty"`
+	CASignatureAlgorithms            composeyaml.Stringorslice `yaml:"casignaturealgorithms,omitempty,flow" json:"CASignatureAlgorithms,omitempty"`
+	CertificateFile                  composeyaml.Stringorslice `yaml:"certificatefile,omitempty,flow" json:"CertificateFile,omitempty"`
 	ChallengeResponseAuthentication  string                    `yaml:"challengeresponseauthentication,omitempty,flow" json:"ChallengeResponseAuthentication,omitempty"`
 	CheckHostIP                      string                    `yaml:"checkhostip,omitempty,flow" json:"CheckHostIP,omitempty"`
 	Cipher                           string                    `yaml:"cipher,omitempty,flow" json:"Cipher,omitempty"`
@@ -261,6 +263,12 @@ func (h *Host) Options() OptionsList {
 	}
 	if h.CanonicalizePermittedCNAMEs != "" {
 		options = append(options, Option{Name: "CanonicalizePermittedCNAMEs", Value: h.CanonicalizePermittedCNAMEs})
+	}
+	if len(h.CASignatureAlgorithms) > 0 {
+		options = append(options, Option{Name: "CASignatureAlgorithms", Value: strings.Join(h.CASignatureAlgorithms, ",")})
+	}
+	for _, entry := range h.CertificateFile {
+		options = append(options, Option{Name: "CertificateFile", Value: entry})
 	}
 	if h.ChallengeResponseAuthentication != "" {
 		options = append(options, Option{Name: "ChallengeResponseAuthentication", Value: h.ChallengeResponseAuthentication})
@@ -601,6 +609,16 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.CanonicalizePermittedCNAMEs = defaults.CanonicalizePermittedCNAMEs
 	}
 	h.CanonicalizePermittedCNAMEs = utils.ExpandField(h.CanonicalizePermittedCNAMEs)
+
+	if len(h.CASignatureAlgorithms) == 0 {
+		h.CASignatureAlgorithms = defaults.CASignatureAlgorithms
+	}
+	h.CASignatureAlgorithms = utils.ExpandSliceField(h.CASignatureAlgorithms)
+
+	if len(h.CertificateFile) == 0 {
+		h.CertificateFile = defaults.CertificateFile
+	}
+	h.CertificateFile = utils.ExpandSliceField(h.CertificateFile)
 
 	if h.ChallengeResponseAuthentication == "" {
 		h.ChallengeResponseAuthentication = defaults.ChallengeResponseAuthentication
@@ -1144,6 +1162,12 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		}
 		if h.CanonicalizePermittedCNAMEs != "" {
 			_, _ = fmt.Fprintf(w, "  CanonicalizePermittedCNAMEs %s\n", h.CanonicalizePermittedCNAMEs)
+		}
+		if len(h.CASignatureAlgorithms) > 0 {
+			_, _ = fmt.Fprintf(w, "  CASignatureAlgorithms %s\n", strings.Join(h.CASignatureAlgorithms, ","))
+		}
+		for _, entry := range h.CertificateFile {
+			_, _ = fmt.Fprintf(w, "  CertificateFile %s\n", entry)
 		}
 		if h.ChallengeResponseAuthentication != "" {
 			_, _ = fmt.Fprintf(w, "  ChallengeResponseAuthentication %s\n", h.ChallengeResponseAuthentication)
