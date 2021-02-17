@@ -1394,6 +1394,7 @@ Host toto7toto
   # KnownHostOf: toto[7-9]toto
 
 Host toutou
+  RemoteCommand date >> /tmp/logs
   # Comment: [First line Second line Third line]
   # ResolveCommand: dig -t %h
 
