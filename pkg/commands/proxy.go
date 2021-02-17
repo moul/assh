@@ -159,7 +159,7 @@ func computeHost(dest string, portOverride int, conf *config.Config) (*config.Ho
 	return host, nil
 }
 
-func expandSSHTokens(tokenized string, host *config.Host, gateway *config.Host) string {
+func expandSSHTokens(tokenized string, host *config.Host) string {
 	result := tokenized
 
 	// OpenSSH Token Cheatsheet (stolen directly from the man pages)
@@ -191,7 +191,7 @@ func expandSSHTokens(tokenized string, host *config.Host, gateway *config.Host) 
 
 	result = strings.Replace(result, "%%", "%", -1)
 	result = strings.Replace(result, "%C", "%l%h%p%r", -1)
-	result = strings.Replace(result, "%h", path.Join(host.Name(), gateway.Name()), -1)
+	result = strings.Replace(result, "%h", host.Name(), -1)
 	result = strings.Replace(result, "%i", strconv.Itoa(os.Geteuid()), -1)
 	result = strings.Replace(result, "%p", host.Port, -1)
 
@@ -214,20 +214,19 @@ func expandSSHTokens(tokenized string, host *config.Host, gateway *config.Host) 
 	return result
 }
 
-func prepareHostControlPath(host, gateway *config.Host) error {
-	if !config.BoolVal(host.ControlMasterMkdir) && ("none" == host.ControlPath || "" == host.ControlPath) {
+func prepareHostControlPath(host *config.Host) error {
+	if !config.BoolVal(host.ControlMasterMkdir) || ("none" == host.ControlPath || "" == host.ControlPath) {
 		return nil
 	}
 
-	controlPath := expandSSHTokens(host.ControlPath, host, gateway)
+	controlPath := expandSSHTokens(host.ControlPath, host)
 	controlPathDir := path.Dir(controlPath)
 	logger().Debug("Creating control path", zap.String("path", controlPathDir))
 	return os.MkdirAll(controlPathDir, 0700)
 }
 
 func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
-	emptygw := config.Host{}
-	if err := prepareHostControlPath(host.Clone(), emptygw.Clone()); err != nil {
+	if err := prepareHostControlPath(host.Clone()); err != nil {
 		return errors.Wrap(err, "failed to prepare host control-path")
 	}
 
@@ -247,7 +246,7 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				hostCopy := host.Clone()
 				gatewayHost := conf.GetGatewaySafe(gateway)
 
-				if err := prepareHostControlPath(hostCopy, gatewayHost); err != nil {
+				if err := prepareHostControlPath(hostCopy); err != nil {
 					return errors.Wrap(err, "failed to prepare host control-path")
 				}
 
