@@ -1,168 +1,159 @@
 #compdef _assh assh
 
+# zsh completion for assh                                 -*- shell-script -*-
 
-function _assh {
-  local -a commands
-
-  _arguments -C \
-    '(-c --config)'{-c,--config}'[Location of config file]:' \
-    '(-D --debug)'{-D,--debug}'[Enable debug mode]' \
-    '(-h --help)'{-h,--help}'[print usage]' \
-    '(-V --verbose)'{-V,--verbose}'[Enable verbose mode]' \
-    "1: :->cmnds" \
-    "*::arg:->args"
-
-  case $state in
-  cmnds)
-    commands=(
-      "config:Manage ssh and assh configuration"
-      "info:Display system-wide information"
-      "ping:Send packets to the SSH server and display statistics"
-      "sockets:Manage control sockets"
-    )
-    _describe "command" commands
-    ;;
-  esac
-
-  case "$words[1]" in
-  config)
-    _assh_config
-    ;;
-  info)
-    _assh_info
-    ;;
-  ping)
-    _assh_ping
-    ;;
-  sockets)
-    _assh_sockets
-    ;;
-  esac
+__assh_debug()
+{
+    local file="$BASH_COMP_DEBUG_FILE"
+    if [[ -n ${file} ]]; then
+        echo "$*" >> "${file}"
+    fi
 }
 
+_assh()
+{
+    local shellCompDirectiveError=1
+    local shellCompDirectiveNoSpace=2
+    local shellCompDirectiveNoFileComp=4
+    local shellCompDirectiveFilterFileExt=8
+    local shellCompDirectiveFilterDirs=16
 
-function _assh_config {
-  local -a commands
+    local lastParam lastChar flagPrefix requestComp out directive compCount comp lastComp
+    local -a completions
 
-  _arguments -C \
-    "1: :->cmnds" \
-    "*::arg:->args"
+    __assh_debug "\n========= starting completion logic =========="
+    __assh_debug "CURRENT: ${CURRENT}, words[*]: ${words[*]}"
 
-  case $state in
-  cmnds)
-    commands=(
-      "build:Build .ssh/config"
-      "graphviz:Generate a Graphviz graph of the hosts"
-      "json:Returns the JSON output"
-      "list:List all hosts from assh config"
-      "search:Search entries by given search text"
-    )
-    _describe "command" commands
-    ;;
-  esac
+    # The user could have moved the cursor backwards on the command-line.
+    # We need to trigger completion from the $CURRENT location, so we need
+    # to truncate the command-line ($words) up to the $CURRENT location.
+    # (We cannot use $CURSOR as its value does not work when a command is an alias.)
+    words=("${=words[1,CURRENT]}")
+    __assh_debug "Truncated words[*]: ${words[*]},"
 
-  case "$words[1]" in
-  build)
-    _assh_config_build
-    ;;
-  graphviz)
-    _assh_config_graphviz
-    ;;
-  json)
-    _assh_config_json
-    ;;
-  list)
-    _assh_config_list
-    ;;
-  search)
-    _assh_config_search
-    ;;
-  esac
+    lastParam=${words[-1]}
+    lastChar=${lastParam[-1]}
+    __assh_debug "lastParam: ${lastParam}, lastChar: ${lastChar}"
+
+    # For zsh, when completing a flag with an = (e.g., assh -n=<TAB>)
+    # completions must be prefixed with the flag
+    setopt local_options BASH_REMATCH
+    if [[ "${lastParam}" =~ '-.*=' ]]; then
+        # We are dealing with a flag with an =
+        flagPrefix="-P ${BASH_REMATCH}"
+    fi
+
+    # Prepare the command to obtain completions
+    requestComp="${words[1]} __complete ${words[2,-1]}"
+    if [ "${lastChar}" = "" ]; then
+        # If the last parameter is complete (there is a space following it)
+        # We add an extra empty parameter so we can indicate this to the go completion code.
+        __assh_debug "Adding extra empty parameter"
+        requestComp="${requestComp} \"\""
+    fi
+
+    __assh_debug "About to call: eval ${requestComp}"
+
+    # Use eval to handle any environment variables and such
+    out=$(eval ${requestComp} 2>/dev/null)
+    __assh_debug "completion output: ${out}"
+
+    # Extract the directive integer following a : from the last line
+    local lastLine
+    while IFS='\n' read -r line; do
+        lastLine=${line}
+    done < <(printf "%s\n" "${out[@]}")
+    __assh_debug "last line: ${lastLine}"
+
+    if [ "${lastLine[1]}" = : ]; then
+        directive=${lastLine[2,-1]}
+        # Remove the directive including the : and the newline
+        local suffix
+        (( suffix=${#lastLine}+2))
+        out=${out[1,-$suffix]}
+    else
+        # There is no directive specified.  Leave $out as is.
+        __assh_debug "No directive found.  Setting do default"
+        directive=0
+    fi
+
+    __assh_debug "directive: ${directive}"
+    __assh_debug "completions: ${out}"
+    __assh_debug "flagPrefix: ${flagPrefix}"
+
+    if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
+        __assh_debug "Completion received error. Ignoring completions."
+        return
+    fi
+
+    compCount=0
+    while IFS='\n' read -r comp; do
+        if [ -n "$comp" ]; then
+            # If requested, completions are returned with a description.
+            # The description is preceded by a TAB character.
+            # For zsh's _describe, we need to use a : instead of a TAB.
+            # We first need to escape any : as part of the completion itself.
+            comp=${comp//:/\\:}
+
+            local tab=$(printf '\t')
+            comp=${comp//$tab/:}
+
+            ((compCount++))
+            __assh_debug "Adding completion: ${comp}"
+            completions+=${comp}
+            lastComp=$comp
+        fi
+    done < <(printf "%s\n" "${out[@]}")
+
+    if [ $((directive & shellCompDirectiveFilterFileExt)) -ne 0 ]; then
+        # File extension filtering
+        local filteringCmd
+        filteringCmd='_files'
+        for filter in ${completions[@]}; do
+            if [ ${filter[1]} != '*' ]; then
+                # zsh requires a glob pattern to do file filtering
+                filter="\*.$filter"
+            fi
+            filteringCmd+=" -g $filter"
+        done
+        filteringCmd+=" ${flagPrefix}"
+
+        __assh_debug "File filtering command: $filteringCmd"
+        _arguments '*:filename:'"$filteringCmd"
+    elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
+        # File completion for directories only
+        local subDir
+        subdir="${completions[1]}"
+        if [ -n "$subdir" ]; then
+            __assh_debug "Listing directories in $subdir"
+            pushd "${subdir}" >/dev/null 2>&1
+        else
+            __assh_debug "Listing directories in ."
+        fi
+
+        _arguments '*:dirname:_files -/'" ${flagPrefix}"
+        if [ -n "$subdir" ]; then
+            popd >/dev/null 2>&1
+        fi
+    elif [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ] && [ ${compCount} -eq 1 ]; then
+        __assh_debug "Activating nospace."
+        # We can use compadd here as there is no description when
+        # there is only one completion.
+        compadd -S '' "${lastComp}"
+    elif [ ${compCount} -eq 0 ]; then
+        if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
+            __assh_debug "deactivating file completion"
+        else
+            # Perform file completion
+            __assh_debug "activating file completion"
+            _arguments '*:filename:_files'" ${flagPrefix}"
+        fi
+    else
+        _describe "completions" completions $(echo $flagPrefix)
+    fi
 }
 
-function _assh_config_build {
-  _arguments \
-    '(-e --expand)'{-e,--expand}'[Expand all fields]' \
-    '--ignore-known-hosts[Ignore known-hosts file]' \
-    '--no-automatic-rewrite[Disable automatic ~/.ssh/config file regeneration]'
-}
-
-function _assh_config_graphviz {
-  _arguments \
-    '--no-inheritance-links[Do not show inheritance links]' \
-    '--no-resolve-wildcard[Do not resolve wildcards in Gateways]' \
-    '--show-isolated-hosts[Show isolated hosts]'
-}
-
-function _assh_config_json {
-  _arguments \
-    '(-e --expand)'{-e,--expand}'[Expand all fields]'
-}
-
-function _assh_config_list {
-  _arguments \
-    '(-e --expand)'{-e,--expand}'[Expand all fields]'
-}
-
-function _assh_config_search {
-  _arguments
-}
-
-function _assh_info {
-  _arguments
-}
-
-function _assh_ping {
-  _arguments \
-    '(-c --count)'{-c,--count}'[Stop after sending '\''count'\'' packets]:' \
-    '--no-rewrite[Do not automatically rewrite outdated configuration]' \
-    '--o[Exit successfully after receiving one reply packet]' \
-    '(-p --port)'{-p,--port}'[SSH destination port]:' \
-    '(-i --wait)'{-i,--wait}'[Wait '\''wait'\'' seconds between sending each packet]:' \
-    '(-W --waittime)'{-W,--waittime}'[Time in seconds to wait for a reply for each packet sent]:'
-}
-
-
-function _assh_sockets {
-  local -a commands
-
-  _arguments -C \
-    "1: :->cmnds" \
-    "*::arg:->args"
-
-  case $state in
-  cmnds)
-    commands=(
-      "flush:Close control sockets"
-      "list:List active control sockets"
-      "master:Open a master control socket"
-    )
-    _describe "command" commands
-    ;;
-  esac
-
-  case "$words[1]" in
-  flush)
-    _assh_sockets_flush
-    ;;
-  list)
-    _assh_sockets_list
-    ;;
-  master)
-    _assh_sockets_master
-    ;;
-  esac
-}
-
-function _assh_sockets_flush {
-  _arguments
-}
-
-function _assh_sockets_list {
-  _arguments
-}
-
-function _assh_sockets_master {
-  _arguments
-}
-
+# don't run the completion function when being source-ed or eval-ed
+if [ "$funcstack[1]" = "_assh" ]; then
+	_assh
+fi
