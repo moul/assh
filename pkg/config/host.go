@@ -1301,6 +1301,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.LocalCommand != "" {
 			_, _ = fmt.Fprintf(w, "  LocalCommand %s\n", h.LocalCommand)
 		}
+		if h.RemoteCommand != "" {
+			_, _ = fmt.Fprintf(w, "  RemoteCommand %s\n", h.RemoteCommand)
+		}
 		for _, entry := range h.LocalForward {
 			_, _ = fmt.Fprintf(w, "  LocalForward %s\n", entry)
 		}
