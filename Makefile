@@ -42,7 +42,7 @@ gen-release: generate
 	GOOS=openbsd GOARCH=386   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_openbsd_386   .
 	GOOS=openbsd GOARCH=arm   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_openbsd_arm   .
 	GOOS=darwin  GOARCH=amd64 go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_darwin_amd64  .
-	GOOS=darwin  GOARCH=386   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_darwin_386    .
+	#GOOS=darwin  GOARCH=386   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_darwin_386    .
 	#GOOS=darwin  GOARCH=arm   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_darwin_arm    .
 	GOOS=netbsd  GOARCH=amd64 go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_netbsd_amd64  .
 	GOOS=netbsd  GOARCH=386   go build $(GO_INSTALL_OPTS) -i -v -o .release/assh_netbsd_386    .
