@@ -24,7 +24,7 @@ require (
 	github.com/guelfey/go.dbus v0.0.0-20131113121618-f6a3a2366cc3 // indirect
 	github.com/haklop/gnotifier v0.0.0-20140909091139-0de36badf601
 	github.com/huandu/xstrings v1.3.1 // indirect
-	github.com/imdario/mergo v0.3.11
+	github.com/imdario/mergo v0.3.12
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-zglob v0.0.3
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
@@ -44,9 +44,9 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/urfave/cli v1.22.5
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20201112155050-0c6587e931a9
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
-	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
+	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/ini.v1 v1.57.0 // indirect
 )
