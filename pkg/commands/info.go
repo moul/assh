@@ -40,7 +40,7 @@ func runInfoCommand(cmd *cobra.Command, args []string) error {
 	fmt.Printf("RC files:\n")
 	homeDir := utils.GetHomeDir()
 	for _, filename := range conf.IncludedFiles() {
-		relativeFilename := strings.Replace(filename, homeDir, "~", -1)
+		relativeFilename := strings.ReplaceAll(filename, homeDir, "~")
 		fmt.Printf("- %s\n", relativeFilename)
 	}
 	fmt.Println("")

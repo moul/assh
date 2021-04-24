@@ -195,13 +195,13 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 		}
 		// expands variables in host
 		// i.e: %h.some.zone -> {name}.some.zone
-		hostname := strings.Replace(computedHost.HostName, "%h", "%n", -1)
+		hostname := strings.ReplaceAll(computedHost.HostName, "%h", "%n")
 
 		// ssh resolve '%h' in hostnames
 		// -> we bypass the string expansion if the input matches
 		//    an already resolved hostname
 		// See https://github.com/moul/assh/issues/103
-		pattern := strings.Replace(hostname, "%n", "*", -1)
+		pattern := strings.ReplaceAll(hostname, "%n", "*")
 		if match, _ := path.Match(pattern, computedHost.inputName); match {
 			computedHost.HostName = computedHost.inputName
 		} else {
@@ -412,7 +412,7 @@ func (c *Config) mergeWildCardEntries() {
 						}
 					}
 				} else {
-					tempKey := strings.Replace(key, "*", "", -1)
+					tempKey := strings.ReplaceAll(key, "*", "")
 					// if the wildcard matches
 					if strings.Contains(k, tempKey) {
 						if err := mergo.Merge(host, subHost); err != nil {
@@ -623,9 +623,9 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 #
 # more info: https://github.com/moul/assh
 `)
-	header = strings.Replace(header, "%VERSION", version.Version, -1)
-	header = strings.Replace(header, "%VCS_REF", version.VcsRef, -1)
-	header = strings.Replace(header, "%BUILD_DATE", time.Now().Format("2006-01-02 15:04:05 -0700 MST"), -1)
+	header = strings.ReplaceAll(header, "%VERSION", version.Version)
+	header = strings.ReplaceAll(header, "%VCS_REF", version.VcsRef)
+	header = strings.ReplaceAll(header, "%BUILD_DATE", time.Now().Format("2006-01-02 15:04:05 -0700 MST"))
 	_, _ = fmt.Fprintln(w, header)
 	// FIXME: add version
 	_, _ = fmt.Fprintln(w)
