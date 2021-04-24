@@ -187,27 +187,27 @@ func expandSSHTokens(tokenized string, host *config.Host) string {
 	if result[0] == '~' {
 		result = strings.Replace(result, "~", homedir, 1)
 	}
-	result = strings.Replace(result, "%d", homedir, -1)
+	result = strings.ReplaceAll(result, "%d", homedir)
 
-	result = strings.Replace(result, "%%", "%", -1)
-	result = strings.Replace(result, "%C", "%l%h%p%r", -1)
-	result = strings.Replace(result, "%h", host.Name(), -1)
-	result = strings.Replace(result, "%i", strconv.Itoa(os.Geteuid()), -1)
-	result = strings.Replace(result, "%p", host.Port, -1)
+	result = strings.ReplaceAll(result, "%%", "%")
+	result = strings.ReplaceAll(result, "%C", "%l%h%p%r")
+	result = strings.ReplaceAll(result, "%h", host.Name())
+	result = strings.ReplaceAll(result, "%i", strconv.Itoa(os.Geteuid()))
+	result = strings.ReplaceAll(result, "%p", host.Port)
 
 	if hostname, err := os.Hostname(); err == nil {
-		result = strings.Replace(result, "%L", hostname, -1)
+		result = strings.ReplaceAll(result, "%L", hostname)
 	} else {
-		result = strings.Replace(result, "%L", "hostname", -1)
+		result = strings.ReplaceAll(result, "%L", "hostname")
 	}
 
 	if host.User != "" {
-		result = strings.Replace(result, "%r", host.User, -1)
+		result = strings.ReplaceAll(result, "%r", host.User)
 	} else {
 		if userdata, err := user.Current(); err == nil {
-			result = strings.Replace(result, "%r", userdata.Username, -1)
+			result = strings.ReplaceAll(result, "%r", userdata.Username)
 		} else {
-			result = strings.Replace(result, "%r", "username", -1)
+			result = strings.ReplaceAll(result, "%r", "username")
 		}
 	}
 
@@ -542,7 +542,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	// human
 	stats.WrittenBytesHuman = humanize.Bytes(stats.WrittenBytes)
 	connectionDurationHuman := humanize.RelTime(stats.DisconnectedAt, stats.ConnectedAt, "", "")
-	stats.ConnectionDurationHuman = strings.Replace(connectionDurationHuman, "now", "0 sec", -1)
+	stats.ConnectionDurationHuman = strings.ReplaceAll(connectionDurationHuman, "now", "0 sec")
 	stats.AverageSpeedHuman = humanize.Bytes(uint64(stats.AverageSpeed)) + "/s"
 
 	// OnDisconnect hook

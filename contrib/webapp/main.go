@@ -63,7 +63,7 @@ func server(c *cli.Context) error {
 			})
 		} else {
 			c.JSON(200, gin.H{
-				//"assh_config": json.AsshConfig,
+				// "assh_config": json.AsshConfig,
 				"ssh_config": buffer.String(),
 			})
 		}
