@@ -113,13 +113,13 @@ ifeq ($(CI),true)
 	@echo "mode: atomic" > /tmp/gocoverage
 	@rm -f $(GOTESTJSON_FILE)
 	@set -e; for dir in $(GOMOD_DIRS); do (set -e; (set -euf pipefail; \
-	    cd $$dir; \
-	    (($(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race -json && touch $@.ok) | tee -a $(GOTESTJSON_FILE) 3>&1 1>&2 2>&3 | tee -a $(GOBUILDLOG_FILE); \
+		cd $$dir; \
+		(($(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race -json && touch $@.ok) | tee -a $(GOTESTJSON_FILE) 3>&1 1>&2 2>&3 | tee -a $(GOBUILDLOG_FILE); \
 	  ); \
 	  rm $@.ok 2>/dev/null || exit 1; \
 	  if [ -f /tmp/profile.out ]; then \
-	    cat /tmp/profile.out | sed "/mode: atomic/d" >> /tmp/gocoverage; \
-	    rm -f /tmp/profile.out; \
+		cat /tmp/profile.out | sed "/mode: atomic/d" >> /tmp/gocoverage; \
+		rm -f /tmp/profile.out; \
 	  fi)); done
 	@mv /tmp/gocoverage $(GOCOVERAGE_FILE)
 else
@@ -128,8 +128,8 @@ else
 	  cd $$dir; \
 	  $(GO) test ./... $(GO_TEST_OPTS) -cover -coverprofile=/tmp/profile.out -covermode=atomic -race); \
 	  if [ -f /tmp/profile.out ]; then \
-	    cat /tmp/profile.out | sed "/mode: atomic/d" >> /tmp/gocoverage; \
-	    rm -f /tmp/profile.out; \
+		cat /tmp/profile.out | sed "/mode: atomic/d" >> /tmp/gocoverage; \
+		rm -f /tmp/profile.out; \
 	  fi); done
 	@mv /tmp/gocoverage $(GOCOVERAGE_FILE)
 endif
@@ -243,8 +243,8 @@ npm.publish:
 	@echo -n "Do you want to npm publish? [y/N] " && read ans && \
 	@if [ $${ans:-N} = y ]; then \
 	  set -e; for dir in $(NPM_PACKAGES); do ( set -xe; \
-	    cd $$dir; \
-	    npm publish --access=public; \
+		cd $$dir; \
+		npm publish --access=public; \
 	  ); done; \
 	fi
 RELEASE_STEPS += npm.publish
@@ -254,7 +254,7 @@ endif
 ## Docker
 ##
 
-docker_build = 	docker build \
+docker_build =	docker build \
 	  --build-arg VCS_REF=`git rev-parse --short HEAD` \
 	  --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 	  --build-arg VERSION=`git describe --tags --always` \
