@@ -37,7 +37,7 @@ func (r *reader) Read(buf []byte) (int, error) {
 		return 0, fmt.Errorf("exceeds limiter's burst")
 	}
 	delay := rv.DelayFrom(now)
-	//fmt.Printf("Read %d bytes, delay %d\n", n, delay)
+	// fmt.Printf("Read %d bytes, delay %d\n", n, delay)
 	time.Sleep(delay)
 	return n, err
 }
@@ -69,7 +69,7 @@ func (w *writer) Write(buf []byte) (int, error) {
 		return 0, fmt.Errorf("exceeds limiter's burst")
 	}
 	delay := rv.DelayFrom(now)
-	//fmt.Printf("Write %d bytes, delay %d\n", n, delay)
+	// fmt.Printf("Write %d bytes, delay %d\n", n, delay)
 	time.Sleep(delay)
 	return n, err
 }

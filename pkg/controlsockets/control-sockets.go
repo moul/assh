@@ -25,10 +25,10 @@ func translateControlPath(input string) string {
 		return input
 	}
 
-	controlPath = strings.Replace(controlPath, "%h", "**/*", -1)
+	controlPath = strings.ReplaceAll(controlPath, "%h", "**/*")
 
 	for _, component := range []string{"%L", "%p", "%n", "%C", "%l", "%r"} {
-		controlPath = strings.Replace(controlPath, component, "*", -1)
+		controlPath = strings.ReplaceAll(controlPath, component, "*")
 	}
 	return controlPath
 }

@@ -22,7 +22,7 @@ jobs:
       - name: lint
         uses: golangci/golangci-lint-action@v2.5.2
         with:
-          version: v1.28
+          version: v1.38
           github-token: ${{ secrets.GITHUB_TOKEN }}
   tests-on-windows:
     needs: golangci-lint # run after golangci-lint action to not produce duplicated errors

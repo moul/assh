@@ -521,27 +521,27 @@ func (h *Host) Options() OptionsList {
 	}
 
 	// ssh-config fields with a different behavior
-	//HostName
-	//ProxyCommand
+	// HostName
+	// ProxyCommand
 
 	// exposed assh fields
-	//Inherits
-	//Gateways
-	//ResolveNameservers
-	//ResolveCommand
-	//ControlMasterMkdir
-	//Aliases
-	//Comment
-	//Hooks
+	// Inherits
+	// Gateways
+	// ResolveNameservers
+	// ResolveCommand
+	// ControlMasterMkdir
+	// Aliases
+	// Comment
+	// Hooks
 
 	// private assh fields
-	//knownHosts
-	//pattern
-	//name
-	//inputName
-	//isDefault
-	//isTemplate
-	//inherited
+	// knownHosts
+	// pattern
+	// name
+	// inputName
+	// isDefault
+	// isTemplate
+	// inherited
 
 	return options
 }
@@ -1489,19 +1489,19 @@ func (h *Host) ExpandString(input string, gateway string) string {
 	output := input
 
 	// name of the host in config
-	output = strings.Replace(output, "%name", h.Name(), -1)
+	output = strings.ReplaceAll(output, "%name", h.Name())
 
 	// original target host name specified on the command line
-	output = strings.Replace(output, "%n", h.inputName, -1)
+	output = strings.ReplaceAll(output, "%n", h.inputName)
 
 	// target host name
-	output = strings.Replace(output, "%h", h.HostName, -1)
+	output = strings.ReplaceAll(output, "%h", h.HostName)
 
 	// port
-	output = strings.Replace(output, "%p", h.Port, -1)
+	output = strings.ReplaceAll(output, "%p", h.Port)
 
 	// gateway
-	output = strings.Replace(output, "%g", gateway, -1)
+	output = strings.ReplaceAll(output, "%g", gateway)
 
 	// FIXME: add
 	//   %L -> first component of the local host name
