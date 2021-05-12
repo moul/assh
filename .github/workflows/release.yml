@@ -6,7 +6,7 @@ jobs:
   semantic-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2.3.4
       - uses: codfish/semantic-release-action@v1
         if: github.ref == 'refs/heads/master'
         env:
