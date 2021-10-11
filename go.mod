@@ -34,7 +34,7 @@ require (
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v2.20.9+incompatible
-	github.com/smartystreets/goconvey v1.6.4
+	github.com/smartystreets/goconvey v1.6.6
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.3
