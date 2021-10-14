@@ -84,6 +84,7 @@ type Host struct {
 	PreferredAuthentications         string                    `yaml:"preferredauthentications,omitempty,flow" json:"PreferredAuthentications,omitempty"`
 	Protocol                         composeyaml.Stringorslice `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
 	ProxyUseFdpass                   string                    `yaml:"proxyusefdpass,omitempty,flow" json:"ProxyUseFdpass,omitempty"`
+	PubkeyAcceptedAlgorithms         string                    `yaml:"pubkeyacceptedalgorithms,omitempty,flow" json:"PubkeyAcceptedAlgorithms,omitempty"`
 	PubkeyAcceptedKeyTypes           string                    `yaml:"pubkeyacceptedkeytypes,omitempty,flow" json:"PubkeyAcceptedKeyTypes,omitempty"`
 	PubkeyAuthentication             string                    `yaml:"pubkeyauthentication,omitempty,flow" json:"PubkeyAuthentication,omitempty"`
 	RekeyLimit                       string                    `yaml:"rekeylimit,omitempty,flow" json:"RekeyLimit,omitempty"`
@@ -443,6 +444,9 @@ func (h *Host) Options() OptionsList {
 	}
 	if h.ProxyUseFdpass != "" {
 		options = append(options, Option{Name: "ProxyUseFdpass", Value: h.ProxyUseFdpass})
+	}
+	if h.PubkeyAcceptedAlgorithms != "" {
+		options = append(options, Option{Name: "PubkeyAcceptedAlgorithms", Value: h.PubkeyAcceptedAlgorithms})
 	}
 	if h.PubkeyAcceptedKeyTypes != "" {
 		options = append(options, Option{Name: "PubkeyAcceptedKeyTypes", Value: h.PubkeyAcceptedKeyTypes})
@@ -919,6 +923,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.ProxyUseFdpass = utils.ExpandField(h.ProxyUseFdpass)
 
+	if h.PubkeyAcceptedAlgorithms == "" {
+		h.PubkeyAcceptedAlgorithms = defaults.PubkeyAcceptedAlgorithms
+	}
+	h.PubkeyAcceptedAlgorithms = utils.ExpandField(h.PubkeyAcceptedAlgorithms)
+
 	if h.PubkeyAcceptedKeyTypes == "" {
 		h.PubkeyAcceptedKeyTypes = defaults.PubkeyAcceptedKeyTypes
 	}
@@ -1342,6 +1351,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		}
 		if h.ProxyUseFdpass != "" {
 			_, _ = fmt.Fprintf(w, "  ProxyUseFdpass %s\n", h.ProxyUseFdpass)
+		}
+		if h.PubkeyAcceptedAlgorithms != "" {
+			_, _ = fmt.Fprintf(w, "  PubkeyAcceptedAlgorithms %s\n", h.PubkeyAcceptedAlgorithms)
 		}
 		if h.PubkeyAcceptedKeyTypes != "" {
 			_, _ = fmt.Fprintf(w, "  PubkeyAcceptedKeyTypes %s\n", h.PubkeyAcceptedKeyTypes)
