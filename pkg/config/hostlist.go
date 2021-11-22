@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// HostsMap is a map of **Host).Name -> *Host
+// HostsMap is a map of **Host.Name -> *Host
 type HostsMap map[string]*Host
 
 // HostsList is a list of *Host
