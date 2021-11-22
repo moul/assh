@@ -103,26 +103,18 @@ func runFlushSocketsCommand(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to open config")
 	}
 
-	controlPath := conf.Defaults.ControlPath
-	if controlPath == "" {
-		return errors.New("missing ControlPath in the configuration; Sockets features are disabled")
-	}
-
-	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
-	if err != nil {
-		return errors.Wrap(err, "failed to lookup control path")
-	}
-
-	if len(activeSockets) == 0 {
-		fmt.Println("No active control sockets.")
-		return nil
-	}
-
 	success := 0
-	for _, socket := range activeSockets {
-		if err := os.Remove(socket.Path()); err != nil {
-			logger().Warn("Failed to close control socket", zap.String("path", socket.Path()), zap.Error(err))
-		} else {
+	for _, host := range conf.Hosts {
+		// Check if ControlMaster exists
+		_, err := os.Stat(host.ControlMaster)
+		if err == nil {
+			cmd := exec.Command("ssh", "-O", "exit", host.HostName) // #nosec
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if e := cmd.Run(); e != nil {
+				return e
+			}
+
 			success++
 		}
 	}
