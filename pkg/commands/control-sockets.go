@@ -102,18 +102,19 @@ func runMasterSocketCommand(_ *cobra.Command, args []string) error {
 func runFlushSocketsCommand(_ *cobra.Command, _ []string) error {
 	success := 0
 
-	if processes, err := process.Processes(); err != nil {
+	processes, err := process.Processes()
+	if err != nil {
 		return err
-	} else {
-		for _, ps := range processes {
-			if cmdline, err := ps.CmdlineSlice(); err == nil && len(cmdline) > 0 && path.Base(cmdline[0]) == "assh" && cmdline[1] == "connect" {
-				cmd := exec.Command("ssh", "-O", "exit", cmdline[len(cmdline)-1]) // #nosec
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
+	}
 
-				if err := cmd.Run(); err == nil {
-					success++
-				}
+	for _, ps := range processes {
+		if cmdline, err := ps.CmdlineSlice(); err == nil && len(cmdline) > 0 && path.Base(cmdline[0]) == "assh" && cmdline[1] == "connect" {
+			cmd := exec.Command("ssh", "-O", "exit", cmdline[len(cmdline)-1]) // #nosec
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+
+			if err := cmd.Run(); err == nil {
+				success++
 			}
 		}
 	}
