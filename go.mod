@@ -30,7 +30,7 @@ require (
 	github.com/moul/flexyaml v0.0.0-20171225152558-f458bfa8afe2
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v2.20.9+incompatible
-	github.com/smartystreets/goconvey v1.6.6
+	github.com/smartystreets/goconvey v1.7.2
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
