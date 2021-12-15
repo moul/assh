@@ -62,6 +62,7 @@ type Host struct {
 	HostKeyAlgorithms                string                    `yaml:"hostkeyalgorithms,omitempty,flow" json:"HostKeyAlgorithms,omitempty"`
 	HostKeyAlias                     string                    `yaml:"hostkeyalias,omitempty,flow" json:"HostKeyAlias,omitempty"`
 	IdentitiesOnly                   string                    `yaml:"identitiesonly,omitempty,flow" json:"IdentitiesOnly,omitempty"`
+	IdentityAgent                    string                    `yaml:"identityagent,omitempty,flow" json:"IdentityAgent,omitempty"`
 	IdentityFile                     composeyaml.Stringorslice `yaml:"identityfile,omitempty,flow" json:"IdentityFile,omitempty"`
 	IgnoreUnknown                    string                    `yaml:"ignoreunknown,omitempty,flow" json:"IgnoreUnknown,omitempty"`
 	IPQoS                            composeyaml.Stringorslice `yaml:"ipqos,omitempty,flow" json:"IPQoS,omitempty"`
@@ -378,6 +379,9 @@ func (h *Host) Options() OptionsList {
 	}
 	if h.IdentitiesOnly != "" {
 		options = append(options, Option{Name: "IdentitiesOnly", Value: h.IdentitiesOnly})
+	}
+	if h.IdentityAgent != "" {
+		options = append(options, Option{Name: "IdentityAgent", Value: h.IdentityAgent})
 	}
 	for _, entry := range h.IdentityFile {
 		options = append(options, Option{Name: "IdentityFile", Value: entry})
@@ -808,6 +812,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 		h.IdentitiesOnly = defaults.IdentitiesOnly
 	}
 	h.IdentitiesOnly = utils.ExpandField(h.IdentitiesOnly)
+
+	if h.IdentityAgent == "" {
+		h.IdentityAgent = defaults.IdentityAgent
+	}
+	h.IdentityAgent = utils.ExpandField(h.IdentityAgent)
 
 	if len(h.IdentityFile) == 0 {
 		h.IdentityFile = defaults.IdentityFile
@@ -1285,6 +1294,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		}
 		if h.IdentitiesOnly != "" {
 			_, _ = fmt.Fprintf(w, "  IdentitiesOnly %s\n", h.IdentitiesOnly)
+		}
+		if h.IdentityAgent != "" {
+			_, _ = fmt.Fprintf(w, "  IdentityAgent %s\n", h.IdentityAgent)
 		}
 		for _, entry := range h.IdentityFile {
 			_, _ = fmt.Fprintf(w, "  IdentityFile %s\n", entry)
