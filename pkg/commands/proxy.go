@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net"
 	"os"
@@ -234,7 +233,6 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 		logger().Debug("Trying gateways", zap.String("gateways", strings.Join(host.Gateways, ", ")))
 		var gatewayErrors []gatewayErrorMsg
 		for _, gateway := range host.Gateways {
-			log.Println(gateway)
 			if gateway == "direct" {
 				if err := proxyDirect(host, dryRun); err != nil {
 					gatewayErrors = append(gatewayErrors, gatewayErrorMsg{
