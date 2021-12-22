@@ -214,7 +214,7 @@ func expandSSHTokens(tokenized string, host *config.Host) string {
 }
 
 func prepareHostControlPath(host *config.Host) error {
-	if !config.BoolVal(host.ControlMasterMkdir) || ("none" == host.ControlPath || "" == host.ControlPath) {
+	if !config.BoolVal(host.ControlMasterMkdir) || (host.ControlPath == "none" || host.ControlPath == "") {
 		return nil
 	}
 

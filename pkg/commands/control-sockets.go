@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"time"
 
-	units "github.com/docker/go-units"
+	"github.com/docker/go-units"
 	"github.com/pkg/errors"
+	"github.com/shirou/gopsutil/v3/process"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -45,7 +47,7 @@ func init() {
 	socketsCommand.AddCommand(masterSocketCommand)
 }
 
-func runListSocketsCommand(cmd *cobra.Command, args []string) error {
+func runListSocketsCommand(_ *cobra.Command, _ []string) error {
 	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
 		return errors.Wrap(err, "failed to open config")
@@ -80,7 +82,7 @@ func runListSocketsCommand(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runMasterSocketCommand(cmd *cobra.Command, args []string) error {
+func runMasterSocketCommand(_ *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		return errors.New("assh: \"sockets master\" requires 1 argument. See 'assh sockets master --help'")
 	}
@@ -97,33 +99,23 @@ func runMasterSocketCommand(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runFlushSocketsCommand(cmd *cobra.Command, args []string) error {
-	conf, err := config.Open(viper.GetString("config"))
-	if err != nil {
-		return errors.Wrap(err, "failed to open config")
-	}
-
-	controlPath := conf.Defaults.ControlPath
-	if controlPath == "" {
-		return errors.New("missing ControlPath in the configuration; Sockets features are disabled")
-	}
-
-	activeSockets, err := controlsockets.LookupControlPathDir(controlPath)
-	if err != nil {
-		return errors.Wrap(err, "failed to lookup control path")
-	}
-
-	if len(activeSockets) == 0 {
-		fmt.Println("No active control sockets.")
-		return nil
-	}
-
+func runFlushSocketsCommand(_ *cobra.Command, _ []string) error {
 	success := 0
-	for _, socket := range activeSockets {
-		if err := os.Remove(socket.Path()); err != nil {
-			logger().Warn("Failed to close control socket", zap.String("path", socket.Path()), zap.Error(err))
-		} else {
-			success++
+
+	processes, err := process.Processes()
+	if err != nil {
+		return err
+	}
+
+	for _, ps := range processes {
+		if cmdline, err := ps.CmdlineSlice(); err == nil && len(cmdline) > 0 && path.Base(cmdline[0]) == "assh" && cmdline[1] == "connect" {
+			cmd := exec.Command("ssh", "-O", "exit", cmdline[len(cmdline)-1]) // #nosec
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+
+			if err := cmd.Run(); err == nil {
+				success++
+			}
 		}
 	}
 
