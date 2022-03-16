@@ -739,6 +739,15 @@ Get a released version on: https://github.com/moul/assh/releases
 
 ---
 
+Install with [asdf-vm](https://asdf-vm.com/):
+```bash
+asdf plugin add assh
+asdf install assh latest
+asdf global assh latest
+```
+
+---
+
 ### Register the wrapper (optional)
 
 To improve experience when using advanced pattern matching, add the following at the end of your `.bashrc` / `.zshrc` / `config.fish`:
