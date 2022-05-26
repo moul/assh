@@ -45,18 +45,23 @@ For specific examples, see [3rd Party Integration](#3rd-party-integration)
 
 Connect to `hosta` using `hostb` as a gateway.
 
-```
-  ┌─────┐
-  │ YOU │─ ─ ─ ─ ─
-  └─────┘         │
-     ┃            ▽
-     ┃         ┌─────┐
- firewall       │hostb│
-     ┃         └─────┘
-     ▼            │
-  ┌─────┐
-  │hosta│◁─ ─ ─ ─ ┘
-  └─────┘
+```mermaid
+flowchart 
+    direction TB
+
+    y[you]
+    a[hosta]
+    b[hostb]
+    fw((firewall))
+
+    style fw fill:#f00,color:#fff
+
+    y ==x fw
+    fw .-> a
+    
+    y --> b
+    b --> a
+
 ```
 
 ```console
@@ -70,19 +75,24 @@ Equivalent to `ssh -o ProxyCommand="ssh hostb nc %h %p" hosta`
 
 Connect to `hosta` using `hostb` as a gateway using `hostc` as a gateway.
 
-```
-  ┌─────┐              ┌─────┐
-  │ YOU │─ ─ ─ ─ ─ ─ ─▷│hostc│
-  └─────┘              └─────┘
-     ┃                    │
-     ┃
- firewall                 │
-     ┃
-     ┃                    │
-     ▼                    ▽
-  ┌─────┐              ┌─────┐
-  │hosta│◁─ ─ ─ ─ ─ ─ ─│hostb│
-  └─────┘              └─────┘
+```mermaid
+flowchart 
+    direction TB
+
+    y[you]
+    a[hosta]
+    b[hostb]
+    c[hostc]
+    fw((firewall))
+
+    style fw fill:#f00,color:#fff
+
+    y ==x fw
+    fw ..-> a
+    
+    y --> c
+    c --> b
+    b --> a
 ```
 
 ```console
