@@ -84,6 +84,7 @@ type Host struct {
 	Port                             string                    `yaml:"port,omitempty,flow" json:"Port,omitempty"`
 	PreferredAuthentications         string                    `yaml:"preferredauthentications,omitempty,flow" json:"PreferredAuthentications,omitempty"`
 	Protocol                         composeyaml.Stringorslice `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
+	ProxyJump                        string                    `yaml:"proxyjump,omitempty,flow" json:"ProxyJump,omitempty"`
 	ProxyUseFdpass                   string                    `yaml:"proxyusefdpass,omitempty,flow" json:"ProxyUseFdpass,omitempty"`
 	PubkeyAcceptedAlgorithms         string                    `yaml:"pubkeyacceptedalgorithms,omitempty,flow" json:"PubkeyAcceptedAlgorithms,omitempty"`
 	PubkeyAcceptedKeyTypes           string                    `yaml:"pubkeyacceptedkeytypes,omitempty,flow" json:"PubkeyAcceptedKeyTypes,omitempty"`
@@ -445,6 +446,9 @@ func (h *Host) Options() OptionsList {
 	}
 	if len(h.Protocol) > 0 {
 		options = append(options, Option{Name: "Protocol", Value: strings.Join(h.Protocol, ",")})
+	}
+	if h.ProxyJump != "" {
+		options = append(options, Option{Name: "ProxyJump", Value: h.ProxyJump})
 	}
 	if h.ProxyUseFdpass != "" {
 		options = append(options, Option{Name: "ProxyUseFdpass", Value: h.ProxyUseFdpass})
@@ -927,6 +931,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.ProxyCommand = utils.ExpandField(h.ProxyCommand)
 
+	if h.ProxyJump == "" {
+		h.ProxyJump = defaults.ProxyJump
+	}
+	h.ProxyJump = utils.ExpandField(h.ProxyJump)
+
 	if h.ProxyUseFdpass == "" {
 		h.ProxyUseFdpass = defaults.ProxyUseFdpass
 	}
@@ -1360,6 +1369,9 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		}
 		if len(h.Protocol) > 0 {
 			_, _ = fmt.Fprintf(w, "  Protocol %s\n", strings.Join(h.Protocol, ","))
+		}
+		if h.ProxyJump != "" {
+			_, _ = fmt.Fprintf(w, "  ProxyJump %s\n", h.ProxyJump)
 		}
 		if h.ProxyUseFdpass != "" {
 			_, _ = fmt.Fprintf(w, "  ProxyUseFdpass %s\n", h.ProxyUseFdpass)
