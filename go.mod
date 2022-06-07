@@ -14,7 +14,7 @@ require (
 	github.com/docker/libcompose v0.4.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568
-	github.com/gin-gonic/gin v1.7.7
+	github.com/gin-gonic/gin v1.8.1
 	github.com/guelfey/go.dbus v0.0.0-20131113121618-f6a3a2366cc3 // indirect
 	github.com/haklop/gnotifier v0.0.0-20140909091139-0de36badf601
 	github.com/huandu/xstrings v1.3.1 // indirect
@@ -36,7 +36,7 @@ require (
 	github.com/urfave/cli v1.22.9
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20201112155050-0c6587e931a9
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 )
