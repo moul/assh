@@ -45,7 +45,8 @@ func init() {
 	config.SetASSHBinaryPath(abspath)
 
 	RootCmd.Flags().BoolP("help", "h", false, "print usage")
-	RootCmd.Flags().StringP("config", "c", "~/.ssh/assh.yml", "Location of config file")
+	//JB20220926//RootCmd.Flags().StringP("config", "c", "~/.ssh/assh.yml", "Location of config file")
+	RootCmd.Flags().StringP("config", "c", "~/.assh.yml", "Location of config file")
 	RootCmd.Flags().BoolP("debug", "D", false, "Enable debug mode")
 	RootCmd.Flags().BoolP("verbose", "V", false, "Enable verbose mode")
 
