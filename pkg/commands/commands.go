@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"moul.io/assh/v2/pkg/utils"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,6 +44,8 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	abspath = filepath.ToSlash(abspath)
+	abspath = utils.EscapeSpaces(abspath)
 	config.SetASSHBinaryPath(abspath)
 
 	RootCmd.Flags().BoolP("help", "h", false, "print usage")
