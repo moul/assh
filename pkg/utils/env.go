@@ -3,8 +3,14 @@ package utils
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+// EscapeSpaces escapes all space characters with a backslash (\)
+func EscapeSpaces(s string) string {
+	return strings.ReplaceAll(s, " ", "\\ ")
+}
 
 // GetHomeDir returns '~' as a path
 func GetHomeDir() string {
@@ -42,14 +48,18 @@ func ExpandUser(path string) (string, error) {
 	// Expand variables
 	path = ExpandEnvSafe(path)
 
-	if path[:2] == "~/" {
+	if strings.HasPrefix(path, "~/") {
 		homeDir := GetHomeDir()
 		if homeDir == "" {
 			return "", errors.New("user home directory not found")
 		}
 
-		return strings.Replace(path, "~", homeDir, 1), nil
+		path = strings.Replace(path, "~", homeDir, 1)
 	}
+
+	path = filepath.FromSlash(path) // OS-agnostic slashes
+	path = EscapeSpaces(path)
+
 	return path, nil
 }
 
