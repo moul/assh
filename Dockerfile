@@ -14,7 +14,7 @@ COPY            . ./
 RUN             make install
 
 # minimalist runtime
-FROM alpine:3.16.0
+FROM alpine:3.17.0
 LABEL           org.label-schema.build-date=$BUILD_DATE \
                 org.label-schema.name="assh" \
                 org.label-schema.description="" \
