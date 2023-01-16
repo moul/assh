@@ -33,7 +33,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
-	github.com/urfave/cli v1.22.9
+	github.com/urfave/cli v1.22.11
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20201112155050-0c6587e931a9
