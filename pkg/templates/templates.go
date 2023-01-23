@@ -6,6 +6,8 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func funcMap() template.FuncMap {
@@ -25,7 +27,7 @@ func funcMap() template.FuncMap {
 			return string(a)
 		},
 		"join":  strings.Join,
-		"title": strings.Title,
+		"title": cases.Title(language.Und, cases.NoLower).String,
 		"lower": strings.ToLower,
 		"upper": strings.ToUpper,
 	}

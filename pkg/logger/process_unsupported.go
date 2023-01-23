@@ -1,3 +1,4 @@
+//go:build openbsd || netbsd || freebsd
 // +build openbsd netbsd freebsd
 
 package logger
