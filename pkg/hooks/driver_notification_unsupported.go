@@ -1,3 +1,4 @@
+//go:build openbsd || freebsd || netbsd || windows
 // +build openbsd freebsd netbsd windows
 
 package hooks
