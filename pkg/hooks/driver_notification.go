@@ -1,7 +1,5 @@
-// +build !openbsd
-// +build !freebsd
-// +build !netbsd
-// +build !windows
+//go:build !openbsd && !freebsd && !netbsd && !windows
+// +build !openbsd,!freebsd,!netbsd,!windows
 
 package hooks
 
