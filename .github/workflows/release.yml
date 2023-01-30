@@ -45,7 +45,7 @@ jobs:
       -
         name: Run GoReleaser
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: goreleaser/goreleaser-action@v3.2.0
+        uses: goreleaser/goreleaser-action@v4.1.1
         with:
           version: latest
           args: release --rm-dist
