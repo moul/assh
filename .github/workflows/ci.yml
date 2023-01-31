@@ -56,7 +56,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v3.0.8
+      - uses: actions/cache@v3.2.4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.golang }}-${{ hashFiles('**/go.sum') }}
@@ -83,7 +83,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v3.0.8
+      - uses: actions/cache@v3.2.4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.golang }}-${{ hashFiles('**/go.sum') }}
