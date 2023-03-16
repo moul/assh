@@ -18,7 +18,7 @@ require (
 	github.com/guelfey/go.dbus v0.0.0-20131113121618-f6a3a2366cc3 // indirect
 	github.com/haklop/gnotifier v0.0.0-20140909091139-0de36badf601
 	github.com/huandu/xstrings v1.3.1 // indirect
-	github.com/imdario/mergo v0.3.12
+	github.com/imdario/mergo v0.3.14
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-zglob v0.0.3
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
