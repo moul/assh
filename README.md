@@ -724,7 +724,7 @@ round-trip min/avg/max = 321µs/503.25µs/641µs
 Get the latest version using GO (recommended way):
 
 ```bash
-go get -u moul.io/assh/v2
+go install moul.io/assh/v2@latest
 ```
 
 **note**: tested with Go1.7 or above
