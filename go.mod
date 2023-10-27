@@ -12,7 +12,7 @@ require (
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/docker/go-units v0.5.0
 	github.com/docker/libcompose v0.4.0
-	github.com/dustin/go-humanize v1.0.0
+	github.com/dustin/go-humanize v1.0.1
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568
 	github.com/gin-gonic/gin v1.7.7
 	github.com/guelfey/go.dbus v0.0.0-20131113121618-f6a3a2366cc3 // indirect
