@@ -32,12 +32,12 @@ For specific examples, see [3rd Party Integration](#3rd-party-integration)
   * **includes**: split configuration in multiple files, note that OpenSSH as of v7.3 has [native support for this](https://www.openssh.com/txt/release-7.3)
   * **local command execution**: finally the reverse of **RemoteCommand**
   * **templates**: equivalent to host but you can't connect directly to a template, perfect for inheritance
-  * **inheritance**: make hosts inherits from host hosts or templates
+  * **inheritance**: make hosts inherit from host hosts or templates
   * **variable expansion**: resolve variables from the environment
   * **smart proxycommand**: RAW tcp connection when possible with `netcat` and `socat` as default fallbacks
   * **rate limit**: configure a per-host or global rate-limiting
   * **JSON output**
-  * **[Graphviz](http://www.graphviz.org/)**: graphviz reprensentation of the hosts
+  * **[Graphviz](http://www.graphviz.org/)**: graphviz representation of the hosts
 
 ### Using Gateway from command line
 
@@ -150,7 +150,7 @@ hosts:
 
 `BeforeConnect` is called just before `assh` tries to connect to the remote SSH port.
 
-Note: `BeforeConnect` will be called for each SSH connection; if you use multiple gateways, it will be called for each gateways until one succeed to connect.
+Note: `BeforeConnect` will be called for each SSH connection; if you use multiple gateways, it will be called for each gateway until one succeed to connect.
 
 ---
 
@@ -696,7 +696,7 @@ Closed 4 control sockets.
 
 #### `assh sockets master`
 
-Create a master control sockets.
+Create master control sockets.
 
 ```console
 $ assh sockets master
@@ -745,7 +745,7 @@ brew install assh --HEAD
 
 ---
 
-Get a released version on: https://github.com/moul/assh/releases
+Get a released version at: https://github.com/moul/assh/releases
 
 ---
 
@@ -771,9 +771,9 @@ This step is not *mandatory* but highly *recommended*.
 ---
 
 **Note**: `ssh` does not understand advanced patterns;
-To bypass this limitation, `assh` maintains a list of *known hosts* and regenerate the `~/.ssh/config` with all those expanded *known hosts*.
+To bypass this limitation, `assh` maintains a list of *known hosts* and regenerates the `~/.ssh/config` with all those expanded *known hosts*.
 
-Without the wrapper, the `~/.ssh/config` risks to be outdated when connecting to a new host for the first time and you will need to launch the command again.
+Without the wrapper, the `~/.ssh/config` risks being outdated when connecting to a new host for the first time and you will need to launch the command again.
 
 With the wrapper, `ssh` will *always* be called with an updated `~/.ssh/config` file.
 
@@ -829,7 +829,7 @@ Host *
 
 Experimental: `assh` may run in Docker, however you will have limitations:
 
-  * The `assh` containers does not have any binaries except `assh`, you can't use `ProxyCommand`, `ResolveCommand`...
+  * The `assh` containers do not have any binaries except `assh`, you can't use `ProxyCommand`, `ResolveCommand`...
   * Docker may run on another host, `ssh localhost` will ssh to Docker host
 
 ```console
@@ -876,7 +876,7 @@ Also, be sure to have netcat installed on your system, or use an alternative pro
 
 ### How to Configure resolver to parse `/etc/hosts` and/or handle **mDNS** requests
 
-**assh** resolves hostnames using the system built-in resolver, depending on the OS, you can enable new features and/or change modules order.
+**assh** resolves hostnames using the system's built-in resolver, depending on the OS, you can enable new features and/or change modules order.
 
   * [Linux - nsswitch documentation](http://man7.org/linux/man-pages/man5/nsswitch.conf.5.html)
   * [Linux - mDNS support (nss-mdns)](http://0pointer.de/lennart/projects/nss-mdns/)
