@@ -41,6 +41,7 @@ type Host struct {
 	ControlPath                      string                    `yaml:"controlpath,omitempty,flow" json:"ControlPath,omitempty" passthrough:""`
 	ControlPersist                   string                    `yaml:"controlpersist,omitempty,flow" json:"ControlPersist,omitempty" passthrough:""`
 	DynamicForward                   composeyaml.Stringorslice `yaml:"dynamicforward,omitempty,flow" json:"DynamicForward,omitempty" passthrough:"perLine"`
+	EnableEscapeCommandline          string                    `yaml:"enableescapecommandline,omitempty,flow" json:"EnableEscapeCommandline,omitempty" passthrough:""`
 	EnableSSHKeysign                 string                    `yaml:"enablesshkeysign,omitempty,flow" json:"EnableSSHKeysign,omitempty" passthrough:""`
 	EscapeChar                       string                    `yaml:"escapechar,omitempty,flow" json:"EscapeChar,omitempty" passthrough:""`
 	ExitOnForwardFailure             string                    `yaml:"exitonforwardfailure,omitempty,flow" json:"ExitOnForwardFailure,omitempty" passthrough:""`
