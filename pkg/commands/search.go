@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -25,7 +26,7 @@ func searchConfig(cmd *cobra.Command, args []string) error {
 		return errors.New("assh config search requires 1 argument. See 'assh config search --help'")
 	}
 
-	needle := args[0]
+	needle := strings.ToLower(args[0]) // Make search case-insensitive
 
 	found := []*config.Host{}
 	for _, host := range conf.Hosts.SortedList() {
