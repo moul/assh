@@ -219,12 +219,15 @@ func (h *Host) Clone() *Host {
 
 // Matches returns true if the host matches a given string
 func (h *Host) Matches(needle string) bool {
-	if matches := strings.Contains(h.Name(), needle); matches {
+	// Normalize both needle and search targets to lowercase
+	needle = strings.ToLower(needle)
+
+	if matches := strings.Contains(strings.ToLower(h.Name()), needle); matches {
 		return true
 	}
 
 	for _, opt := range h.Options() {
-		if matches := strings.Contains(opt.Value, needle); matches {
+		if matches := strings.Contains(strings.ToLower(opt.Value), needle); matches {
 			return true
 		}
 	}

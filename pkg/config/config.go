@@ -213,6 +213,9 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 }
 
 func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
+	// Normalize name to lowercase for case-insensitive matching
+	name = strings.ToLower(name)
+	
 	if host, ok := c.Hosts[name]; ok {
 		logger().Debug("getHostByName direct matching", zap.String("name", name))
 		return computeHost(host, c, name, compute)
@@ -426,25 +429,39 @@ func (c *Config) mergeWildCardEntries() {
 }
 
 func (c *Config) applyMissingNames() {
+	// Normalize all host keys to lowercase
+	normalizedHosts := make(map[string]*Host)
 	for key, host := range c.Hosts {
+		normalizedKey := strings.ToLower(key)
 		if host == nil {
-			c.Hosts[key] = &Host{}
-			host = c.Hosts[key]
+			normalizedHosts[normalizedKey] = &Host{}
+			host = normalizedHosts[normalizedKey]
+		} else {
+			normalizedHosts[normalizedKey] = host
 		}
-		host.pattern = key
-		host.name = key // should be removed
+		host.pattern = key // Keep original pattern for display
+		host.name = normalizedKey
 		host.prepare()
 	}
+	c.Hosts = normalizedHosts
+
+	// Same for templates
+	normalizedTemplates := make(map[string]*Host)
 	for key, template := range c.Templates {
+		normalizedKey := strings.ToLower(key)
 		if template == nil {
-			c.Templates[key] = &Host{}
-			template = c.Templates[key]
+			normalizedTemplates[normalizedKey] = &Host{}
+			template = normalizedTemplates[normalizedKey]
+		} else {
+			normalizedTemplates[normalizedKey] = template
 		}
-		template.pattern = key
-		template.name = key // should be removed
+		template.pattern = key // Keep original pattern for display
+		template.name = normalizedKey
 		template.isTemplate = true
 		template.prepare()
 	}
+	c.Templates = normalizedTemplates
+
 	c.Defaults.isDefault = true
 	if c.Defaults.Hooks == nil {
 		c.Defaults.Hooks = &HostHooks{}
