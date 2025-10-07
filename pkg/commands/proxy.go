@@ -30,6 +30,15 @@ import (
 	"moul.io/assh/v2/pkg/ratelimit"
 )
 
+// formatHostPort formats a hostname and port for net.Dial, wrapping IPv6 addresses in brackets
+func formatHostPort(hostname, port string) string {
+	// Check if hostname contains colons (likely IPv6) and isn't already bracketed
+	if strings.Contains(hostname, ":") && !strings.HasPrefix(hostname, "[") {
+		return fmt.Sprintf("[%s]:%s", hostname, port)
+	}
+	return fmt.Sprintf("%s:%s", hostname, port)
+}
+
 type contextKey string
 
 type gatewayErrorMsg struct {
@@ -453,7 +462,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	}
 	conn, err := net.DialTimeout(
 		"tcp",
-		fmt.Sprintf("%s:%s", host.HostName, host.Port),
+		formatHostPort(host.HostName, host.Port),
 		time.Duration(timeout)*time.Second,
 	)
 	if err != nil {
