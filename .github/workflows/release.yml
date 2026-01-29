@@ -15,7 +15,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       -
         name: Unshallow
         run: git fetch --prune --unshallow
@@ -25,19 +25,19 @@ jobs:
       -
         name: Run Semantic Release
         id: semantic
-        uses: docker://ghcr.io/codfish/semantic-release-action:v1
+        uses: docker://ghcr.io/codfish/semantic-release-action:v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Set up Go
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.golang }}
       -
         name: Cache Go modules
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: actions/cache@v3.2.6
+        uses: actions/cache@v5.0.3
         with:
           path: ~/go/pkg/mod
           key:          ${{ runner.os }}-go-${{ matrix.golang }}-v1-${{ hashFiles('**/go.sum') }}
@@ -45,7 +45,7 @@ jobs:
       -
         name: Run GoReleaser
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: goreleaser/goreleaser-action@v3.2.0
+        uses: goreleaser/goreleaser-action@v6.4.0
         with:
           version: latest
           args: release --rm-dist
