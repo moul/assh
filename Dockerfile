@@ -4,7 +4,7 @@ ARG             VCS_REF
 ARG             VERSION
 
 # build
-FROM            golang:1.19.2-alpine as builder
+FROM            golang:1.25.6-alpine as builder
 RUN             apk add --no-cache git gcc musl-dev make
 ENV             GO111MODULE=on
 WORKDIR         /go/src/moul.io/assh
@@ -14,7 +14,7 @@ COPY            . ./
 RUN             make install
 
 # minimalist runtime
-FROM alpine:3.16.0
+FROM alpine:3.23.3
 LABEL           org.label-schema.build-date=$BUILD_DATE \
                 org.label-schema.name="assh" \
                 org.label-schema.description="" \
