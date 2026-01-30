@@ -3,10 +3,11 @@ package hooks
 import (
 	"bytes"
 	"fmt"
-	"moul.io/assh/v2/pkg/templates"
 	"os"
 	"os/exec"
 	"runtime"
+
+	"moul.io/assh/v2/pkg/templates"
 )
 
 var (
