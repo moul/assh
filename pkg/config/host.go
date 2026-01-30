@@ -96,6 +96,7 @@ type Host struct {
 	RhostsRSAAuthentication          string                    `yaml:"rhostsrsaauthentication,omitempty,flow" json:"RhostsRSAAuthentication,omitempty"`
 	RSAAuthentication                string                    `yaml:"rsaauthentication,omitempty,flow" json:"RSAAuthentication,omitempty"`
 	SendEnv                          composeyaml.Stringorslice `yaml:"sendenv,omitempty,flow" json:"SendEnv,omitempty"`
+	SetEnv                           composeyaml.Stringorslice `yaml:"setenv,omitempty,flow" json:"SetEnv,omitempty"`
 	ServerAliveCountMax              int                       `yaml:"serveralivecountmax,omitempty,flow" json:"ServerAliveCountMax,omitempty"`
 	ServerAliveInterval              int                       `yaml:"serveraliveinterval,omitempty,flow" json:"ServerAliveInterval,omitempty"`
 	StreamLocalBindMask              string                    `yaml:"streamlocalbindmask,omitempty,flow" json:"StreamLocalBindMask,omitempty"`
@@ -480,8 +481,15 @@ func (h *Host) Options() OptionsList {
 	if h.RSAAuthentication != "" {
 		options = append(options, Option{Name: "RSAAuthentication", Value: h.RSAAuthentication})
 	}
-	for _, entry := range h.SendEnv {
-		options = append(options, Option{Name: "SendEnv", Value: entry})
+	if len(h.SendEnv) > 0 {
+		for _, env := range h.SendEnv {
+			options = append(options, Option{Name: "SendEnv", Value: env})
+		}
+	}
+	if len(h.SetEnv) > 0 {
+		for _, env := range h.SetEnv {
+			options = append(options, Option{Name: "SetEnv", Value: env})
+		}
 	}
 	if h.ServerAliveCountMax != 0 {
 		options = append(options, Option{Name: "ServerAliveCountMax", Value: fmt.Sprintf("%d", h.ServerAliveCountMax)})
@@ -991,6 +999,11 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	}
 	h.SendEnv = utils.ExpandSliceField(h.SendEnv)
 
+	if len(h.SetEnv) == 0 {
+		h.SetEnv = defaults.SetEnv
+	}
+	h.SetEnv = utils.ExpandSliceField(h.SetEnv)
+
 	if h.ServerAliveCountMax == 0 {
 		h.ServerAliveCountMax = defaults.ServerAliveCountMax
 	}
@@ -1403,8 +1416,15 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 		if h.RSAAuthentication != "" {
 			_, _ = fmt.Fprintf(w, "  RSAAuthentication %s\n", h.RSAAuthentication)
 		}
-		for _, entry := range h.SendEnv {
-			_, _ = fmt.Fprintf(w, "  SendEnv %s\n", entry)
+		if len(h.SendEnv) > 0 {
+			for _, env := range h.SendEnv {
+				_, _ = fmt.Fprintf(w, "  SendEnv %s\n", env)
+			}
+		}
+		if len(h.SetEnv) > 0 {
+			for _, env := range h.SetEnv {
+				_, _ = fmt.Fprintf(w, "  SetEnv %s\n", env)
+			}
 		}
 		if h.ServerAliveCountMax != 0 {
 			_, _ = fmt.Fprintf(w, "  ServerAliveCountMax %d\n", h.ServerAliveCountMax)
