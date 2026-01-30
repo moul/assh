@@ -2,7 +2,7 @@ module moul.io/assh/v2
 
 go 1.24.0
 
-toolchain go1.24.12
+toolchain go1.25.6
 
 require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -15,21 +15,21 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/haklop/gnotifier v0.0.0-20140909091139-0de36badf601
 	github.com/imdario/mergo v0.3.16
-	github.com/mattn/go-zglob v0.0.4
+	github.com/mattn/go-zglob v0.0.6
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/moul/flexyaml v0.0.0-20171225152558-f458bfa8afe2
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/smartystreets/goconvey v1.7.2
+	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli v1.22.17
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.27.1
 	golang.org/x/term v0.39.0
 	golang.org/x/text v0.33.0
-	golang.org/x/time v0.3.0
+	golang.org/x/time v0.14.0
 )
 
 require (
@@ -54,7 +54,7 @@ require (
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/guelfey/go.dbus v0.0.0-20131113121618-f6a3a2366cc3 // indirect
 	github.com/huandu/xstrings v1.3.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/smartystreets/assertions v1.2.0 // indirect
+	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
@@ -83,9 +83,8 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.23.0 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
