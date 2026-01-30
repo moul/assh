@@ -11,7 +11,6 @@ import (
 func Test_isExecutable(t *testing.T) {
 	type args struct {
 		path string
-		goos string
 	}
 	type want struct {
 		executable bool
