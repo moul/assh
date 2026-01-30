@@ -18,7 +18,6 @@ var (
 		"C:\\Program Files\\Git\\bin\\bash.exe",
 		"C:\\Program Files\\Git\\bin\\sh.exe",
 		"C:\\Windows\\System32\\bash.exe",
-		"C:\\Users\\paul.schroeder\\scoop\\shims\\sh.exe",
 	}
 )
 
