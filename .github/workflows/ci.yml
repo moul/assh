@@ -11,17 +11,17 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Build the Docker image
         run: docker build . --file Dockerfile
   golangci-lint:
     name: golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v1.50.1
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -34,9 +34,9 @@ jobs:
           - 1.18.x
           - 1.19.x
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.golang }}
       - name: Run tests on Windows
@@ -51,12 +51,12 @@ jobs:
           - 1.18.x
           - 1.19.x
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v3.2.6
+      - uses: actions/cache@v5.0.3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.golang }}-${{ hashFiles('**/go.sum') }}
@@ -78,12 +78,12 @@ jobs:
           - 1.18.x
           - 1.19.x
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v3.2.6
+      - uses: actions/cache@v5.0.3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ matrix.golang }}-${{ hashFiles('**/go.sum') }}
