@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        golang: [1.17.x]
+        golang: ["1.24"]
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         name: Unshallow
         run: git fetch --prune --unshallow
@@ -31,13 +31,13 @@ jobs:
       -
         name: Set up Go
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.golang }}
       -
         name: Cache Go modules
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: actions/cache@v3.2.6
+        uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
           key:          ${{ runner.os }}-go-${{ matrix.golang }}-v1-${{ hashFiles('**/go.sum') }}
@@ -45,10 +45,10 @@ jobs:
       -
         name: Run GoReleaser
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: goreleaser/goreleaser-action@v3.2.0
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -

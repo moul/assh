@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 	"moul.io/assh/v2/pkg/config"
 )
 
@@ -35,7 +35,7 @@ func runListConfigCommand(cmd *cobra.Command, args []string) error {
 	redColorize := func(input string) string { return input }
 	yellowColorize := func(input string) string { return input }
 	cyanColorize := func(input string) string { return input }
-	if terminal.IsTerminal(int(os.Stdout.Fd())) {
+	if term.IsTerminal(int(os.Stdout.Fd())) {
 		greenColorize = ansi.ColorFunc("green+b+h")
 		redColorize = ansi.ColorFunc("red")
 		yellowColorize = ansi.ColorFunc("yellow")
