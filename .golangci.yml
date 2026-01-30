@@ -1,57 +1,47 @@
 run:
-  deadline: 1m
+  timeout: 2m
   tests: false
-  skip-files:
+
+issues:
+  exclude-files:
     - "testing.go"
     - ".*\\.pb\\.go"
     - ".*\\.gen\\.go"
 
 linters-settings:
-  golint:
-    min-confidence: 0
-  maligned:
-    suggest-new: true
   goconst:
     min-len: 5
     min-occurrences: 4
   misspell:
     locale: US
+  revive:
+    rules:
+      - name: exported
+        disabled: true
 
 linters:
   disable-all: true
   enable:
     - bodyclose
-    #- deadcode
-    - depguard
     - dogsled
     - dupl
     - errcheck
-    #- funlen
     - gochecknoinits
-    #- gocognit
     - goconst
     - gocritic
     - gocyclo
     - gofmt
     - goimports
-    #- golint
     - gosimple
     - govet
     - ineffassign
-    #- interfacer
-    #- maligned
     - misspell
     - nakedret
     - prealloc
-    #- scopelint
     - staticcheck
-    #- structcheck
-    #- stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    #- varcheck
     - whitespace
     - revive
-    - exportloopref

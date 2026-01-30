@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -381,7 +380,7 @@ func (c *Config) needsARebuildForTarget(target string) bool {
 
 // LoadConfig loads the content of an io.Reader source
 func (c *Config) LoadConfig(source io.Reader) error {
-	buf, err := ioutil.ReadAll(source)
+	buf, err := io.ReadAll(source)
 	if err != nil {
 		return err
 	}
@@ -469,7 +468,7 @@ func (c *Config) SaveSSHConfig() error {
 	logger().Debug("Writing SSH config file", zap.String("file", configPath))
 
 	tmpDir := filepath.Dir(configPath)
-	tmpFile, err := ioutil.TempFile(tmpDir, "config")
+	tmpFile, err := os.CreateTemp(tmpDir, "config")
 	if err != nil {
 		return err
 	}

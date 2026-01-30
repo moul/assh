@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,7 +25,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"golang.org/x/net/context"
 	"golang.org/x/time/rate"
 	"moul.io/assh/v2/pkg/config"
 	"moul.io/assh/v2/pkg/ratelimit"
@@ -490,6 +490,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	result := exportReadWrite{}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	ctx = context.WithValue(ctx, syncContextKey, &waitGroup)
 
 	waitGroup.Add(2)
@@ -523,7 +524,6 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	if err := conn.Close(); err != nil {
 		return err
 	}
-	cancel()
 	waitGroup.Wait()
 	select {
 	case res := <-c1:
