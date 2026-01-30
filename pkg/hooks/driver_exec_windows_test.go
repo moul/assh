@@ -23,7 +23,7 @@ func Test_isExecutable(t *testing.T) {
 	}{
 		"ErrFileDoesNotExist": {
 			args: args{
-				path: "testdata/not_exit",
+				path: "testdata/not_exist",
 			},
 			want: want{
 				executable: false,
