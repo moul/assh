@@ -12,7 +12,6 @@ import (
 	"moul.io/assh/v2/pkg/utils"
 )
 
-// EnableEscapeCommandline          string                    `yaml:"enableescapecommandline,omitempty,flow" json:"EnableSSHKeysign,omitempty"`
 // Host defines the configuration flags of a host
 type Host struct {
 	// ssh-config fields
@@ -326,7 +325,7 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	hostReflect := reflect.ValueOf(h).Elem()
 	hostTypeReflect := reflect.TypeOf(h).Elem()
 
-	defaultsReflecet := reflect.ValueOf(defaults).Elem()
+	defaultsReflect := reflect.ValueOf(defaults).Elem()
 
 	// go through each field in Host. If 'passthrough' tag exists, process it.
 	for i := 0; i < hostReflect.NumField(); i++ {
@@ -344,20 +343,20 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 			fieldVal := field.String()
 
 			if fieldVal == "" {
-				fieldVal = defaultsReflecet.FieldByName(fieldName).String()
+				fieldVal = defaultsReflect.FieldByName(fieldName).String()
 			}
 			field.SetString(utils.ExpandField(fieldVal))
 		case reflect.Int:
 			fieldVal := field.Int()
 
 			if fieldVal == 0 {
-				field.SetInt(defaultsReflecet.FieldByName(fieldName).Int())
+				field.SetInt(defaultsReflect.FieldByName(fieldName).Int())
 			}
 		case reflect.TypeOf(composeyaml.Stringorslice(nil)).Kind():
 			fieldVal := field.Interface().(composeyaml.Stringorslice)
 
 			if len(fieldVal) == 0 {
-				fieldVal = defaultsReflecet.FieldByName(fieldName).Interface().(composeyaml.Stringorslice)
+				fieldVal = defaultsReflect.FieldByName(fieldName).Interface().(composeyaml.Stringorslice)
 			}
 			field.Set(reflect.ValueOf(utils.ExpandSliceField(fieldVal)).Convert(field.Type()))
 		default:
