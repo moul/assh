@@ -256,7 +256,7 @@ func (h *Host) Options() OptionsList {
 
 		switch field.Type().Kind() {
 		case reflect.String:
-			if fieldVal := field.String(); fieldVal == "" {
+			if fieldVal := field.String(); fieldVal != "" {
 				options = append(options, Option{Name: fieldName, Value: fieldVal})
 			}
 		case reflect.Int:
@@ -268,14 +268,14 @@ func (h *Host) Options() OptionsList {
 
 			if passthroughTag == "joinByComma" {
 				if len(fieldVal) > 0 {
-					options = append(options, Option{Name: fieldName, Value: strings.Join(fieldVal, " ")})
+					options = append(options, Option{Name: fieldName, Value: strings.Join(fieldVal, ",")})
 				}
 			} else if passthroughTag == "perLine" {
 				for _, entry := range fieldVal {
 					options = append(options, Option{Name: fieldName, Value: entry})
 				}
 			} else {
-				panic(fmt.Sprintf("Undefined Range type for field '%s'.\nIt must contains either of the following value: [ joinByComma, perLine ]", fieldName))
+				panic(fmt.Sprintf("Undefined Range type for field '%s'.\nIt must contain either of the following values: [ joinByComma, perLine ]", fieldName))
 			}
 		default:
 			panic(fmt.Sprintf("Unimplemented datatype '%s' for field '%s'", field.Type(), fieldName))
@@ -492,10 +492,10 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 					}
 				} else if passthroughTag == "perLine" {
 					for _, entry := range fieldVal {
-						_, _ = fmt.Fprintf(w, "   %s %s\n", fieldName, entry)
+						_, _ = fmt.Fprintf(w, "  %s %s\n", fieldName, entry)
 					}
 				} else {
-					panic(fmt.Sprintf("Undefined Range type for field '%s'.\nIt must contains either of the following value: [ joinByComma, perLine ]", fieldName))
+					panic(fmt.Sprintf("Undefined Range type for field '%s'.\nIt must contain either of the following values: [ joinByComma, perLine ]", fieldName))
 				}
 			default:
 				panic(fmt.Sprintf("Unimplemented datatype '%s' for field '%s'", field.Type(), fieldName))
