@@ -14,7 +14,7 @@ require (
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568
 	github.com/gin-gonic/gin v1.11.0
 	github.com/haklop/gnotifier v0.0.0-20140909091139-0de36badf601
-	github.com/imdario/mergo v0.3.16
+	github.com/imdario/mergo v1.0.2
 	github.com/mattn/go-zglob v0.0.4
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/moul/flexyaml v0.0.0-20171225152558-f458bfa8afe2
@@ -25,7 +25,7 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli v1.22.17
+	github.com/urfave/cli/v3 v3.6.2
 	go.uber.org/zap v1.24.0
 	golang.org/x/term v0.39.0
 	golang.org/x/text v0.33.0
