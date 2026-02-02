@@ -20,7 +20,7 @@ require (
 	github.com/moul/flexyaml v0.0.0-20171225152558-f458bfa8afe2
 	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/smartystreets/goconvey v1.7.2
+	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
@@ -54,7 +54,7 @@ require (
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/guelfey/go.dbus v0.0.0-20131113121618-f6a3a2366cc3 // indirect
 	github.com/huandu/xstrings v1.3.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/smartystreets/assertions v1.2.0 // indirect
+	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
