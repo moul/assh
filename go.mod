@@ -15,7 +15,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/haklop/gnotifier v0.0.0-20140909091139-0de36badf601
 	github.com/imdario/mergo v0.3.16
-	github.com/mattn/go-zglob v0.0.4
+	github.com/mattn/go-zglob v0.0.6
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 	github.com/moul/flexyaml v0.0.0-20171225152558-f458bfa8afe2
 	github.com/pkg/errors v0.9.1
