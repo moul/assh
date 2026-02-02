@@ -11,14 +11,14 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build the Docker image
         run: docker build . --file Dockerfile
   golangci-lint:
     name: golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
@@ -35,7 +35,7 @@ jobs:
         golang:
           - "1.24"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -51,7 +51,7 @@ jobs:
         golang:
           - "1.24"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -72,7 +72,7 @@ jobs:
         golang:
           - "1.24"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Go
         uses: actions/setup-go@v5
         with:
