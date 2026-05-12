@@ -129,6 +129,7 @@ type Host struct {
 	Comment               composeyaml.Stringorslice `yaml:"comment,omitempty,flow" json:"Comment,omitempty"`
 	RateLimit             string                    `yaml:"ratelimit,omitempty,flow" json:"RateLimit,omitempty"`
 	GatewayConnectTimeout int                       `yaml:"gatewayconnecttimeout,omitempty,flow" json:"GatewayConnectTimeout,omitempty"`
+	MetaVars              map[string]string         `yaml:"metavars,omitempty,flow" json:"MetaVars,omitempty"`
 
 	// private assh fields
 	noAutomaticRewrite bool
@@ -573,6 +574,9 @@ func (h *Host) prepare() {
 	}
 	for key, name := range h.Gateways {
 		h.Gateways[key] = strings.ToLower(name)
+	}
+	if h.MetaVars == nil {
+		h.MetaVars = make(map[string]string)
 	}
 }
 
@@ -1149,6 +1153,17 @@ func (h *Host) ApplyDefaults(defaults *Host) {
 	// Extra defaults
 	if h.Port == "" {
 		h.Port = "22"
+	}
+
+	// MetaVars inheritance: merge maps, child overrides parent
+	if h.MetaVars == nil {
+		h.MetaVars = make(map[string]string)
+	}
+	// copy defaults
+	for k, v := range defaults.MetaVars {
+		if _, exists := h.MetaVars[k]; !exists {
+			h.MetaVars[k] = v
+		}
 	}
 }
 
