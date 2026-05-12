@@ -10,17 +10,15 @@ import (
 	"moul.io/assh/v2/pkg/templates"
 )
 
-var (
-	possibleShells = []string{
-		"/bin/sh", "/bin/bash", "/bin/zsh",
-		"/usr/bin/sh", "/usr/bin/bash", "/usr/bin/zsh",
-		"/usr/local/bin/sh", "/usr/local/bin/bash", "/usr/local/bin/zsh",
+var possibleShells = []string{
+	"/bin/sh", "/bin/bash", "/bin/zsh",
+	"/usr/bin/sh", "/usr/bin/bash", "/usr/bin/zsh",
+	"/usr/local/bin/sh", "/usr/local/bin/bash", "/usr/local/bin/zsh",
 
-		"C:\\Program Files\\Git\\bin\\bash.exe",
-		"C:\\Program Files\\Git\\bin\\sh.exe",
-		"C:\\Windows\\System32\\bash.exe",
-	}
-)
+	"C:\\Program Files\\Git\\bin\\bash.exe",
+	"C:\\Program Files\\Git\\bin\\sh.exe",
+	"C:\\Windows\\System32\\bash.exe",
+}
 
 // ExecDriver is a driver that execs some texts to the terminal
 type ExecDriver struct {
@@ -98,5 +96,5 @@ func isExecutable(path string) bool {
 	}
 
 	// on Linux actually check if the file is executable
-	return info.Mode()&0111 != 0
+	return info.Mode()&0o111 != 0
 }

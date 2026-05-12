@@ -66,7 +66,7 @@ func (c *Config) SaveNewKnownHost(target string) {
 		)
 	}
 
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0600)
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0o600)
 	if err != nil {
 		logger().Error(
 			"Cannot append host to assh_known_hosts file (perf. degradation)",

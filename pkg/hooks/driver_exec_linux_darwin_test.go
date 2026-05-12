@@ -4,8 +4,9 @@
 package hooks
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func Test_isExecutable(t *testing.T) {

@@ -1,9 +1,10 @@
 package hooks
 
 import (
+	"testing"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func EqualError(tb testing.TB, want, got error) {

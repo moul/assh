@@ -221,7 +221,7 @@ func prepareHostControlPath(host *config.Host) error {
 	controlPath := expandSSHTokens(host.ControlPath, host)
 	controlPathDir := path.Dir(controlPath)
 	logger().Debug("Creating control path", zap.String("path", controlPathDir))
-	return os.MkdirAll(controlPathDir, 0700)
+	return os.MkdirAll(controlPathDir, 0o700)
 }
 
 func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
@@ -236,7 +236,8 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 			if gateway == "direct" {
 				if err := proxyDirect(host, dryRun); err != nil {
 					gatewayErrors = append(gatewayErrors, gatewayErrorMsg{
-						gateway: "direct", err: zap.Error(err)})
+						gateway: "direct", err: zap.Error(err),
+					})
 				} else {
 					return nil
 				}
@@ -272,7 +273,8 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				)
 				if err := runProxy(gatewayHost, command, dryRun); err != nil {
 					gatewayErrors = append(gatewayErrors, gatewayErrorMsg{
-						gateway: gateway, err: zap.Error(err)})
+						gateway: gateway, err: zap.Error(err),
+					})
 				} else {
 					return nil
 				}

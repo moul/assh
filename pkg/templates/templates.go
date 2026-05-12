@@ -11,7 +11,7 @@ import (
 )
 
 func funcMap() template.FuncMap {
-	var m = template.FuncMap{
+	m := template.FuncMap{
 		"json": func(v interface{}) string {
 			a, err := json.Marshal(v)
 			if err != nil {
