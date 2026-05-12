@@ -1,6 +1,6 @@
 # assh
 
-[![GoDoc](https://img/shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/moul.io/assh/v2)
+[![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/moul.io/assh/v2)
 [![Financial Contributors on Open Collective](https://opencollective.com/assh/all/badge.svg?label=financial+contributors)](https://opencollective.com/assh) ![License](https://img.shields.io/github/license/moul/assh.svg)
 [![CircleCI](https://circleci.com/gh/moul/assh.svg?style=svg)](https://circleci.com/gh/moul/assh)
 [![GitHub release](https://img.shields.io/github/release/moul/assh.svg)](https://github.com/moul/assh/releases)
@@ -917,4 +917,4 @@ Support this project with your organization. Your logo will show up here with a 
 
 ## License
 
-Â© 2009-2026 Manfred Touron - MIT License
+© 2009-2026 Manfred Touron - MIT License
