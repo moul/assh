@@ -1,0 +1,5 @@
+version: 2
+builds:
+  - ldflags:
+    - -X 'moul.io/assh/v2/pkg/version.Version={{.Version}}' 
+    - -X 'moul.io/assh/v2/pkg/version.VcsRef={{.Commit}}'
