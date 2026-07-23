@@ -1,26 +1,8 @@
+version: "2"
 run:
-  timeout: 2m
   tests: false
-
-issues:
-  exclude-files:
-    - "testing.go"
-    - ".*\\.pb\\.go"
-    - ".*\\.gen\\.go"
-
-linters-settings:
-  goconst:
-    min-len: 5
-    min-occurrences: 4
-  misspell:
-    locale: US
-  revive:
-    rules:
-      - name: exported
-        disabled: true
-
 linters:
-  disable-all: true
+  default: none
   enable:
     - bodyclose
     - dogsled
@@ -30,18 +12,51 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
     - misspell
     - nakedret
     - prealloc
+    - revive
     - staticcheck
-    - typecheck
     - unconvert
     - unparam
     - unused
     - whitespace
-    - revive
+  settings:
+    goconst:
+      min-len: 5
+      min-occurrences: 4
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - testing.go
+      - .*\.pb\.go
+      - .*\.gen\.go
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - testing.go
+      - .*\.pb\.go
+      - .*\.gen\.go
+      - third_party$
+      - builtin$
+      - examples$
