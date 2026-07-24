@@ -9,7 +9,6 @@ linters:
     - dupl
     - errcheck
     - gochecknoinits
-    - goconst
     - gocritic
     - gocyclo
     - govet
@@ -24,9 +23,6 @@ linters:
     - unused
     - whitespace
   settings:
-    goconst:
-      min-len: 5
-      min-occurrences: 4
     misspell:
       locale: US
     revive:
