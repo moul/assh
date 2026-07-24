@@ -31,8 +31,9 @@ func cleanupValue(input string) string {
 // stringComment splits comment strings into <1024 char lines
 func stringComment(name, value string) string {
 	maxLength := 1024 - len(name) - 9
-	ret := []string{}
-	for _, line := range splitSubN(value, maxLength) {
+	lines := splitSubN(value, maxLength)
+	ret := make([]string, 0, len(lines))
+	for _, line := range lines {
 		ret = append(ret, fmt.Sprintf("  # %s: %s", name, line))
 	}
 	return strings.Join(ret, "\n") + "\n"
@@ -65,7 +66,7 @@ func sliceComment(name string, slice []string) string {
 		}
 	}
 
-	ret := []string{}
+	ret := make([]string, 0, len(bundles))
 	for _, bundle := range bundles {
 		ret = append(ret, fmt.Sprintf("  # %s: [%s]", name, strings.Join(bundle, ", ")))
 	}

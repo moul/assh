@@ -59,7 +59,8 @@ func runSSHWrapperCommand(cmd *cobra.Command, args []string) error {
 			options = append(options, val)
 		}
 	}
-	sshArgs := []string{cmd.Name()}
+	sshArgs := make([]string, 0, 1+len(options)+1+len(command))
+	sshArgs = append(sshArgs, cmd.Name())
 	sshArgs = append(sshArgs, options...)
 	sshArgs = append(sshArgs, target)
 	sshArgs = append(sshArgs, command...)

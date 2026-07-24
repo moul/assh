@@ -13,7 +13,7 @@ type HostsList []*Host
 
 // ToList returns a slice of *Hosts
 func (hm *HostsMap) ToList() HostsList {
-	list := HostsList{}
+	list := make(HostsList, 0, len(*hm))
 	for _, host := range *hm {
 		list = append(list, host)
 	}

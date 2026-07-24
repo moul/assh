@@ -64,10 +64,10 @@ func runListConfigCommand(cmd *cobra.Command, args []string) error {
 
 		for _, opt := range options {
 			defaultValue := generalOptions.Get(opt.Name)
-			switch {
-			case defaultValue == "":
+			switch defaultValue {
+			case "":
 				fmt.Printf("        %s %s %s\n", yellowColorize(opt.Name), opt.Value, yellowColorize("[custom option]"))
-			case defaultValue == opt.Value:
+			case opt.Value:
 				fmt.Printf("        %s: %s\n", redColorize(opt.Name), opt.Value)
 			default:
 				fmt.Printf("        %s %s %s\n", cyanColorize(opt.Name), opt.Value, cyanColorize("[override]"))

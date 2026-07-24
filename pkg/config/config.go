@@ -131,7 +131,7 @@ func (c *Config) LoadKnownHosts() error {
 
 // IncludedFiles returns the list of the included files
 func (c *Config) IncludedFiles() []string {
-	includedFiles := []string{}
+	includedFiles := make([]string, 0, len(c.includedFiles))
 	for file := range c.includedFiles {
 		includedFiles = append(includedFiles, file)
 	}
@@ -581,7 +581,7 @@ func (c *Config) LoadFiles(pattern string) error {
 
 // sortedNames returns the host names sorted alphabetically
 func (c *Config) sortedNames() []string {
-	names := sort.StringSlice{}
+	names := make(sort.StringSlice, 0, len(c.Hosts))
 	for key := range c.Hosts {
 		names = append(names, key)
 	}

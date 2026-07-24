@@ -73,7 +73,7 @@ func ExpandField(input string) string {
 
 // ExpandSliceField expands environment variables in every entries of a slice field
 func ExpandSliceField(input []string) []string {
-	ret := []string{}
+	ret := make([]string, 0, len(input))
 	for _, entry := range input {
 		ret = append(ret, ExpandField(entry))
 	}

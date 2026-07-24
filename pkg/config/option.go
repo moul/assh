@@ -27,7 +27,7 @@ func (ol *OptionsList) Get(name string) string {
 
 // ToStringList returns a list of string with the following format: `key=value`
 func (ol *OptionsList) ToStringList() []string {
-	list := []string{}
+	list := make([]string, 0, len(*ol))
 	for _, opt := range *ol {
 		list = append(list, opt.String())
 	}
