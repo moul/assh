@@ -25,7 +25,7 @@ jobs:
       -
         name: Run Semantic Release
         id: semantic
-        uses: docker://ghcr.io/codfish/semantic-release-action:v1
+        uses: docker://ghcr.io/codfish/semantic-release-action:v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       -
@@ -45,7 +45,7 @@ jobs:
       -
         name: Run GoReleaser
         if: steps.semantic.outputs.new-release-published == 'true' && steps.repoman.outputs.has-go-binary == 'true'
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
           args: release --clean
