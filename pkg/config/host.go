@@ -7,7 +7,6 @@ import (
 	"os/user"
 	"strings"
 
-	composeyaml "github.com/docker/libcompose/yaml"
 	"moul.io/assh/v2/pkg/utils"
 )
 
@@ -24,12 +23,12 @@ type Host struct {
 	CanonicalizeHostname             string                    `yaml:"canonicalizehostname,omitempty,flow" json:"CanonicalizeHostname,omitempty"`
 	CanonicalizeMaxDots              string                    `yaml:"canonicalizemaxDots,omitempty,flow" json:"CanonicalizeMaxDots,omitempty"`
 	CanonicalizePermittedCNAMEs      string                    `yaml:"canonicalizepermittedcnames,omitempty,flow" json:"CanonicalizePermittedCNAMEs,omitempty"`
-	CASignatureAlgorithms            composeyaml.Stringorslice `yaml:"casignaturealgorithms,omitempty,flow" json:"CASignatureAlgorithms,omitempty"`
-	CertificateFile                  composeyaml.Stringorslice `yaml:"certificatefile,omitempty,flow" json:"CertificateFile,omitempty"`
+	CASignatureAlgorithms            utils.ScalarOrStringSlice `yaml:"casignaturealgorithms,omitempty,flow" json:"CASignatureAlgorithms,omitempty"`
+	CertificateFile                  utils.ScalarOrStringSlice `yaml:"certificatefile,omitempty,flow" json:"CertificateFile,omitempty"`
 	ChallengeResponseAuthentication  string                    `yaml:"challengeresponseauthentication,omitempty,flow" json:"ChallengeResponseAuthentication,omitempty"`
 	CheckHostIP                      string                    `yaml:"checkhostip,omitempty,flow" json:"CheckHostIP,omitempty"`
 	Cipher                           string                    `yaml:"cipher,omitempty,flow" json:"Cipher,omitempty"`
-	Ciphers                          composeyaml.Stringorslice `yaml:"ciphers,omitempty,flow" json:"Ciphers,omitempty"`
+	Ciphers                          utils.ScalarOrStringSlice `yaml:"ciphers,omitempty,flow" json:"Ciphers,omitempty"`
 	ClearAllForwardings              string                    `yaml:"clearallforwardings,omitempty,flow" json:"ClearAllForwardings,omitempty"`
 	Compression                      string                    `yaml:"compression,omitempty,flow" json:"Compression,omitempty"`
 	CompressionLevel                 int                       `yaml:"compressionlevel,omitempty,flow" json:"CompressionLevel,omitempty"`
@@ -38,7 +37,7 @@ type Host struct {
 	ControlMaster                    string                    `yaml:"controlmaster,omitempty,flow" json:"ControlMaster,omitempty"`
 	ControlPath                      string                    `yaml:"controlpath,omitempty,flow" json:"ControlPath,omitempty"`
 	ControlPersist                   string                    `yaml:"controlpersist,omitempty,flow" json:"ControlPersist,omitempty"`
-	DynamicForward                   composeyaml.Stringorslice `yaml:"dynamicforward,omitempty,flow" json:"DynamicForward,omitempty"`
+	DynamicForward                   utils.ScalarOrStringSlice `yaml:"dynamicforward,omitempty,flow" json:"DynamicForward,omitempty"`
 	EnableSSHKeysign                 string                    `yaml:"enablesshkeysign,omitempty,flow" json:"EnableSSHKeysign,omitempty"`
 	EscapeChar                       string                    `yaml:"escapechar,omitempty,flow" json:"EscapeChar,omitempty"`
 	ExitOnForwardFailure             string                    `yaml:"exitonforwardfailure,omitempty,flow" json:"ExitOnForwardFailure,omitempty"`
@@ -48,7 +47,7 @@ type Host struct {
 	ForwardX11Timeout                int                       `yaml:"forwardx11timeout,omitempty,flow" json:"ForwardX11Timeout,omitempty"`
 	ForwardX11Trusted                string                    `yaml:"forwardx11trusted,omitempty,flow" json:"ForwardX11Trusted,omitempty"`
 	GatewayPorts                     string                    `yaml:"gatewayports,omitempty,flow" json:"GatewayPorts,omitempty"`
-	GlobalKnownHostsFile             composeyaml.Stringorslice `yaml:"globalknownhostsfile,omitempty,flow" json:"GlobalKnownHostsFile,omitempty"`
+	GlobalKnownHostsFile             utils.ScalarOrStringSlice `yaml:"globalknownhostsfile,omitempty,flow" json:"GlobalKnownHostsFile,omitempty"`
 	GSSAPIAuthentication             string                    `yaml:"gssapiauthentication,omitempty,flow" json:"GSSAPIAuthentication,omitempty"`
 	GSSAPIClientIdentity             string                    `yaml:"gssapiclientidentity,omitempty,flow" json:"GSSAPIClientIdentity,omitempty"`
 	GSSAPIDelegateCredentials        string                    `yaml:"gssapidelegatecredentials,omitempty,flow" json:"GSSAPIDelegateCredentials,omitempty"`
@@ -59,22 +58,22 @@ type Host struct {
 	HashKnownHosts                   string                    `yaml:"hashknownhosts,omitempty,flow" json:"HashKnownHosts,omitempty"`
 	HostbasedAuthentication          string                    `yaml:"hostbasedauthentication,omitempty,flow" json:"HostbasedAuthentication,omitempty"`
 	HostbasedKeyTypes                string                    `yaml:"hostbasedkeytypes,omitempty,flow" json:"HostbasedKeyTypes,omitempty"`
-	HostKeyAlgorithms                composeyaml.Stringorslice `yaml:"hostkeyalgorithms,omitempty,flow" json:"HostKeyAlgorithms,omitempty"`
+	HostKeyAlgorithms                utils.ScalarOrStringSlice `yaml:"hostkeyalgorithms,omitempty,flow" json:"HostKeyAlgorithms,omitempty"`
 	HostKeyAlias                     string                    `yaml:"hostkeyalias,omitempty,flow" json:"HostKeyAlias,omitempty"`
 	IdentitiesOnly                   string                    `yaml:"identitiesonly,omitempty,flow" json:"IdentitiesOnly,omitempty"`
 	IdentityAgent                    string                    `yaml:"identityagent,omitempty,flow" json:"IdentityAgent,omitempty"`
-	IdentityFile                     composeyaml.Stringorslice `yaml:"identityfile,omitempty,flow" json:"IdentityFile,omitempty"`
+	IdentityFile                     utils.ScalarOrStringSlice `yaml:"identityfile,omitempty,flow" json:"IdentityFile,omitempty"`
 	IgnoreUnknown                    string                    `yaml:"ignoreunknown,omitempty,flow" json:"IgnoreUnknown,omitempty"`
-	IPQoS                            composeyaml.Stringorslice `yaml:"ipqos,omitempty,flow" json:"IPQoS,omitempty"`
+	IPQoS                            utils.ScalarOrStringSlice `yaml:"ipqos,omitempty,flow" json:"IPQoS,omitempty"`
 	KbdInteractiveAuthentication     string                    `yaml:"kbdinteractiveauthentication,omitempty,flow" json:"KbdInteractiveAuthentication,omitempty"`
-	KbdInteractiveDevices            composeyaml.Stringorslice `yaml:"kbdinteractivedevices,omitempty,flow" json:"KbdInteractiveDevices,omitempty"`
-	KexAlgorithms                    composeyaml.Stringorslice `yaml:"kexalgorithms,omitempty,flow" json:"KexAlgorithms,omitempty"`
+	KbdInteractiveDevices            utils.ScalarOrStringSlice `yaml:"kbdinteractivedevices,omitempty,flow" json:"KbdInteractiveDevices,omitempty"`
+	KexAlgorithms                    utils.ScalarOrStringSlice `yaml:"kexalgorithms,omitempty,flow" json:"KexAlgorithms,omitempty"`
 	KeychainIntegration              string                    `yaml:"keychainintegration,omitempty,flow" json:"KeychainIntegration,omitempty"`
 	LocalCommand                     string                    `yaml:"localcommand,omitempty,flow" json:"LocalCommand,omitempty"`
 	RemoteCommand                    string                    `yaml:"remotecommand,omitempty,flow" json:"RemoteCommand,omitempty"`
-	LocalForward                     composeyaml.Stringorslice `yaml:"localforward,omitempty,flow" json:"LocalForward,omitempty"`
+	LocalForward                     utils.ScalarOrStringSlice `yaml:"localforward,omitempty,flow" json:"LocalForward,omitempty"`
 	LogLevel                         string                    `yaml:"loglevel,omitempty,flow" json:"LogLevel,omitempty"`
-	MACs                             composeyaml.Stringorslice `yaml:"macs,omitempty,flow" json:"MACs,omitempty"`
+	MACs                             utils.ScalarOrStringSlice `yaml:"macs,omitempty,flow" json:"MACs,omitempty"`
 	Match                            string                    `yaml:"match,omitempty,flow" json:"Match,omitempty"`
 	NoHostAuthenticationForLocalhost string                    `yaml:"nohostauthenticationforlocalhost,omitempty,flow" json:"NoHostAuthenticationForLocalhost,omitempty"`
 	NumberOfPasswordPrompts          string                    `yaml:"numberofpasswordprompts,omitempty,flow" json:"NumberOfPasswordPrompts,omitempty"`
@@ -83,20 +82,20 @@ type Host struct {
 	PKCS11Provider                   string                    `yaml:"pkcs11provider,omitempty,flow" json:"PKCS11Provider,omitempty"`
 	Port                             string                    `yaml:"port,omitempty,flow" json:"Port,omitempty"`
 	PreferredAuthentications         string                    `yaml:"preferredauthentications,omitempty,flow" json:"PreferredAuthentications,omitempty"`
-	Protocol                         composeyaml.Stringorslice `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
+	Protocol                         utils.ScalarOrStringSlice `yaml:"protocol,omitempty,flow" json:"Protocol,omitempty"`
 	ProxyJump                        string                    `yaml:"proxyjump,omitempty,flow" json:"ProxyJump,omitempty"`
 	ProxyUseFdpass                   string                    `yaml:"proxyusefdpass,omitempty,flow" json:"ProxyUseFdpass,omitempty"`
 	PubkeyAcceptedAlgorithms         string                    `yaml:"pubkeyacceptedalgorithms,omitempty,flow" json:"PubkeyAcceptedAlgorithms,omitempty"`
 	PubkeyAcceptedKeyTypes           string                    `yaml:"pubkeyacceptedkeytypes,omitempty,flow" json:"PubkeyAcceptedKeyTypes,omitempty"`
 	PubkeyAuthentication             string                    `yaml:"pubkeyauthentication,omitempty,flow" json:"PubkeyAuthentication,omitempty"`
 	RekeyLimit                       string                    `yaml:"rekeylimit,omitempty,flow" json:"RekeyLimit,omitempty"`
-	RemoteForward                    composeyaml.Stringorslice `yaml:"remoteforward,omitempty,flow" json:"RemoteForward,omitempty"`
+	RemoteForward                    utils.ScalarOrStringSlice `yaml:"remoteforward,omitempty,flow" json:"RemoteForward,omitempty"`
 	RequestTTY                       string                    `yaml:"requesttty,omitempty,flow" json:"RequestTTY,omitempty"`
 	RevokedHostKeys                  string                    `yaml:"revokedhostkeys,omitempty,flow" json:"RevokedHostKeys,omitempty"`
 	RhostsRSAAuthentication          string                    `yaml:"rhostsrsaauthentication,omitempty,flow" json:"RhostsRSAAuthentication,omitempty"`
 	RSAAuthentication                string                    `yaml:"rsaauthentication,omitempty,flow" json:"RSAAuthentication,omitempty"`
-	SendEnv                          composeyaml.Stringorslice `yaml:"sendenv,omitempty,flow" json:"SendEnv,omitempty"`
-	SetEnv                           composeyaml.Stringorslice `yaml:"setenv,omitempty,flow" json:"SetEnv,omitempty"`
+	SendEnv                          utils.ScalarOrStringSlice `yaml:"sendenv,omitempty,flow" json:"SendEnv,omitempty"`
+	SetEnv                           utils.ScalarOrStringSlice `yaml:"setenv,omitempty,flow" json:"SetEnv,omitempty"`
 	ServerAliveCountMax              int                       `yaml:"serveralivecountmax,omitempty,flow" json:"ServerAliveCountMax,omitempty"`
 	ServerAliveInterval              int                       `yaml:"serveraliveinterval,omitempty,flow" json:"ServerAliveInterval,omitempty"`
 	StreamLocalBindMask              string                    `yaml:"streamlocalbindmask,omitempty,flow" json:"StreamLocalBindMask,omitempty"`
@@ -109,7 +108,7 @@ type Host struct {
 	UseKeychain                      string                    `yaml:"usekeychain,omitempty,flow" json:"UseKeychain,omitempty"`
 	UsePrivilegedPort                string                    `yaml:"useprivilegedport,omitempty,flow" json:"UsePrivilegedPort,omitempty"`
 	User                             string                    `yaml:"user,omitempty,flow" json:"User,omitempty"`
-	UserKnownHostsFile               composeyaml.Stringorslice `yaml:"userknownhostsfile,omitempty,flow" json:"UserKnownHostsFile,omitempty"`
+	UserKnownHostsFile               utils.ScalarOrStringSlice `yaml:"userknownhostsfile,omitempty,flow" json:"UserKnownHostsFile,omitempty"`
 	VerifyHostKeyDNS                 string                    `yaml:"verifyhostkeydns,omitempty,flow" json:"VerifyHostKeyDNS,omitempty"`
 	VisualHostKey                    string                    `yaml:"visualhostkey,omitempty,flow" json:"VisualHostKey,omitempty"`
 	XAuthLocation                    string                    `yaml:"xauthlocation,omitempty,flow" json:"XAuthLocation,omitempty"`
@@ -119,14 +118,14 @@ type Host struct {
 	ProxyCommand string `yaml:"proxycommand,omitempty,flow" json:"ProxyCommand,omitempty"`
 
 	// exposed assh fields
-	Inherits              composeyaml.Stringorslice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
-	Gateways              composeyaml.Stringorslice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
-	ResolveNameservers    composeyaml.Stringorslice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
+	Inherits              utils.ScalarOrStringSlice `yaml:"inherits,omitempty,flow" json:"Inherits,omitempty"`
+	Gateways              utils.ScalarOrStringSlice `yaml:"gateways,omitempty,flow" json:"Gateways,omitempty"`
+	ResolveNameservers    utils.ScalarOrStringSlice `yaml:"resolvenameservers,omitempty,flow" json:"ResolveNameservers,omitempty"`
 	ResolveCommand        string                    `yaml:"resolvecommand,omitempty,flow" json:"ResolveCommand,omitempty"`
 	ControlMasterMkdir    string                    `yaml:"controlmastermkdir,omitempty,flow" json:"ControlMasterMkdir,omitempty"`
-	Aliases               composeyaml.Stringorslice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
+	Aliases               utils.ScalarOrStringSlice `yaml:"aliases,omitempty,flow" json:"Aliases,omitempty"`
 	Hooks                 *HostHooks                `yaml:"hooks,omitempty,flow" json:"Hooks,omitempty"`
-	Comment               composeyaml.Stringorslice `yaml:"comment,omitempty,flow" json:"Comment,omitempty"`
+	Comment               utils.ScalarOrStringSlice `yaml:"comment,omitempty,flow" json:"Comment,omitempty"`
 	RateLimit             string                    `yaml:"ratelimit,omitempty,flow" json:"RateLimit,omitempty"`
 	GatewayConnectTimeout int                       `yaml:"gatewayconnecttimeout,omitempty,flow" json:"GatewayConnectTimeout,omitempty"`
 

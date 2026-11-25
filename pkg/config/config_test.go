@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	composeyaml "github.com/docker/libcompose/yaml"
 	. "github.com/smartystreets/goconvey/convey"
+	"moul.io/assh/v2/pkg/utils"
 )
 
 var (
@@ -323,7 +323,7 @@ func TestConfig(t *testing.T) {
 
 		So(config.Hosts["tonton"].isDefault, ShouldEqual, false)
 		So(config.Hosts["tonton"].Port, ShouldEqual, "")
-		So(config.Hosts["tonton"].ResolveNameservers, ShouldResemble, composeyaml.Stringorslice{"a.com", "1.2.3.4"})
+		So(config.Hosts["tonton"].ResolveNameservers, ShouldResemble, utils.ScalarOrStringSlice{"a.com", "1.2.3.4"})
 
 		So(config.Hosts["toutou"].isDefault, ShouldEqual, false)
 		So(config.Hosts["toutou"].Port, ShouldEqual, "")
@@ -331,7 +331,7 @@ func TestConfig(t *testing.T) {
 
 		So(config.Hosts["tutu"].isDefault, ShouldEqual, false)
 		So(config.Hosts["tutu"].Port, ShouldEqual, "")
-		So(config.Hosts["tutu"].Gateways, ShouldResemble, composeyaml.Stringorslice{"titi", "direct", "1.2.3.4"})
+		So(config.Hosts["tutu"].Gateways, ShouldResemble, utils.ScalarOrStringSlice{"titi", "direct", "1.2.3.4"})
 
 		So(config.Hosts["*.ddd"].isDefault, ShouldEqual, false)
 		So(config.Hosts["*.ddd"].HostName, ShouldEqual, "1.3.5.7")
@@ -1181,7 +1181,7 @@ func TestConfig_GetHost(t *testing.T) {
 			})
 			So(host.ProxyCommand, ShouldEqual, "nc -v 4242")
 			So(host.User, ShouldEqual, "moul")
-			So(host.Gateways, ShouldResemble, composeyaml.Stringorslice{"titi", "direct", "1.2.3.4"})
+			So(host.Gateways, ShouldResemble, utils.ScalarOrStringSlice{"titi", "direct", "1.2.3.4"})
 			So(host.PasswordAuthentication, ShouldEqual, "yes")
 
 			host, err = config.GetHost("tutu")
@@ -1192,7 +1192,7 @@ func TestConfig_GetHost(t *testing.T) {
 				"*.ddd": true,
 			})
 			So(host.User, ShouldEqual, "root")
-			So(host.Gateways, ShouldResemble, composeyaml.Stringorslice{"titi", "direct", "1.2.3.4"})
+			So(host.Gateways, ShouldResemble, utils.ScalarOrStringSlice{"titi", "direct", "1.2.3.4"})
 			So(host.PasswordAuthentication, ShouldEqual, "yes")
 
 			host, err = config.GetHost("nnn")
@@ -1203,14 +1203,14 @@ func TestConfig_GetHost(t *testing.T) {
 			})
 			So(host.User, ShouldEqual, "mmmm")
 			So(host.Port, ShouldEqual, "26")
-			So(host.Gateways, ShouldResemble, composeyaml.Stringorslice{"titi", "direct", "1.2.3.4"})
+			So(host.Gateways, ShouldResemble, utils.ScalarOrStringSlice{"titi", "direct", "1.2.3.4"})
 		})
 
 		Convey("Aliases", FailureContinues, func() {
 			host, err = config.GetHost("ooo1")
 			So(err, ShouldBeNil)
 			So(host.name, ShouldEqual, "ooo1")
-			So(host.Aliases, ShouldResemble, composeyaml.Stringorslice{
+			So(host.Aliases, ShouldResemble, utils.ScalarOrStringSlice{
 				"ooo11",
 				"ooo12",
 			})
@@ -1219,7 +1219,7 @@ func TestConfig_GetHost(t *testing.T) {
 			host, err = config.GetHost("ooo2")
 			So(err, ShouldBeNil)
 			So(host.name, ShouldEqual, "ooo2")
-			So(host.Aliases, ShouldResemble, composeyaml.Stringorslice{
+			So(host.Aliases, ShouldResemble, utils.ScalarOrStringSlice{
 				"ooo21",
 				"ooo22",
 			})
@@ -1228,7 +1228,7 @@ func TestConfig_GetHost(t *testing.T) {
 			host, err = config.GetHost("ooo11")
 			So(err, ShouldBeNil)
 			So(host.name, ShouldEqual, "ooo11")
-			So(host.Aliases, ShouldResemble, composeyaml.Stringorslice{
+			So(host.Aliases, ShouldResemble, utils.ScalarOrStringSlice{
 				"ooo11",
 				"ooo12",
 			})
@@ -1237,7 +1237,7 @@ func TestConfig_GetHost(t *testing.T) {
 			host, err = config.GetHost("ooo22")
 			So(err, ShouldBeNil)
 			So(host.name, ShouldEqual, "ooo22")
-			So(host.Aliases, ShouldResemble, composeyaml.Stringorslice{
+			So(host.Aliases, ShouldResemble, utils.ScalarOrStringSlice{
 				"ooo21",
 				"ooo22",
 			})

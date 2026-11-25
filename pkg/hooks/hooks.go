@@ -3,12 +3,20 @@ package hooks
 import (
 	"fmt"
 	"strings"
-
-	composeyaml "github.com/docker/libcompose/yaml"
 )
 
 // Hooks represents a slice of Hook
-type Hooks composeyaml.Stringorslice
+type Hooks []string
+
+// UnmarshalYAML accepts a single hook or a sequence of hooks.
+func (h *Hooks) UnmarshalYAML(decode func(any) error) error {
+	var single string
+	if err := decode(&single); err == nil {
+		*h = Hooks{single}
+		return nil
+	}
+	return decode((*[]string)(h))
+}
 
 // HookDriver represents a hook driver
 type HookDriver interface {
