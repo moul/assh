@@ -20,7 +20,7 @@ type ControlSocket struct {
 type ControlSockets []ControlSocket
 
 func translateControlPath(input string) string {
-	controlPath, err := utils.ExpandUser(input)
+	controlPath, err := utils.ExpandPath(input)
 	if err != nil {
 		return input
 	}

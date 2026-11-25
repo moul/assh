@@ -43,8 +43,17 @@ func ExpandEnvSafe(s string) string {
 	return string(buf) + s[i:]
 }
 
-// ExpandUser expands tild and env vars in unix paths
+// ExpandUser expands a path and escapes spaces for use in a shell command.
 func ExpandUser(path string) (string, error) {
+	expanded, err := ExpandPath(path)
+	if err != nil {
+		return "", err
+	}
+	return EscapeSpaces(expanded), nil
+}
+
+// ExpandPath expands a leading tilde and environment variables in a filesystem path.
+func ExpandPath(path string) (string, error) {
 	// Expand variables
 	path = ExpandEnvSafe(path)
 
@@ -57,10 +66,7 @@ func ExpandUser(path string) (string, error) {
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
-	path = filepath.FromSlash(path) // OS-agnostic slashes
-	path = EscapeSpaces(path)
-
-	return path, nil
+	return filepath.FromSlash(path), nil
 }
 
 // ExpandField expands environment variables in field
