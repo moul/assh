@@ -263,7 +263,7 @@ func proxy(host *config.Host, conf *config.Config, dryRun bool) error {
 				if hostCopy.ProxyCommand != "" {
 					command = "ssh %name -- " + hostCopy.ExpandString(hostCopy.ProxyCommand, gateway)
 				} else {
-					command = hostCopy.ExpandString("ssh -W %h:%p ", "") + "%name"
+					command = "ssh -W " + tcpDestination(hostCopy.HostName, hostCopy.Port) + " %name"
 				}
 
 				logger().Debug(
@@ -431,8 +431,9 @@ func proxyGo(host *config.Host, dryRun bool) error {
 		return errors.Wrap(err, "failed to prepare host")
 	}
 
+	dest := tcpDestination(host.HostName, host.Port)
 	if dryRun {
-		return fmt.Errorf("dry-run: Golang native TCP connection to '%s:%s'", host.HostName, host.Port)
+		return fmt.Errorf("dry-run: Golang native TCP connection to '%s'", dest)
 	}
 
 	// BeforeConnect hook
@@ -455,7 +456,7 @@ func proxyGo(host *config.Host, dryRun bool) error {
 	}
 	conn, err := net.DialTimeout(
 		"tcp",
-		fmt.Sprintf("%s:%s", host.HostName, host.Port),
+		dest,
 		time.Duration(timeout)*time.Second,
 	)
 	if err != nil {
