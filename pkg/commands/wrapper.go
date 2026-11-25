@@ -98,7 +98,7 @@ func runSSHWrapperCommand(cmd *cobra.Command, args []string) error {
 			"The configuration file is outdated, rebuilding it before calling command",
 			zap.String("command", cmd.Name()),
 		)
-		if err = conf.SaveSSHConfig(); err != nil {
+		if err = rewriteSSHConfig(conf); err != nil {
 			logger().Error("failed to save ssh config file", zap.Error(err))
 		}
 	}

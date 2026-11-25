@@ -22,6 +22,7 @@ func (hh *HostHooks) Length() int {
 		return 0
 	}
 	return len(hh.AfterConfigWrite) +
+		len(hh.BeforeConfigWrite) +
 		len(hh.BeforeConnect) +
 		len(hh.OnConnectError) +
 		len(hh.OnDisconnect) +

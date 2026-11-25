@@ -246,7 +246,9 @@ Example of Golang template variables:
 
 ##### BeforeConfigWrite
 
-`BeforeConfigWrite` is called just before `assh` rewrite the `~/.ssh/config` file.
+`BeforeConfigWrite` runs before assh replaces `~/.ssh/config`. `AfterConfigWrite` runs after a successful replacement.
+Both run during an automatic rewrite or when you run `assh config build --write`.
+Plain `assh config build` prints the generated configuration to standard output.
 
 ---
 
@@ -303,7 +305,7 @@ defaults:
 ```yaml
 defaults:
   Hooks:
-  AfterConfigWrite: 'exec cat /path/to/my/provider/generated/.ssh/config >> {{.SSHConfigPath}}'
+    AfterConfigWrite: 'exec cat /path/to/my/provider/generated/.ssh/config >> {{.SSHConfigPath}}'
 # Append another .ssh/config file to the generated .ssh/config file
 ```
 
