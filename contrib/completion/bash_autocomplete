@@ -378,6 +378,7 @@ _assh_config_build()
     flags+=("-e")
     flags+=("--ignore-known-hosts")
     flags+=("--no-automatic-rewrite")
+    flags+=("--write")
 
     must_have_one_flag=()
     must_have_one_noun=()
