@@ -394,31 +394,25 @@ func (c *Config) LoadConfig(source io.Reader) error {
 }
 
 func (c *Config) mergeWildCardEntries() {
-	for k, host := range c.Hosts {
-		if strings.Contains(k, "*") {
+	var patterns []string
+	for _, name := range c.sortedNames() {
+		if strings.Contains(name, "*") {
+			patterns = append(patterns, name)
+		}
+	}
+
+	for name, host := range c.Hosts {
+		if strings.Contains(name, "*") {
 			continue
 		}
 
-		for key, subHost := range c.Hosts {
-			if strings.Contains(key, "*") {
-				keyParts := strings.Split(key, "*")
-				// if * is in the middle
-				if keyParts[0] != "" && keyParts[1] != "" {
-					// if the wildcard matches
-					if strings.Contains(k, keyParts[0]) && strings.Contains(k, keyParts[1]) {
-						if err := mergo.Merge(host, subHost); err != nil {
-							fmt.Println(err.Error())
-						}
-					}
-				} else {
-					tempKey := strings.ReplaceAll(key, "*", "")
-					// if the wildcard matches
-					if strings.Contains(k, tempKey) {
-						if err := mergo.Merge(host, subHost); err != nil {
-							fmt.Println(err.Error())
-						}
-					}
-				}
+		for _, pattern := range patterns {
+			matched, err := path.Match(pattern, name)
+			if err != nil || !matched {
+				continue
+			}
+			if err := mergo.Merge(host, c.Hosts[pattern]); err != nil {
+				logger().Warn("Cannot merge wildcard host", zap.String("pattern", pattern), zap.String("host", name), zap.Error(err))
 			}
 		}
 	}
