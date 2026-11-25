@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -71,14 +72,14 @@ func Test_runProxy(t *testing.T) {
 		host, err := computeHost("aaa", 0, config)
 		So(err, ShouldBeNil)
 
-		err = runProxy(host, "echo test from proxyCommand", false)
-		So(err, ShouldBeNil)
-
-		err = runProxy(host, "/bin/sh -c 'echo test from proxyCommand'", false)
-		So(err, ShouldBeNil)
-
-		err = runProxy(host, "/bin/sh -c 'exit 1'", false)
-		So(err, ShouldNotBeNil)
+		success := "/bin/sh -c 'echo test from proxyCommand'"
+		failure := "/bin/sh -c 'exit 1'"
+		if runtime.GOOS == "windows" {
+			success = "cmd.exe /c echo test from proxyCommand"
+			failure = "cmd.exe /c exit 1"
+		}
+		So(runProxy(host, success, false), ShouldBeNil)
+		So(runProxy(host, failure, false), ShouldNotBeNil)
 
 		err = runProxy(host, "blah", true)
 		So(err, ShouldResemble, fmt.Errorf("dry-run: Execute [blah]"))
@@ -87,8 +88,12 @@ func Test_runProxy(t *testing.T) {
 
 func Test_hostPrepare(t *testing.T) {
 	Convey("Testing hostPrepare()", t, func() {
+		source := configExample
+		if runtime.GOOS == "windows" {
+			source = strings.Replace(source, `/bin/sh -c "echo 42.42.42.42"`, "cmd.exe /c echo 42.42.42.42", 1)
+		}
 		config := config.New()
-		err := config.LoadConfig(strings.NewReader(configExample))
+		err := config.LoadConfig(strings.NewReader(source))
 		So(err, ShouldBeNil)
 
 		host, err := computeHost("aaa", 0, config)

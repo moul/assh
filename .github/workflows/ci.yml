@@ -27,61 +27,23 @@ jobs:
         with:
           version: v2.12
           github-token: ${{ secrets.GITHUB_TOKEN }}
-  tests-on-windows:
-    needs: golangci-lint # run after golangci-lint action to not produce duplicated errors
-    runs-on: windows-latest
+  tests:
+    needs: golangci-lint
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
-        golang:
-          - "1.25"
+        include:
+          - runner: ubuntu-latest
+            race: -race
+          - runner: macos-latest
+            race: -race
+          - runner: windows-latest
+            race: ""
     steps:
       - uses: actions/checkout@v7
-      - name: Install Go
-        uses: actions/setup-go@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: ${{ matrix.golang }}
-      - name: Run tests on Windows
-        run: make.exe unittest
-        continue-on-error: true
-  tests-on-mac:
-    needs: golangci-lint # run after golangci-lint action to not produce duplicated errors
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        golang:
-          - "1.25"
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.golang }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.golang }}-
-      - name: Run tests on Unix-like operating systems
-        run: make unittest
-  tests-on-linux:
-    needs: golangci-lint # run after golangci-lint action to not produce duplicated errors
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        golang:
-          - "1.25"
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: ${{ matrix.golang }}
-      - uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.golang }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.golang }}-
-      - name: Run tests on Unix-like operating systems
-        run: make unittest
+          go-version: "1.25"
+      - name: Run Go tests
+        run: go test -timeout=30s -cover ${{ matrix.race }} ./...
