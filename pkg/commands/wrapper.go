@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
+	"strings"
 	"syscall"
 
 	"github.com/pkg/errors"
@@ -20,64 +22,79 @@ var wrapperCommand = &cobra.Command{
 }
 
 var sshWrapperCommand = &cobra.Command{
-	Use:   "ssh",
-	Short: "Wrap ssh",
-	RunE:  runSSHWrapperCommand,
+	Use:                "ssh [options] destination [command]",
+	Short:              "Wrap ssh",
+	DisableFlagParsing: true,
+	RunE:               runSSHWrapperCommand,
 }
 
 // nolint:gochecknoinits
 func init() {
-	sshWrapperCommand.Flags().AddFlagSet(config.SSHFlags())
 	wrapperCommand.AddCommand(sshWrapperCommand)
 }
 
 func runSSHWrapperCommand(cmd *cobra.Command, args []string) error {
-	if len(args) < 1 {
+	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
+		return cmd.Help()
+	}
+	// Preserve the separator used by the documented shell alias.
+	if len(args) > 0 && args[0] == "--" {
+		args = args[1:]
+	}
+	if len(args) == 0 {
 		return fmt.Errorf("missing <target> argument. See usage with 'assh wrapper %s -h'", cmd.Name())
 	}
 
-	// prepare variables
-	target := args[0]
-	command := args[1:]
-	options := []string{}
-	for _, flag := range config.SSHBoolFlags {
-		if viper.GetBool(flag) {
-			options = append(options, fmt.Sprintf("-%s", flag))
-		}
-	}
-	for _, flag := range config.SSHStringFlags {
-		for _, val := range viper.GetStringSlice(flag) {
-			if (flag == "o" || flag == "O") && val == "false" {
-				logger().Debug(
-					"Skip invalid option:",
-					zap.String("flag", flag),
-					zap.String("val", val),
-				)
-				continue
-			}
-			options = append(options, fmt.Sprintf("-%s", flag))
-			options = append(options, val)
-		}
-	}
-	sshArgs := make([]string, 0, 1+len(options)+1+len(command))
-	sshArgs = append(sshArgs, cmd.Name())
-	sshArgs = append(sshArgs, options...)
-	sshArgs = append(sshArgs, target)
-	sshArgs = append(sshArgs, command...)
 	bin, err := exec.LookPath(cmd.Name())
 	if err != nil {
 		return errors.Wrapf(err, "failed to lookup %q", cmd.Name())
 	}
+	target := sshDestination(args)
+	logger().Debug("Wrapper called", zap.String("bin", bin), zap.String("target", target), zap.Strings("sshArgs", args))
 
-	logger().Debug(
-		"Wrapper called",
-		zap.String("bin", bin),
-		zap.String("target", target),
-		zap.Any("command", command),
-		zap.Any("options", options),
-		zap.Any("sshArgs", sshArgs),
-	)
+	if target != "" {
+		if err := refreshWrapperConfig(target); err != nil {
+			return err
+		}
+	}
 
+	sshArgs := append([]string{cmd.Name()}, args...)
+	return syscall.Exec(bin, sshArgs, os.Environ()) // #nosec
+}
+
+// sshDestination only identifies which host may require a config refresh.
+// OpenSSH receives the original arguments and handles validation.
+func sshDestination(args []string) string {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--" {
+			if i+1 < len(args) {
+				return args[i+1]
+			}
+			return ""
+		}
+		if len(arg) < 2 || arg[0] != '-' {
+			return arg
+		}
+		if strings.HasPrefix(arg, "--") {
+			return ""
+		}
+
+		for j := 1; j < len(arg); j++ {
+			if !slices.Contains(config.SSHStringFlags, string(arg[j])) {
+				continue
+			}
+			if j == len(arg)-1 {
+				// An option with no attached value consumes the next argument.
+				i++
+			}
+			break
+		}
+	}
+	return ""
+}
+
+func refreshWrapperConfig(target string) error {
 	// check if config is up-to-date
 	conf, err := config.Open(viper.GetString("config"))
 	if err != nil {
@@ -96,13 +113,11 @@ func runSSHWrapperCommand(cmd *cobra.Command, args []string) error {
 	if isOutdated {
 		logger().Debug(
 			"The configuration file is outdated, rebuilding it before calling command",
-			zap.String("command", cmd.Name()),
+			zap.String("target", target),
 		)
 		if err = conf.SaveSSHConfig(); err != nil {
 			logger().Error("failed to save ssh config file", zap.Error(err))
 		}
 	}
-
-	// Execute Binary
-	return syscall.Exec(bin, sshArgs, os.Environ()) // #nosec
+	return nil
 }
