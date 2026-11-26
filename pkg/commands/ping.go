@@ -61,7 +61,7 @@ func runPingCommand(cmd *cobra.Command, args []string) error {
 	}
 	proto := "tcp"
 	fmt.Printf("PING %s (%s) PORT %s (%s) PROTO %s\n", target, host.HostName, host.Port, portName, proto)
-	dest := net.JoinHostPort(host.HostName, host.Port)
+	dest := tcpDestination(host.HostName, host.Port)
 	count := uint(viper.GetInt("count"))
 	transmittedPackets := 0
 	receivedPackets := 0
