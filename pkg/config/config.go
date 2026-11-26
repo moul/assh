@@ -57,7 +57,7 @@ func (c *Config) String() string {
 func (c *Config) SaveNewKnownHost(target string) {
 	c.addKnownHost(target)
 
-	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
+	path, err := utils.ExpandPath(c.ASSHKnownHostFile)
 	if err != nil {
 		logger().Error(
 			"Cannot append host, unknown assh_known_hosts file",
@@ -94,7 +94,7 @@ func (c *Config) addKnownHost(target string) {
 
 // KnownHostsFileExists returns nil if it the file exists and an error if it doesn't
 func (c *Config) KnownHostsFileExists() error {
-	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
+	path, err := utils.ExpandPath(c.ASSHKnownHostFile)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (c *Config) KnownHostsFileExists() error {
 
 // LoadKnownHosts loads known hosts list from disk
 func (c *Config) LoadKnownHosts() error {
-	path, err := utils.ExpandUser(c.ASSHKnownHostFile)
+	path, err := utils.ExpandPath(c.ASSHKnownHostFile)
 	if err != nil {
 		return err
 	}
@@ -293,7 +293,7 @@ func (c *Config) GetHostSafe(name string) *Host {
 // isSSHConfigOutdated returns true if assh.yml or an included file has a
 // modification date more recent than .ssh/config
 func (c *Config) isSSHConfigOutdated() (bool, error) {
-	filepath, err := utils.ExpandUser(c.sshConfigPath)
+	filepath, err := utils.ExpandPath(c.sshConfigPath)
 	if err != nil {
 		return false, err
 	}
@@ -455,7 +455,7 @@ func (c *Config) SaveSSHConfig() error {
 	if c.sshConfigPath == "" {
 		return fmt.Errorf("no Config.sshConfigPath configured")
 	}
-	configPath, err := utils.ExpandUser(c.sshConfigPath)
+	configPath, err := utils.ExpandPath(c.sshConfigPath)
 	if err != nil {
 		return err
 	}
@@ -501,7 +501,7 @@ func (c *Config) LoadFile(filename string) error {
 	beforeHostsCount := len(c.Hosts)
 
 	// Resolve '~' and '$HOME'
-	filepath, err := utils.ExpandUser(filename)
+	filepath, err := utils.ExpandPath(filename)
 	if err != nil {
 		return err
 	}
@@ -551,7 +551,7 @@ func (c *Config) LoadFile(filename string) error {
 // LoadFiles will try to glob the pattern and load each matching entries
 func (c *Config) LoadFiles(pattern string) error {
 	// Resolve '~' and '$HOME'
-	expandedPattern, err := utils.ExpandUser(pattern)
+	expandedPattern, err := utils.ExpandPath(pattern)
 	if err != nil {
 		return err
 	}
