@@ -7,7 +7,6 @@ require (
 	github.com/awalterschulze/gographviz v2.0.3+incompatible
 	github.com/bugsnag/osext v0.0.0-20130617224835-0dd3f918b21b
 	github.com/docker/go-units v0.5.0
-	github.com/docker/libcompose v0.4.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568
 	github.com/gin-gonic/gin v1.11.0
@@ -40,7 +39,6 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/gosx-notifier v0.0.0-20180201035817-e127226297fb // indirect
-	github.com/docker/docker v28.5.2+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
