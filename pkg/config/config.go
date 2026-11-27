@@ -384,7 +384,16 @@ func (c *Config) LoadConfig(source io.Reader) error {
 	if err != nil {
 		return err
 	}
-	err = flexyaml.Unmarshal(buf, &c)
+	// A null section in an include contributes no entries.
+	hosts, templates := c.Hosts, c.Templates
+	decoded := c
+	err = flexyaml.Unmarshal(buf, &decoded)
+	if c.Hosts == nil {
+		c.Hosts = hosts
+	}
+	if c.Templates == nil {
+		c.Templates = templates
+	}
 	if err != nil {
 		return err
 	}
@@ -507,10 +516,9 @@ func (c *Config) LoadFile(filename string) error {
 	}
 
 	// Anti-loop protection
-	if _, ok := c.includedFiles[filepath]; ok {
+	if c.includedFiles[filepath] {
 		return nil
 	}
-	c.includedFiles[filepath] = false
 
 	logger().Debug("Loading config file", zap.String("file", filepath))
 
@@ -521,9 +529,13 @@ func (c *Config) LoadFile(filename string) error {
 	}
 
 	// Load config stream
-	err = c.LoadConfig(source)
-	if err != nil {
-		return err
+	loadErr := c.LoadConfig(source)
+	closeErr := source.Close()
+	if loadErr != nil {
+		return loadErr
+	}
+	if closeErr != nil {
+		return closeErr
 	}
 
 	// Successful loading
