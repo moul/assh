@@ -82,45 +82,20 @@ func runProxyCommand(cmd *cobra.Command, args []string) error {
 		logger().Debug("Failed to load assh known_hosts", zap.Error(err))
 	}
 
-	automaticRewrite := !viper.GetBool("no-rewrite")
-	isOutdated, err2 := conf.IsConfigOutdated(target)
-	if err2 != nil {
-		logger().Warn("Cannot check if ~/.ssh/config is outdated", zap.Error(err))
-	}
-	if isOutdated {
-		if automaticRewrite {
-			// BeforeConfigWrite
-			type configWriteHookArgs struct {
-				SSHConfigPath string
-			}
-			hookArgs := configWriteHookArgs{
-				SSHConfigPath: conf.SSHConfigPath(),
-			}
-
-			logger().Debug("Calling BeforeConfigWrite hooks")
-			if drivers, err := conf.Defaults.Hooks.BeforeConfigWrite.InvokeAll(hookArgs); err != nil {
-				logger().Error("BeforeConfigWrite hook failed", zap.Error(err))
+	if !dryRun {
+		isOutdated, err := conf.IsConfigOutdated(target)
+		if err != nil {
+			logger().Warn("Cannot check if ~/.ssh/config is outdated", zap.Error(err))
+		}
+		if isOutdated {
+			if viper.GetBool("no-rewrite") {
+				logger().Warn("The configuration file is outdated; you need to run `assh config build --no-automatic-rewrite --write` to stay updated")
 			} else {
-				defer drivers.Close()
+				if err := rewriteSSHConfig(conf); err != nil {
+					return errors.Wrap(err, "failed to save SSH config file")
+				}
+				logger().Warn("'~/.ssh/config' has been rewritten. SSH needs to be restarted. See https://github.com/moul/assh/issues/122 for more information.")
 			}
-
-			// Save
-			logger().Debug("The configuration file is outdated, rebuilding it before calling ssh")
-			logger().Warn("'~/.ssh/config' has been rewritten.  SSH needs to be restarted.  See https://github.com/moul/assh/issues/122 for more information.")
-			logger().Debug("Saving SSH config")
-			if err := conf.SaveSSHConfig(); err != nil {
-				return errors.Wrap(err, "failed to save SSH config file")
-			}
-
-			// AfterConfigWrite
-			logger().Debug("Calling AfterConfigWrite hooks")
-			if drivers, err := conf.Defaults.Hooks.AfterConfigWrite.InvokeAll(hookArgs); err != nil {
-				logger().Error("AfterConfigWrite hook failed", zap.Error(err))
-			} else {
-				defer drivers.Close()
-			}
-		} else {
-			logger().Warn("The configuration file is outdated; you need to run `assh config build --no-automatic-rewrite > ~/.ssh/config` to stay updated")
 		}
 	}
 

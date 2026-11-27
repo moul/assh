@@ -3,7 +3,6 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -25,6 +24,7 @@ var buildJSONConfigCommand = &cobra.Command{
 
 // nolint:gochecknoinits
 func init() {
+	buildConfigCommand.Flags().Bool("write", false, "Write ~/.ssh/config and run configuration write hooks")
 	buildConfigCommand.Flags().BoolP("no-automatic-rewrite", "", false, "Disable automatic ~/.ssh/config file regeneration")
 	buildConfigCommand.Flags().BoolP("expand", "e", false, "Expand all fields")
 	buildConfigCommand.Flags().BoolP("ignore-known-hosts", "", false, "Ignore known-hosts file")
@@ -60,7 +60,14 @@ func runBuildConfigCommand(cmd *cobra.Command, args []string) error {
 	if viper.GetBool("no-automatic-rewrite") {
 		conf.DisableAutomaticRewrite()
 	}
-	return conf.WriteSSHConfigTo(os.Stdout)
+	write, err := cmd.Flags().GetBool("write")
+	if err != nil {
+		return err
+	}
+	if write {
+		return rewriteSSHConfig(conf)
+	}
+	return conf.WriteSSHConfigTo(cmd.OutOrStdout())
 }
 
 func runBuildJSONConfigCommand(cmd *cobra.Command, args []string) error {
