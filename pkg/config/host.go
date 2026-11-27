@@ -1158,8 +1158,14 @@ func (h *Host) AddKnownHost(target string) {
 }
 
 // WriteSSHConfigTo writes an ~/.ssh/config file compatible host definition to a writable stream
+func (h *Host) WriteSSHConfigTo(output io.Writer) error {
+	w := &sshConfigWriter{output: output}
+	h.writeSSHConfigTo(w)
+	return w.err
+}
+
 // nolint:gocyclo
-func (h *Host) WriteSSHConfigTo(w io.Writer) error {
+func (h *Host) writeSSHConfigTo(w io.Writer) {
 	aliases := append([]string{h.Name()}, h.Aliases...)
 	aliases = append(aliases, h.knownHosts...)
 	aliasIdx := 0
@@ -1537,7 +1543,6 @@ func (h *Host) WriteSSHConfigTo(w io.Writer) error {
 
 		aliasIdx++
 	}
-	return nil
 }
 
 // ExpandString replaces elements in a format string with host variables.
