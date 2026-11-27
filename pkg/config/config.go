@@ -144,7 +144,11 @@ func (c *Config) JSONString() ([]byte, error) {
 }
 
 // computeHost returns a copy of the host with applied defaults, resolved inheritances and configured internal fields
-func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Host, error) {
+func computeHost(host *Host, config *Config, name string, fullCompute bool, ancestors map[*Host]bool) (*Host, error) {
+	// Track the source host so aliases and gateway-qualified names share the same identity.
+	if ancestors[host] {
+		return nil, fmt.Errorf("cyclic inheritance of %q", name)
+	}
 	computedHost := NewHost(name)
 	computedHost.pattern = name
 	if host != nil {
@@ -157,23 +161,26 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	// self is already inherited
 	computedHost.inherited[name] = true
 
-	// Inheritance
-	// FIXME: allow deeper inheritance:
-	//     currently not resolving inherited hosts
-	//     we should resolve all inherited hosts and pass the
-	//     currently resolved hosts to avoid computing an host twice
-	for _, name := range host.Inherits {
+	if len(computedHost.Inherits) > 0 {
+		if ancestors == nil {
+			ancestors = make(map[*Host]bool)
+		}
+		ancestors[host] = true
+		defer delete(ancestors, host)
+	}
+
+	for _, name := range computedHost.Inherits {
 		_, found := computedHost.inherited[name]
 		if found {
-			logger().Debug("Detected circular loop inheritance, skiping...")
+			logger().Debug("Skipping repeated inheritance", zap.String("name", name))
 			continue
 		}
 		computedHost.inherited[name] = true
 
-		target, err := config.getHostByPath(name, false, false, true)
+		target, err := config.getHostByPath(name, false, false, true, ancestors)
 		if err != nil {
 			logger().Warn(
-				"Cannot inherits",
+				"Cannot inherit host",
 				zap.String("name", name),
 				zap.Error(err),
 			)
@@ -211,10 +218,10 @@ func computeHost(host *Host, config *Config, name string, fullCompute bool) (*Ho
 	return computedHost, nil
 }
 
-func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
+func (c *Config) getHostByName(name string, safe bool, compute bool, allowTemplate bool, ancestors map[*Host]bool) (*Host, error) {
 	if host, ok := c.Hosts[name]; ok {
 		logger().Debug("getHostByName direct matching", zap.String("name", name))
-		return computeHost(host, c, name, compute)
+		return computeHost(host, c, name, compute, ancestors)
 	}
 
 	for origPattern, host := range c.Hosts {
@@ -226,7 +233,7 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 			}
 			if matched {
 				logger().Debug("getHostByName pattern matching", zap.String("pattern", pattern), zap.String("name", name))
-				return computeHost(host, c, name, compute)
+				return computeHost(host, c, name, compute, ancestors)
 			}
 		}
 	}
@@ -238,7 +245,7 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 				return nil, err
 			}
 			if matched {
-				return computeHost(template, c, name, compute)
+				return computeHost(template, c, name, compute, ancestors)
 			}
 		}
 	}
@@ -246,16 +253,16 @@ func (c *Config) getHostByName(name string, safe bool, compute bool, allowTempla
 	if safe {
 		host := NewHost(name)
 		host.HostName = name
-		return computeHost(host, c, name, compute)
+		return computeHost(host, c, name, compute, ancestors)
 	}
 
 	return nil, fmt.Errorf("no such host: %s", name)
 }
 
-func (c *Config) getHostByPath(path string, safe bool, compute bool, allowTemplate bool) (*Host, error) {
+func (c *Config) getHostByPath(path string, safe bool, compute bool, allowTemplate bool, ancestors map[*Host]bool) (*Host, error) {
 	parts := strings.SplitN(path, "/", 2)
 
-	host, err := c.getHostByName(parts[0], safe, compute, allowTemplate)
+	host, err := c.getHostByName(parts[0], safe, compute, allowTemplate, ancestors)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +276,7 @@ func (c *Config) getHostByPath(path string, safe bool, compute bool, allowTempla
 
 // GetGatewaySafe returns gateway Host configuration, a gateway is like a Host, except, the host path is not resolved
 func (c *Config) GetGatewaySafe(name string) *Host {
-	host, err := c.getHostByName(name, true, true, false) // FIXME: fullCompute for gateway ?
+	host, err := c.getHostByName(name, true, true, false, nil) // FIXME: fullCompute for gateway ?
 	if err != nil {
 		panic(err)
 	}
@@ -278,12 +285,12 @@ func (c *Config) GetGatewaySafe(name string) *Host {
 
 // GetHost returns a matching host form Config hosts list
 func (c *Config) GetHost(name string) (*Host, error) {
-	return c.getHostByPath(name, false, true, false)
+	return c.getHostByPath(name, false, true, false, nil)
 }
 
 // GetHostSafe won't fail, in case the host is not found, it will returns a virtual host matching the pattern
 func (c *Config) GetHostSafe(name string) *Host {
-	host, err := c.getHostByPath(name, true, true, false)
+	host, err := c.getHostByPath(name, true, true, false, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -632,7 +639,7 @@ func (c *Config) WriteSSHConfigTo(w io.Writer) error {
 	_, _ = fmt.Fprintln(w, "# host-based configuration")
 	for _, name := range c.sortedNames() {
 		host := c.Hosts[name]
-		computedHost, err := computeHost(host, c, name, false)
+		computedHost, err := computeHost(host, c, name, false, nil)
 		if err != nil {
 			return err
 		}

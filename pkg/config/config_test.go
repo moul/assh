@@ -767,30 +767,30 @@ func TestComputeHost(t *testing.T) {
 		})
 		Convey("Expand variables in HostName", func() {
 			host := config.Hosts["jjj"]
-			computed, err := computeHost(host, config, "jjj", false)
+			computed, err := computeHost(host, config, "jjj", false, nil)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "%h.jjjjj")
 
-			computed, err = computeHost(host, config, "jjj", true)
+			computed, err = computeHost(host, config, "jjj", true, nil)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "jjj.jjjjj")
 
 			host = config.Hosts["*.kkk"]
-			computed, err = computeHost(host, config, "test.kkk", false)
+			computed, err = computeHost(host, config, "test.kkk", false, nil)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "%h.kkkkk")
 
-			computed, err = computeHost(host, config, "test.kkk", true)
+			computed, err = computeHost(host, config, "test.kkk", true, nil)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "test.kkk.kkkkk")
 		})
 		Convey("Do not expand variables twice", func() {
 			host := config.Hosts["lll-*"]
-			computed, err := computeHost(host, config, "lll-42", true)
+			computed, err := computeHost(host, config, "lll-42", true, nil)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "lll-42.lll")
 
-			computed, err = computeHost(host, config, "lll-43.lll", true)
+			computed, err = computeHost(host, config, "lll-43.lll", true, nil)
 			So(err, ShouldBeNil)
 			So(computed.HostName, ShouldEqual, "lll-43.lll")
 		})
@@ -808,7 +808,7 @@ func TestComputeHost(t *testing.T) {
 			//os.Setenv("ENV_VAR_LOCALCOMMAND", "bbb")
 			So(os.Setenv("ENV_VAR_USER", "ccc"), ShouldBeNil)
 
-			computed, err := computeHost(host, config, "bbb", true)
+			computed, err := computeHost(host, config, "bbb", true, nil)
 			So(err, ShouldBeNil)
 
 			So(computed.HostName, ShouldEqual, "aaa")
@@ -828,57 +828,57 @@ func TestConfig_getHostByName(t *testing.T) {
 		var err error
 
 		Convey("Without gateway", func() {
-			host, err = config.getHostByName("titi", false, true, false)
+			host, err = config.getHostByName("titi", false, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 
-			host, err = config.getHostByName("titi", true, true, false)
+			host, err = config.getHostByName("titi", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 
-			host, err = config.getHostByName("dontexists", false, true, false)
+			host, err = config.getHostByName("dontexists", false, true, false, nil)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("dontexists", true, true, false)
+			host, err = config.getHostByName("dontexists", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists")
 
-			host, err = config.getHostByName("regex.ddd", false, true, false)
+			host, err = config.getHostByName("regex.ddd", false, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 
-			host, err = config.getHostByName("regex.ddd", true, true, false)
+			host, err = config.getHostByName("regex.ddd", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 		})
 
 		Convey("With gateway", func() {
-			host, err = config.getHostByName("titi/gateway", false, true, false)
+			host, err = config.getHostByName("titi/gateway", false, true, false, nil)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("titi/gateway", true, true, false)
+			host, err = config.getHostByName("titi/gateway", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi/gateway")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByName("dontexists/gateway", false, true, false)
+			host, err = config.getHostByName("dontexists/gateway", false, true, false, nil)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("dontexists/gateway", true, true, false)
+			host, err = config.getHostByName("dontexists/gateway", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists/gateway")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByName("regex.ddd/gateway", false, true, false)
+			host, err = config.getHostByName("regex.ddd/gateway", false, true, false, nil)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByName("regex.ddd/gateway", true, true, false)
+			host, err = config.getHostByName("regex.ddd/gateway", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd/gateway")
 			So(host.HostName, ShouldNotEqual, "1.3.5.7")
@@ -1062,32 +1062,32 @@ func TestConfig_getHostByPath(t *testing.T) {
 		var err error
 
 		Convey("Without gateway", func() {
-			host, err = config.getHostByPath("titi", false, true, false)
+			host, err = config.getHostByPath("titi", false, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("titi", true, true, false)
+			host, err = config.getHostByPath("titi", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("dontexists", false, true, false)
+			host, err = config.getHostByPath("dontexists", false, true, false, nil)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByPath("dontexists", true, true, false)
+			host, err = config.getHostByPath("dontexists", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("regex.ddd", false, true, false)
+			host, err = config.getHostByPath("regex.ddd", false, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 0)
 
-			host, err = config.getHostByPath("regex.ddd", true, true, false)
+			host, err = config.getHostByPath("regex.ddd", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
@@ -1095,32 +1095,32 @@ func TestConfig_getHostByPath(t *testing.T) {
 		})
 
 		Convey("With gateway", func() {
-			host, err = config.getHostByPath("titi/gateway", false, true, false)
+			host, err = config.getHostByPath("titi/gateway", false, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("titi/gateway", true, true, false)
+			host, err = config.getHostByPath("titi/gateway", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "titi")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("dontexists/gateway", false, true, false)
+			host, err = config.getHostByPath("dontexists/gateway", false, true, false, nil)
 			So(err, ShouldNotBeNil)
 			So(host, ShouldBeNil)
 
-			host, err = config.getHostByPath("dontexists/gateway", true, true, false)
+			host, err = config.getHostByPath("dontexists/gateway", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "dontexists")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("regex.ddd/gateway", false, true, false)
+			host, err = config.getHostByPath("regex.ddd/gateway", false, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
 			So(len(host.Gateways), ShouldEqual, 1)
 
-			host, err = config.getHostByPath("regex.ddd/gateway", true, true, false)
+			host, err = config.getHostByPath("regex.ddd/gateway", true, true, false, nil)
 			So(err, ShouldBeNil)
 			So(host.Name(), ShouldEqual, "regex.ddd")
 			So(host.HostName, ShouldEqual, "1.3.5.7")
